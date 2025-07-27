@@ -45,9 +45,29 @@ function Main {
         # ------------------------------
         # EXTRACT UI LAYOUT DEFINITIONS
         # ------------------------------
+        $formWidth = 
+            $config.Layout.Labels.Width + 
+            $config.Spacing.X + 
+            $config.Layout.TextBoxes.Width + 
+            $config.Spacing.X + 
+            $config.Layout.BrowseButtons.Width + 
+            $config.Margins.Left + 
+            $config.Margins.Right
+
+        $formHeight =
+            $config.Layout.Labels.Height +
+            $config.Spacing.Y +
+            $config.Layout.TabControl.Height +  
+            $config.Spacing.Y +          
+            $config.Layout.Buttons.Height +
+            $config.Spacing.Y +
+            $config.Layout.ProgressBar.Height +
+            $config.Spacing.Y +
+            $config.Layout.LogBox.Height
+
         $form_layout = @{
-            formWidth     = $config.Form.Width
-            formHeight    = $config.Form.Height
+            formWidth     = $formWidth
+            formHeight    = $formHeight
             startPosition = $config.Form.StartPosition
             defaultFont   = $config.Fonts.Default
         }
@@ -62,7 +82,6 @@ function Main {
         $provider_layout = @{
             XLeftMargin           = $config.Margins.Left
             XLabelOffset          = $config.Offset.LabelX
-            YLineSpacing          = $config.Spacing.YLine
             YSmallSpacing         = $config.Spacing.YSmall
             LabelWidth            = $config.Layout.Labels.Width
             TextBoxWidth          = $config.Layout.TextBoxes.Width
@@ -74,6 +93,7 @@ function Main {
             GroupBoxHeight        = $config.Layout.GroupBoxes.Height
             HeaderWidth           = $config.Layout.Headers.Width
             HeaderHeight          = $config.Layout.Headers.Height
+            ControlHeight         = $config.Layout.Control.Height
             ExplainLabelWidth     = $config.Layout.ExplainLabels.Width
             ExplainLabelHeight    = $config.Layout.ExplainLabels.Height
             ComboBoxWidth         = $config.Layout.ComboBoxes.Width
@@ -119,7 +139,7 @@ function Main {
         }
 
         $button_layout = @{
-            formWidth     = $config.Form.Width
+            formWidth     = $formWidth
             buttonHeight  = $config.Layout.Buttons.Height
             startY        = $config.Layout.Buttons.Y
             cancelWidth   = $config.Layout.Buttons.Cancel.Width

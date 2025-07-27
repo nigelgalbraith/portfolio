@@ -4,8 +4,6 @@
     "ProviderPath": "config/cloudProviders.json"
   },
   "Form": {
-    "Width": 710,
-    "Height": 1000,
     "StartPosition": "CenterScreen"
   },
   "Fonts": {
@@ -58,6 +56,9 @@
       "Width": 690,
       "Height": 520
     },
+    "Control": {
+      "Height" :30
+    },
     "ProgressBar": {
       "Y": 600,
       "Height": 20
@@ -91,13 +92,15 @@
     "LogBoxFore": "Lime"
   },
   "Spacing": {
+    "X": 15,
     "Btn": 20,
     "YGroup": 55,
-    "YLine": 30,
+    "Y": 30,
     "YSmall": 20
   },
   "Margins": {
-    "Left": 10
+    "Left": 20,
+    "Right": 20
   },
   "Offset": {
     "LabelX": 160

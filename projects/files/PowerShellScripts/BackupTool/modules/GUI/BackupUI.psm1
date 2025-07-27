@@ -128,7 +128,7 @@ function Add-ProviderControls {
     $lblHeader.Location = New-Object Drawing.Point($layout.XLeftMargin, $y)
     $lblHeader.Size = New-Object Drawing.Size($layout.HeaderWidth, $layout.HeaderHeight)
     $tab.Controls.Add($lblHeader)
-    $y += $layout.HeaderHeight + $layout.YSmallSpacing
+    $y += $layout.HeaderHeight
 
     # ---- Source and Destination Paths ----
     foreach ($type in @("Source", "Dest")) {
@@ -184,7 +184,7 @@ function Add-ProviderControls {
     $grpType.Controls.Add($rdoZip)
     $controls["Rdo${prefix}Zip"] = $rdoZip
 
-    $y += $layout.GroupBoxHeight + $layout.YSmallSpacing
+    $y += $layout.GroupBoxHeight + $layout.YSmallSpacing 
 
     # ---- Zip/File Explanation Label ----
     $lblExplain = New-Object Windows.Forms.Label
@@ -195,7 +195,7 @@ function Add-ProviderControls {
     $lblExplain.ForeColor = $layout.ExplainTextColor
     $tab.Controls.Add($lblExplain)
     $controls["Lbl${prefix}Explain"] = $lblExplain
-    $y += $layout.ExplainLabelHeight + $layout.YSmallSpacing
+    $y += $layout.ExplainLabelHeight
 
     # ---- File Mode Group (Mirror/Append) ----
     $grpMode = New-Object Windows.Forms.GroupBox
@@ -217,7 +217,7 @@ function Add-ProviderControls {
     $grpMode.Controls.Add($rdoAppend)
     $controls["Rdo${prefix}Append"] = $rdoAppend
 
-    $y += $layout.GroupBoxHeight + $layout.YSmallSpacing
+    $y += $layout.GroupBoxHeight + $layout.YSmallSpacing 
 
     # ---- Mirror/Append Explanation Label ----
     $lblModeExplain = New-Object Windows.Forms.Label
@@ -228,11 +228,12 @@ function Add-ProviderControls {
     $lblModeExplain.ForeColor = $layout.ModeExplainTextColor
     $tab.Controls.Add($lblModeExplain)
     $controls["Lbl${prefix}ModeExplain"] = $lblModeExplain
-    $y += $layout.ExplainLabelHeight + $layout.YSmallSpacing
+    $y += $layout.ExplainLabelHeight 
 
     # ---- Frequency Dropdown ----
     $lblFreq = New-Object Windows.Forms.Label
     $lblFreq.Text = "Frequency:"
+    $y = ($y - $layout.ExplainY)
     $lblFreq.Location = New-Object Drawing.Point($layout.XLeftMargin, $y)
     $tab.Controls.Add($lblFreq)
 
@@ -240,11 +241,12 @@ function Add-ProviderControls {
     $cmbFreq.Items.AddRange($layout.DefaultFrequencies)
     $cmbFreq.DropDownStyle = 'DropDownList'
     $cmbFreq.SelectedItem = $settings.Freq
+    
     $cmbFreq.Location = New-Object Drawing.Point($layout.XLabelOffset, $y)
     $cmbFreq.Size = New-Object Drawing.Size($layout.ComboBoxWidth, $layout.ControlHeight)
     $tab.Controls.Add($cmbFreq)
     $controls["Cmb${prefix}Freq"] = $cmbFreq
-    $y += $layout.ControlHeight + $layout.YSmallSpacing
+    $y += $layout.ControlHeight
 
     # ---- Zip Name ----
     $lblName = New-Object Windows.Forms.Label
@@ -258,7 +260,7 @@ function Add-ProviderControls {
     $txtName.Size = New-Object Drawing.Size($layout.TextBoxWidth, $layout.ControlHeight)
     $tab.Controls.Add($txtName)
     $controls["Txt${prefix}ZipName"] = $txtName
-    $y += $layout.ControlHeight + $layout.YSmallSpacing
+    $y += $layout.ControlHeight
 
     # ---- Zip Retention Count ----
     $lblKeep = New-Object Windows.Forms.Label
@@ -271,6 +273,7 @@ function Add-ProviderControls {
     $numKeep.Location = New-Object Drawing.Point($layout.XLabelOffset, $y)
     $numKeep.Size = New-Object Drawing.Size($layout.NumericWidth, $layout.ControlHeight)
     $tab.Controls.Add($numKeep)
+    $y += $layout.ControlHeight
     $controls["Num${prefix}Keep"] = $numKeep
 
     # ---- Configure Initial State and Behaviors ----
