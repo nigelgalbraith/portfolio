@@ -1,7 +1,0 @@
-[2025-07-27 14:58:08] [ERROR] Job 'Google': None of the source paths exist: D:\Documents\GoogleDriveSync\Books
-D:\Documents\GoogleDriveSync\Piano
-D:\Documents\GoogleDriveSync\SketchUp
-[2025-07-27 14:58:08] [ERROR] Job 'Mega': None of the source paths exist: D:\Documents\MegaSync\NZMA
-D:\Documents\MegaSync\Personal
-[2025-07-27 14:58:08] [ERROR] Job 'Dropbox': None of the source paths exist: D:\Documents\GitHub\portfolio.github.io
-[2025-07-27 14:58:08] [ERROR] One or more jobs are invalid. Backup cancelled.

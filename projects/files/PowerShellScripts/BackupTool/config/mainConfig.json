@@ -1,12 +1,7 @@
 {
   "Locations": {
     "SettingsPath": "config/backupSettings.json",
-    "ProviderPath": "config/cloudProviders.json",
-    "LogFolder": "logs"
-  },
-  "Logging": {
-    "LogsToKeep": 10,
-    "LogFile": "backup_{timestamp}.log"
+    "ProviderPath": "config/cloudProviders.json"
   },
   "Form": {
     "Width": 710,
