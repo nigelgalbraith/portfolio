@@ -99,26 +99,26 @@ function Main {
         # Calculate form width using layout config
         $formWidth = 
             $config.Layout.Margins.Left + 
-            $config.Layout.Spacing.X + 
+            $config.Layout.Spacing.XTiny + 
             $config.Layout.Labels.Width + 
-            $config.Layout.Spacing.X + 
+            $config.Layout.Spacing.XTiny + 
             $config.Layout.TextBoxes.Width + 
-            $config.Layout.Spacing.X + 
+            $config.Layout.Spacing.XTiny + 
             $config.Layout.BrowseButtons.Width + 
-            $config.Layout.Spacing.X + 
+            $config.Layout.Spacing.XTiny + 
             $config.Layout.Margins.Right
 
         # Calculate form height using vertical component stacking
         $formHeight = 
             $config.Layout.TabControl.Y +
             $config.Layout.TabControl.Height +
-            $config.Layout.Spacing.Y +          
+            $config.Layout.Spacing.YBig +          
             $config.Layout.Buttons.Height +
             $config.Layout.Spacing.YSmall +
             $config.Layout.ProgressBar.Height +
             $config.Layout.Spacing.YSmall +
             $config.Layout.LogBox.Height +
-            $config.Layout.Spacing.Y
+            $config.Layout.Spacing.YBig
 
         # Form-level layout
         $form_layout = @{
@@ -129,7 +129,7 @@ function Main {
         }
 
         # TabControl layout
-        $tabWidth = $formWidth - $config.Layout.Spacing.X - $config.Layout.Margins.Right
+        $tabWidth = $formWidth - $config.Layout.Spacing.XTiny - $config.Layout.Margins.Right
         $tab_layout = @{
             tabWidth  = $tabWidth
             tabHeight = $config.Layout.TabControl.Height
@@ -205,11 +205,11 @@ function Main {
             cancelWidth   = $config.Layout.Buttons.Cancel.Width
             backupWidth   = $config.Layout.Buttons.Backup.Width
             shutdownWidth = $config.Layout.Buttons.Shutdown.Width
-            spacing       = $config.Layout.Buttons.Spacing.X
+            spacing       = $config.Layout.Spacing.XSmall
         }
 
         # Progress bar layout
-        $progesswidth = $formWidth - $config.Layout.ProgressBar.Spacing.X
+        $progesswidth = $formWidth - $config.Layout.Spacing.XSmall
         $progressY = $buttonY + $config.Layout.Buttons.Height + $config.Layout.Spacing.YSmall
 
         $progress_layout = @{
@@ -220,7 +220,7 @@ function Main {
         }
 
         # LogBox layout
-        $logBoxwidth = $formWidth - $config.Layout.LogBox.Spacing.X
+        $logBoxwidth = $formWidth - $config.Layout.Spacing.XMed
         $logBoxY = $progressY + $config.Layout.ProgressBar.Height + $config.Layout.Spacing.YSmall
 
         $logbox_layout = @{

@@ -58,17 +58,14 @@
       "Height": 30
     },
     "ProgressBar": {
-      "Height": 20,
-      "Spacing": { "X": 20 }
+      "Height": 20
     },
     "LogBox": {
       "Height": 280,
-      "Spacing": { "X": 25 },
       "Y": 690
     },
     "Buttons": {
       "Height": 30,
-      "Spacing": { "X": 20 },
       "Cancel": {
         "Width": 120
       },
@@ -90,9 +87,13 @@
       "LogBoxFore": "Lime"
     },
     "Spacing": {
-      "X": 15,
-      "Y": 30,
-      "YSmall": 20
+      "XTiny": 15,
+      "XSmall":20,
+      "XMed": 25, 
+      "YBig": 30,
+      "YSmall": 20,
+      "X":15,
+      "Y":30
     },
     "Margins": {
       "Left": 20,
