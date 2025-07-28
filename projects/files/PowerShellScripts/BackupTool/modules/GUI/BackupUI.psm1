@@ -294,10 +294,13 @@ function Add-ProviderControls {
 
         if ($settings.Mirror) {
             $rdoMirror.Checked = $true
-            $lblModeExplain.Text = "Mirror:`nDestination will exactly match the source (files deleted if missing in source)."
+            $lblModeExplain.Text = "Mirror:`nOnly selected source folders are mirrored to the destination.
+                                            `nExisting files are overwritten, and files missing in the source folder are deleted from the corresponding destination folder.
+                                            `nFolders not included in the source selection will remain untouched in the destination."
         } else {
             $rdoAppend.Checked = $true
-            $lblModeExplain.Text = "Append:`nAdds new files and overwrites changed ones without deleting anything in the destination."
+            $lblModeExplain.Text = "Append:`nAdds new files and overwrites changed ones in the selected source folders.
+                                    `nFiles and folders outside the selected source are not affected."
         }
     }
 
@@ -338,14 +341,17 @@ function Add-ProviderControls {
     $rdoMirror.Tag = $lblModeExplain
     $rdoMirror.Add_CheckedChanged({
         if ($this.Checked) {
-            $this.Tag.Text = "Mirror:`nDestination will exactly match the source (files deleted if missing in source)."
+            $this.Tag.Text = "Mirror:`nOnly selected source folders are mirrored to the destination.
+                                    `nExisting files are overwritten, and files missing in the source folder are deleted from the corresponding destination folder.
+                                    `nFolders not included in the source selection will remain untouched in the destination."
         }
     })
 
     $rdoAppend.Tag = $lblModeExplain
     $rdoAppend.Add_CheckedChanged({
         if ($this.Checked) {
-            $this.Tag.Text = "Append:`nAdds new files and overwrites changed ones without deleting anything in the destination."
+            $this.Tag.Text = "Append:`nAdds new files and overwrites changed ones in the selected source folders.
+                                    `nFiles and folders outside the selected source are not affected."
         }
     })
 

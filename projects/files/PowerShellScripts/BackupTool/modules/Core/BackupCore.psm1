@@ -13,49 +13,6 @@ $LOG_FILE_PATH   = Join-Path $LOGFOLDER "backup_$timestamp.log"
 # DEPENDENCIES
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
-function Write-Log {
-    <#
-    .SYNOPSIS
-    Writes a timestamped log message to both the GUI log box and a log file.
-
-    .DESCRIPTION
-    This function formats a log message with a timestamp and optional error prefix,
-    appends it to a TextBox in the GUI, and writes it to a log file on disk.
-    It also performs basic log rotation by keeping only a limited number of recent logs.
-    #>
-
-    param (
-        [System.Windows.Forms.TextBox]$logBox,  # The GUI log output box
-        [string]$message,                       # The log message to write
-        [switch]$Error                          # Whether the message is an error
-    )
-
-    # Format the log message with timestamp and prefix
-    $timestamp = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
-    $prefix = if ($Error) { "[ERROR]" } else { "[INFO]" }
-    $fullMessage = "[$timestamp] $prefix $message"
-
-    # Append the message to the GUI TextBox
-    $logBox.AppendText("$fullMessage`r`n")
-    $logBox.SelectionStart = $logBox.Text.Length
-    $logBox.ScrollToCaret()
-    [System.Windows.Forms.Application]::DoEvents()
-
-    # Ensure the log folder exists
-    if (-not (Test-Path $LOGFOLDER)) {
-        New-Item -Path $LOGFOLDER -ItemType Directory | Out-Null
-    }
-
-    # Append the message to the log file on disk
-    Add-Content -Path $LOG_FILE_PATH -Value $fullMessage
-
-    # Perform log rotation (keep only the newest $logs_to_keep log files)
-    $allLogs = Get-ChildItem -Path $LOGFOLDER -Filter "backup_*.log" | Sort-Object LastWriteTime -Descending
-    if ($allLogs.Count -gt $LOGS_TO_KEEP) {
-        $allLogs | Select-Object -Skip $LOGS_TO_KEEP | Remove-Item -Force
-    }
-}
-
 
 function Convert-ToHashtable {
     <#
@@ -450,10 +407,6 @@ function Update-Progress {
 }
 
 
-
-
-
-
 function Get-ZipSuffix {
     <#
     .SYNOPSIS
@@ -487,6 +440,7 @@ function Get-ZipSuffix {
         default   { return "Backup" }
     }
 }
+
 
 function Remove-ExistingZip {
     <#
@@ -674,7 +628,7 @@ function Start-BackupProcess {
 }
 
 
-Export-ModuleMember -Function Write-Log, Convert-ToHashtable, Import-JsonFile, Get-ValidBackupJobs, 
+Export-ModuleMember -Function Convert-ToHashtable, Import-JsonFile, Get-ValidBackupJobs, 
     New-BackupJobs, Invoke-FileCopyOperation, Invoke-ZipOperation, Start-ProcessWithOutput, 
     Update-Progress, Get-ZipSuffix, Remove-ExistingZip, New-ZipArchive, Set-BackupRetention,
     Wait-ForSyncCompletion, Start-BackupProcess

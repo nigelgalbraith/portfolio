@@ -18,6 +18,50 @@ Import-Module "$PSScriptRoot\modules\Core\BackupCore.psm1" -Force -Verbose
 Import-Module "$PSScriptRoot\modules\GUI\BackupUI.psm1" -Force -Verbose
 Import-Module "$PSScriptRoot\modules\GUI\FileSystemUI.psm1" -Force -Verbose
 
+function Write-Log {
+    <#
+    .SYNOPSIS
+    Writes a timestamped log message to both the GUI log box and a log file.
+
+    .DESCRIPTION
+    This function formats a log message with a timestamp and optional error prefix,
+    appends it to a TextBox in the GUI, and writes it to a log file on disk.
+    It also performs basic log rotation by keeping only a limited number of recent logs.
+    #>
+
+    param (
+        [System.Windows.Forms.TextBox]$logBox,  # The GUI log output box
+        [string]$message,                       # The log message to write
+        [switch]$Error                          # Whether the message is an error
+    )
+
+    # Format the log message with timestamp and prefix
+    $timestamp = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+    $prefix = if ($Error) { "[ERROR]" } else { "[INFO]" }
+    $fullMessage = "[$timestamp] $prefix $message"
+
+    # Append the message to the GUI TextBox
+    $logBox.AppendText("$fullMessage`r`n")
+    $logBox.SelectionStart = $logBox.Text.Length
+    $logBox.ScrollToCaret()
+    [System.Windows.Forms.Application]::DoEvents()
+
+    # Ensure the log folder exists
+    if (-not (Test-Path $logFolder)) {
+        New-Item -Path $logFolder -ItemType Directory | Out-Null
+    }
+
+    # Append the message to the log file on disk
+    Add-Content -Path $logFilePath -Value $fullMessage
+
+    # Perform log rotation (keep only the newest $logs_to_keep log files)
+    $allLogs = Get-ChildItem -Path $logFolder -Filter "backup_*.log" | Sort-Object LastWriteTime -Descending
+    if ($allLogs.Count -gt $logsToKeep) {
+        $allLogs | Select-Object -Skip $logsToKeep | Remove-Item -Force
+    }
+}
+
+
 # ============ APPLICATION ENTRY POINT ============
 
 # Entry point for the Cloud Backup Tool GUI; initializes components, loads settings, and handles events.
@@ -35,8 +79,14 @@ function Main {
         # ------------------------------
         # LOAD CONFIGURATION AND RESOURCES
         # ------------------------------
-
         $config = Convert-ToHashtable (Import-JsonFile -JsonPath $CONFIG_PATH)
+
+        # Logging varaiables
+        $script:logFolder    = $CONFIG.Locations.LogPath
+        $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+        $script:logFilePath = Join-Path $script:logFolder "backup_$timestamp.log"
+        $script:logsToKeep   = $CONFIG.Logging.LogsToKeep
+
 
         # Load cloud providers and current saved settings
         $cloud_providers = Convert-ToHashtable (Import-JsonFile -jsonPath $config.Locations.ProviderPath)
@@ -45,109 +95,145 @@ function Main {
         # ------------------------------
         # EXTRACT UI LAYOUT DEFINITIONS
         # ------------------------------
+
+        # Calculate form width using layout config
         $formWidth = 
+            $config.Layout.Margins.Left + 
+            $config.Layout.Spacing.X + 
             $config.Layout.Labels.Width + 
-            $config.Spacing.X + 
+            $config.Layout.Spacing.X + 
             $config.Layout.TextBoxes.Width + 
-            $config.Spacing.X + 
+            $config.Layout.Spacing.X + 
             $config.Layout.BrowseButtons.Width + 
-            $config.Margins.Left + 
-            $config.Margins.Right
+            $config.Layout.Spacing.X + 
+            $config.Layout.Margins.Right
 
-        $formHeight =
-            $config.Layout.Labels.Height +
-            $config.Spacing.Y +
-            $config.Layout.TabControl.Height +  
-            $config.Spacing.Y +          
+        # Calculate form height using vertical component stacking
+        $formHeight = 
+            $config.Layout.TabControl.Y +
+            $config.Layout.TabControl.Height +
+            $config.Layout.Spacing.Y +          
             $config.Layout.Buttons.Height +
-            $config.Spacing.Y +
+            $config.Layout.Spacing.YSmall +
             $config.Layout.ProgressBar.Height +
-            $config.Spacing.Y +
-            $config.Layout.LogBox.Height
+            $config.Layout.Spacing.YSmall +
+            $config.Layout.LogBox.Height +
+            $config.Layout.Spacing.Y
 
+        # Form-level layout
         $form_layout = @{
             formWidth     = $formWidth
             formHeight    = $formHeight
-            startPosition = $config.Form.StartPosition
-            defaultFont   = $config.Fonts.Default
+            startPosition = $config.Layout.Form.StartPosition
+            defaultFont   = $config.Layout.Fonts.Default
         }
 
+        # TabControl layout
+        $tabWidth = $formWidth - $config.Layout.Spacing.X - $config.Layout.Margins.Right
         $tab_layout = @{
-            tabWidth  = $config.Layout.TabControl.Width
+            tabWidth  = $tabWidth
             tabHeight = $config.Layout.TabControl.Height
             tabX      = $config.Layout.TabControl.X
             tabY      = $config.Layout.TabControl.Y
         }
 
+        # Provider layout: controls inside each provider tab
         $provider_layout = @{
-            XLeftMargin           = $config.Margins.Left
-            XLabelOffset          = $config.Offset.LabelX
-            YSmallSpacing         = $config.Spacing.YSmall
-            LabelWidth            = $config.Layout.Labels.Width
-            TextBoxWidth          = $config.Layout.TextBoxes.Width
-            BrowseButtonHeight    = $config.Layout.BrowseButtons.Height
-            BrowseButtonWidth     = $config.Layout.BrowseButtons.Width
-            TextBoxHeightSrc      = $config.Layout.TextBoxes.HeightSrc
-            TextBoxHeightDest     = $config.Layout.TextBoxes.HeightDest
-            GroupBoxWidth         = $config.Layout.GroupBoxes.Width
-            GroupBoxHeight        = $config.Layout.GroupBoxes.Height
-            HeaderWidth           = $config.Layout.Headers.Width
-            HeaderHeight          = $config.Layout.Headers.Height
-            ControlHeight         = $config.Layout.Control.Height
-            ExplainLabelWidth     = $config.Layout.ExplainLabels.Width
-            ExplainLabelHeight    = $config.Layout.ExplainLabels.Height
-            ComboBoxWidth         = $config.Layout.ComboBoxes.Width
-            NumericWidth          = $config.Layout.NumericInputs.Width
-            ModeExplainTextColor  = $config.Colors.ModeExplainText
-            ExplainTextColor      = $config.Colors.ExplainText
-            DefaultFrequencies    = $config.Defaults.Frequencies
-            DefaultKeepCount      = $config.Defaults.KeepCount
-            HeaderFont            = $config.Fonts.Header
-            InnerRadioY           = $config.Offsets.InnerRadioY
-            LabelX                = $config.Layout.Labels.X
-            TextBoxX              = $config.Layout.TextBoxes.X
-            BrowseButtonX         = $config.Layout.BrowseButtons.X
-            TreeFormWidth         = $config.Tree.Form.Width
-            TreeFormHeight        = $config.Tree.Form.Height
-            TreeX                 = $config.Tree.TreeView.X
-            TreeY                 = $config.Tree.TreeView.Y
-            TreeWidth             = $config.Tree.TreeView.Width
-            TreeHeight            = $config.Tree.TreeView.Height
-            TreeOKX               = $config.Tree.Buttons.OK.X
-            TreeOKY               = $config.Tree.Buttons.OK.Y
-            TreeCancelX           = $config.Tree.Buttons.Cancel.X
-            TreeCancelY           = $config.Tree.Buttons.Cancel.Y
-            TreeButtonWidth       = $config.Tree.Buttons.Width
-            TreeButtonHeight      = $config.Tree.Buttons.Height
+            # Margins & Offsets
+            XLeftMargin          = $config.Layout.Margins.Left
+            XLabelOffset         = $config.Layout.Offsets.LabelX
+            LabelX               = $config.Layout.Labels.X
+            TextBoxX             = $config.Layout.TextBoxes.X
+            BrowseButtonX        = $config.Layout.BrowseButtons.X
+            InnerRadioY          = $config.Layout.Offsets.InnerRadioY
+            YSmallSpacing        = $config.Layout.Spacing.YSmall
+
+            # Label, TextBox, Button Sizing
+            LabelWidth           = $config.Layout.Labels.Width
+            TextBoxWidth         = $config.Layout.TextBoxes.Width
+            TextBoxHeightSrc     = $config.Layout.TextBoxes.HeightSrc
+            TextBoxHeightDest    = $config.Layout.TextBoxes.HeightDest
+            BrowseButtonWidth    = $config.Layout.BrowseButtons.Width
+            BrowseButtonHeight   = $config.Layout.BrowseButtons.Height
+
+            # Group Box / Header / Control Heights
+            GroupBoxWidth        = $config.Layout.GroupBoxes.Width
+            GroupBoxHeight       = $config.Layout.GroupBoxes.Height
+            HeaderWidth          = $config.Layout.Headers.Width
+            HeaderHeight         = $config.Layout.Headers.Height
+            ControlHeight        = $config.Layout.Control.Height
+
+            # Explanation Labels
+            ExplainLabelWidth    = $config.Layout.ExplainLabels.Width
+            ExplainLabelHeight   = $config.Layout.ExplainLabels.Height
+
+            # Dropdowns & Inputs
+            ComboBoxWidth        = $config.Layout.ComboBoxes.Width
+            NumericWidth         = $config.Layout.NumericInputs.Width
+
+            # Fonts & Colors
+            HeaderFont           = $config.Layout.Fonts.Header
+            ModeExplainTextColor = $config.Layout.Colors.ModeExplainText
+            ExplainTextColor     = $config.Layout.Colors.ExplainText
+
+            # Zip defaults
+            DefaultFrequencies   = $config.ZipSettings.Frequencies
+            DefaultKeepCount     = $config.ZipSettings.KeepCount
+
+            # TreeView Picker Modal
+            TreeFormWidth        = $config.Tree.Form.Width
+            TreeFormHeight       = $config.Tree.Form.Height
+            TreeX                = $config.Tree.TreeView.X
+            TreeY                = $config.Tree.TreeView.Y
+            TreeWidth            = $config.Tree.TreeView.Width
+            TreeHeight           = $config.Tree.TreeView.Height
+            TreeOKX              = $config.Tree.Buttons.OK.X
+            TreeOKY              = $config.Tree.Buttons.OK.Y
+            TreeCancelX          = $config.Tree.Buttons.Cancel.X
+            TreeCancelY          = $config.Tree.Buttons.Cancel.Y
+            TreeButtonWidth      = $config.Tree.Buttons.Width
+            TreeButtonHeight     = $config.Tree.Buttons.Height
         }
 
-        $progress_layout = @{
-            X      = $config.Layout.TabControl.X
-            Y      = $config.Layout.ProgressBar.Y
-            Width  = $config.Layout.TabControl.Width - 20
-            Height = $config.Layout.ProgressBar.Height
-        }
-
-        $logbox_layout = @{
-            X         = $config.Layout.TabControl.X
-            Y         = $config.Layout.LogBox.Y
-            Width     = $config.Layout.TabControl.Width - 10
-            Height    = $config.Layout.LogBox.Height
-            BackColor = $config.Colors.LogBoxBack
-            ForeColor = $config.Colors.LogBoxFore
-            Font      = $config.Fonts.Log
-        }
+        # Buttons layout
+        $buttonY = $config.Layout.TabControl.Height + $config.Layout.Spacing.YSmall
 
         $button_layout = @{
             formWidth     = $formWidth
             buttonHeight  = $config.Layout.Buttons.Height
-            startY        = $config.Layout.Buttons.Y
+            startY        = $buttonY
             cancelWidth   = $config.Layout.Buttons.Cancel.Width
             backupWidth   = $config.Layout.Buttons.Backup.Width
             shutdownWidth = $config.Layout.Buttons.Shutdown.Width
-            spacing       = $config.Spacing.Btn
+            spacing       = $config.Layout.Buttons.Spacing.X
         }
 
+        # Progress bar layout
+        $progesswidth = $formWidth - $config.Layout.ProgressBar.Spacing.X
+        $progressY = $buttonY + $config.Layout.Buttons.Height + $config.Layout.Spacing.YSmall
+
+        $progress_layout = @{
+            X      = $config.Layout.TabControl.X
+            Y      = $progressY
+            Width  = $progesswidth
+            Height = $config.Layout.ProgressBar.Height
+        }
+
+        # LogBox layout
+        $logBoxwidth = $formWidth - $config.Layout.LogBox.Spacing.X
+        $logBoxY = $progressY + $config.Layout.ProgressBar.Height + $config.Layout.Spacing.YSmall
+
+        $logbox_layout = @{
+            X         = $config.Layout.TabControl.X
+            Y         = $logBoxY
+            Width     = $logBoxwidth
+            Height    = $config.Layout.LogBox.Height
+            BackColor = $config.Layout.Colors.LogBoxBack
+            ForeColor = $config.Layout.Colors.LogBoxFore
+            Font      = $config.Layout.Fonts.Log
+        }
+
+        # Robocopy engine settings
         $robocopy_settings = @{
             Retries           = $config.Robocopy.Retries
             Wait              = $config.Robocopy.Wait
@@ -155,7 +241,7 @@ function Main {
             PostBackupDelay   = $config.Robocopy.PostBackupDelay
             SyncCheckInterval = $config.Robocopy.SyncCheckInterval
         }
-        
+  
         # ------------------------------
         # CREATE UI COMPONENTS
         # ------------------------------

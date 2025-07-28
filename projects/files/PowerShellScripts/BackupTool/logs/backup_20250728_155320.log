@@ -1,0 +1,222 @@
+[2025-07-28 15:53:23] [INFO] Starting Mirror operation from D:\Documents\GoogleDriveSync\Books to D:\Documents\Google Drive\Books
+[2025-07-28 15:53:23] [INFO] 
+[2025-07-28 15:53:23] [INFO] -------------------------------------------------------------------------------
+[2025-07-28 15:53:23] [INFO]    ROBOCOPY     ::     Robust File Copy for Windows                              
+[2025-07-28 15:53:23] [INFO] -------------------------------------------------------------------------------
+[2025-07-28 15:53:23] [INFO] 
+[2025-07-28 15:53:23] [INFO]   Started : Monday, 28 July 2025 3:53:23 pm
+[2025-07-28 15:53:23] [INFO]    Source : D:\Documents\GoogleDriveSync\Books\
+[2025-07-28 15:53:23] [INFO]      Dest : D:\Documents\Google Drive\Books\
+[2025-07-28 15:53:23] [INFO] 
+[2025-07-28 15:53:23] [INFO]     Files : *.*
+[2025-07-28 15:53:23] [INFO] 	    
+[2025-07-28 15:53:23] [INFO]   Options : *.* /NDL /NFL /TEE /S /E /DCOPY:DA /COPY:DAT /PURGE /MIR /Z /MT:1 /R:0 /W:0 
+[2025-07-28 15:53:23] [INFO] 
+[2025-07-28 15:53:23] [INFO] ------------------------------------------------------------------------------
+[2025-07-28 15:53:23] [INFO] 
+[2025-07-28 15:53:23] [INFO] 
+[2025-07-28 15:53:23] [INFO] ------------------------------------------------------------------------------
+[2025-07-28 15:53:23] [INFO] 
+[2025-07-28 15:53:23] [INFO]                Total    Copied   Skipped  Mismatch    FAILED    Extras
+[2025-07-28 15:53:23] [INFO]     Dirs :         5         5         5         0         0         0
+[2025-07-28 15:53:23] [INFO]    Files :        56         0        56         0         0         0
+[2025-07-28 15:53:23] [INFO]    Bytes :  947.84 m         0  947.84 m         0         0         0
+[2025-07-28 15:53:23] [INFO]    Times :   0:00:00   0:00:00                       0:00:00   0:00:00
+[2025-07-28 15:53:23] [INFO]    Ended : Monday, 28 July 2025 3:53:23 pm
+[2025-07-28 15:53:23] [INFO] 
+[2025-07-28 15:53:23] [INFO] Mirror operation completed (Exit code: 0)
+[2025-07-28 15:53:23] [INFO] Starting Mirror operation from D:\Documents\GoogleDriveSync\Piano to D:\Documents\Google Drive\Piano
+[2025-07-28 15:53:23] [INFO] 
+[2025-07-28 15:53:23] [INFO] -------------------------------------------------------------------------------
+[2025-07-28 15:53:23] [INFO]    ROBOCOPY     ::     Robust File Copy for Windows                              
+[2025-07-28 15:53:23] [INFO] -------------------------------------------------------------------------------
+[2025-07-28 15:53:23] [INFO] 
+[2025-07-28 15:53:23] [INFO]   Started : Monday, 28 July 2025 3:53:23 pm
+[2025-07-28 15:53:23] [INFO]    Source : D:\Documents\GoogleDriveSync\Piano\
+[2025-07-28 15:53:23] [INFO]      Dest : D:\Documents\Google Drive\Piano\
+[2025-07-28 15:53:23] [INFO] 
+[2025-07-28 15:53:23] [INFO]     Files : *.*
+[2025-07-28 15:53:23] [INFO] 	    
+[2025-07-28 15:53:23] [INFO]   Options : *.* /NDL /NFL /TEE /S /E /DCOPY:DA /COPY:DAT /PURGE /MIR /Z /MT:1 /R:0 /W:0 
+[2025-07-28 15:53:23] [INFO] 
+[2025-07-28 15:53:23] [INFO] ------------------------------------------------------------------------------
+[2025-07-28 15:53:23] [INFO] 
+[2025-07-28 15:53:23] [INFO] 
+[2025-07-28 15:53:23] [INFO] ------------------------------------------------------------------------------
+[2025-07-28 15:53:23] [INFO] 
+[2025-07-28 15:53:23] [INFO]                Total    Copied   Skipped  Mismatch    FAILED    Extras
+[2025-07-28 15:53:23] [INFO]     Dirs :         1         1         1         0         0         0
+[2025-07-28 15:53:23] [INFO]    Files :         1         0         1         0         0         0
+[2025-07-28 15:53:23] [INFO]    Bytes :    13.3 k         0    13.3 k         0         0         0
+[2025-07-28 15:53:23] [INFO]    Times :   0:00:00   0:00:00                       0:00:00   0:00:00
+[2025-07-28 15:53:23] [INFO]    Ended : Monday, 28 July 2025 3:53:23 pm
+[2025-07-28 15:53:23] [INFO] 
+[2025-07-28 15:53:23] [INFO] Mirror operation completed (Exit code: 0)
+[2025-07-28 15:53:23] [INFO] Starting Mirror operation from D:\Documents\GoogleDriveSync\SketchUp to D:\Documents\Google Drive\SketchUp
+[2025-07-28 15:53:23] [INFO] 
+[2025-07-28 15:53:23] [INFO] -------------------------------------------------------------------------------
+[2025-07-28 15:53:23] [INFO]    ROBOCOPY     ::     Robust File Copy for Windows                              
+[2025-07-28 15:53:23] [INFO] -------------------------------------------------------------------------------
+[2025-07-28 15:53:23] [INFO] 
+[2025-07-28 15:53:24] [INFO]   Started : Monday, 28 July 2025 3:53:23 pm
+[2025-07-28 15:53:24] [INFO]    Source : D:\Documents\GoogleDriveSync\SketchUp\
+[2025-07-28 15:53:24] [INFO]      Dest : D:\Documents\Google Drive\SketchUp\
+[2025-07-28 15:53:24] [INFO] 
+[2025-07-28 15:53:24] [INFO]     Files : *.*
+[2025-07-28 15:53:24] [INFO] 	    
+[2025-07-28 15:53:24] [INFO]   Options : *.* /NDL /NFL /TEE /S /E /DCOPY:DA /COPY:DAT /PURGE /MIR /Z /MT:1 /R:0 /W:0 
+[2025-07-28 15:53:24] [INFO] 
+[2025-07-28 15:53:24] [INFO] ------------------------------------------------------------------------------
+[2025-07-28 15:53:24] [INFO] 
+[2025-07-28 15:53:24] [INFO] 
+[2025-07-28 15:53:24] [INFO] ------------------------------------------------------------------------------
+[2025-07-28 15:53:24] [INFO] 
+[2025-07-28 15:53:24] [INFO]                Total    Copied   Skipped  Mismatch    FAILED    Extras
+[2025-07-28 15:53:24] [INFO]     Dirs :        19        19        19         0         0         0
+[2025-07-28 15:53:24] [INFO]    Files :        88         0        88         0         0         0
+[2025-07-28 15:53:24] [INFO]    Bytes :  438.33 m         0  438.33 m         0         0         0
+[2025-07-28 15:53:24] [INFO]    Times :   0:00:00   0:00:00                       0:00:00   0:00:00
+[2025-07-28 15:53:24] [INFO]    Ended : Monday, 28 July 2025 3:53:23 pm
+[2025-07-28 15:53:24] [INFO] 
+[2025-07-28 15:53:24] [INFO] Mirror operation completed (Exit code: 0)
+[2025-07-28 15:53:24] [INFO] Starting Mirror operation from D:\Documents\GoogleDriveSync\Software to D:\Documents\Google Drive\Software
+[2025-07-28 15:53:24] [INFO] 
+[2025-07-28 15:53:24] [INFO] -------------------------------------------------------------------------------
+[2025-07-28 15:53:24] [INFO]    ROBOCOPY     ::     Robust File Copy for Windows                              
+[2025-07-28 15:53:24] [INFO] -------------------------------------------------------------------------------
+[2025-07-28 15:53:24] [INFO] 
+[2025-07-28 15:53:24] [INFO]   Started : Monday, 28 July 2025 3:53:24 pm
+[2025-07-28 15:53:24] [INFO]    Source : D:\Documents\GoogleDriveSync\Software\
+[2025-07-28 15:53:24] [INFO]      Dest : D:\Documents\Google Drive\Software\
+[2025-07-28 15:53:24] [INFO] 
+[2025-07-28 15:53:24] [INFO]     Files : *.*
+[2025-07-28 15:53:24] [INFO] 	    
+[2025-07-28 15:53:24] [INFO]   Options : *.* /NDL /NFL /TEE /S /E /DCOPY:DA /COPY:DAT /PURGE /MIR /Z /MT:1 /R:0 /W:0 
+[2025-07-28 15:53:24] [INFO] 
+[2025-07-28 15:53:24] [INFO] ------------------------------------------------------------------------------
+[2025-07-28 15:53:24] [INFO] 
+[2025-07-28 15:53:24] [INFO] 
+[2025-07-28 15:53:24] [INFO] ------------------------------------------------------------------------------
+[2025-07-28 15:53:24] [INFO] 
+[2025-07-28 15:53:24] [INFO]                Total    Copied   Skipped  Mismatch    FAILED    Extras
+[2025-07-28 15:53:24] [INFO]     Dirs :        99        99        99         0         0         0
+[2025-07-28 15:53:24] [INFO]    Files :        44         0        44         0         0         0
+[2025-07-28 15:53:24] [INFO]    Bytes :  860.87 m         0  860.87 m         0         0         0
+[2025-07-28 15:53:24] [INFO]    Times :   0:00:00   0:00:00                       0:00:00   0:00:00
+[2025-07-28 15:53:24] [INFO]    Ended : Monday, 28 July 2025 3:53:24 pm
+[2025-07-28 15:53:24] [INFO] 
+[2025-07-28 15:53:24] [INFO] Mirror operation completed (Exit code: 0)
+[2025-07-28 15:53:24] [INFO] Starting Mirror operation from D:\Documents\GoogleDriveSync\Woodwork to D:\Documents\Google Drive\Woodwork
+[2025-07-28 15:53:24] [INFO] 
+[2025-07-28 15:53:24] [INFO] -------------------------------------------------------------------------------
+[2025-07-28 15:53:24] [INFO]    ROBOCOPY     ::     Robust File Copy for Windows                              
+[2025-07-28 15:53:24] [INFO] -------------------------------------------------------------------------------
+[2025-07-28 15:53:24] [INFO] 
+[2025-07-28 15:53:24] [INFO]   Started : Monday, 28 July 2025 3:53:24 pm
+[2025-07-28 15:53:24] [INFO]    Source : D:\Documents\GoogleDriveSync\Woodwork\
+[2025-07-28 15:53:24] [INFO]      Dest : D:\Documents\Google Drive\Woodwork\
+[2025-07-28 15:53:24] [INFO] 
+[2025-07-28 15:53:24] [INFO]     Files : *.*
+[2025-07-28 15:53:24] [INFO] 	    
+[2025-07-28 15:53:24] [INFO]   Options : *.* /NDL /NFL /TEE /S /E /DCOPY:DA /COPY:DAT /PURGE /MIR /Z /MT:1 /R:0 /W:0 
+[2025-07-28 15:53:24] [INFO] 
+[2025-07-28 15:53:24] [INFO] ------------------------------------------------------------------------------
+[2025-07-28 15:53:24] [INFO] 
+[2025-07-28 15:53:24] [INFO] 
+[2025-07-28 15:53:24] [INFO] ------------------------------------------------------------------------------
+[2025-07-28 15:53:24] [INFO] 
+[2025-07-28 15:53:24] [INFO]                Total    Copied   Skipped  Mismatch    FAILED    Extras
+[2025-07-28 15:53:24] [INFO]     Dirs :         7         7         7         0         0         0
+[2025-07-28 15:53:24] [INFO]    Files :        17         0        17         0         0         0
+[2025-07-28 15:53:24] [INFO]    Bytes :  158.42 m         0  158.42 m         0         0         0
+[2025-07-28 15:53:24] [INFO]    Times :   0:00:00   0:00:00                       0:00:00   0:00:00
+[2025-07-28 15:53:24] [INFO]    Ended : Monday, 28 July 2025 3:53:24 pm
+[2025-07-28 15:53:24] [INFO] 
+[2025-07-28 15:53:24] [INFO] Mirror operation completed (Exit code: 0)
+[2025-07-28 15:53:24] [INFO] Starting Mirror operation from D:\Documents\GoogleDriveSync\Zoom to D:\Documents\Google Drive\Zoom
+[2025-07-28 15:53:25] [INFO] 
+[2025-07-28 15:53:25] [INFO] -------------------------------------------------------------------------------
+[2025-07-28 15:53:25] [INFO]    ROBOCOPY     ::     Robust File Copy for Windows                              
+[2025-07-28 15:53:25] [INFO] -------------------------------------------------------------------------------
+[2025-07-28 15:53:25] [INFO] 
+[2025-07-28 15:53:25] [INFO]   Started : Monday, 28 July 2025 3:53:25 pm
+[2025-07-28 15:53:25] [INFO]    Source : D:\Documents\GoogleDriveSync\Zoom\
+[2025-07-28 15:53:25] [INFO]      Dest : D:\Documents\Google Drive\Zoom\
+[2025-07-28 15:53:25] [INFO] 
+[2025-07-28 15:53:25] [INFO]     Files : *.*
+[2025-07-28 15:53:25] [INFO] 	    
+[2025-07-28 15:53:25] [INFO]   Options : *.* /NDL /NFL /TEE /S /E /DCOPY:DA /COPY:DAT /PURGE /MIR /Z /MT:1 /R:0 /W:0 
+[2025-07-28 15:53:25] [INFO] 
+[2025-07-28 15:53:25] [INFO] ------------------------------------------------------------------------------
+[2025-07-28 15:53:25] [INFO] 
+[2025-07-28 15:53:25] [INFO] 
+[2025-07-28 15:53:25] [INFO] ------------------------------------------------------------------------------
+[2025-07-28 15:53:25] [INFO] 
+[2025-07-28 15:53:25] [INFO]                Total    Copied   Skipped  Mismatch    FAILED    Extras
+[2025-07-28 15:53:25] [INFO]     Dirs :         1         1         1         0         0         0
+[2025-07-28 15:53:25] [INFO]    Files :         0         0         0         0         0         0
+[2025-07-28 15:53:25] [INFO]    Bytes :         0         0         0         0         0         0
+[2025-07-28 15:53:25] [INFO]    Times :   0:00:00   0:00:00                       0:00:00   0:00:00
+[2025-07-28 15:53:25] [INFO]    Ended : Monday, 28 July 2025 3:53:25 pm
+[2025-07-28 15:53:25] [INFO] 
+[2025-07-28 15:53:25] [INFO] Mirror operation completed (Exit code: 0)
+[2025-07-28 15:53:25] [INFO] Starting Mirror operation from D:\Documents\MegaSync\NZMA to D:\Documents\Mega\NZMA
+[2025-07-28 15:53:25] [INFO] 
+[2025-07-28 15:53:25] [INFO] -------------------------------------------------------------------------------
+[2025-07-28 15:53:25] [INFO]    ROBOCOPY     ::     Robust File Copy for Windows                              
+[2025-07-28 15:53:25] [INFO] -------------------------------------------------------------------------------
+[2025-07-28 15:53:25] [INFO] 
+[2025-07-28 15:53:25] [INFO]   Started : Monday, 28 July 2025 3:53:25 pm
+[2025-07-28 15:53:25] [INFO]    Source : D:\Documents\MegaSync\NZMA\
+[2025-07-28 15:53:25] [INFO]      Dest : D:\Documents\Mega\NZMA\
+[2025-07-28 15:53:25] [INFO] 
+[2025-07-28 15:53:25] [INFO]     Files : *.*
+[2025-07-28 15:53:25] [INFO] 	    
+[2025-07-28 15:53:25] [INFO]   Options : *.* /NDL /NFL /TEE /S /E /DCOPY:DA /COPY:DAT /PURGE /MIR /Z /MT:1 /R:0 /W:0 
+[2025-07-28 15:53:25] [INFO] 
+[2025-07-28 15:53:25] [INFO] ------------------------------------------------------------------------------
+[2025-07-28 15:53:25] [INFO] 
+[2025-07-28 15:53:25] [INFO] 
+[2025-07-28 15:53:25] [INFO] ------------------------------------------------------------------------------
+[2025-07-28 15:53:25] [INFO] 
+[2025-07-28 15:53:25] [INFO]                Total    Copied   Skipped  Mismatch    FAILED    Extras
+[2025-07-28 15:53:25] [INFO]     Dirs :        27        27        27         0         0         0
+[2025-07-28 15:53:25] [INFO]    Files :        84         0        84         0         0         0
+[2025-07-28 15:53:25] [INFO]    Bytes :  266.02 m         0  266.02 m         0         0         0
+[2025-07-28 15:53:25] [INFO]    Times :   0:00:00   0:00:00                       0:00:00   0:00:00
+[2025-07-28 15:53:25] [INFO]    Ended : Monday, 28 July 2025 3:53:25 pm
+[2025-07-28 15:53:25] [INFO] 
+[2025-07-28 15:53:25] [INFO] Mirror operation completed (Exit code: 0)
+[2025-07-28 15:53:25] [INFO] Starting Mirror operation from D:\Documents\MegaSync\Personal to D:\Documents\Mega\Personal
+[2025-07-28 15:53:25] [INFO] 
+[2025-07-28 15:53:25] [INFO] -------------------------------------------------------------------------------
+[2025-07-28 15:53:25] [INFO]    ROBOCOPY     ::     Robust File Copy for Windows                              
+[2025-07-28 15:53:25] [INFO] -------------------------------------------------------------------------------
+[2025-07-28 15:53:25] [INFO] 
+[2025-07-28 15:53:25] [INFO]   Started : Monday, 28 July 2025 3:53:25 pm
+[2025-07-28 15:53:25] [INFO]    Source : D:\Documents\MegaSync\Personal\
+[2025-07-28 15:53:25] [INFO]      Dest : D:\Documents\Mega\Personal\
+[2025-07-28 15:53:25] [INFO] 
+[2025-07-28 15:53:25] [INFO]     Files : *.*
+[2025-07-28 15:53:25] [INFO] 	    
+[2025-07-28 15:53:25] [INFO]   Options : *.* /NDL /NFL /TEE /S /E /DCOPY:DA /COPY:DAT /PURGE /MIR /Z /MT:1 /R:0 /W:0 
+[2025-07-28 15:53:25] [INFO] 
+[2025-07-28 15:53:25] [INFO] ------------------------------------------------------------------------------
+[2025-07-28 15:53:25] [INFO] 
+[2025-07-28 15:53:25] [INFO] 
+[2025-07-28 15:53:25] [INFO] ------------------------------------------------------------------------------
+[2025-07-28 15:53:25] [INFO] 
+[2025-07-28 15:53:25] [INFO]                Total    Copied   Skipped  Mismatch    FAILED    Extras
+[2025-07-28 15:53:25] [INFO]     Dirs :       680       680       680         0         0         0
+[2025-07-28 15:53:25] [INFO]    Files :      3815         0      3815         0         0         0
+[2025-07-28 15:53:26] [INFO]    Bytes :   1.415 g         0   1.415 g         0         0         0
+[2025-07-28 15:53:26] [INFO]    Times :   0:00:00   0:00:00                       0:00:00   0:00:00
+[2025-07-28 15:53:26] [INFO]    Ended : Monday, 28 July 2025 3:53:25 pm
+[2025-07-28 15:53:26] [INFO] 
+[2025-07-28 15:53:26] [INFO] Mirror operation completed (Exit code: 0)
+[2025-07-28 15:53:26] [INFO] Starting zip operation for D:\Documents\GitHub\portfolio.github.io
+[2025-07-28 15:53:26] [INFO] Removing existing zip: C:\Users\Lenovo\Dropbox\portfolio.github.io-Mon.zip
+[2025-07-28 15:54:19] [INFO] Successfully created zip: C:\Users\Lenovo\Dropbox\portfolio.github.io-Mon.zip
+[2025-07-28 15:54:19] [INFO] Monitoring sync status...
+[2025-07-28 15:54:20] [INFO] All sync operations completed
+[2025-07-28 15:54:20] [INFO] Backup process completed

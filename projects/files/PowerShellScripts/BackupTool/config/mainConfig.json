@@ -1,25 +1,24 @@
 {
   "Locations": {
     "SettingsPath": "config/backupSettings.json",
-    "ProviderPath": "config/cloudProviders.json"
+    "ProviderPath": "config/cloudProviders.json",
+    "LogPath": "logs"
   },
-  "Form": {
-    "StartPosition": "CenterScreen"
-  },
-  "Fonts": {
-    "Default": "Microsoft Sans Serif, 8pt",
-    "Header": "Microsoft Sans Serif, 10pt, style=Bold",
-    "Log": "Consolas, 9pt"
-  },
-  "Defaults": {
-    "Frequencies": ["Daily", "Weekly", "Monthly"],
-    "KeepCount": 2
+  "Logging": {
+    "LogsToKeep": 5
   },
   "Layout": {
+    "Form": {
+      "StartPosition": "CenterScreen"
+    },
+    "Fonts": {
+      "Default": "Microsoft Sans Serif, 8pt",
+      "Header": "Microsoft Sans Serif, 10pt, style=Bold",
+      "Log": "Consolas, 9pt"
+    },
     "Labels": {
       "X": 10,
-      "Width": 150,
-      "Height": 20
+      "Width": 150
     },
     "TextBoxes": {
       "X": 160,
@@ -48,27 +47,28 @@
     },
     "ExplainLabels": {
       "Width": 650,
-      "Height": 40
+      "Height": 60
     },
     "TabControl": {
       "X": 10,
       "Y": 10,
-      "Width": 690,
-      "Height": 520
+      "Height": 540
     },
     "Control": {
-      "Height" :30
+      "Height": 30
     },
     "ProgressBar": {
-      "Y": 600,
-      "Height": 20
+      "Height": 20,
+      "Spacing": { "X": 20 }
     },
     "LogBox": {
-      "Y": 650,
-      "Height": 280
+      "Height": 280,
+      "Spacing": { "X": 25 },
+      "Y": 690
     },
     "Buttons": {
-      "Y": 550,
+      "Height": 30,
+      "Spacing": { "X": 20 },
       "Cancel": {
         "Width": 120
       },
@@ -77,33 +77,31 @@
       },
       "Shutdown": {
         "Width": 200
-      },
-      "Height": 30
+      }
+    },
+    "Offsets": {
+      "InnerRadioY": 15,
+      "LabelX": 160
+    },
+    "Colors": {
+      "ExplainText": "DarkBlue",
+      "ModeExplainText": "DarkGreen",
+      "LogBoxBack": "Black",
+      "LogBoxFore": "Lime"
+    },
+    "Spacing": {
+      "X": 15,
+      "Y": 30,
+      "YSmall": 20
+    },
+    "Margins": {
+      "Left": 20,
+      "Right": 20
     }
   },
-  "Offsets": {
-    "RadioButtonY": 15,
-    "InnerRadioY": 15
-  },
-  "Colors": {
-    "ExplainText": "DarkBlue",
-    "ModeExplainText": "DarkGreen",
-    "LogBoxBack": "Black",
-    "LogBoxFore": "Lime"
-  },
-  "Spacing": {
-    "X": 15,
-    "Btn": 20,
-    "YGroup": 55,
-    "Y": 30,
-    "YSmall": 20
-  },
-  "Margins": {
-    "Left": 20,
-    "Right": 20
-  },
-  "Offset": {
-    "LabelX": 160
+  "ZipSettings": {
+    "Frequencies": ["Daily", "Weekly", "Monthly"],
+    "KeepCount": 2
   },
   "Robocopy": {
     "Retries": 3,
