@@ -119,7 +119,7 @@ function Add-ProviderControls {
     )
 
     $controls = @{ }
-    $y = $layout.XLeftMargin
+    $y = $layout.YSmallSpacing 
 
     # ---- Header Label ----
     $lblHeader = New-Object Windows.Forms.Label

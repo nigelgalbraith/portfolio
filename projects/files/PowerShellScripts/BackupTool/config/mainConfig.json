@@ -87,9 +87,9 @@
       "LogBoxFore": "Lime"
     },
     "Spacing": {
-      "XTiny": 15,
-      "XSmall":20,
-      "XMed": 25, 
+      "XSmall": 15,
+      "XMed":20,
+      "XBig": 25, 
       "YBig": 30,
       "YSmall": 20,
       "X":15,

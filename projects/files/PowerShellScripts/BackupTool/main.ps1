@@ -99,13 +99,13 @@ function Main {
         # Calculate form width using layout config
         $formWidth = 
             $config.Layout.Margins.Left + 
-            $config.Layout.Spacing.XTiny + 
+            $config.Layout.Spacing.XSmall + 
             $config.Layout.Labels.Width + 
-            $config.Layout.Spacing.XTiny + 
+            $config.Layout.Spacing.XSmall + 
             $config.Layout.TextBoxes.Width + 
-            $config.Layout.Spacing.XTiny + 
+            $config.Layout.Spacing.XSmall + 
             $config.Layout.BrowseButtons.Width + 
-            $config.Layout.Spacing.XTiny + 
+            $config.Layout.Spacing.XSmall + 
             $config.Layout.Margins.Right
 
         # Calculate form height using vertical component stacking
@@ -129,7 +129,7 @@ function Main {
         }
 
         # TabControl layout
-        $tabWidth = $formWidth - $config.Layout.Spacing.XTiny - $config.Layout.Margins.Right
+        $tabWidth = $formWidth - $config.Layout.Spacing.XSmall - $config.Layout.Margins.Right
         $tab_layout = @{
             tabWidth  = $tabWidth
             tabHeight = $config.Layout.TabControl.Height
@@ -205,11 +205,11 @@ function Main {
             cancelWidth   = $config.Layout.Buttons.Cancel.Width
             backupWidth   = $config.Layout.Buttons.Backup.Width
             shutdownWidth = $config.Layout.Buttons.Shutdown.Width
-            spacing       = $config.Layout.Spacing.XSmall
+            spacing       = $config.Layout.Spacing.XMed
         }
 
         # Progress bar layout
-        $progesswidth = $formWidth - $config.Layout.Spacing.XSmall
+        $progesswidth = $formWidth - $config.Layout.Spacing.XMed
         $progressY = $buttonY + $config.Layout.Buttons.Height + $config.Layout.Spacing.YSmall
 
         $progress_layout = @{
@@ -220,7 +220,7 @@ function Main {
         }
 
         # LogBox layout
-        $logBoxwidth = $formWidth - $config.Layout.Spacing.XMed
+        $logBoxwidth = $formWidth - $config.Layout.Spacing.XBig
         $logBoxY = $progressY + $config.Layout.ProgressBar.Height + $config.Layout.Spacing.YSmall
 
         $logbox_layout = @{
