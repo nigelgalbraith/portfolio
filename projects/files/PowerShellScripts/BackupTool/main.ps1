@@ -82,7 +82,7 @@ function Main {
         $config = Convert-ToHashtable (Import-JsonFile -JsonPath $CONFIG_PATH)
 
         # Logging varaiables
-        $script:logFolder    = $CONFIG.Locations.LogPath
+        $script:logFolder = Join-Path $env:USERPROFILE $CONFIG.Locations.LogPath
         $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
         $script:logFilePath = Join-Path $script:logFolder "backup_$timestamp.log"
         $script:logsToKeep   = $CONFIG.Logging.LogsToKeep
