@@ -1,11 +1,5 @@
 {
   "nodes": {
-    "CheckDependencies": {
-      "label": "Check if 'pandas' and 'openpyxl' are installed"
-    },
-    "InstallIfMissing": {
-      "label": "Install missing packages via pip"
-    },
     "LoadWorkbook": {
       "label": "Load Excel file"
     },
@@ -17,8 +11,6 @@
     }
   },
   "connections": [
-    ["CheckDependencies", "InstallIfMissing"],
-    ["InstallIfMissing", "LoadWorkbook"],
     ["LoadWorkbook", "LoopSheets"],
     ["LoopSheets", "ExportJSON"]
   ],
@@ -26,8 +18,6 @@
     "action": "fillcolor:#f0f8ff,style:filled,shape:rect,fontcolor:black"
   },
   "class_map": {
-    "CheckDependencies": "action",
-    "InstallIfMissing": "action",
     "LoadWorkbook": "action",
     "LoopSheets": "action",
     "ExportJSON": "action"
