@@ -81,19 +81,25 @@ def ensure_dependencies_installed(dependencies):
             subprocess.run(["sudo", "apt", "install", "-y", dep], check=True)
 
 
-def chmod_recursive(path: Path, mode: int):
+def secure_logs_for_user(path: Path, username: str):
     """
-    Recursively apply chmod to a directory and all files and subdirectories within it.
+    Recursively set ownership to the given user and apply secure permissions to logs.
 
     Args:
-        path (Path): The root directory to apply permissions to.
-        mode (int): The permission mode (e.g., 0o755 or 0o644).
-
-    Example:
-        chmod_recursive(Path("/var/log/myapp"), 0o755)
+        path (Path): The log directory path.
+        username (str): The user who should own the logs.
     """
-    for root, dirs, files in os.walk(path):
-        os.chmod(root, mode)  # Apply to the directory itself
-        for name in dirs + files:
-            os.chmod(os.path.join(root, name), mode)
+    try:
+        # Recursively change ownership
+        subprocess.run(["chown", "-R", f"{username}:{username}", str(path)], check=True)
+
+        # Set directory permissions to 700
+        subprocess.run(["find", str(path), "-type", "d", "-exec", "chmod", "700", "{}", "+"], check=True)
+
+        # Set file permissions to 600
+        subprocess.run(["find", str(path), "-type", "f", "-exec", "chmod", "600", "{}", "+"], check=True)
+
+    except subprocess.CalledProcessError as e:
+        print(f"Error applying permissions: {e}")
+
 

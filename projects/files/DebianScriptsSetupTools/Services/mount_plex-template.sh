@@ -1,8 +1,6 @@
 #!/bin/bash
 
-# ncg33@arastudent.ac.nz
 # Debian setup or remove mount Plex service
-# Version 2
 
 # Script to mount Plex Media Drive
 

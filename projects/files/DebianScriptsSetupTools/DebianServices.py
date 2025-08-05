@@ -6,7 +6,7 @@ from pathlib import Path
 import datetime
 
 from modules.logger_utils import setup_logging, log_and_print, rotate_logs, show_logs, install_logrotate_config
-from modules.system_utils import check_account, get_model, ensure_dependencies_installed, chmod_recursive
+from modules.system_utils import check_account, get_model, ensure_dependencies_installed, secure_logs_for_user
 from modules.json_utils import get_json_keys, get_value_from_json, filter_jobs_by_status, validate_meta, map_values_from_named_block
 from modules.display_utils import format_status_summary
 from modules.service_utils import check_service_status, copy_template, create_service, enable_and_start_service, stop_and_disable_service, remove_path
@@ -17,7 +17,6 @@ PRIMARY_CONFIG = "config/AppConfigSettings.json"
 SERVICE_KEY = "Services"
 TIMESTAMP = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 LOGS_TO_KEEP = 10
-LOG_PER = 0o777
 ROTATE_LOG_NAME = "services_install_*.log"
 DEPENDENCIES = ["logrotate"]
 LOGPATH_KEY= "LogPath"
@@ -133,7 +132,7 @@ def main():
 
 
     # Set log dir permissions and rotate old logs
-    chmod_recursive(log_dir, LOG_PER)
+    secure_logs_for_user(log_dir, sudo_user)
     rotate_logs(log_dir, LOGS_TO_KEEP, ROTATE_LOG_NAME)
     log_and_print(f"\nAll actions complete. Log: {log_file}")
 

@@ -22,7 +22,8 @@
       "docker",
       "curl",
       "remmina",
-      "pcmanfm"
+      "pcmanfm",
+      "zip"
     ],
     "DEB": {
       "github-desktop": {

@@ -8,7 +8,7 @@ from pathlib import Path
 from shutil import which
 
 from modules.display_utils import print_dict_table, print_list_section
-from modules.system_utils import check_account, get_model, ensure_dependencies_installed, chmod_recursive
+from modules.system_utils import check_account, get_model, ensure_dependencies_installed, secure_logs_for_user
 from modules.json_utils import build_indexed_jobs, get_indexed_field_list
 from modules.logger_utils import log_and_print, setup_logging, rotate_logs
 from modules.firewall_utils import (
@@ -23,7 +23,6 @@ LOGS_TO_KEEP = 10
 ROTATE_LOG_NAME = "fw_settings_*.log"
 REQUIRED_USER = "root"
 DEPENDENCIES = ["ufw", "iptables"]
-LOG_PER = 0o777
 KEY_APPLICATIONS = "Applications"
 KEY_SINGLE_PORTS = "SinglePorts"
 KEY_PORT_RANGES = "PortRanges"
@@ -117,7 +116,7 @@ def main():
         log_and_print(line)
 
     # Set log dir permissions and rotate old logs
-    chmod_recursive(log_dir, LOG_PER)
+    secure_logs_for_user(log_dir, sudo_user)
     rotate_logs(log_dir, LOGS_TO_KEEP, ROTATE_LOG_NAME)
     log_and_print(f"\nAll actions complete. Log: {log_file}")
 

@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# ncg33@arastudent.ac.nz
 # Debian update PLEX permissions and manage Plex service
 
 # Define constants
