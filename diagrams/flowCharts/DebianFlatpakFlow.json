@@ -1,55 +1,36 @@
 {
   "nodes": {
-    "CheckUser": { "label": "Check standard (non-root) user" },
-    "SetupLogging": { "label": "Setup log directory and file" },
-    "CheckDependencies": { "label": "Check if Flatpak is installed" },
-    "EnsureFlathub": { "label": "Ensure Flathub remote is added" },
-    "DetectModel": { "label": "Detect system model" },
-    "LoadConfig": { "label": "Load Flatpak config from AppConfigSettings.json" },
-    "CheckInstalled": { "label": "Check which Flatpak apps are installed" },
-    "UserPrompt": { "label": "Prompt: Install, Uninstall, or Cancel" },
+    "Init": { "label": "Check user, setup logs, check Flatpak + Flathub" },
+    "LoadConfig": { "label": "Detect model and load Flatpak config" },
+    "CheckApps": { "label": "Check installed Flatpak apps" },
+    "PromptAction": { "label": "Prompt: Install, Uninstall, or Cancel" },
 
-    "InstallLoop": { "label": "For each NOT INSTALLED app..." },
-    "InstallApp": { "label": "Install Flatpak app using defined remote" },
+    "InstallFlow": { "label": "Install missing Flatpak apps" },
+    "UninstallFlow": { "label": "Uninstall installed Flatpak apps" },
 
-    "UninstallLoop": { "label": "For each INSTALLED app..." },
-    "UninstallApp": { "label": "Uninstall Flatpak app" },
-
-    "RotateLogs": { "label": "Rotate old logs and finish" }
+    "Finish": { "label": "Rotate logs and finish" }
   },
   "connections": [
-    ["CheckUser", "SetupLogging"],
-    ["SetupLogging", "CheckDependencies"],
-    ["CheckDependencies", "EnsureFlathub"],
-    ["EnsureFlathub", "DetectModel"],
-    ["DetectModel", "LoadConfig"],
-    ["LoadConfig", "CheckInstalled"],
-    ["CheckInstalled", "UserPrompt"],
+    ["Init", "LoadConfig"],
+    ["LoadConfig", "CheckApps"],
+    ["CheckApps", "PromptAction"],
 
-    ["UserPrompt", "InstallLoop"],
-    ["InstallLoop", "InstallApp"],
-    ["InstallApp", "RotateLogs"],
+    ["PromptAction", "InstallFlow"],
+    ["InstallFlow", "Finish"],
 
-    ["UserPrompt", "UninstallLoop"],
-    ["UninstallLoop", "UninstallApp"],
-    ["UninstallApp", "RotateLogs"]
+    ["PromptAction", "UninstallFlow"],
+    ["UninstallFlow", "Finish"]
   ],
   "classes": {
     "step": "fillcolor:#d9ead3,style:filled,shape:rect,fontcolor:black"
   },
   "class_map": {
-    "CheckUser": "step",
-    "SetupLogging": "step",
-    "CheckDependencies": "step",
-    "EnsureFlathub": "step",
-    "DetectModel": "step",
+    "Init": "step",
     "LoadConfig": "step",
-    "CheckInstalled": "step",
-    "UserPrompt": "step",
-    "InstallLoop": "step",
-    "InstallApp": "step",
-    "UninstallLoop": "step",
-    "UninstallApp": "step",
-    "RotateLogs": "step"
+    "CheckApps": "step",
+    "PromptAction": "step",
+    "InstallFlow": "step",
+    "UninstallFlow": "step",
+    "Finish": "step"
   }
 }

@@ -1,18 +1,18 @@
 {
   "nodes": {
     "StartupMenu": { "label": "Display Startup Menu" },
-    "Option1": { "label": "1) Install XRDP + XFCE" },
+    "Option1": { "label": "Install XRDP + XFCE" },
     "CheckAccount": { "label": "Check non-root account" },
     "InstallPackages": { "label": "Install required packages" },
     "ConfigureSession": { "label": "Configure XFCE session (.xsession)" },
     "AddToGroup": { "label": "Add xrdp user to ssl-cert group" },
     "RestartService": { "label": "Enable + restart xrdp service" },
-    "Option2": { "label": "2) Uninstall XRDP" },
+    "Option2": { "label": "Uninstall XRDP" },
     "StopService": { "label": "Stop and disable xrdp service" },
     "PurgePackages": { "label": "Purge XRDP and cleanup session files" },
-    "Option3": { "label": "3) Create Sudo User" },
+    "Option3": { "label": "reate Sudo User" },
     "CreateUser": { "label": "Prompt for username and create user" },
-    "Option4": { "label": "4) Cancel" },
+    "Option4": { "label": "Cancel" },
     "Exit": { "label": "Exit Script" }
   },
   "connections": [

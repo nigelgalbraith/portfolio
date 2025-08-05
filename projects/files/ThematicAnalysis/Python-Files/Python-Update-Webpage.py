@@ -1,7 +1,3 @@
-# 01/09/2024
-# Nigel Galbraith
-# ncg33@arastudent.ac.nz
-
 # Python web update tool
 
 import subprocess

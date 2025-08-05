@@ -1,61 +1,36 @@
 {
   "nodes": {
-    "SetupLogging": { "label": "Setup log directory and file" },
-    "CheckUser": { "label": "Ensure script is run as standard user" },
-    "CheckDependencies": { "label": "Check required dependencies (e.g. wget)" },
-    "DetectModel": { "label": "Detect system model" },
-    "LoadDebConfig": { "label": "Load model-specific DEB config from AppConfigSettings.json" },
-    "CheckInstalled": { "label": "Check which packages are installed" },
-    "UserPrompt": { "label": "Prompt: Install, Uninstall, or Cancel" },
+    "Init": { "label": "Setup logs and check environment" },
+    "LoadConfig": { "label": "Load model-specific DEB config" },
+    "CheckPackages": { "label": "Check installed packages" },
+    "PromptAction": { "label": "Prompt: Install, Uninstall, or Cancel" },
 
-    "InstallLoop": { "label": "For each NOT INSTALLED package..." },
-    "DownloadDeb": { "label": "Download .deb file from URL" },
-    "InstallDeb": { "label": "Install .deb package" },
-    "StartService": { "label": "Start service (if enabled)" },
-    "DeleteDeb": { "label": "Delete downloaded .deb file" },
+    "InstallFlow": { "label": "Download and install DEBs, start service if needed" },
+    "UninstallFlow": { "label": "Uninstall DEBs and clean up" },
 
-    "UninstallLoop": { "label": "For each INSTALLED package..." },
-    "UninstallDeb": { "label": "Uninstall package" },
-
-    "RotateLogs": { "label": "Rotate old logs and finish" }
+    "Finish": { "label": "Rotate logs and finish" }
   },
   "connections": [
-    ["SetupLogging", "CheckUser"],
-    ["CheckUser", "CheckDependencies"],
-    ["CheckDependencies", "DetectModel"],
-    ["DetectModel", "LoadDebConfig"],
-    ["LoadDebConfig", "CheckInstalled"],
-    ["CheckInstalled", "UserPrompt"],
+    ["Init", "LoadConfig"],
+    ["LoadConfig", "CheckPackages"],
+    ["CheckPackages", "PromptAction"],
 
-    ["UserPrompt", "InstallLoop"],
-    ["InstallLoop", "DownloadDeb"],
-    ["DownloadDeb", "InstallDeb"],
-    ["InstallDeb", "StartService"],
-    ["StartService", "DeleteDeb"],
-    ["DeleteDeb", "RotateLogs"],
+    ["PromptAction", "InstallFlow"],
+    ["InstallFlow", "Finish"],
 
-    ["UserPrompt", "UninstallLoop"],
-    ["UninstallLoop", "UninstallDeb"],
-    ["UninstallDeb", "RotateLogs"]
+    ["PromptAction", "UninstallFlow"],
+    ["UninstallFlow", "Finish"]
   ],
   "classes": {
     "step": "fillcolor:#ddebf7,style:filled,shape:rect,fontcolor:black"
   },
   "class_map": {
-    "SetupLogging": "step",
-    "CheckUser": "step",
-    "CheckDependencies": "step",
-    "DetectModel": "step",
-    "LoadDebConfig": "step",
-    "CheckInstalled": "step",
-    "UserPrompt": "step",
-    "InstallLoop": "step",
-    "DownloadDeb": "step",
-    "InstallDeb": "step",
-    "StartService": "step",
-    "DeleteDeb": "step",
-    "UninstallLoop": "step",
-    "UninstallDeb": "step",
-    "RotateLogs": "step"
+    "Init": "step",
+    "LoadConfig": "step",
+    "CheckPackages": "step",
+    "PromptAction": "step",
+    "InstallFlow": "step",
+    "UninstallFlow": "step",
+    "Finish": "step"
   }
 }

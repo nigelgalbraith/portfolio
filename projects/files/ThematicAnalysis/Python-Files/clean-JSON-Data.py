@@ -1,3 +1,5 @@
+# Python JSON Clean Tool
+
 import json
 from collections import defaultdict
 

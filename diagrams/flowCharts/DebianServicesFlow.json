@@ -1,41 +1,24 @@
 {
   "nodes": {
     "CheckRoot": { "label": "Check root account" },
-    "SetupLogging": { "label": "Setup logging directory and file" },
-    "LoadServiceConfig": { "label": "Load AppConfigSettings.json and model service JSON" },
-    "GetUserChoice": { "label": "Prompt: Install, Uninstall, or View Logs" },
+    "Setup": { "label": "Setup logging and load config files" },
+    "GetUserChoice": { "label": "Choose: Install, Uninstall, or View Logs" },
 
-    "InstallLoop": { "label": "For each DISABLED service..." },
-    "ValidateFields": { "label": "Validate required fields" },
-    "InstallLogrotate": { "label": "Install logrotate config (optional)" },
-    "CopyScript": { "label": "Copy script to target location" },
-    "CreateService": { "label": "Create systemd service file" },
-    "EnableService": { "label": "Enable and start service" },
+    "InstallFlow": { "label": "Install: validate, copy files, enable service" },
+    "UninstallFlow": { "label": "Uninstall: stop service, remove files" },
+    "ShowLogs": { "label": "Open logs for each service" },
 
-    "UninstallLoop": { "label": "For each ENABLED service..." },
-    "StopService": { "label": "Stop and disable service" },
-    "RemoveFiles": { "label": "Remove script and service files" },
-
-    "ShowLogs": { "label": "Open log viewer for each service" },
     "RotateLogs": { "label": "Rotate logs and finish" }
   },
   "connections": [
-    ["CheckRoot", "SetupLogging"],
-    ["SetupLogging", "LoadServiceConfig"],
-    ["LoadServiceConfig", "GetUserChoice"],
+    ["CheckRoot", "Setup"],
+    ["Setup", "GetUserChoice"],
 
-    ["GetUserChoice", "InstallLoop"],
-    ["InstallLoop", "ValidateFields"],
-    ["ValidateFields", "InstallLogrotate"],
-    ["InstallLogrotate", "CopyScript"],
-    ["CopyScript", "CreateService"],
-    ["CreateService", "EnableService"],
-    ["EnableService", "RotateLogs"],
+    ["GetUserChoice", "InstallFlow"],
+    ["InstallFlow", "RotateLogs"],
 
-    ["GetUserChoice", "UninstallLoop"],
-    ["UninstallLoop", "StopService"],
-    ["StopService", "RemoveFiles"],
-    ["RemoveFiles", "RotateLogs"],
+    ["GetUserChoice", "UninstallFlow"],
+    ["UninstallFlow", "RotateLogs"],
 
     ["GetUserChoice", "ShowLogs"],
     ["ShowLogs", "RotateLogs"]
@@ -45,18 +28,10 @@
   },
   "class_map": {
     "CheckRoot": "step",
-    "SetupLogging": "step",
-    "LoadServiceConfig": "step",
+    "Setup": "step",
     "GetUserChoice": "step",
-    "InstallLoop": "step",
-    "ValidateFields": "step",
-    "InstallLogrotate": "step",
-    "CopyScript": "step",
-    "CreateService": "step",
-    "EnableService": "step",
-    "UninstallLoop": "step",
-    "StopService": "step",
-    "RemoveFiles": "step",
+    "InstallFlow": "step",
+    "UninstallFlow": "step",
     "ShowLogs": "step",
     "RotateLogs": "step"
   }

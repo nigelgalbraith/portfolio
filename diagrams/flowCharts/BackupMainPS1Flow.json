@@ -1,31 +1,25 @@
 {
   "nodes": {
-    "Start": { "label": "Start" },
     "LoadConfigs": { "label": "Load Config Files" },
     "ImportModules": { "label": "Import PowerShell Modules" },
     "BuildGUI": { "label": "Build GUI Interface" },
     "WaitForUserAction": { "label": "Wait for User Action" },
-    "Backup": { "label": "Perform Backup" },
-    "Shutdown": { "label": "Shutdown After Sync" }
+    "Backup": { "label": "Perform Backup" }
   },
   "connections": [
-    ["Start", "LoadConfigs"],
     ["LoadConfigs", "ImportModules"],
     ["ImportModules", "BuildGUI"],
     ["BuildGUI", "WaitForUserAction"],
-    ["WaitForUserAction", "Backup"],
-    ["Backup", "Shutdown"]
+    ["WaitForUserAction", "Backup"]
   ],
   "classes": {
     "action": "fillcolor:#f0f8ff,style:filled,shape:rect,fontcolor:black"
   },
   "class_map": {
-    "Start": "action",
     "LoadConfigs": "action",
     "ImportModules": "action",
     "BuildGUI": "action",
     "WaitForUserAction": "action",
-    "Backup": "action",
-    "Shutdown": "action"
+    "Backup": "action"
   }
 }
