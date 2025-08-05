@@ -49,5 +49,23 @@ const ProjectLinks = {
       alt: "Zip",
       download: true
     }
-  ]
+  ],
+    powerShellCloudBackup: [
+    {
+      label: "PowerShell Cloud Backup Tool",
+      href: "files/powerShellCloudBackupTool.zip",
+      icon: "../images/icons/optimized/zip.png",
+      alt: "Zip",
+      download: true
+    }
+  ],
+    debianInstallSuite: [
+      {
+        label: "Debian Install Suite Tools",
+        href: "files/DebianScriptsSetupTools.zip",
+        icon: "../images/icons/optimized/zip.png",
+        alt: "Zip",
+        download: true
+      }
+    ]
 };

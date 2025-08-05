@@ -122,7 +122,7 @@ def main():
         mermaid_lines = ["graph TD\n"]
 
         # Build subgraphs (up to 3)
-        for key_level in ("key_main", "key_second", "key_third"):
+        for key_level in ("key_main", "key_second", "key_third", "key_fourth"):
             if key_level in meta:
                 node_key = meta[key_level]
                 if node_key in site_data:

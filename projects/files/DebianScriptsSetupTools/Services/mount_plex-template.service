@@ -1,0 +1,15 @@
+[Unit]
+Description=Mount Plex Media Drive
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/mount_plex.sh
+StandardOutput=append:/var/log/mount_plex.log
+StandardError=append:/var/log/mount_plex.log
+RemainAfterExit=true
+User=root
+Group=root
+
+[Install]
+WantedBy=multi-user.target

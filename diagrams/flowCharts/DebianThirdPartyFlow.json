@@ -1,0 +1,78 @@
+{
+  "nodes": {
+    "SetupLogging": { "label": "Setup log directory and log file" },
+    "CheckUser": { "label": "Ensure script is run as standard user" },
+    "CheckDependencies": { "label": "Check required tools (curl, gpg)" },
+    "DetectModel": { "label": "Detect current hardware model" },
+    "LoadConfig": { "label": "Load third-party JSON config from AppConfigSettings.json" },
+    "CheckPackageKeys": { "label": "Get packages from JSON file" },
+    "CheckStatus": { "label": "Check which packages are installed" },
+    "StatusSummary": { "label": "Print summary of install status" },
+    "PromptUser": { "label": "Prompt: Install, Uninstall, or Cancel" },
+
+    "FilterInstallJobs": { "label": "Filter NOT INSTALLED packages" },
+    "FilterUninstallJobs": { "label": "Filter INSTALLED packages" },
+    "AbortIfNone": { "label": "Abort if no packages to process" },
+    "ConfirmAction": { "label": "Confirm action with user" },
+
+    "InstallLoop": { "label": "For each NOT INSTALLED package..." },
+    "CheckRepo": { "label": "Check for conflicting APT repo" },
+    "AddRepo": { "label": "Add APT repo and GPG key" },
+    "InstallPackage": { "label": "Install package" },
+
+    "UninstallLoop": { "label": "For each INSTALLED package..." },
+    "UninstallPackage": { "label": "Uninstall package and remove repo" },
+
+    "Finish": { "label": "Rotate logs and finish" }
+  },
+  "connections": [
+    ["SetupLogging", "CheckUser"],
+    ["CheckUser", "CheckDependencies"],
+    ["CheckDependencies", "DetectModel"],
+    ["DetectModel", "LoadConfig"],
+    ["LoadConfig", "CheckPackageKeys"],
+    ["CheckPackageKeys", "CheckStatus"],
+    ["CheckStatus", "StatusSummary"],
+    ["StatusSummary", "PromptUser"],
+
+    ["PromptUser", "FilterInstallJobs"],
+    ["FilterInstallJobs", "AbortIfNone"],
+    ["AbortIfNone", "ConfirmAction"],
+    ["ConfirmAction", "InstallLoop"],
+    ["InstallLoop", "CheckRepo"],
+    ["CheckRepo", "AddRepo"],
+    ["AddRepo", "InstallPackage"],
+    ["InstallPackage", "Finish"],
+
+    ["PromptUser", "FilterUninstallJobs"],
+    ["FilterUninstallJobs", "AbortIfNone"],
+    ["ConfirmAction", "UninstallLoop"],
+    ["UninstallLoop", "UninstallPackage"],
+    ["UninstallPackage", "Finish"]
+  ],
+  "classes": {
+    "step": "fillcolor:#f4cccc,style:filled,shape:rect,fontcolor:black"
+  },
+  "class_map": {
+    "SetupLogging": "step",
+    "CheckUser": "step",
+    "CheckDependencies": "step",
+    "DetectModel": "step",
+    "LoadConfig": "step",
+    "CheckPackageKeys": "step",
+    "CheckStatus": "step",
+    "StatusSummary": "step",
+    "PromptUser": "step",
+    "FilterInstallJobs": "step",
+    "FilterUninstallJobs": "step",
+    "AbortIfNone": "step",
+    "ConfirmAction": "step",
+    "InstallLoop": "step",
+    "CheckRepo": "step",
+    "AddRepo": "step",
+    "InstallPackage": "step",
+    "UninstallLoop": "step",
+    "UninstallPackage": "step",
+    "Finish": "step"
+  }
+}

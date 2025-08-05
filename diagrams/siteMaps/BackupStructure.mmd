@@ -1,0 +1,35 @@
+graph TD
+
+  subgraph MainScript [Main Script]
+    MainPS1[main.ps1]
+  end
+
+  subgraph Modules [PowerShell Modules]
+    BackupConfig[BackupConfig.psm1]
+    BackupCore[BackupCore.psm1]
+    BackupUI[BackupUI.psm1]
+    FileSystemUI[FileSystemUI.psm1]
+  end
+
+  subgraph ConfigFiles [Configuration Files]
+    MainConfig[mainConfig.json]
+    CloudProviders[cloudProviders.json]
+    BackupSettings[backupSettings.json]
+  end
+
+  MainPS1 --> BackupConfig
+  MainPS1 --> BackupCore
+  MainPS1 --> BackupUI
+  MainPS1 --> FileSystemUI
+  BackupConfig --> MainConfig
+  BackupCore --> CloudProviders
+  BackupUI --> BackupSettings
+  FileSystemUI --> BackupSettings
+  style MainPS1 fill:#c9daf8,stroke:#0b5394
+  style BackupConfig fill:#d9ead3,stroke:#38761d
+  style BackupCore fill:#d9ead3,stroke:#38761d
+  style BackupUI fill:#d9ead3,stroke:#38761d
+  style FileSystemUI fill:#d9ead3,stroke:#38761d
+  style MainConfig fill:#fce5cd,stroke:#b45f06
+  style CloudProviders fill:#fce5cd,stroke:#b45f06
+  style BackupSettings fill:#fce5cd,stroke:#b45f06

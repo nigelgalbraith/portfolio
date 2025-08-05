@@ -1,0 +1,19 @@
+{
+  "nodes": {
+    "LoadMainConfig": { "label": "Load mainConfig.json" },
+    "ParseLayoutSettings": { "label": "Parse Layout and UI Settings" },
+    "ReturnToMain": { "label": "Return Settings to Main Script" }
+  },
+  "connections": [
+    ["LoadMainConfig", "ParseLayoutSettings"],
+    ["ParseLayoutSettings", "ReturnToMain"]
+  ],
+  "classes": {
+    "action": "fillcolor:#f0f8ff,style:filled,shape:rect,fontcolor:black"
+  },
+  "class_map": {
+    "LoadMainConfig": "action",
+    "ParseLayoutSettings": "action",
+    "ReturnToMain": "action"
+  }
+}

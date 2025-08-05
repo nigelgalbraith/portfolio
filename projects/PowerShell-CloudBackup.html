@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Nigel Galbraith - Portfolio Website</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="../styles/style.css" />
+
+  <!-- JSON-style data -->
+  <script src="../js/JSON/mainTextData.js"></script>
+  <script src="../js/JSON/iconRegistry.js"></script>
+  <script src="js/JSON/projectLinks.js"></script>
+  <script src="js/JSON/projectSteps.js"></script>
+
+  <!-- JavaScript Functionality -->
+  <script src="js/modalZoom.js" defer></script>                          
+  <script src="js/init.js" defer></script>                   
+  <script src="../js/footerIconLoader.js" defer></script>    
+  <script src="../js/skillsLoader.js" defer></script>       
+  <script src="js/projectStepsData.js" defer></script>       
+  <script src="../js/responsiveImageLoader.js" defer></script>
+  <script src="../js/mainTextLoader.js" defer></script>
+  <script src="js/projectLinksLoader.js" defer></script>
+</head>
+
+
+<body data-project="powerShellCloudBackup">
+  <!-- 
+    Dynamic Content Notes:
+    - Responsive image is loaded via data-img-name using responsiveImageLoader.js
+    - Project steps are injected into <section> via js/projectStepsData.js
+    - Tools and Key Learnings icons are populated using data-icons via skillsLoader.js
+    - Footer content is dynamically inserted via footerIconLoader.js
+    - Image zoom modal functionality is handled by modalZoom.js
+    - Main text description is loaded via data-main-text="portfolioWebsite" and mainTextLoader.js
+  -->
+
+  <div class="grid-bg"></div>
+  <div class="container">
+    <h1>Nigel Galbraith Portfolio</h1>
+
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+      <ul>
+        <li><a href="../projects.html">Back To Projects</a></li>
+      </ul>
+    </nav>
+
+    <main class="main-content">
+      <div class="main-content-flex-centre">
+        <h2>PowerShell - Cloud Backup Tool</h2>
+
+        <!-- Responsive Image with Zoom -->
+        <div class="boxed-content-main-image">
+          <div class="image-zoom-wrapper">
+            <div class="responsive-image"
+                 data-img-name="PowerShell-CloudBackup.png"
+                 data-alt="PowerShell-CloudBackup"
+                 data-class="centre-img">
+            </div>
+          </div>
+        </div>
+        <div class="step-separator"></div>
+
+        <!-- Main text injected from mainTextLoader.js -->
+        <div class="main-content-text" data-main-text="powerShellCloudBackup"></div>
+
+        <div class="main-content-step-text">
+          <!-- Project Steps injected by js/projectStepsData.js -->
+          <section></section>
+
+          <!-- Project Links Section -->
+          <h2 class="centered-title">Project Files</h2>
+          <div class="boxed-content">
+            <div id="project-links" data-links="powerShellCloudBackup"></div>
+          </div>
+
+          <!-- Tools and Technologies -->
+          <section>
+            <h2 class="centered-title">Tools and Technologies</h2>
+            <div class="boxed-content">
+              <div class="icon-grid" data-icons="powerShell"></div>
+            </div>
+
+            <!-- Key Learnings -->
+            <h2 class="centered-title">Key Learnings</h2>
+            <div class="boxed-content">
+              <div class="icon-grid" data-icons="debugging, problem_solving, user_experience, cloud, automation"></div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <!-- Footer content dynamically loaded from footerIconLoader.js -->
+    <footer></footer>
+
+    <!-- Modal Zoom -->
+    <div class="modal" id="imgModal" onclick="closeFullScreen()">
+      <span class="close">×</span>
+      <img class="modal-content" id="fullImg" />
+    </div>
+  </div>
+</body>
+</html>

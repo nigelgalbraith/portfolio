@@ -109,6 +109,21 @@ const MAIN_TEXT_DATA = {
         "The final output can be exported to a web-based format, allowing thematic findings to be reviewed and navigated more clearly. Glossaries, group relationships, and even basic risk assessment visuals are automatically included, making the end result both informative and accessible.",
         "Like my other tools, this project was also an opportunity to apply what I’ve been learning in areas like Excel automation, Python scripting, and front-end web development. It’s flexible enough to adapt to different types of thematic work—whether for research, education, or internal reporting."
     ]
+    },
+    "powerShellCloudBackup": {
+      "paragraphs": [
+        "This tool allows users to back up selected files and folders to cloud storage destinations such as Google Drive, Dropbox, and Mega NZ before shutting down or logging off. Users can choose between zipped backups (with retention) and raw file copies (append or mirror mode). The program supports customizable settings, GUI configuration, and sync completion detection.",
+        "While the tool has been thoroughly tested, it is strongly recommended that users perform a manual backup first to ensure there is no risk of data loss. This is especially important when using 'Mirror' mode, which may delete files in the destination to match the source. Always double-check your paths and settings before enabling automatic shutdown.",
+        "Note: Most cloud providers like Google Drive, Dropbox, and Mega NZ offer a file recovery or version history window (typically up to 30 days), which may help restore accidentally deleted files. However, relying on this should not replace cautious setup and testing.",
+        "All backup settings are stored in editable JSON files, making it easy to customize the behavior of the tool or update preferences without modifying the script itself. Advanced users can also add support for additional cloud providers by extending the `cloudProviders.json` file with a new provider block."
+      ]
+    },
+    "debianInstallSuite": {
+      "paragraphs": [
+        "This collection of Python and Bash scripts automates the setup of Debian-based systems using a modular, model-aware design. Each script targets a specific aspect of system configuration—such as installing packages, setting up firewall rules, configuring RDP access, deploying system services, or managing third-party repositories. All behavior is driven by structured JSON config files that map to individual system models, making the tool flexible and scalable across diverse environments.",
+        "Scripts follow a consistent lifecycle: detect system model, load matching config, validate user input, execute the job, and log all results to a versioned logs directory. Each installer prompts users before making changes, reducing the risk of misconfiguration. Logging is built in at every stage, and logs are auto-rotated to avoid clutter.",
+        "This suite is particularly useful for system administrators and IT teams who want to streamline repeatable setups for classrooms, labs, or business machines. Instead of maintaining a one-size-fits-all image, you can define clear rules for each device type and apply them with a single command.",
+        "All logic is modularized into shared utility modules—handling logging, service setup, file permissions, JSON parsing, and more—making the scripts easy to extend, debug, and maintain. Future enhancements could include GUI wrappers, remote execution tools, or Ansible-style batch automation built on top of this clean foundation."
+      ]
     }
-
 };

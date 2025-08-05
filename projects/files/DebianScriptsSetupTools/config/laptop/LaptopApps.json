@@ -1,0 +1,77 @@
+{
+  "HPEliteBook2540p": {
+    "Packages": [
+      "vlc",
+      "audacious",
+      "audacity",
+      "clamav",
+      "inkscape",
+      "lyx",
+      "idle",
+      "timeshift",
+      "ufw",
+      "cifs-utils",
+      "bluetooth",
+      "bluez",
+      "blueman",
+      "joystick",
+      "antimicro",
+      "gnome-network-displays",
+      "openssh-server",
+      "retroarch",
+      "docker",
+      "curl",
+      "remmina",
+      "pcmanfm"
+    ],
+     "DEB": {
+      "github-desktop": {
+        "DownloadURL": "https://github.com/shiftkey/desktop/releases/download/release-3.2.1-linux1/GitHubDesktop-linux-3.2.1-linux1.deb",
+        "EnableService": false
+      },
+      "plexmediaserver": {
+        "DownloadURL": "https://downloads.plex.tv/plex-media-server-new/1.40.5.8854-f36c552fd/debian/plexmediaserver_1.40.5.8854-f36c552fd_amd64.deb",
+        "EnableService": false
+      },
+      "code": {
+        "DownloadURL": "https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x64",
+        "EnableService": false
+      },
+      "virtualbox-7.0": {
+        "DownloadURL": "https://download.virtualbox.org/virtualbox/7.0.18/virtualbox-7.0_7.0.18-162988~Debian~bookworm_amd64.deb",
+        "EnableService": false
+    }
+   },
+    "ThirdParty": {
+        "docker-ce": {
+          "name": "Docker Engine",
+          "type": "apt-repo",
+          "url": "https://download.docker.com/linux/debian",
+          "key": "https://download.docker.com/linux/debian/gpg",
+          "codename": "bookworm",
+          "component": "stable"
+        },
+        "docker-ce-cli": {
+          "name": "Docker Engine CLI",
+          "type": "apt-repo",
+          "url": "https://download.docker.com/linux/debian",
+          "key": "https://download.docker.com/linux/debian/gpg",
+          "codename": "bookworm",
+          "component": "stable"
+        },
+        "containerd.io": {
+          "name": "Container Runtime",
+          "type": "apt-repo",
+          "url": "https://download.docker.com/linux/debian",
+          "key": "https://download.docker.com/linux/debian/gpg",
+          "codename": "bookworm",
+          "component": "stable"
+        }
+      },
+      "Flatpak": {
+          "io.github.nate_xyz.Conjure": {
+            "remote": "flathub"
+          }
+        }
+      }
+    }

@@ -1,0 +1,28 @@
+{
+  "HPEliteBook2540p": {
+    "Applications": ["KTorrent"],
+    "SinglePorts": [
+      {
+        "Port": 22,
+        "Protocol": "tcp",
+        "IPs": [
+          "x.x.x.x",
+          "x.x.x.x",
+          "x.x.x.x",
+          "x.x.x.x"
+        ]
+      },
+      {
+        "Port": 3389,
+        "Protocol": "tcp",
+        "IPs": [
+          "x.x.x.x",
+          "x.x.x.x",
+          "x.x.x.x",
+          "x.x.x.x"
+        ]
+      }
+    ],
+    "PortRanges": []
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "nodes": {
+    "SetupLogging": { "label": "Setup log directory and file" },
+    "CheckUser": { "label": "Ensure script is run as standard user" },
+    "DetectModel": { "label": "Detect system model" },
+    "LoadPackageConfig": { "label": "Load APT package config from AppConfigSettings.json" },
+    "ReadPackageList": { "label": "Read package list from model-specific config" },
+    "CheckPackageStatus": { "label": "Check which packages are installed" },
+    "UserPrompt": { "label": "Prompt: Install, Uninstall, or Cancel" },
+
+    "InstallPackages": { "label": "Install all NOT INSTALLED packages" },
+    "UninstallPackages": { "label": "Uninstall all listed packages" },
+
+    "RotateLogs": { "label": "Rotate old logs and finish" }
+  },
+  "connections": [
+    ["SetupLogging", "CheckUser"],
+    ["CheckUser", "DetectModel"],
+    ["DetectModel", "LoadPackageConfig"],
+    ["LoadPackageConfig", "ReadPackageList"],
+    ["ReadPackageList", "CheckPackageStatus"],
+    ["CheckPackageStatus", "UserPrompt"],
+    ["UserPrompt", "InstallPackages"],
+    ["UserPrompt", "UninstallPackages"],
+    ["InstallPackages", "RotateLogs"],
+    ["UninstallPackages", "RotateLogs"]
+  ],
+  "classes": {
+    "step": "fillcolor:#e2efda,style:filled,shape:rect,fontcolor:black"
+  },
+  "class_map": {
+    "SetupLogging": "step",
+    "CheckUser": "step",
+    "DetectModel": "step",
+    "LoadPackageConfig": "step",
+    "ReadPackageList": "step",
+    "CheckPackageStatus": "step",
+    "UserPrompt": "step",
+    "InstallPackages": "step",
+    "UninstallPackages": "step",
+    "RotateLogs": "step"
+  }
+}

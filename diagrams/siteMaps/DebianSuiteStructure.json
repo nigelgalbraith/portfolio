@@ -1,0 +1,57 @@
+{
+  "meta": {
+    "main_label": "Main + Selector",
+    "second_label": "Device Models",
+    "third_label": "Config Files",
+
+    "main_title": "Main Script & Model Selector",
+    "second_title": "Device Models",
+    "third_title": "Configuration Files",
+
+    "key_main": "MainAndSelector",
+    "key_second": "DeviceModels",
+    "key_third": "ConfigFiles",
+
+    "key_links": "links",
+    "key_styles": "styles",
+    "key_classes": "classes",
+    "key_class_map": "class_map"
+  },
+  "MainAndSelector": {
+    "MainScripts": "Main Scripts",
+    "AppConfig": "AppConfig"
+  },
+  "DeviceModels": {
+    "Desktop": "Desktop",
+    "MediaCentre": "MediaCentre",
+    "Laptop": "Laptop"
+  },
+  "ConfigFiles": {
+    "DesktopJSON": "Desktop.json",
+    "MediaCentreJSON": "MediaCentre.json",
+    "LaptopJSON": "Laptop.json"
+  },
+  "links": [
+    ["MainScripts", "AppConfig"],
+    ["AppConfig", "Desktop"],
+    ["AppConfig", "MediaCentre"],
+    ["AppConfig", "Laptop"],
+    ["Desktop", "DesktopJSON"],
+    ["MediaCentre", "MediaCentreJSON"],
+    ["Laptop", "LaptopJSON"]
+  ],
+  "styles": {
+    "MainScripts": "fill:#cfe2f3,stroke:#036,stroke-width:1px",
+    "AppConfig": "fill:#fce5cd,stroke:#a61c00",
+
+    "Desktop": "fill:#e6f7ff,stroke:#005c99",
+    "MediaCentre": "fill:#e6f7ff,stroke:#005c99",
+    "Laptop": "fill:#e6f7ff,stroke:#005c99",
+
+    "DesktopJSON": "fill:#f9cb9c,stroke:#783f04",
+    "MediaCentreJSON": "fill:#f9cb9c,stroke:#783f04",
+    "LaptopJSON": "fill:#f9cb9c,stroke:#783f04"
+  },
+  "classes": {},
+  "class_map": {}
+}

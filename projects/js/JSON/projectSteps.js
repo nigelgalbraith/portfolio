@@ -182,6 +182,7 @@ thematic: [
     text: "While the default quizzes use CyberOps examples, you can easily adapt the tool for other topics. Just create a new Excel file using the same structure, then update the path in the 'import-Tool-Data.py' script to point to your new file. The rest of the system will adapt automatically."
   }
   ],
+  // Step-by-step breakdown for the Website project
   portfolio: [
     {
     title: "HTML Architecture Plan",
@@ -303,5 +304,149 @@ thematic: [
       img: "GenerateFlowchartFlow.png",
       alt: "Flowchart showing how flowchart PNGs are generated from JSON"
     }
-]
+  ],
+  // Step-by-step breakdown for the PowerShell Backup Tool
+  powerShellCloudBackup: [
+    {
+      title: "Backup Tool Project Structure",
+      img: "BackupStructure.png",
+      alt: "Backup Tool File Structure",
+      text: "This diagram outlines how the main PowerShell script connects with its supporting modules and configuration files. Each file is responsible for a distinct part of the workflow, allowing for a modular and maintainable architecture. The configuration files (like cloudProviders.json and mainConfig.json) are easy to edit manually, enabling you to customize layout, backup defaults, or even add support for new cloud providers without modifying the script itself."
+    },
+    {
+      title: "Step 1: Launch the Tool",
+      img: "BackupLaunch.png",
+      alt: "Launching Backup Tool",
+      text: "To begin, either run the `main.ps1` script in PowerShell or double-click the included `.bat` file. This launches the user-friendly GUI and loads your previous settings, if available."
+    },
+    {
+      title: "Step 2: Configure Source and Destination",
+      img: "BackupSourceDest.png",
+      alt: "Selecting Source and Destination",
+      text: "Use the 'Browse' buttons to pick the folders you want to back up and the cloud destination where files should go. Each provider (Google, Dropbox, Mega) has its own tab."
+    },
+    {
+      title: "Step 3: Choose File Copy Mode (Robocopy)",
+      img: "BackupModeRobocopy.png",
+      alt: "Choosing File Copy Mode",
+      text: "If you select File Copy as your backup method, you can choose between Append and Mirror mode. 'Append' will add new or changed files to the destination, keeping everything already there. 'Mirror' will make the destination exactly match the source including deleting files that no longer exist in the source folder."
+    },
+    {
+      title: "Step 4: Choose Zip Archive Mode",
+      img: "BackupModeZip.png",
+      alt: "Choosing Zip Backup Mode",
+      text: "If you select Zip Backup, the tool will compress your source files into a timestamped archive. You can choose how often to create a zip (Daily, Weekly, Monthly) and how many previous zip files to retain. This is useful for versioned backups or archival snapshots."
+    },
+    {
+      title: "Step 5: Run Backup or Shutdown",
+      img: "BackupButtons.png",
+      alt: "Performing Backup",
+      text: "Once your settings are configured, click 'Backup' to begin the process. Choosing 'Backup + Shutdown' attempts to wait for cloud sync to complete before powering off. However, depending on your system and cloud provider, the tool may sometimes shut down too early or briefly stop responding while waiting. These issues are under active improvement. If you're unsure whether syncing has finished, it's safer to run a manual 'Backup' first and shut down afterward."
+    },
+    {
+      title: "main.ps1 Flowchart",
+      img: "BackupMainPS1Flow.png",
+      alt: "Flowchart of main.ps1",
+      text: "This flowchart shows how the main script handles config loading, GUI setup, and user actions like backup or shutdown. It serves as the entry point of the entire tool."
+    },
+    {
+      title: "BackupConfig.psm1 Flowchart",
+      img: "BackupConfigFlow.png",
+      alt: "Flowchart of BackupConfig.psm1",
+      text: "Responsible for loading global settings, font styles, control layout, and application-wide parameters from `mainConfig.json` and related files."
+    },
+    {
+      title: "BackupCore.psm1 Flowchart",
+      img: "BackupCoreFlow.png",
+      alt: "Flowchart of BackupCore.psm1",
+      text: "This module runs the actual backup logic. It validates paths, performs file or zip operations, checks for sync status, and logs the results."
+    },
+    {
+      title: "BackupUI.psm1 Flowchart",
+      img: "BackupUIFlow.png",
+      alt: "Flowchart of BackupUI.psm1",
+      text: "Creates the GUI tabs, file selection fields, and buttons. It handles layout and event bindings to ensure user actions are captured correctly."
+    },
+    {
+      title: "FileSystemUI.psm1 Flowchart",
+      img: "BackupFileSystemUIFlow.png",
+      alt: "Flowchart of FileSystemUI.psm1",
+      text: "This module builds the advanced tree-view picker for selecting multiple source folders. It also manages how those paths are passed back to the main form."
+    },
+    {
+      title: "Step 6: Review the Log",
+      img: "BackupLogOutput.png",
+      alt: "Backup Log Output",
+      text: "After the backup completes, review the on-screen log for results, errors, or skipped files. This feedback confirms that all selected files were processed correctly. A copy of each log is also saved to your home directory under the 'logs' folder, so you can refer back to previous backups even after restarting the program."
+    },
+  ],
+  // Step-by-step breakdown for the Debian Install
+  debianInstallSuite: [
+    {
+      title: "Debian Setup Suite Structure",
+      img: "DebianSuiteStructure.png",
+      alt: "Debian Configuration Flow Diagram",
+      text: "This diagram illustrates how the Debian setup process flows from a unified main script and model selector (`AppConfig`) into system-specific configurations. The AppConfig file determines the target model (Desktop, MediaCentre, or Laptop), and each model links to its own configuration file. This modular structure enables a scalable, repeatable setup process tailored to different system types using centralized logic and clean separation of concerns."
+    },
+    {
+      title: "Step 1: Detect Model and Load Config",
+      img: "DebianDetectModel.png",
+      alt: "Model Detection and Config Loading",
+      text: "Each script begins by checking the current hardware model (like 'ThinkPadX1' or 'OptiPlex7000') and loads the corresponding JSON config block. This allows tailoring the install to specific systems while maintaining a central source of truth in `AppConfigSettings.json`."
+    },
+    {
+      title: "Step 2: Choose Install or Uninstall",
+      img: "DebianInstallOptions.png",
+      alt: "Install or Uninstall Menu",
+      text: "The CLI prompts users to install or remove applications. Installers like `DebianPackageInstalls.py`, `DebianDebInstalls.py`, and `DebianFlatPakInstalls.py` filter packages based on current system state, avoiding unnecessary reinstalls or removals."
+    },
+    {
+      title: "Step 3: Perform Jobs and Log Output",
+      img: "DebianLoggingFlow.png",
+      alt: "Logging and Execution",
+      text: "Each installer logs its actions to a timestamped log file under a dedicated subdirectory (e.g., `logs/deb/`, `logs/services/`). Scripts also rotate logs automatically and print status summaries, making it easy to review success/failure outcomes after execution."
+    },
+    {
+      title: "DebianRDP Bash Installer",
+      img: "DebianRDPFlow.png",
+      alt: "XRDP and XFCE Setup Flow",
+      text: "The Bash script `DebianRDP.bash` installs and configures XRDP with XFCE for remote access. It checks required packages, sets up user sessions, and configures systemd services. You can also use it to uninstall XRDP or create new sudo users interactively."
+    },
+    {
+      title: "Firewall Rules per Model",
+      img: "DebianFirewallFlow.png",
+      alt: "Firewall Configuration Logic",
+      text: "`DebianSetFirewall.py` applies UFW rules based on per-model JSON configs. It supports application profiles, single ports, and port ranges with IP whitelisting. The program prints rule previews and waits for user confirmation before applying changes."
+    },
+    {
+      title: "Service Deployment Flow",
+      img: "DebianServicesFlow.png",
+      alt: "Custom Service Setup Logic",
+      text: "`DebianServices.py` installs or removes systemd services and associated scripts. It validates file paths, copies templates, enables autostart, and supports optional logrotate configuration. Admins can also review logs via the built-in viewer."
+    },
+    {
+      title: "Third-Party APT Installer Flowchart",
+      img: "DebianThirdPartyFlow.png",
+      alt: "Third-Party Install Logic",
+      text: "`DebianThirdPartryInstalls.py` adds external repositories, installs packages, and removes them cleanly if uninstalled. The script detects conflicting keyrings and handles GPG key and source list creation automatically."
+    },
+    {
+      title: "DEB Installer Flowchart",
+      img: "DebianDebFlow.png",
+      alt: "DEB File Install Logic",
+      text: "`DebianDebInstalls.py` handles downloading `.deb` files from URLs, installing them, and optionally enabling systemd services based on configuration. Files are cleaned up after installation, and logs are rotated automatically."
+    },
+    {
+      title: "Flatpak Installer Flowchart",
+      img: "DebianFlatpakFlow.png",
+      alt: "Flatpak Install Logic",
+      text: "`DebianFlatPakInstalls.py` ensures Flatpak and Flathub are available, then installs or uninstalls model-specific apps using a clean interface. Remote configuration is also supported per application."
+    },
+    {
+      title: "APT Package Installer Flowchart",
+      img: "DebianPackageFlow.png",
+      alt: "APT Install Logic",
+      text: "`DebianPackageInstalls.py` handles standard APT packages using a simple model-configured list. It verifies package status before performing any action and supports clean summary logging and feedback."
+    }
+  ]
 };

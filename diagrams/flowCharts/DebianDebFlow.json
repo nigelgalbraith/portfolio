@@ -1,0 +1,61 @@
+{
+  "nodes": {
+    "SetupLogging": { "label": "Setup log directory and file" },
+    "CheckUser": { "label": "Ensure script is run as standard user" },
+    "CheckDependencies": { "label": "Check required dependencies (e.g. wget)" },
+    "DetectModel": { "label": "Detect system model" },
+    "LoadDebConfig": { "label": "Load model-specific DEB config from AppConfigSettings.json" },
+    "CheckInstalled": { "label": "Check which packages are installed" },
+    "UserPrompt": { "label": "Prompt: Install, Uninstall, or Cancel" },
+
+    "InstallLoop": { "label": "For each NOT INSTALLED package..." },
+    "DownloadDeb": { "label": "Download .deb file from URL" },
+    "InstallDeb": { "label": "Install .deb package" },
+    "StartService": { "label": "Start service (if enabled)" },
+    "DeleteDeb": { "label": "Delete downloaded .deb file" },
+
+    "UninstallLoop": { "label": "For each INSTALLED package..." },
+    "UninstallDeb": { "label": "Uninstall package" },
+
+    "RotateLogs": { "label": "Rotate old logs and finish" }
+  },
+  "connections": [
+    ["SetupLogging", "CheckUser"],
+    ["CheckUser", "CheckDependencies"],
+    ["CheckDependencies", "DetectModel"],
+    ["DetectModel", "LoadDebConfig"],
+    ["LoadDebConfig", "CheckInstalled"],
+    ["CheckInstalled", "UserPrompt"],
+
+    ["UserPrompt", "InstallLoop"],
+    ["InstallLoop", "DownloadDeb"],
+    ["DownloadDeb", "InstallDeb"],
+    ["InstallDeb", "StartService"],
+    ["StartService", "DeleteDeb"],
+    ["DeleteDeb", "RotateLogs"],
+
+    ["UserPrompt", "UninstallLoop"],
+    ["UninstallLoop", "UninstallDeb"],
+    ["UninstallDeb", "RotateLogs"]
+  ],
+  "classes": {
+    "step": "fillcolor:#ddebf7,style:filled,shape:rect,fontcolor:black"
+  },
+  "class_map": {
+    "SetupLogging": "step",
+    "CheckUser": "step",
+    "CheckDependencies": "step",
+    "DetectModel": "step",
+    "LoadDebConfig": "step",
+    "CheckInstalled": "step",
+    "UserPrompt": "step",
+    "InstallLoop": "step",
+    "DownloadDeb": "step",
+    "InstallDeb": "step",
+    "StartService": "step",
+    "DeleteDeb": "step",
+    "UninstallLoop": "step",
+    "UninstallDeb": "step",
+    "RotateLogs": "step"
+  }
+}

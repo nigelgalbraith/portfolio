@@ -1,0 +1,34 @@
+graph TD
+
+  subgraph Main + Selector [Main Script & Model Selector]
+    MainScripts[Main Scripts]
+    AppConfig[AppConfig]
+  end
+
+  subgraph Device Models [Device Models]
+    Desktop[Desktop]
+    MediaCentre[MediaCentre]
+    Laptop[Laptop]
+  end
+
+  subgraph Config Files [Configuration Files]
+    DesktopJSON[Desktop.json]
+    MediaCentreJSON[MediaCentre.json]
+    LaptopJSON[Laptop.json]
+  end
+
+  MainScripts --> AppConfig
+  AppConfig --> Desktop
+  AppConfig --> MediaCentre
+  AppConfig --> Laptop
+  Desktop --> DesktopJSON
+  MediaCentre --> MediaCentreJSON
+  Laptop --> LaptopJSON
+  style MainScripts fill:#cfe2f3,stroke:#036,stroke-width:1px
+  style AppConfig fill:#fce5cd,stroke:#a61c00
+  style Desktop fill:#e6f7ff,stroke:#005c99
+  style MediaCentre fill:#e6f7ff,stroke:#005c99
+  style Laptop fill:#e6f7ff,stroke:#005c99
+  style DesktopJSON fill:#f9cb9c,stroke:#783f04
+  style MediaCentreJSON fill:#f9cb9c,stroke:#783f04
+  style LaptopJSON fill:#f9cb9c,stroke:#783f04

@@ -1,0 +1,25 @@
+{
+  "nodes": {
+    "PerformBackup": { "label": "Start Backup Operation" },
+    "ValidateInputs": { "label": "Validate Source and Destination" },
+    "RunZipOrFileCopy": { "label": "Run Zip or File Copy" },
+    "DetectSyncStatus": { "label": "Check for Sync Completion" },
+    "LogResults": { "label": "Log Results to Output" }
+  },
+  "connections": [
+    ["PerformBackup", "ValidateInputs"],
+    ["ValidateInputs", "RunZipOrFileCopy"],
+    ["RunZipOrFileCopy", "DetectSyncStatus"],
+    ["DetectSyncStatus", "LogResults"]
+  ],
+  "classes": {
+    "action": "fillcolor:#f0f8ff,style:filled,shape:rect,fontcolor:black"
+  },
+  "class_map": {
+    "PerformBackup": "action",
+    "ValidateInputs": "action",
+    "RunZipOrFileCopy": "action",
+    "DetectSyncStatus": "action",
+    "LogResults": "action"
+  }
+}

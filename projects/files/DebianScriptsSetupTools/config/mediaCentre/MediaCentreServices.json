@@ -1,0 +1,26 @@
+{
+  "HPCompaqElite8300SFF": {
+    "Services": {
+      "Plexmedia": {
+        "Name": "plexmedia",
+        "ScriptSrc": "Services/mount_plex-template.sh",
+        "ScriptDest": "/usr/local/bin/mount_plex.sh",
+        "ServiceSrc": "Services/mount_plex-template.service",
+        "ServiceDest": "/etc/systemd/system/mount_plex.service",
+        "ServiceName": "mount_plex.service",
+        "LogPath": "/var/log/mount_plex.log",
+        "LogrotateCfg": "Services/mount_plex.logrotate"
+      },
+      "PlexPermissions": {
+        "Name": "plex_permissions",
+        "ScriptSrc": "Services/update_plex_permissions-template.sh",
+        "ScriptDest": "/usr/local/bin/update_plex_permissions.sh",
+        "ServiceSrc": "Services/update_plex_permissions-template.service",
+        "ServiceDest": "/etc/systemd/system/update_plex_permissions.service",
+        "ServiceName": "update_plex_permissions.service",
+        "LogPath": "/var/log/update_plex_permissions.log",
+        "LogrotateCfg": "Services/update_plex_permissions.logrotate"
+      }
+    }
+  }
+}

@@ -7,12 +7,12 @@
       "Default": {
         "Source": "",
         "Dest": "C:\\GoogleDrive\\Backups",
-        "Zip": true,
+        "Zip": false,
         "Mirror": false,
-        "Append": false,
+        "Append": true,
         "Name": "GoogleBackup",
         "Freq": "Daily",
-        "Keep": 2
+        "Keep": 10
       }
     },
     "Dropbox": {
@@ -23,11 +23,11 @@
         "Source": "",
         "Dest": "C:\\Dropbox\\Backups",
         "Zip": false,
-        "Mirror": true,
-        "Append": false,
+        "Mirror": false,
+        "Append": true,
         "Name": "DropboxBackup",
         "Freq": "Weekly",
-        "Keep": 2
+        "Keep": 10
       }
     },
     "Mega": {
@@ -37,12 +37,12 @@
       "Default": {
         "Source": "",
         "Dest": "C:\\Mega\\Backups",
-        "Zip": true,
+        "Zip": false,
         "Mirror": false,
-        "Append": false,
+        "Append": true,
         "Name": "MegaBackup",
         "Freq": "Monthly",
-        "Keep": 2
+        "Keep": 10
       }
     }
   }

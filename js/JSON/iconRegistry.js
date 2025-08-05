@@ -7,7 +7,8 @@ const ICON_PATH_PREFIX = window.location.pathname.includes("/projects/") ? "../"
 const ICON_REGISTRY = {
   "degree":           { "alt": "Degree",                  "label": "BICT",                     "src": ICON_PATH_PREFIX + "images/icons/optimized/degree.png" },
   "cert":             { "alt": "Certificate",             "label": "CCNA Certified",           "src": ICON_PATH_PREFIX + "images/icons/optimized/cert.png" },
-  "cloud":            { "alt": "Cloud",                   "label": "Azure Fundamentals",       "src": ICON_PATH_PREFIX + "images/icons/optimized/cloud.png" },
+  "cloud":            { "alt": "Cloud",                   "label": "Azure Fundamentals",       "src": ICON_PATH_PREFIX + "images/icons/optimized/Azurecloud.png" },
+  "cloud":            { "alt": "Cloud",                   "label": "Cloud Tech",               "src": ICON_PATH_PREFIX + "images/icons/optimized/cloud.png" },
   "sharepoint":       { "alt": "SharePoint",              "label": "SharePoint",               "src": ICON_PATH_PREFIX + "images/icons/optimized/SharePoint.png" },
   "office365":        { "alt": "Office 365",              "label": "Office 365",               "src": ICON_PATH_PREFIX + "images/icons/optimized/Office365.png" },
   "ubuntu":           { "alt": "ubuntu",                  "label": "Ubuntu KVM",               "src": ICON_PATH_PREFIX + "images/icons/optimized/ubuntu.png" },
@@ -16,6 +17,7 @@ const ICON_REGISTRY = {
   "network":          { "alt": "Networking",              "label": "Network Setup",            "src": ICON_PATH_PREFIX + "images/icons/optimized/network.png" },
   "qemu":             { "alt": "qemu",                    "label": "QEMU",                     "src": ICON_PATH_PREFIX + "images/icons/optimized/qemu.png" },
   "virtual":          { "alt": "Virtualization",          "label": "Virtualization & KVM",     "src": ICON_PATH_PREFIX + "images/icons/optimized/virtual.png" },
+  "powerShell":       { "alt": "powerShell",              "label": "powerShell",               "src": ICON_PATH_PREFIX + "images/icons/optimized/powerShell.png" },
   "shell":            { "alt": "Shell Scripting",         "label": "Shell Scripting",          "src": ICON_PATH_PREFIX + "images/icons/optimized/programing.png" },
   "python":           { "alt": "Python",                  "label": "Python",                   "src": ICON_PATH_PREFIX + "images/icons/optimized/python.png" },
   "permissions":      { "alt": "Permissions",             "label": "Permissions",              "src": ICON_PATH_PREFIX + "images/icons/optimized/permissions.png" },

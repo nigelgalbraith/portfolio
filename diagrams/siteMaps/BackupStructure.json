@@ -1,0 +1,51 @@
+{
+  "meta": {
+    "main_label": "MainScript",
+    "second_label": "Modules",
+    "third_label": "ConfigFiles",
+    "main_title": "Main Script",
+    "second_title": "PowerShell Modules",
+    "third_title": "Configuration Files",
+    "key_main": "MainScript",
+    "key_second": "Modules",
+    "key_third": "ConfigFiles",
+    "key_links": "links",
+    "key_styles": "styles",
+    "key_classes": "classes",
+    "key_class_map": "class_map"
+  },
+  "MainScript": {
+    "MainPS1": "main.ps1"
+  },
+  "Modules": {
+    "BackupConfig": "BackupConfig.psm1",
+    "BackupCore": "BackupCore.psm1",
+    "BackupUI": "BackupUI.psm1",
+    "FileSystemUI": "FileSystemUI.psm1"
+  },
+  "ConfigFiles": {
+    "MainConfig": "mainConfig.json",
+    "CloudProviders": "cloudProviders.json",
+    "BackupSettings": "backupSettings.json"
+  },
+  "links": [
+    ["MainPS1", "BackupConfig"],
+    ["MainPS1", "BackupCore"],
+    ["MainPS1", "BackupUI"],
+    ["MainPS1", "FileSystemUI"],
+    ["BackupConfig", "MainConfig"],
+    ["BackupCore", "CloudProviders"],
+    ["BackupUI", "BackupSettings"],
+    ["FileSystemUI", "BackupSettings"]
+  ],
+  "styles": {
+    "MainPS1": "fill:#c9daf8,stroke:#0b5394",
+    "BackupConfig": "fill:#d9ead3,stroke:#38761d",
+    "BackupCore": "fill:#d9ead3,stroke:#38761d",
+    "BackupUI": "fill:#d9ead3,stroke:#38761d",
+    "FileSystemUI": "fill:#d9ead3,stroke:#38761d",
+    "MainConfig": "fill:#fce5cd,stroke:#b45f06",
+    "CloudProviders": "fill:#fce5cd,stroke:#b45f06",
+    "BackupSettings": "fill:#fce5cd,stroke:#b45f06"
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "nodes": {
+    "CheckUser": { "label": "Check root account" },
+    "SetupLogging": { "label": "Setup logging directory and file" },
+    "LoadModelConfig": { "label": "Load AppConfigSettings.json and model firewall JSON" },
+    "ShowRules": { "label": "Print application, port, and range rules" },
+    "UserConfirm": { "label": "Prompt for user confirmation" },
+    "ResetUFW": { "label": "Reset and enable UFW" },
+    "ApplyApps": { "label": "Allow UFW application profiles" },
+    "ApplySinglePorts": { "label": "Allow Single Ports from IPs" },
+    "ApplyPortRanges": { "label": "Allow Port Ranges from IPs" },
+    "ReloadUFW": { "label": "Reload UFW and display status" },
+    "RotateLogs": { "label": "Rotate old logs and finish" }
+  },
+  "connections": [
+    ["CheckUser", "SetupLogging"],
+    ["SetupLogging", "LoadModelConfig"],
+    ["LoadModelConfig", "ShowRules"],
+    ["ShowRules", "UserConfirm"],
+    ["UserConfirm", "ResetUFW"],
+    ["ResetUFW", "ApplyApps"],
+    ["ApplyApps", "ApplySinglePorts"],
+    ["ApplySinglePorts", "ApplyPortRanges"],
+    ["ApplyPortRanges", "ReloadUFW"],
+    ["ReloadUFW", "RotateLogs"]
+  ],
+  "classes": {
+    "step": "fillcolor:#e6f4ea,style:filled,shape:rect,fontcolor:black"
+  },
+  "class_map": {
+    "CheckUser": "step",
+    "SetupLogging": "step",
+    "LoadModelConfig": "step",
+    "ShowRules": "step",
+    "UserConfirm": "step",
+    "ResetUFW": "step",
+    "ApplyApps": "step",
+    "ApplySinglePorts": "step",
+    "ApplyPortRanges": "step",
+    "ReloadUFW": "step",
+    "RotateLogs": "step"
+  }
+}

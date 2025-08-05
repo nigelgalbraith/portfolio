@@ -1,0 +1,60 @@
+{
+  "HPCompaqElite8300SFF": {
+    "Applications": ["KTorrent"],
+    "SinglePorts": [
+      {
+        "Port": 32400,
+        "Protocol": "tcp",
+        "IPs": ["x.x.x.x"]
+      },
+      {
+        "Port": 1900,
+        "Protocol": "tcp",
+        "IPs": ["x.x.x.x"]
+      },
+      {
+        "Port": 5353,
+        "Protocol": "tcp",
+        "IPs": ["x.x.x.x"]
+      },
+      {
+        "Port": 8324,
+        "Protocol": "tcp",
+        "IPs": ["x.x.x.x"]
+      },
+      {
+        "Port": 32469,
+        "Protocol": "tcp",
+        "IPs": ["x.x.x.x"]
+      },
+      {
+        "Port": 22,
+        "Protocol": "tcp",
+        "IPs": [
+          "x.x.x.x",
+          "x.x.x.x",
+          "x.x.x.x",
+          "x.x.x.x"
+        ]
+      },
+      {
+        "Port": 3389,
+        "Protocol": "tcp",
+        "IPs": [
+          "x.x.x.x",
+          "x.x.x.x",
+          "x.x.x.x",
+          "x.x.x.x"
+        ]
+      }
+    ],
+    "PortRanges": [
+      {
+        "StartPort": 32410,
+        "EndPort": 32414,
+        "Protocol": "tcp",
+        "IPs": ["x.x.x.x"]
+      }
+    ]
+  }
+}

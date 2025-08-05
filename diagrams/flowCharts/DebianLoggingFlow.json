@@ -1,0 +1,28 @@
+{
+  "nodes": {
+    "SetupLogDir": { "label": "Create or confirm log directory" },
+    "GenerateLogFile": { "label": "Generate timestamped log file" },
+    "StartLogging": { "label": "Start logging with setup_logging()" },
+    "WriteToLog": { "label": "Log messages during script execution" },
+    "RotateLogs": { "label": "Rotate old log files" },
+    "PrintSummary": { "label": "Print summary and log path" }
+  },
+  "connections": [
+    ["SetupLogDir", "GenerateLogFile"],
+    ["GenerateLogFile", "StartLogging"],
+    ["StartLogging", "WriteToLog"],
+    ["WriteToLog", "RotateLogs"],
+    ["RotateLogs", "PrintSummary"]
+  ],
+  "classes": {
+    "action": "fillcolor:#f0f8ff,style:filled,shape:rect,fontcolor:black"
+  },
+  "class_map": {
+    "SetupLogDir": "action",
+    "GenerateLogFile": "action",
+    "StartLogging": "action",
+    "WriteToLog": "action",
+    "RotateLogs": "action",
+    "PrintSummary": "action"
+  }
+}

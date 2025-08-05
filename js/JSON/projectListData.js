@@ -54,5 +54,19 @@ const PROJECT_LIST_DATA = [
     "alt": "ThermaticAnalysis Thumbnail",
     "title": "Thermatic Analysis Web Tool",
     "description": "Helps structure thematic analysis findings from Excel into a clean, interactive web interface. Uses Python to transform raw coding data into something easier to review, share, and discuss with others."
+  },
+  {
+    "href": "projects/PowerShell-CloudBackup.html",
+    "img": "images/thumbs/optimized/PowerShellBackup.png",
+    "alt": "PowerShell Backup Tool Thumbnail",
+    "title": "PowerShell Cloud Backup Tool",
+    "description": "Automates cloud backups to Google Drive, Dropbox, or Mega with options for zipped or file-based modes. Includes a GUI, shutdown integration, and customizable JSON-based configuration."
+  },
+  {
+    "href": "projects/Debian-SetupSuite.html",
+    "img": "images/thumbs/optimized/DebianSetup.png",
+    "alt": "Debian Setup Suite Thumbnail",
+    "title": "Debian Setup Suite",
+    "description": "Model-aware automation scripts for configuring Debian systems. Supports APT, DEB, Flatpak installs, firewall rules, services, RDP, and third-party repositories using modular JSON-based configs."
   }
 ];

@@ -1,0 +1,25 @@
+{
+  "nodes": {
+    "BuildGUI": { "label": "Initialize Main Form" },
+    "AddTabs": { "label": "Add Cloud Provider Tabs" },
+    "AddZipOptions": { "label": "Insert Zip Options" },
+    "AddFileCopyOptions": { "label": "Insert File Copy Options" },
+    "AddActionButtons": { "label": "Add Backup and Shutdown Buttons" }
+  },
+  "connections": [
+    ["BuildGUI", "AddTabs"],
+    ["AddTabs", "AddZipOptions"],
+    ["AddZipOptions", "AddFileCopyOptions"],
+    ["AddFileCopyOptions", "AddActionButtons"]
+  ],
+  "classes": {
+    "action": "fillcolor:#f0f8ff,style:filled,shape:rect,fontcolor:black"
+  },
+  "class_map": {
+    "BuildGUI": "action",
+    "AddTabs": "action",
+    "AddZipOptions": "action",
+    "AddFileCopyOptions": "action",
+    "AddActionButtons": "action"
+  }
+}

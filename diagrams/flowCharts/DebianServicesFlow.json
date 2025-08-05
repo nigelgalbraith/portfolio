@@ -1,0 +1,63 @@
+{
+  "nodes": {
+    "CheckRoot": { "label": "Check root account" },
+    "SetupLogging": { "label": "Setup logging directory and file" },
+    "LoadServiceConfig": { "label": "Load AppConfigSettings.json and model service JSON" },
+    "GetUserChoice": { "label": "Prompt: Install, Uninstall, or View Logs" },
+
+    "InstallLoop": { "label": "For each DISABLED service..." },
+    "ValidateFields": { "label": "Validate required fields" },
+    "InstallLogrotate": { "label": "Install logrotate config (optional)" },
+    "CopyScript": { "label": "Copy script to target location" },
+    "CreateService": { "label": "Create systemd service file" },
+    "EnableService": { "label": "Enable and start service" },
+
+    "UninstallLoop": { "label": "For each ENABLED service..." },
+    "StopService": { "label": "Stop and disable service" },
+    "RemoveFiles": { "label": "Remove script and service files" },
+
+    "ShowLogs": { "label": "Open log viewer for each service" },
+    "RotateLogs": { "label": "Rotate logs and finish" }
+  },
+  "connections": [
+    ["CheckRoot", "SetupLogging"],
+    ["SetupLogging", "LoadServiceConfig"],
+    ["LoadServiceConfig", "GetUserChoice"],
+
+    ["GetUserChoice", "InstallLoop"],
+    ["InstallLoop", "ValidateFields"],
+    ["ValidateFields", "InstallLogrotate"],
+    ["InstallLogrotate", "CopyScript"],
+    ["CopyScript", "CreateService"],
+    ["CreateService", "EnableService"],
+    ["EnableService", "RotateLogs"],
+
+    ["GetUserChoice", "UninstallLoop"],
+    ["UninstallLoop", "StopService"],
+    ["StopService", "RemoveFiles"],
+    ["RemoveFiles", "RotateLogs"],
+
+    ["GetUserChoice", "ShowLogs"],
+    ["ShowLogs", "RotateLogs"]
+  ],
+  "classes": {
+    "step": "fillcolor:#f4cccc,style:filled,shape:rect,fontcolor:black"
+  },
+  "class_map": {
+    "CheckRoot": "step",
+    "SetupLogging": "step",
+    "LoadServiceConfig": "step",
+    "GetUserChoice": "step",
+    "InstallLoop": "step",
+    "ValidateFields": "step",
+    "InstallLogrotate": "step",
+    "CopyScript": "step",
+    "CreateService": "step",
+    "EnableService": "step",
+    "UninstallLoop": "step",
+    "StopService": "step",
+    "RemoveFiles": "step",
+    "ShowLogs": "step",
+    "RotateLogs": "step"
+  }
+}
