@@ -1,0 +1,24 @@
+{
+  "nodes": {
+    "loadMainText": {
+      "label": "Load from\nmainTextData.js",
+      "shape": "parallelogram"
+    },
+    "formatText": {
+      "label": "Format paragraph text"
+    },
+    "injectText": {
+      "label": "Append to main container"
+    }
+  },
+  "connections": [
+    [
+      "loadMainText",
+      "formatText"
+    ],
+    [
+      "formatText",
+      "injectText"
+    ]
+  ]
+}

@@ -163,10 +163,14 @@ def main():
             name, json_path, CONFIG_PATH
         )
 
+        # Load class styles from config and allow per-diagram override
+        global_classes = config.get("classes", {})
+        local_classes = data.get("classes", {})
+        classes = {**global_classes, **local_classes}
+        
         # Load flowchart data
         nodes = data.get("nodes", {})
         connections = data.get("connections", [])
-        classes = data.get("classes", {})
         class_map = data.get("class_map", {})
 
         # Add all nodes with shape and wrapped labels

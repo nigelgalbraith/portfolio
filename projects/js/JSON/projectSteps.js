@@ -382,71 +382,109 @@ thematic: [
   ],
   // Step-by-step breakdown for the Debian Install
   debianInstallSuite: [
+    // --- Overview & RDP ---
     {
       title: "Debian Setup Suite Structure",
       img: "DebianSuiteStructure.png",
       alt: "Debian Configuration Flow Diagram",
-      text: "This diagram illustrates how the Debian setup process flows from a unified main script and model selector (`AppConfig`) into system-specific configurations. The AppConfig file determines the target model (Desktop, MediaCentre, or Laptop), and each model links to its own configuration file. This modular structure enables a scalable, repeatable setup process tailored to different system types using centralized logic and clean separation of concerns."
+      text: "This diagram illustrates how the Debian setup process flows from a unified main script and model selector (`AppConfig`) into system-specific configurations. Each script uses a modular, repeatable design for multi-device rollout."
     },
     {
-      title: "Step 1: Detect Model and Load Config",
-      img: "DebianDetectModel.png",
-      alt: "Model Detection and Config Loading",
-      text: "Each script begins by checking the current hardware model (like 'ThinkPadX1' or 'OptiPlex7000') and loads the corresponding JSON config block. This allows tailoring the install to specific systems while maintaining a central source of truth in `AppConfigSettings.json`."
+      title: "Step 1: Link Your Model in AppConfigSettings.json",
+      img: "DebianEditAppConfig.png",
+      alt: "Edit AppConfigSettings.json",
+      text: "Each system model (e.g. `ThinkPadX1`) must be defined in `AppConfigSettings.json`. This file tells the install scripts where to find your model-specific config files:\n\n```json\n\"ThinkPadX1\": {\n  \"Packages\": \"config/laptop/LaptopApps.json\",\n  \"DEB\": \"config/laptop/LaptopApps.json\",\n  \"ThirdParty\": \"config/laptop/LaptopApps.json\",\n  \"Flatpak\": \"config/laptop/LaptopApps.json\",\n  \"FireWall\": \"config/laptop/LaptopFW.json\",\n  \"Services\": \"config/laptop/LaptopServices.json\"\n}\n```"
     },
+
+    // --- APT Packages ---
     {
-      title: "Step 2: Choose Install or Uninstall",
-      img: "DebianInstallOptions.png",
-      alt: "Install or Uninstall Menu",
-      text: "The CLI prompts users to install or remove applications. Installers like `DebianPackageInstalls.py`, `DebianDebInstalls.py`, and `DebianFlatPakInstalls.py` filter packages based on current system state, avoiding unnecessary reinstalls or removals."
-    },
-    {
-      title: "Step 3: Perform Jobs and Log Output",
-      img: "DebianLoggingFlow.png",
-      alt: "Logging and Execution",
-      text: "Each installer logs its actions to a timestamped log file under a dedicated subdirectory (e.g., `logs/deb/`, `logs/services/`). Scripts also rotate logs automatically and print status summaries, making it easy to review success/failure outcomes after execution."
-    },
-    {
-      title: "DebianRDP Bash Installer",
-      img: "DebianRDPFlow.png",
-      alt: "XRDP and XFCE Setup Flow",
-      text: "The Bash script `DebianRDP.bash` installs and configures XRDP with XFCE for remote access. It checks required packages, sets up user sessions, and configures systemd services. You can also use it to uninstall XRDP or create new sudo users interactively."
-    },
-    {
-      title: "Firewall Rules per Model",
-      img: "DebianFirewallFlow.png",
-      alt: "Firewall Configuration Logic",
-      text: "`DebianSetFirewall.py` applies UFW rules based on per-model JSON configs. It supports application profiles, single ports, and port ranges with IP whitelisting. The program prints rule previews and waits for user confirmation before applying changes."
-    },
-    {
-      title: "Service Deployment Flow",
-      img: "DebianServicesFlow.png",
-      alt: "Custom Service Setup Logic",
-      text: "`DebianServices.py` installs or removes systemd services and associated scripts. It validates file paths, copies templates, enables autostart, and supports optional logrotate configuration. Admins can also review logs via the built-in viewer."
-    },
-    {
-      title: "Third-Party APT Installer Flowchart",
-      img: "DebianThirdPartyFlow.png",
-      alt: "Third-Party Install Logic",
-      text: "`DebianThirdPartryInstalls.py` adds external repositories, installs packages, and removes them cleanly if uninstalled. The script detects conflicting keyrings and handles GPG key and source list creation automatically."
-    },
-    {
-      title: "DEB Installer Flowchart",
-      img: "DebianDebFlow.png",
-      alt: "DEB File Install Logic",
-      text: "`DebianDebInstalls.py` handles downloading `.deb` files from URLs, installing them, and optionally enabling systemd services based on configuration. Files are cleaned up after installation, and logs are rotated automatically."
-    },
-    {
-      title: "Flatpak Installer Flowchart",
-      img: "DebianFlatpakFlow.png",
-      alt: "Flatpak Install Logic",
-      text: "`DebianFlatPakInstalls.py` ensures Flatpak and Flathub are available, then installs or uninstalls model-specific apps using a clean interface. Remote configuration is also supported per application."
+      title: "Step 2: Define APT Packages",
+      img: "DebianEditPackages.png",
+      alt: "APT Package List in JSON",
+      text: "In your model's config file (e.g., `LaptopApps.json`), list APT packages under the `Packages` key:\n\n```json\n\"Packages\": [\"vlc\", \"ufw\", \"timeshift\"]\n```"
     },
     {
       title: "APT Package Installer Flowchart",
       img: "DebianPackageFlow.png",
       alt: "APT Install Logic",
-      text: "`DebianPackageInstalls.py` handles standard APT packages using a simple model-configured list. It verifies package status before performing any action and supports clean summary logging and feedback."
+      text: "`DebianPackageInstalls.py` installs standard APT packages defined in the config. It checks which ones are missing, installs them using `apt`, and logs results to `logs/packages/`."
+    },
+
+    // --- DEB Installers ---
+    {
+      title: "Step 3: Add .deb File Installers",
+      img: "DebianEditDeb.png",
+      alt: "DEB Installer JSON Structure",
+      text: "Still in the same config file, define `.deb` packages under the `DEB` key. These are direct downloads:\n\n```json\n\"DEB\": {\n  \"plexmediaserver\": {\n    \"DownloadURL\": \"https://downloads.plex.tv/.../plex.deb\",\n    \"EnableService\": true\n  }\n}\n```"
+    },
+    {
+      title: "DEB Installer Flowchart",
+      img: "DebianDebFlow.png",
+      alt: "DEB File Install Logic",
+      text: "`DebianDebInstalls.py` downloads and installs `.deb` packages. It optionally enables systemd services and cleans up the temp files afterward. Logs go to `logs/deb/`."
+    },
+
+    // --- Flatpak ---
+    {
+      title: "Step 4: Add Flatpak Applications",
+      img: "DebianEditFlatpak.png",
+      alt: "Flatpak App JSON Structure",
+      text: "Add Flatpak apps under the `Flatpak` key, using app IDs and their remote source:\n\n```json\n\"Flatpak\": {\n  \"io.github.nate_xyz.Conjure\": {\n    \"remote\": \"flathub\"\n  }\n}\n```"
+    },
+    {
+      title: "Flatpak Installer Flowchart",
+      img: "DebianFlatpakFlow.png",
+      alt: "Flatpak Install Logic",
+      text: "`DebianFlatPakInstalls.py` installs or uninstalls Flatpak apps using model-specific config. It ensures Flathub is enabled and skips already-installed apps."
+    },
+
+    // --- Third-Party APT ---
+    {
+      title: "Step 5: Configure Third-Party APT Repos",
+      img: "DebianEditThirdParty.png",
+      alt: "Third-Party APT Repo JSON",
+      text: "Define third-party APT repos under the `ThirdParty` key. This enables external software sources:\n\n```json\n\"ThirdParty\": {\n  \"docker-ce\": {\n    \"url\": \"https://download.docker.com/linux/debian\",\n    \"key\": \"https://download.docker.com/linux/debian/gpg\",\n    \"codename\": \"bookworm\",\n    \"component\": \"stable\"\n  }\n}\n```"
+    },
+    {
+      title: "Third-Party APT Installer Flowchart",
+      img: "DebianThirdPartyFlow.png",
+      alt: "Third-Party Install Logic",
+      text: "`DebianThirdPartryInstalls.py` adds external APT repos and installs packages from them. It also removes them cleanly when uninstalled. Logs are saved under `logs/thirdparty/`."
+    },
+
+    // --- Firewall ---
+    {
+      title: "Step 6: Set Firewall Rules",
+      img: "DebianEditFirewall.png",
+      alt: "Firewall JSON Structure",
+      text: "Define firewall settings in a separate file (e.g. `LaptopFW.json`) using `SinglePorts`, `PortRanges`, and `Applications` keys:\n\n```json\n\"SinglePorts\": [\n  {\n    \"Port\": 22,\n    \"Protocol\": \"tcp\",\n    \"IPs\": [\"192.168.1.100\"]\n  }\n]\n```"
+    },
+    {
+      title: "Firewall Rules Flowchart",
+      img: "DebianFirewallFlow.png",
+      alt: "Firewall Configuration Logic",
+      text: "`DebianSetFirewall.py` resets and enables UFW, then applies rules from the model config. It supports IP-based rules, app profiles, and port ranges. Logs go to `logs/fw/`."
+    },
+
+    // --- Services ---
+    {
+      title: "Step 7: Add Systemd Services",
+      img: "DebianEditServices.png",
+      alt: "Service Configuration JSON",
+      text: "Create a `Services` JSON file with systemd unit and script paths. It can also define logrotate configs:\n\n```json\n\"Services\": {\n  \"plex_permissions\": {\n    \"ScriptSrc\": \"Services/plex.sh\",\n    \"ScriptDest\": \"/usr/local/bin/plex.sh\",\n    \"ServiceSrc\": \"Services/plex.service\",\n    \"ServiceDest\": \"/etc/systemd/system/plex.service\",\n    \"ServiceName\": \"plex.service\",\n    \"LogPath\": \"/var/log/plex.log\",\n    \"LogrotateCfg\": \"Services/plex.logrotate\"\n  }\n}\n```"
+    },
+    {
+      title: "Service Deployment Flowchart",
+      img: "DebianServicesFlow.png",
+      alt: "Custom Service Setup Logic",
+      text: "`DebianServices.py` installs systemd services, copies scripts, applies optional logrotate configs, and enables the service. Logs go to `logs/services/`."
+    },
+    // --- RDP ---
+    {
+      title: "DebianRDP Bash Installer",
+      img: "DebianRDPFlow.png",
+      alt: "XRDP and XFCE Setup Flow",
+      text: "The Bash script `DebianRDP.bash` installs and configures XRDP with XFCE for remote desktop access. It also lets you create new sudo users or cleanly remove XRDP."
     }
   ]
 };

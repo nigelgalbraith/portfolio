@@ -1,0 +1,16 @@
+{
+  "nodes": {
+    "listenToggle": {
+      "label": "Listen for menu toggle click"
+    },
+    "toggleClass": {
+      "label": "Add/remove open class"
+    }
+  },
+  "connections": [
+    [
+      "listenToggle",
+      "toggleClass"
+    ]
+  ]
+}

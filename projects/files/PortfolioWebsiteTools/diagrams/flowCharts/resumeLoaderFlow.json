@@ -1,0 +1,18 @@
+{
+  "nodes": {
+    "loadResumeData": {
+      "label": "Load from\nresumeData.js",
+      "shape": "parallelogram"
+    },
+    "generateTimeline": {
+      "label": "Create timeline entries"
+    },
+    "injectTimeline": {
+      "label": "Append to resume section"
+    }
+  },
+  "connections": [
+    ["loadResumeData", "generateTimeline"],
+    ["generateTimeline", "injectTimeline"]
+  ]
+}

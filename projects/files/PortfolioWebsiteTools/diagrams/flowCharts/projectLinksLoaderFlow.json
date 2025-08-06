@@ -1,0 +1,24 @@
+{
+  "nodes": {
+    "loadLinks": {
+      "label": "Load from\nprojectLinks.js",
+      "shape": "parallelogram"
+    },
+    "createButtons": {
+      "label": "Create demo/source buttons"
+    },
+    "appendButtons": {
+      "label": "Add buttons to project cards"
+    }
+  },
+  "connections": [
+    [
+      "loadLinks",
+      "createButtons"
+    ],
+    [
+      "createButtons",
+      "appendButtons"
+    ]
+  ]
+}

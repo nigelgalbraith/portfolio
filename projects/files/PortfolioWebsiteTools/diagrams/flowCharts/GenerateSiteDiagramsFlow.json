@@ -1,0 +1,26 @@
+{
+  "nodes": {
+    "loadJSON": {
+      "label": "Load site JSON definitions",
+      "shape": "parallelogram"
+    },
+    "buildMermaid": {
+      "label": "Build Mermaid .mmd syntax"
+    },
+    "writeMMD": {
+      "label": "Save .mmd file"
+    },
+    "renderSVG": {
+      "label": "Render to .svg (mmdc)"
+    },
+    "renderPNG": {
+      "label": "Render to .png (hi-res)"
+    }
+  },
+  "connections": [
+    ["loadJSON", "buildMermaid"],
+    ["buildMermaid", "writeMMD"],
+    ["writeMMD", "renderSVG"],
+    ["renderSVG", "renderPNG"]
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "nodes": {
+    "loadCarousel": {
+      "label": "Load from\ncarouselData.js",
+      "shape": "parallelogram"
+    },
+    "buildSlides": {
+      "label": "Create image slides"
+    },
+    "initCarousel": {
+      "label": "Initialize slider behavior"
+    }
+  },
+  "connections": [
+    [
+      "loadCarousel",
+      "buildSlides"
+    ],
+    [
+      "buildSlides",
+      "initCarousel"
+    ]
+  ]
+}

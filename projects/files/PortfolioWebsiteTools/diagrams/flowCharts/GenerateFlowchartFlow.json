@@ -1,0 +1,22 @@
+{
+  "nodes": {
+    "loadDiagramData": {
+      "label": "Load node + edge JSON",
+      "shape": "parallelogram"
+    },
+    "applyStyles": {
+      "label": "Apply layout + styles"
+    },
+    "buildGraph": {
+      "label": "Build Graphviz diagram"
+    },
+    "renderPNG": {
+      "label": "Render .png to output folder"
+    }
+  },
+  "connections": [
+    ["loadDiagramData", "applyStyles"],
+    ["applyStyles", "buildGraph"],
+    ["buildGraph", "renderPNG"]
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "nodes": {
+    "detectClick": {
+      "label": "Detect click on image"
+    },
+    "showModal": {
+      "label": "Open zoomed modal"
+    },
+    "closeModal": {
+      "label": "Enable close interaction"
+    }
+  },
+  "connections": [
+    [
+      "detectClick",
+      "showModal"
+    ],
+    [
+      "showModal",
+      "closeModal"
+    ]
+  ]
+}
