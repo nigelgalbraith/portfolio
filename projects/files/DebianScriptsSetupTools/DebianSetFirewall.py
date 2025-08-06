@@ -9,11 +9,9 @@ from shutil import which
 
 from modules.display_utils import print_dict_table, print_list_section
 from modules.system_utils import check_account, get_model, ensure_dependencies_installed, secure_logs_for_user
-from modules.json_utils import build_indexed_jobs, get_indexed_field_list
+from modules.json_utils import build_indexed_jobs, get_indexed_field_list, get_value_from_json
 from modules.logger_utils import log_and_print, setup_logging, rotate_logs
-from modules.firewall_utils import (
-    allow_application, allow_port_for_ip, allow_port_range_for_ip,
-)
+from modules.firewall_utils import allow_application, allow_port_for_ip, allow_port_range_for_ip
 
 # === CONSTANTS ===
 PRIMARY_CONFIG = "config/AppConfigSettings.json"
@@ -54,15 +52,21 @@ def main():
     model = get_model()
     log_and_print(f"Detected model: {model}")
 
-    with open(PRIMARY_CONFIG) as f:
-        config = json.load(f)
-    firewall_path = config.get(model, {}).get(CONFIG_KEY)
+    # Load firewall path using fallback-enabled function
+    firewall_path, used_default = get_value_from_json(PRIMARY_CONFIG, model, CONFIG_KEY)
 
     if not firewall_path or not Path(firewall_path).exists():
-        log_and_print(f"Firewall config not found for model '{model}'.")
+        log_and_print(f"Firewall config not found for model '{model}' or fallback.")
         return
 
     log_and_print(f"Using firewall config: {firewall_path}")
+
+    # Warn if fallback is used
+    if used_default:
+        log_and_print("NOTE: The default service configuration is being used.")
+        log_and_print(f"To customize services for model '{model}', create a model-specific config file")
+        log_and_print(f"e.g. -'config/desktop/DesktopFW.json' and add an entry for '{model}' in 'config/AppConfigSettings.json'.")
+        model = "default"
 
     # Show rules before applying
     with open(firewall_path) as f:

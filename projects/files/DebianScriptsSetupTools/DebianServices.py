@@ -56,11 +56,20 @@ def main():
     model = get_model()
     log_and_print(f"Detected model: {model}")
 
-    # Load config path for this model
-    services_file = get_value_from_json(PRIMARY_CONFIG, model, SERVICE_KEY)
+    # Load config path for this model (with fallback detection)
+    services_file, used_default = get_value_from_json(PRIMARY_CONFIG, model, SERVICE_KEY)
+
     if not services_file or not Path(services_file).exists():
-        log_and_print(f"No services config file found for model '{model}'.")
+        log_and_print(f"No services config file found for model '{model}' or fallback.")
         return
+
+    log_and_print(f"Using service config file: {services_file}")
+
+    if used_default:
+        log_and_print("NOTE: The default service configuration is being used.")
+        log_and_print(f"To customize services for model '{model}', create a model-specific config file")
+        log_and_print(f"e.g. -'config/desktop/DesktopServices.json' and add an entry for '{model}' in 'config/AppConfigSettings.json'.")
+        model = "default"
 
     log_and_print(f"Using service config file: {services_file}")
     service_keys = get_json_keys(services_file, model, SERVICE_KEY)

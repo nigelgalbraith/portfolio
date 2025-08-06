@@ -5,17 +5,10 @@ from pathlib import Path
 import datetime
 from modules.system_utils import check_account, get_model, ensure_dependencies_installed
 from modules.logger_utils import log_and_print, setup_logging, rotate_logs
-from modules.json_utils import filter_jobs_by_status
+from modules.json_utils import filter_jobs_by_status, get_value_from_json
 from modules.display_utils import format_status_summary
 from modules.json_utils import get_json_keys
-
-# Local flatpak-specific functions
-from modules.flatpak_utils import (
-    ensure_flathub,
-    check_flatpak_status,
-    install_flatpak_app,
-    uninstall_flatpak_app
-)
+from modules.flatpak_utils import ensure_flathub, check_flatpak_status, install_flatpak_app, uninstall_flatpak_app
 
 # Constants
 PRIMARY_CONFIG = "config/AppConfigSettings.json"
@@ -50,17 +43,21 @@ def main():
     model = get_model()
     log_and_print(f"Detected model: {model}")
 
-    # Load the primary config to find the model's Flatpak config path
-    with open(PRIMARY_CONFIG) as f:
-        config = json.load(f)
+    # Get the path to the model-specific Flatpak app list (with fallback)
+    flatpak_file, used_default = get_value_from_json(PRIMARY_CONFIG, model, FLATPAK_KEY)
 
-    # Get the path to the model-specific Flatpak app list
-    flatpak_file = config.get(model, {}).get(FLATPAK_KEY) or config.get("default", {}).get(FLATPAK_KEY)
     if not flatpak_file or not Path(flatpak_file).exists():
-        log_and_print(f"No Flatpak config file found for model '{model}'.")
+        log_and_print(f"No Flatpak config file found for model '{model}' or fallback.")
         return
 
     log_and_print(f"Using Flatpak config: {flatpak_file}")
+
+    # Warn if fallback is used
+    if used_default:
+        log_and_print("NOTE: The default service configuration is being used.")
+        log_and_print(f"To customize services for model '{model}', create a model-specific config file")
+        log_and_print(f"e.g. -'config/desktop/DesktopApps.json' and add an entry for '{model}' in 'config/AppConfigSettings.json'.")
+        model = "default"
 
     # Get a list of Flatpak app IDs from the model config file
     app_ids = get_json_keys(flatpak_file, model, FLATPAK_KEY)

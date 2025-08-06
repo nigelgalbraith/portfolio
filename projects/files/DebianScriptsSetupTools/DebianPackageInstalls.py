@@ -29,24 +29,29 @@ def main():
     if not check_account(expected_user=REQUIRED_USER):
         return
 
-    # Detect the hardware model of the system
+    # Detect model
     model = get_model()
     log_and_print(f"Detected model: {model}")
 
-    # Load the package list path from the primary config based on model
-    package_file = get_value_from_json(PRIMARY_CONFIG, model, PACKAGES_KEY)
+    # Get package file and detect fallback
+    package_file, used_default = get_value_from_json(PRIMARY_CONFIG, model, PACKAGES_KEY)
     if not package_file or not os.path.isfile(package_file):
         log_and_print(f"No valid package config file found for model '{model}'")
         return
 
+    log_and_print(f"Using package config file '{package_file}'")
+
+    if used_default:
+        log_and_print("NOTE: The default service configuration is being used.")
+        log_and_print(f"To customize services for model '{model}', create a model-specific config file")
+        log_and_print(f"e.g. -'config/desktop/DesktopApps.json' and add an entry for '{model}' in 'config/AppConfigSettings.json'.")
+
+
     # Load the actual list of packages from the resolved package config file
-    packages = get_list_from_json(package_file, model, PACKAGES_KEY)
-    if not packages:
+    package_status = get_list_from_json(package_file, model, PACKAGES_KEY, check_package)
+    if not package_status:
         log_and_print(f"Could not read Packages from {package_file}")
         return
-
-    # Check install status for each package
-    package_status = {pkg: check_package(pkg) for pkg in packages}
 
     # Print summary of current package statuses
     summary = format_status_summary(package_status, label=SUMMARY_LABEL, count_keys=["INSTALLED", "NOT INSTALLED"])

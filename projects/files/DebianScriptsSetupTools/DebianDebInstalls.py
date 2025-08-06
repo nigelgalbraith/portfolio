@@ -8,12 +8,7 @@ from modules.system_utils import check_account, get_model, ensure_dependencies_i
 from modules.json_utils import get_value_from_json, get_json_keys, filter_jobs_by_status
 from modules.package_utils import check_package
 from modules.display_utils import format_status_summary
-from modules.package_utils import (
-    download_deb_file,
-    install_deb_file,
-    uninstall_deb_package,
-    start_service_if_enabled
-)
+from modules.package_utils import download_deb_file, install_deb_file, uninstall_deb_package, start_service_if_enabled
 
 # CONSTANTS
 PRIMARY_CONFIG = "config/AppConfigSettings.json"
@@ -46,11 +41,21 @@ def main():
     log_and_print(f"Detected model: {model}")
 
     # Get the path to the model-specific DEB config file from the main config
-    deb_file = get_value_from_json(PRIMARY_CONFIG, model, DEB_KEY)
+    deb_file, used_default = get_value_from_json(PRIMARY_CONFIG, model, DEB_KEY)
+
     if not deb_file or not Path(deb_file).exists():
-        log_and_print(f"Invalid DEB config path for model '{model}'")
+        log_and_print(f"Invalid DEB config path for model '{model}' or fallback.")
         return
 
+    log_and_print(f"Using DEB config file: {deb_file}")
+
+    # Warn if fallback is used
+    if used_default:
+        log_and_print("NOTE: The default service configuration is being used.")
+        log_and_print(f"To customize services for model '{model}', create a model-specific config file")
+        log_and_print(f"e.g. -'config/desktop/DesktopApps.json' and add an entry for '{model}' in 'config/AppConfigSettings.json'.")
+        model = "default"
+   
     # Load the JSON config file that contains package information
     with open(deb_file) as f:
         json_data = json.load(f)

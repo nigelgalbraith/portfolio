@@ -15,46 +15,57 @@ Assumes well-structured JSON files organized by top-level keys like models or co
 
 import json
 from pathlib import Path
+from typing import Callable, Optional, Union
 
 
 def get_value_from_json(config_path, top_key, key):
     """
     Returns value for a specific key from a JSON config, with fallback to 'default'.
-
+    
     Args:
         config_path (str or Path): Path to the JSON config file.
         top_key (str): Primary key to look under (e.g. machine model).
         key (str): Specific key to retrieve.
-
+    
     Returns:
-        str or None: The value found, or the fallback from 'default'.
-
+        tuple: (value, used_default: bool)
+    
     Example:
-        get_value_from_json("config.json", "LaptopModel1", "hostname")
+        value, used_default = get_value_from_json("config.json", "LaptopModel1", "hostname")
     """
     with open(config_path) as f:
         config = json.load(f)
-    return config.get(top_key, {}).get(key) or config.get("default", {}).get(key)
+    
+    if top_key in config and key in config[top_key]:
+        return config[top_key][key], False
+    
+    return config.get("default", {}).get(key), True
 
 
-def get_list_from_json(json_file, top_key, key):
+
+def get_list_from_json(json_file, top_key, key, check_fn=None):
     """
     Extract a list of values from a JSON file using a top-level key, with fallback to 'default'.
+    Optionally apply a check or transformation function to each item.
 
     Args:
         json_file (str or Path): Path to the JSON file.
         top_key (str): Section to retrieve from.
         key (str): The list field under that section.
+        check_fn (callable, optional): Function to apply to each item in the list.
 
     Returns:
-        list: The list of values, or fallback from 'default'.
-
-    Example:
-        get_list_from_json("config.json", "LaptopModel1", "packages")
+        list or dict: Raw list or dict of {item: check_fn(item)} if check_fn is provided.
     """
     with open(json_file) as f:
         data = json.load(f)
-    return data.get(top_key, {}).get(key, []) or data.get("default", {}).get(key, [])
+    
+    items = data.get(top_key, {}).get(key, []) or data.get("default", {}).get(key, [])
+    
+    if check_fn:
+        return {item: check_fn(item) for item in items}
+    
+    return items
 
 
 def get_json_keys(json_path, top_key, block_key):

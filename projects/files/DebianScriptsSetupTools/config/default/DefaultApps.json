@@ -1,0 +1,28 @@
+{
+  "default": {
+    "Packages": [
+      "vlc"
+    ],
+    "DEB": {
+      "github-desktop": {
+        "DownloadURL": "https://github.com/shiftkey/desktop/releases/download/release-3.2.1-linux1/GitHubDesktop-linux-3.2.1-linux1.deb",
+        "EnableService": false
+      }
+    },
+    "ThirdParty": {
+      "docker-ce": {
+        "name": "Docker Engine",
+        "type": "apt-repo",
+        "url": "https://download.docker.com/linux/debian",
+        "key": "https://download.docker.com/linux/debian/gpg",
+        "codename": "bookworm",
+        "component": "stable"
+      }
+    },
+    "Flatpak": {
+      "io.github.nate_xyz.Conjure": {
+        "remote": "flathub"
+      }
+    }
+  }
+}

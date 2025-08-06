@@ -1,0 +1,22 @@
+{
+  "default": {
+    "Applications": [
+      "openssh-server"
+    ],
+    "SinglePorts": [
+      {
+        "Port": 22,
+        "Protocol": "tcp",
+        "IPs": ["127.0.0.1"]
+      }
+    ],
+    "PortRanges": [
+      {
+        "StartPort": 8000,
+        "EndPort": 8010,
+        "Protocol": "tcp",
+        "IPs": ["127.0.0.1"]
+      }
+    ]
+  }
+}

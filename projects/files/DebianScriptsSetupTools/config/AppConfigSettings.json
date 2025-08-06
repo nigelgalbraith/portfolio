@@ -18,5 +18,13 @@
     "ThirdParty": "config/laptop/LaptopApps.json",
     "FireWall":"config/laptop/LaptopFW.json",
     "Flatpak":"config/laptop/LaptopApps.json"
+  },
+    "default": {
+    "Packages": "config/default/DefaultApps.json",
+    "DEB": "config/default/DefaultApps.json",
+    "ThirdParty": "config/default/DefaultApps.json",
+    "FireWall":"config/default/DefaultFW.json",
+    "Flatpak":"config/default/DefaultApps.json",
+    "Services": "config/default/DefaultServices.json"
   }
 }

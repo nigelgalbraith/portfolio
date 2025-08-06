@@ -1,3 +1,4 @@
+
 import os
 import json
 import datetime
@@ -5,15 +6,10 @@ from pathlib import Path
 
 from modules.logger_utils import setup_logging, log_and_print, rotate_logs
 from modules.system_utils import check_account, get_model, ensure_dependencies_installed
-from modules.json_utils import get_value_from_json, get_json_keys
+from modules.json_utils import get_value_from_json, get_json_keys, filter_jobs_by_status
 from modules.package_utils import check_package, install_packages, uninstall_packages
 from modules.display_utils import format_status_summary
-from modules.apt_repo_utils import (
-    add_apt_repository,
-    remove_apt_repo_and_keyring,
-    conflicting_repo_entry_exists
-)
-from modules.json_utils import filter_jobs_by_status
+from modules.apt_repo_utils import add_apt_repository, remove_apt_repo_and_keyring, conflicting_repo_entry_exists
 
 # CONSTANTS
 PRIMARY_CONFIG = "config/AppConfigSettings.json"
@@ -51,10 +47,20 @@ def main():
     log_and_print(f"Detected model: {model}")
 
     # Get the path to the model-specific third-party JSON config file
-    tp_file = get_value_from_json(PRIMARY_CONFIG, model, THIRD_PARTY_KEY)
+    tp_file, used_default = get_value_from_json(PRIMARY_CONFIG, model, THIRD_PARTY_KEY)
+
     if not tp_file or not Path(tp_file).exists():
-        log_and_print(f"No third-party config for model '{model}'")
+        log_and_print(f"No third-party config file found for model '{model}' or fallback.")
         return
+
+    log_and_print(f"Using third-party config file: {tp_file}")
+
+    # Warn if fallback is used
+    if used_default:
+        log_and_print("NOTE: The default service configuration is being used.")
+        log_and_print(f"To customize services for model '{model}', create a model-specific config file")
+        log_and_print(f"e.g. -'config/desktop/DesktopApps.json' and add an entry for '{model}' in 'config/AppConfigSettings.json'.")
+        model = "default"
 
     # Load the JSON data for the model's third-party packages
     with open(tp_file) as f:
