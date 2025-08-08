@@ -1,25 +1,35 @@
 {
-  "YOUR MEDIACENTRE MODEL": {
+  "HPCompaqElite8300SFF": {
     "Services": {
       "Plexmedia": {
         "Name": "plexmedia",
-        "ScriptSrc": "Services/mount_plex-template.sh",
+        "ScriptSrc": "Services/plexMount/mount_plex-template.sh",
         "ScriptDest": "/usr/local/bin/mount_plex.sh",
-        "ServiceSrc": "Services/mount_plex-template.service",
+        "ServiceSrc": "Services/plexMount/mount_plex-template.service",
         "ServiceDest": "/etc/systemd/system/mount_plex.service",
         "ServiceName": "mount_plex.service",
         "LogPath": "/var/log/mount_plex.log",
-        "LogrotateCfg": "Services/mount_plex.logrotate"
+        "LogrotateCfg": "Services/plexMount/mount_plex.logrotate"
       },
       "PlexPermissions": {
         "Name": "plex_permissions",
-        "ScriptSrc": "Services/update_plex_permissions-template.sh",
+        "ScriptSrc": "Services/plexPermissions/update_plex_permissions-template.sh",
         "ScriptDest": "/usr/local/bin/update_plex_permissions.sh",
-        "ServiceSrc": "Services/update_plex_permissions-template.service",
+        "ServiceSrc": "Services/plexPermissions/update_plex_permissions-template.service",
         "ServiceDest": "/etc/systemd/system/update_plex_permissions.service",
         "ServiceName": "update_plex_permissions.service",
         "LogPath": "/var/log/update_plex_permissions.log",
-        "LogrotateCfg": "Services/update_plex_permissions.logrotate"
+        "LogrotateCfg": "Services/plexPermissions/update_plex_permissions.logrotate"
+      },
+      "PlexRename": {
+        "Name": "plex_rename_folders",
+        "ScriptSrc": "Services/plexRename/plex_rename_folders-template.sh",
+        "ScriptDest": "/usr/local/bin/plex_rename_folders.sh",
+        "ServiceSrc": "Services/plexRename/plex_rename_folders-template.service",
+        "ServiceDest": "/etc/systemd/system/plex_rename_folders.service",
+        "ServiceName": "plex_rename_folders.service",
+        "LogPath": "/var/log/plex_rename_folders.log",
+        "LogrotateCfg": "Services/plexRename/plex_rename_folders.logrotate"
       }
     }
   }
