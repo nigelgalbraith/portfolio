@@ -245,6 +245,3 @@ def map_values_from_named_block(json_file, top_key, block_key, field_name, func=
         for item_name, meta in block.items()
         if field_name in meta
     }
-
-
-

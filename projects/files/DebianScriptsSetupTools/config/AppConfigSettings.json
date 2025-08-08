@@ -1,18 +1,18 @@
 {
-  "YOUR DESKTOP MODEL": {
+  "10A6S1A600": {
     "Packages": "config/desktop/DesktopApps.json",
     "DEB": "config/desktop/DesktopApps.json",
     "ThirdParty": "config/desktop/DesktopApps.json",
     "FireWall":"config/desktop/DesktopFW.json",
     "Flatpak":"config/desktop/DesktopApps.json"
   },
-  "YOUR MEDIACENTRE MODEL": {
+  "HPCompaqElite8300SFF": {
     "Packages": "config/mediaCentre/MediaCentreApps.json",
     "DEB": "config/mediaCentre/MediaCentreApps.json",
     "Services": "config/mediaCentre/MediaCentreServices.json",
     "FireWall":"config/mediaCentre/MediaCentreFW.json"
   },
-  "YOUR LAPTOP MODEL": {
+  "HPEliteBook2540p": {
     "Packages": "config/laptop/LaptopApps.json",
     "DEB": "config/laptop/LaptopApps.json",
     "ThirdParty": "config/laptop/LaptopApps.json",
