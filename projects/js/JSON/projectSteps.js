@@ -393,7 +393,7 @@ thematic: [
       title: "Step 1: Link Your Model in AppConfigSettings.json",
       img: "DebianEditAppConfig.png",
       alt: "Edit AppConfigSettings.json",
-      text: "Each system model (e.g. `ThinkPadX1`) must be defined in `AppConfigSettings.json`. This file tells the install scripts where to find your model-specific config files:\n\n```json\n\"ThinkPadX1\": {\n  \"Packages\": \"config/laptop/LaptopApps.json\",\n  \"DEB\": \"config/laptop/LaptopApps.json\",\n  \"ThirdParty\": \"config/laptop/LaptopApps.json\",\n  \"Flatpak\": \"config/laptop/LaptopApps.json\",\n  \"FireWall\": \"config/laptop/LaptopFW.json\",\n  \"Services\": \"config/laptop/LaptopServices.json\"\n}\n```"
+      text: "Each system model (e.g. `ThinkPadX1`) must be defined in `AppConfigSettings.json`. This file tells the install scripts where to find your model-specific config files"
     },
 
     // --- APT Packages ---
@@ -401,7 +401,7 @@ thematic: [
       title: "Step 2: Define APT Packages",
       img: "DebianEditPackages.png",
       alt: "APT Package List in JSON",
-      text: "In your model's config file (e.g., `LaptopApps.json`), list APT packages under the `Packages` key:\n\n```json\n\"Packages\": [\"vlc\", \"ufw\", \"timeshift\"]\n```"
+      text: "In your model's config file (e.g., `LaptopApps.json`), list APT packages under the `Packages`key"
     },
     {
       title: "APT Package Installer Flowchart",
@@ -415,7 +415,7 @@ thematic: [
       title: "Step 3: Add .deb File Installers",
       img: "DebianEditDeb.png",
       alt: "DEB Installer JSON Structure",
-      text: "Still in the same config file, define `.deb` packages under the `DEB` key. These are direct downloads:\n\n```json\n\"DEB\": {\n  \"plexmediaserver\": {\n    \"DownloadURL\": \"https://downloads.plex.tv/.../plex.deb\",\n    \"EnableService\": true\n  }\n}\n```"
+      text: "Still in the same config file, define `.deb` packages under the `DEB` key. These are direct downloads"
     },
     {
       title: "DEB Installer Flowchart",
@@ -429,7 +429,7 @@ thematic: [
       title: "Step 4: Add Flatpak Applications",
       img: "DebianEditFlatpak.png",
       alt: "Flatpak App JSON Structure",
-      text: "Add Flatpak apps under the `Flatpak` key, using app IDs and their remote source:\n\n```json\n\"Flatpak\": {\n  \"io.github.nate_xyz.Conjure\": {\n    \"remote\": \"flathub\"\n  }\n}\n```"
+      text: "Add Flatpak apps under the `Flatpak` key, using app IDs and their remote source"
     },
     {
       title: "Flatpak Installer Flowchart",
@@ -443,7 +443,7 @@ thematic: [
       title: "Step 5: Configure Third-Party APT Repos",
       img: "DebianEditThirdParty.png",
       alt: "Third-Party APT Repo JSON",
-      text: "Define third-party APT repos under the `ThirdParty` key. This enables external software sources:\n\n```json\n\"ThirdParty\": {\n  \"docker-ce\": {\n    \"url\": \"https://download.docker.com/linux/debian\",\n    \"key\": \"https://download.docker.com/linux/debian/gpg\",\n    \"codename\": \"bookworm\",\n    \"component\": \"stable\"\n  }\n}\n```"
+      text: "Define third-party APT repos under the `ThirdParty` key. This enables external software sources"
     },
     {
       title: "Third-Party APT Installer Flowchart",
@@ -457,7 +457,7 @@ thematic: [
       title: "Step 6: Set Firewall Rules",
       img: "DebianEditFirewall.png",
       alt: "Firewall JSON Structure",
-      text: "Define firewall settings in a separate file (e.g. `LaptopFW.json`) using `SinglePorts`, `PortRanges`, and `Applications` keys:\n\n```json\n\"SinglePorts\": [\n  {\n    \"Port\": 22,\n    \"Protocol\": \"tcp\",\n    \"IPs\": [\"192.168.1.100\"]\n  }\n]\n```"
+      text: "Define firewall settings in a separate file (e.g. `LaptopFW.json`) using `SinglePorts`, `PortRanges`, and `Applications` keys"
     },
     {
       title: "Firewall Rules Flowchart",
@@ -471,7 +471,7 @@ thematic: [
       title: "Step 7: Add Systemd Services",
       img: "DebianEditServices.png",
       alt: "Service Configuration JSON",
-      text: "Create a `Services` JSON file with systemd unit and script paths. It can also define logrotate configs:\n\n```json\n\"Services\": {\n  \"plex_permissions\": {\n    \"ScriptSrc\": \"Services/plex.sh\",\n    \"ScriptDest\": \"/usr/local/bin/plex.sh\",\n    \"ServiceSrc\": \"Services/plex.service\",\n    \"ServiceDest\": \"/etc/systemd/system/plex.service\",\n    \"ServiceName\": \"plex.service\",\n    \"LogPath\": \"/var/log/plex.log\",\n    \"LogrotateCfg\": \"Services/plex.logrotate\"\n  }\n}\n```"
+      text: "Create a `Services` JSON file with systemd unit and script paths. It can also define logrotate configs"
     },
     {
       title: "Service Deployment Flowchart",
