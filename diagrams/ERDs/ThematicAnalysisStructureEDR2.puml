@@ -6,8 +6,15 @@ skinparam BackgroundColor #ffffff
 skinparam ClassBackgroundColor #dab3ff
 skinparam ClassBorderColor #4b0082
 skinparam ClassFontColor #000000
+skinparam ClassFontStyle bold
+skinparam ClassAttributeIconSize 0
+skinparam DefaultFontName Arial
+skinparam DefaultFontSize 16
 skinparam ArrowColor #0000ff
+skinparam ArrowFontColor #000000
+skinparam ArrowThickness 2
 skinparam LineColor #0000ff
+skinparam LineThickness 2
 skinparam linetype ortho
 skinparam roundcorner 15
 skinparam shadowing false
@@ -34,9 +41,8 @@ class "Search Tool" as SearchTool {
 }
 
 ' --- relationships ---
-ThematicAnalysis::Factor ||-left-o{ Glossary::Factor
-ThematicAnalysis::Factor ||-right-o{ SearchTool::Factor
-ThematicAnalysis::Extract ||-right-o{ SearchTool::Extract
+ThematicAnalysis ||-left-o{ Glossary
+ThematicAnalysis ||-right-o{ SearchTool
 Glossary -[hidden]right- SearchTool
 ThematicAnalysis -[hidden]down- Glossary
 ThematicAnalysis -[hidden]down- SearchTool

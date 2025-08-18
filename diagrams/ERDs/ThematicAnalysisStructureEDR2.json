@@ -34,8 +34,7 @@
   ],
   "relationships": [
     { "from": "ThematicAnalysis", "to": "Glossary",   "cardinality": "1..N", "direction": "left"  },
-    { "from": "ThematicAnalysis", "to": "SearchTool", "cardinality": "1..N", "direction": "right" },
-    { "from": "ThematicAnalysis", "to": "SearchTool", "cardinality": "1..N", "direction": "right", "label": "" }
+    { "from": "ThematicAnalysis", "to": "SearchTool", "cardinality": "1..N", "direction": "right" }
   ],
   "layout": {
     "same_row": [["Glossary", "SearchTool"]],
