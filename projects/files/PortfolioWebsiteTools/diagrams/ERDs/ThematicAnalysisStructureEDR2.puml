@@ -41,8 +41,8 @@ class "Search Tool" as SearchTool {
 }
 
 ' --- relationships ---
-ThematicAnalysis ||-left-o{ Glossary
-ThematicAnalysis ||-right-o{ SearchTool
+ThematicAnalysis ||-down-o{ Glossary
+ThematicAnalysis ||-down-o{ SearchTool
 Glossary -[hidden]right- SearchTool
 ThematicAnalysis -[hidden]down- Glossary
 ThematicAnalysis -[hidden]down- SearchTool
