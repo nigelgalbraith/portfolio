@@ -1,0 +1,45 @@
+{
+  "prelude": [
+    "hide stereotype",
+    "hide circle"
+  ],
+  "skinparams": {
+    "BackgroundColor": "#ffffff",
+
+    "ClassBackgroundColor": "#dab3ff",
+    "ClassBorderColor": "#4b0082",
+    "ClassFontColor": "#000000",
+    "ClassFontStyle": "bold",
+    "ClassAttributeIconSize": 0,
+
+    "DefaultFontName": "Arial",
+    "DefaultFontSize": 16,
+
+    "ArrowColor": "#0000ff",
+    "ArrowFontColor": "#000000",
+    "ArrowThickness": 2,
+
+    "LineColor": "#0000ff",
+    "LineThickness": 2,
+
+    "linetype": "ortho",
+    "roundcorner": 15,
+    "shadowing": false
+  },
+  "hide": [],
+  "stereotypes": {
+    "default": "table",
+    "per_entity": {}
+  },
+  "relationship_styles": {
+    "cardinality_map": {
+      "1..1": "||--||",
+      "1..N": "||--o{",
+      "0..N": "|o--o{",
+      "0..1": "|o--||",
+      "N..N": "}o--o{",
+      "N..1": "}o--||"
+    }
+  },
+  "footer": []
+}
