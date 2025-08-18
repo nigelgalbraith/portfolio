@@ -103,10 +103,17 @@ def main():
     print("[INFO] If rendering fails, try running this script from a terminal.")
     print("Example: python3 generate_site_maps.py\n")
 
+    # Check that required system commands are available
     check_command("node", "Node.js")
     check_command("npm", "Node Package Manager")
     check_command(MMDC_COMMAND, "Mermaid CLI")
 
+    # Ensure the output directory exists before generating diagrams
+    if not OUTPUT_DIR.is_dir():
+        print(f"[ERROR] Output directory does not exist: {OUTPUT_DIR}")
+        sys.exit(1)
+
+    # Process all JSON files in the sitemap directory
     for json_file in sorted(SITEMAP_DIR.glob("*.json")):
         name = json_file.stem
         print(f"\n[INFO] Processing: {name}")
@@ -121,7 +128,7 @@ def main():
 
         mermaid_lines = ["graph TD\n"]
 
-        # Build subgraphs (up to 3)
+        # Build subgraphs (up to 4 levels)
         for key_level in ("key_main", "key_second", "key_third", "key_fourth"):
             if key_level in meta:
                 node_key = meta[key_level]
@@ -146,6 +153,7 @@ def main():
         svg_file = json_file.with_suffix(".svg")
         png_file = OUTPUT_DIR / (json_file.stem + ".png")
 
+        # Write and render
         write_mermaid_file(mermaid_lines, mmd_file)
         render_mermaid_files(mmd_file, svg_file, png_file, MMDC_COMMAND, config_path=CONFIG_FILE)
 

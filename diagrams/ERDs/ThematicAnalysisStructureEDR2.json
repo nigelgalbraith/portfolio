@@ -1,0 +1,44 @@
+{
+  "title": "Thematic Analysis ERD",
+  "entities": [
+    {
+      "name": "ThematicAnalysis",
+      "display": "Thematic Analysis",
+      "columns": [
+        { "name": "ID" },
+        { "name": "Extract" },
+        { "name": "Fact" },
+        { "name": "Factor" },
+        { "name": "Note" }
+      ]
+    },
+    {
+      "name": "Glossary",
+      "display": "Glossary",
+      "columns": [
+        { "name": "Factor" },
+        { "name": "Group" },
+        { "name": "Sub Group" }
+      ]
+    },
+    {
+      "name": "SearchTool",
+      "display": "Search Tool",
+      "columns": [
+        { "name": "Factor" },
+        { "name": "Catergory" },
+        { "name": "Sub Category" },
+        { "name": "Extract" }
+      ]
+    }
+  ],
+  "relationships": [
+    { "from": "ThematicAnalysis", "to": "Glossary",   "cardinality": "1..N", "direction": "left"  },
+    { "from": "ThematicAnalysis", "to": "SearchTool", "cardinality": "1..N", "direction": "right" },
+    { "from": "ThematicAnalysis", "to": "SearchTool", "cardinality": "1..N", "direction": "right", "label": "" }
+  ],
+  "layout": {
+    "same_row": [["Glossary", "SearchTool"]],
+    "rank": { "top": ["ThematicAnalysis"], "bottom": ["Glossary", "SearchTool"] }
+  }
+}

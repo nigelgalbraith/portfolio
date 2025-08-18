@@ -147,8 +147,15 @@ def main():
     Main routine: check requirements, load each diagram JSON from folder,
     and generate flowchart PNGs using base filenames.
     """
+    # Check that the required Graphviz binary and Python module are installed
     check_command(CHECK_CMD, CHECK_DES)
 
+    # Ensure output directory exists
+    if not os.path.isdir(OUTPUT_DIR):
+        print(f"[ERROR] Output directory does not exist: {OUTPUT_DIR}")
+        sys.exit(1)
+
+    # Loop through all JSON files in the flowchart directory
     for filename in os.listdir(FLOWCHART_DIR):
         if not filename.endswith("Flow.json"):
             continue

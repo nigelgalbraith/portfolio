@@ -1,0 +1,43 @@
+@startuml
+title Thematic Analysis ERD
+hide stereotype
+hide circle
+skinparam BackgroundColor #ffffff
+skinparam ClassBackgroundColor #dab3ff
+skinparam ClassBorderColor #4b0082
+skinparam ClassFontColor #000000
+skinparam ArrowColor #0000ff
+skinparam LineColor #0000ff
+skinparam linetype ortho
+skinparam roundcorner 15
+skinparam shadowing false
+' --- entities ---
+class "Thematic Analysis" as ThematicAnalysis {
+  ID
+  Extract
+  Fact
+  Factor
+  Note
+}
+
+class "Glossary" as Glossary {
+  Factor
+  Group
+  Sub Group
+}
+
+class "Search Tool" as SearchTool {
+  Factor
+  Catergory
+  Sub Category
+  Extract
+}
+
+' --- relationships ---
+ThematicAnalysis::Factor ||-left-o{ Glossary::Factor
+ThematicAnalysis::Factor ||-right-o{ SearchTool::Factor
+ThematicAnalysis::Extract ||-right-o{ SearchTool::Extract
+Glossary -[hidden]right- SearchTool
+ThematicAnalysis -[hidden]down- Glossary
+ThematicAnalysis -[hidden]down- SearchTool
+@enduml
