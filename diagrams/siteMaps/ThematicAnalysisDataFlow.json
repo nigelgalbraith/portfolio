@@ -1,0 +1,53 @@
+{
+  "meta": {
+    "main_label": "Data Exploration",
+    "second_label": "Factor Analysis",
+    "third_label": "Entities",
+    "main_title": "Data Exploration",
+    "second_title": "Factor Analysis",
+    "third_title": "Entities",
+    "key_main": "DataExploration",
+    "key_second": "FactorAnalysis",
+    "key_third": "Entities",
+    "key_links": "links",
+    "key_styles": "styles",
+    "key_classes": "classes",
+    "key_class_map": "class_map"
+  },
+  "DataExploration": {
+    "ThematicAnalysis": "Thematic Analysis"
+  },
+  "FactorAnalysis": {
+    "Glossary": "Glossary",
+    "SearchTool": "Search Tool"
+  },
+  "Entities": {
+    "factorG": "Factor",
+    "factorS": "Factor",
+    "group": "Group",
+    "sub_group": "Sub Group",
+    "category": "Category",
+    "sub_category": "Sub Category"
+  },
+  "links": [
+    ["ThematicAnalysis", "Glossary"],
+    ["ThematicAnalysis", "SearchTool"],
+    ["Glossary", "factorG"],
+    ["Glossary", "group"],
+    ["Glossary", "sub_group"],
+    ["SearchTool", "factorS"],
+    ["SearchTool", "category"],
+    ["SearchTool", "sub_category"]
+  ],
+  "class_map": {
+    "ThematicAnalysis": "primary",
+    "Glossary": "secondary",
+    "SearchTool": "secondary",
+    "factorG": "tertiary",
+    "group": "tertiary",
+    "sub_group": "tertiary",
+    "factorS": "tertiary",
+    "category": "tertiary",
+    "sub_category": "tertiary"
+  }
+}

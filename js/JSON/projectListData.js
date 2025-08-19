@@ -25,7 +25,7 @@ const PROJECT_LIST_DATA = [
     "img": "images/thumbs/optimized/PortfolioWebsite.png",
     "alt": "Portfolio Website Thumbnail",
     "title": "Portfolio Website",
-    "description": "This website was built from scratch using modular HTML and dynamic JavaScript injection. Each project page is templated with reusable loaders for clean, maintainable structure—no frameworks, just raw code."
+    "description": "This website was built from scratch using modular HTML and dynamic JavaScript injection. Each project page is templated with reusable loaders for clean, maintainable structure no frameworks, just raw code."
   },
   {
     "href": "projects/QuizCreator.html",

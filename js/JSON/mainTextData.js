@@ -73,7 +73,7 @@ const MAIN_TEXT_DATA = {
 "contact": {
     "paragraphs": [
         "If you'd like to get in touch, please reach out using one of the following methods:",
-        "Feel free to connect or send a message — I’d love to hear from you!"
+        "Feel free to connect or send a message I’d love to hear from you!"
     ],
     "lists": [
         {
@@ -104,10 +104,10 @@ const MAIN_TEXT_DATA = {
    "thematic": {
     "paragraphs": [
         "This project was created to streamline the process of thematic analysis by combining structured Excel sheets with automated data handling and web export tools. It simplifies what can often be a time-consuming and repetitive task, providing a more efficient way to organise and interpret qualitative data.",
-        "I designed this system to reduce manual overhead—no more constant copying, pasting, or cross-referencing between sheets. By using built-in macros and structured workflows, it helps maintain consistency across the analysis and ensures that factors, groupings, and categories are properly recorded and referenced.",
+        "I designed this system to reduce manual overhead no more constant copying, pasting, or cross-referencing between sheets. By using built-in macros and structured workflows, it helps maintain consistency across the analysis and ensures that factors, groupings, and categories are properly recorded and referenced.",
         "During my own work with qualitative datasets, I found that managing themes and tracking related metadata could quickly become overwhelming. This project gave me a more practical and repeatable approach, making it easier to focus on insights rather than formatting or troubleshooting formulas.",
         "The final output can be exported to a web-based format, allowing thematic findings to be reviewed and navigated more clearly. Glossaries, group relationships, and even basic risk assessment visuals are automatically included, making the end result both informative and accessible.",
-        "Like my other tools, this project was also an opportunity to apply what I’ve been learning in areas like Excel automation, Python scripting, and front-end web development. It’s flexible enough to adapt to different types of thematic work—whether for research, education, or internal reporting."
+        "Like my other tools, this project was also an opportunity to apply what I’ve been learning in areas like Excel automation, Python scripting, and front-end web development. It’s flexible enough to adapt to different types of thematic work whether for research, education, or internal reporting."
     ]
     },
     "powerShellCloudBackup": {
@@ -120,10 +120,10 @@ const MAIN_TEXT_DATA = {
     },
     "debianInstallSuite": {
       "paragraphs": [
-        "This collection of Python and Bash scripts automates the setup of Debian-based systems using a modular, model-aware design. Each script targets a specific aspect of system configuration—such as installing packages, setting up firewall rules, configuring RDP access, deploying system services, or managing third-party repositories. All behavior is driven by structured JSON config files that map to individual system models, making the tool flexible and scalable across diverse environments.",
+        "This collection of Python and Bash scripts automates the setup of Debian-based systems using a modular, model-aware design. Each script targets a specific aspect of system configuration such as installing packages, setting up firewall rules, configuring RDP access, deploying system services, or managing third-party repositories. All behavior is driven by structured JSON config files that map to individual system models, making the tool flexible and scalable across diverse environments.",
         "Scripts follow a consistent lifecycle: detect system model, load matching config, validate user input, execute the job, and log all results to a versioned logs directory. Each installer prompts users before making changes, reducing the risk of misconfiguration. Logging is built in at every stage, and logs are auto-rotated to avoid clutter.",
         "This suite is particularly useful for system administrators and IT teams who want to streamline repeatable setups for classrooms, labs, or business machines. Instead of maintaining a one-size-fits-all image, you can define clear rules for each device type and apply them with a single command.",
-        "All logic is modularized into shared utility modules—handling logging, service setup, file permissions, JSON parsing, and more—making the scripts easy to extend, debug, and maintain. Future enhancements could include GUI wrappers, remote execution tools, or Ansible-style batch automation built on top of this clean foundation."
+        "All logic is modularized into shared utility modules handling logging, service setup, file permissions, JSON parsing, and more making the scripts easy to extend, debug, and maintain. Future enhancements could include GUI wrappers, remote execution tools, or Ansible-style batch automation built on top of this clean foundation."
       ]
     }
 };

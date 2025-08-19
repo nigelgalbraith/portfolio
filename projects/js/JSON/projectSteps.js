@@ -10,6 +10,12 @@ thematic: [
     text: "This project uses a structured workflow to transform raw text into meaningful insights. At its core, the thematic analysis links Extracts (raw data) to Factors (identified themes), which are then grouped into Groups, Sub-Groups, and categorized further. This structured hierarchy allows for powerful visualizations, risk models, and filtering in the final web output.The process begins in Excel, where users record and classify data. A Python script converts the workbook into structured JSON, enabling dynamic exploration on the final webpages"
   },
   {
+    title: "Thematic Analysis Diagram",
+    img: "ThematicAnalysisDataFlow.png",
+    alt: "Diagram showing hierarchical flow of thematic analysis",
+    text: "This diagram illustrates how the thematic analysis connects each stage of the process. Starting from the central Thematic Analysis, the flow branches into Factor Analysis, which is split into Glossary and Search Tool components. Each of these then links to their associated entities, such as factors, groups, sub-groups, categories, and sub-categories. The visualization highlights the structured relationships that guide how data moves from initial extraction to organized insights."
+  },
+  {
     title: "Step 1: Enter Extracts and Identify Factors",
     img: "ThematicAnalysisIntial.png",
     alt: "Entering Extracts and Factors",
@@ -186,7 +192,7 @@ thematic: [
   portfolio: [
     {
     title: "HTML Architecture Plan",
-    text: "I began by mapping out the HTML structure of the site — deciding on core pages (like About, Resume, Projects), and how they would be linked together. This gave me a clear navigation flow and helped identify which project pages would sit underneath the main Projects page. Planning this first made it easier to keep internal linking and layout consistent.",
+    text: "I began by mapping out the HTML structure of the site deciding on core pages (like About, Resume, Projects), and how they would be linked together. This gave me a clear navigation flow and helped identify which project pages would sit underneath the main Projects page. Planning this first made it easier to keep internal linking and layout consistent.",
     img: "SiteHTMLStructure.png",
     alt: "Diagram showing how the main HTML pages and project subpages are connected"
     },
