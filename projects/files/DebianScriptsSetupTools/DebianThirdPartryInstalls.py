@@ -1,160 +1,227 @@
-
-import os
+#!/usr/bin/env python3
 import json
 import datetime
+import subprocess
 from pathlib import Path
 
 from modules.logger_utils import setup_logging, log_and_print, rotate_logs
 from modules.system_utils import check_account, get_model, ensure_dependencies_installed
-from modules.json_utils import get_value_from_json, get_json_keys, filter_jobs_by_status
-from modules.package_utils import check_package, install_packages, uninstall_packages
-from modules.display_utils import format_status_summary
-from modules.apt_repo_utils import add_apt_repository, remove_apt_repo_and_keyring, conflicting_repo_entry_exists
+from modules.json_utils import load_json, build_jobs_from_block
+from modules.package_utils import check_package, install_packages, uninstall_packages, filter_by_status
+from modules.display_utils import format_status_summary, select_from_list, confirm
+from modules.apt_repo_utils import (
+    add_apt_repository,
+    remove_apt_repo_and_keyring,
+    conflicting_repo_entry_exists,
+)
 
-# CONSTANTS
+# === CONFIG PATHS & KEYS ===
 PRIMARY_CONFIG = "config/AppConfigSettings.json"
 THIRD_PARTY_KEY = "ThirdParty"
+CONFIG_TYPE = "third-party"
+CONFIG_EXAMPLE = "config/desktop/DesktopThirdParty.json"
+DEFAULT_CONFIG = "default"  # used for fallback when model-specific entry is missing
+
+# === LOGGING ===
 LOG_DIR = Path.home() / "logs" / "thirdparty"
+LOGS_TO_KEEP = 10
 TIMESTAMP = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 LOG_FILE = LOG_DIR / f"thirdparty_install_{TIMESTAMP}.log"
-LOGS_TO_KEEP = 10
-ROTATE_LOG_NAME="thirdparty_install_*.log"
+ROTATE_LOG_NAME = "thirdparty_install_*.log"
+
+# === DEPENDENCIES ===
 DEPENDENCIES = ["curl", "gpg"]
-REQUIRED_USER = "standard"
+
+# === USER & MODEL ===
+REQUIRED_USER = "Standard"
+
+# === JSON FIELDS ===
 JSON_URL = "url"
 JSON_KEY = "key"
 JSON_CODENAME = "codename"
 JSON_COMPONENT = "component"
-JSON_PACKAGES = "packages"
-SUMMARY_LABEL = "Third Party Package"
+
+# === KEYRING ===
+KEY_RING_BASEPATH = "/usr/share/keyrings/"
+
+# === LABELS ===
+SUMMARY_LABEL = "Third-Party Package"
+TP_LABEL = "third-party packages"
+INSTALLED_LABEL = "INSTALLED"
+UNINSTALLED_LABEL = "UNINSTALLED"
+
+# === MENU LABELS ===
+MENU_TITLE      = "Select an option"
+ACTION_INSTALL  = f"Install required {THIRD_PARTY_KEY}"
+ACTION_REMOVE   = f"Uninstall all listed {THIRD_PARTY_KEY}"
+ACTION_CANCEL   = "Cancel"
+MENU_OPTIONS    = [ACTION_INSTALL, ACTION_REMOVE, ACTION_CANCEL]
+
+# === ACTIONS ===
+INSTALLATION_ACTION = "installation"
+UNINSTALLATION_ACTION = "uninstallation"
+
+# === FAILURE MESSAGES ===
+INSTALL_FAIL_MSG = "INSTALL FAILED"
+UNINSTALL_FAIL_MSG = "UNINSTALL FAILED"
+
+# === PROMPTS ===
+PROMPT_PROCEED = "Proceed with {action}? [y/n]: "
+
+# === CONFIG NOTES ===
+DEFAULT_CONFIG_NOTE = (
+    "NOTE: The default {config_type} configuration is being used.\n"
+    "To customize {config_type} for model '{model}', create a model-specific config file.\n"
+    "e.g. - '{example}' and add an entry for '{model}' in '{primary}'."
+)
 
 
 def main():
-    """Main logic to install or uninstall third-party APT packages based on model config."""
+    """Install or uninstall third-party APT packages based on model config (boolean flow)."""
 
-    # Set up logging and ensure the log directory exists
+    # Setup logging early
     setup_logging(LOG_FILE, LOG_DIR)
 
-    # Ensure the script is run as a standard (non-root) user
-    if not check_account(REQUIRED_USER):
+    # User & deps
+    if not check_account(expected_user=REQUIRED_USER):
         return
-
-    # Make sure required tools like curl and gpg are installed
     ensure_dependencies_installed(DEPENDENCIES)
 
-    # Detect the current hardware model (e.g. ThinkPadX1, DellLatitude)
+    # Model
     model = get_model()
     log_and_print(f"Detected model: {model}")
 
-    # Get the path to the model-specific third-party JSON config file
-    tp_file, used_default = get_value_from_json(PRIMARY_CONFIG, model, THIRD_PARTY_KEY)
+    # Resolve third-party config (model → default fallback)
+    primary_cfg = load_json(PRIMARY_CONFIG)
+    try:
+        tp_file = primary_cfg[model][THIRD_PARTY_KEY]
+        used_default = False
+    except KeyError:
+        tp_file = primary_cfg[DEFAULT_CONFIG][THIRD_PARTY_KEY]
+        used_default = True
 
     if not tp_file or not Path(tp_file).exists():
-        log_and_print(f"No third-party config file found for model '{model}' or fallback.")
+        log_and_print(f"Invalid {CONFIG_TYPE.upper()} config path for model '{model}' or fallback.")
         return
 
-    log_and_print(f"Using third-party config file: {tp_file}")
+    log_and_print(f"Using {CONFIG_TYPE} config file: {tp_file}")
 
-    # Warn if fallback is used
     if used_default:
-        log_and_print("NOTE: The default service configuration is being used.")
-        log_and_print(f"To customize services for model '{model}', create a model-specific config file")
-        log_and_print(f"e.g. -'config/desktop/DesktopApps.json' and add an entry for '{model}' in 'config/AppConfigSettings.json'.")
-        model = "default"
+        log_and_print(
+            DEFAULT_CONFIG_NOTE.format(
+                config_type=CONFIG_TYPE,
+                model=model,
+                example=CONFIG_EXAMPLE,
+                primary=PRIMARY_CONFIG,
+            )
+        )
 
-    # Load the JSON data for the model's third-party packages
-    with open(tp_file) as f:
-        json_data = json.load(f)
-
-    # Get the list of package names defined under the model
-    tp_keys = get_json_keys(tp_file, model, THIRD_PARTY_KEY)
-    if not tp_keys:
-        log_and_print(f"No packages found for model '{model}'")
+    # Load third-party config and extract package keys for this model
+    try:
+        tp_cfg = load_json(tp_file)
+        model_block = tp_cfg[model][THIRD_PARTY_KEY]  # {pkg: {url,key,codename,component}}
+        tp_keys = sorted(model_block.keys())
+    except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
+        log_and_print(f"No {TP_LABEL} found for model '{model}' in {tp_file}: {e}")
         return
 
-    # Check each package's install status (INSTALLED or NOT INSTALLED)
+    if not tp_keys:
+        log_and_print(f"No {TP_LABEL} found for model '{model}'.")
+        return
+
+    # Boolean status (is the package currently installed)
     package_status = {pkg: check_package(pkg) for pkg in tp_keys}
 
-    # Print a status summary of all packages
-    summary = format_status_summary(package_status, label=SUMMARY_LABEL, count_keys=["INSTALLED", "NOT INSTALLED"])
+    # Summary with boolean→label mapping
+    summary = format_status_summary(
+        package_status,
+        label=SUMMARY_LABEL,
+        count_keys=[INSTALLED_LABEL, UNINSTALLED_LABEL],
+        labels={True: INSTALLED_LABEL, False: UNINSTALLED_LABEL},
+    )
     log_and_print(summary)
 
-    # Prompt the user to choose what action to take
-    choice = ""
-    while choice not in ["1", "2", "3"]:
-        print("\nSelect an option:")
-        print("1) Install required applications")
-        print("2) Uninstall all listed applications")
-        print("3) Cancel")
-        choice = input("Enter your selection (1/2/3): ").strip()
-        if choice not in ["1", "2", "3"]:
-            log_and_print("Invalid input. Please enter 1, 2, or 3.")
+    # Prompt for action
+    choice = None
+    while choice not in MENU_OPTIONS:
+        choice = select_from_list(MENU_TITLE, MENU_OPTIONS)
+        if choice not in MENU_OPTIONS:
+            log_and_print("Invalid selection. Please choose a valid option.")
 
-    # Build a list of jobs based on user's choice and current package status
-    if choice == "1":
-        action = "installation"
-        jobs = filter_jobs_by_status(
-            package_status,
-            "NOT INSTALLED",
-            json_data,
-            model,
-            THIRD_PARTY_KEY,
-            [JSON_URL, JSON_KEY, JSON_CODENAME, JSON_COMPONENT]
-        )
-    elif choice == "2":
-        action = "uninstallation"
-        jobs = filter_jobs_by_status(
-            package_status,
-            "INSTALLED",
-            json_data,
-            model,
-            THIRD_PARTY_KEY,
-            [JSON_URL, JSON_KEY, JSON_CODENAME, JSON_COMPONENT]
-        )
+    if choice == ACTION_CANCEL:
+        log_and_print("Cancelled by user.")
+        rotate_logs(LOG_DIR, LOGS_TO_KEEP, ROTATE_LOG_NAME)
+        log_and_print(f"Done. Log: {LOG_FILE}")
+        return
+
+    # Select names by status using shared helper
+    if choice == ACTION_INSTALL:
+        action = INSTALLATION_ACTION
+        pkg_names = sorted(filter_by_status(package_status, False))  # not installed
     else:
-        log_and_print("Operation cancelled.")
+        action = UNINSTALLATION_ACTION
+        pkg_names = sorted(filter_by_status(package_status, True))   # installed
+
+    if not pkg_names:
+        log_and_print(f"No {TP_LABEL} to process for {action}.")
         return
 
-    # Abort if there are no packages to process
-    if not jobs:
-        log_and_print("No packages to process.")
-        return
+    # Map package names → required JSON fields from model_block
+    jobs = build_jobs_from_block(
+        model_block,
+        pkg_names,
+        [JSON_URL, JSON_KEY, JSON_CODENAME, JSON_COMPONENT],
+    )
 
-    # Confirm user wants to proceed
-    confirm = input(f"Proceed with {action}? [Y/n]: ").strip().lower()
-    if confirm == "n":
+    # Show plan
+    log_and_print(f"The following {TP_LABEL} will be processed for {action}:")
+    log_and_print("  " + "\n  ".join(pkg_names))
+
+    # Confirm (shared confirm helper; strict y/n)
+    if not confirm(PROMPT_PROCEED.format(action=action), log_fn=log_and_print):
         log_and_print("User cancelled.")
         return
 
-    # Perform the selected action for each package
-    for pkg, data in jobs.items():
-        if choice == "1":
-            log_and_print(f"INSTALLING: {pkg}")
-            keyring_path = f"/usr/share/keyrings/{pkg}.gpg"
+    # Execute per package (count successes)
+    success_count = 0
+    try:
+        for pkg in pkg_names:
+            try:
+                meta = jobs[pkg]
+                url = meta.get(JSON_URL)
+                key = meta.get(JSON_KEY)
+                codename = meta.get(JSON_CODENAME)
+                component = meta.get(JSON_COMPONENT)
 
-            # If a repo for the same URL already exists with a different keyring, skip adding repo
-            if conflicting_repo_entry_exists(data[JSON_URL], keyring_path):
-                log_and_print(f"Repo for {pkg} already exists with a different keyring. Skipping repo add.")
-            else:
-                # Add the repo and keyring if not present
-                add_apt_repository(pkg, data[JSON_URL], data[JSON_KEY], data[JSON_CODENAME], data[JSON_COMPONENT])
+                if choice == ACTION_INSTALL:
+                    log_and_print(f"INSTALLING: {pkg}")
+                    keyring_path = f"{KEY_RING_BASEPATH}{pkg}.gpg"
 
-            # Install the package
-            install_packages([pkg])
-            log_and_print(f"{pkg} installed.")
+                    # Skip adding repo if a conflicting entry exists (already present w/different keyring)
+                    if url and conflicting_repo_entry_exists(url, keyring_path):
+                        log_and_print(f"Repo for {pkg} already exists with a different keyring. Skipping repo add.")
+                    else:
+                        add_apt_repository(pkg, url, key, codename, component)
 
-        else:
-            log_and_print(f"UNINSTALLING: {pkg}")
-
-            # Remove the package and its APT repo + GPG key
-            uninstall_packages([pkg])
-            remove_apt_repo_and_keyring(pkg)
-            log_and_print(f"{pkg} uninstalled.")
-
-    # Rotate old logs and report completion
-    rotate_logs(LOG_DIR, LOGS_TO_KEEP, ROTATE_LOG_NAME)
-    log_and_print(f"All actions complete. Log: {LOG_FILE}")
-
+                    # Install the package
+                    install_packages([pkg])
+                    log_and_print(f"APT {INSTALLED_LABEL}: {pkg}")
+                    success_count += 1
+                else:
+                    log_and_print(f"UNINSTALLING: {pkg}")
+                    if uninstall_packages([pkg]):
+                        remove_apt_repo_and_keyring(pkg)
+                        log_and_print(f"APT {UNINSTALLED_LABEL}: {pkg}")
+                        success_count += 1
+                    else:
+                        log_and_print(f"{UNINSTALL_FAIL_MSG}: {pkg}")
+            except subprocess.CalledProcessError:
+                msg = INSTALL_FAIL_MSG if choice == ACTION_INSTALL else UNINSTALL_FAIL_MSG
+                log_and_print(f"{msg}: {pkg}")
+    finally:
+        rotate_logs(LOG_DIR, LOGS_TO_KEEP, ROTATE_LOG_NAME)
+        log_and_print(f"\nAll actions complete. {action.title()}ed: {success_count}")
+        log_and_print(f"You can find the full log here: {LOG_FILE}")
 
 
 if __name__ == "__main__":

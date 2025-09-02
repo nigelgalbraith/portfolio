@@ -1,0 +1,32 @@
+{
+  "Default": {
+    "Archive": {
+      "Example1": {
+        "DownloadURL": "https://example.com/apps/tool1.zip",
+        "ExtractTo": "~/apps/tool1",
+        "CheckPath": "~/apps/tool1/bin/tool1",
+        "StripTopLevel": true,
+        "PostInstall": [
+          "chmod +x ~/apps/tool1/bin/tool1",
+          "ln -s ~/apps/tool1/bin/tool1 ~/bin/tool1"
+        ],
+        "TrashPaths": [
+          "~/apps/tool1",
+          "~/bin/tool1"
+        ]
+      },
+      "Example2": {
+        "DownloadURL": "https://example.com/games/game2.tar.gz",
+        "ExtractTo": "~/games/game2",
+        "CheckPath": "~/games/game2/start.sh",
+        "StripTopLevel": false,
+        "PostInstall": [
+          "chmod +x ~/games/game2/start.sh"
+        ],
+        "TrashPaths": [
+          "~/games/game2"
+        ]
+      }
+    }
+  }
+}

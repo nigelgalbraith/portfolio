@@ -55,7 +55,7 @@ def log_and_print(message):
     logging.info(message)
 
 
-def rotate_logs(log_dir, logs_to_keep, pattern="*.log"):
+def rotate_logs(log_dir: Path, logs_to_keep: int, pattern: str = "*.log") -> None:
     """
     Delete oldest log files in a directory if total exceeds limit.
 
@@ -67,11 +67,26 @@ def rotate_logs(log_dir, logs_to_keep, pattern="*.log"):
     Example:
         rotate_logs(Path("/var/log/myscript"), logs_to_keep=5)
     """
-    logs = sorted(log_dir.glob(pattern), key=lambda f: f.stat().st_mtime)
-    if logs_to_keep > 0 and len(logs) > logs_to_keep:
-        for old_log in logs[:-logs_to_keep]:
-            old_log.unlink()
-            print(f"Deleted old log: {old_log}")
+    try:
+        log_dir.mkdir(parents=True, exist_ok=True)
+        logs = sorted(
+            log_dir.glob(pattern),
+            key=lambda f: f.stat().st_mtime if f.exists() else 0,
+        )
+        if logs_to_keep > 0 and len(logs) > logs_to_keep:
+            for old_log in logs[:-logs_to_keep]:
+                try:
+                    if old_log.is_file() or old_log.is_symlink():
+                        old_log.unlink()
+                        print(f"Deleted old log: {old_log}")
+                    elif old_log.is_dir():
+                        shutil.rmtree(old_log, ignore_errors=True)
+                        print(f"Deleted old log directory: {old_log}")
+                except Exception as e:
+                    print(f"[rotate_logs] WARNING: Could not remove {old_log}: {e}")
+    except Exception as e:
+        print(f"[rotate_logs] WARNING: Rotation failed for {log_dir}: {e}")
+
 
 
 def show_logs(log_paths: dict):

@@ -1,6 +1,7 @@
 [Unit]
 Description=Update Plex Media Drive Permissions
 After=network.target
+Requires=mount_plex.service plex_rename_folders.service
 
 [Service]
 Type=oneshot

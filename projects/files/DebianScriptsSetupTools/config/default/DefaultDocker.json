@@ -1,0 +1,20 @@
+{
+  "Default": {
+    "Containers": {
+      "Example1": {
+        "Name": "example-app1",
+        "Image": "example/app1:latest",
+        "Port": "8080:80",
+        "Location": "~/projects/example-app1",
+        "Download": "https://example.com/example-app1.zip"
+      },
+      "Example2": {
+        "Name": "example-app2",
+        "Image": "example/app2:latest",
+        "Port": "9090:90",
+        "Location": "~/projects/example-app2",
+        "Download": "https://example.com/example-app2.zip"
+      }
+    }
+  }
+}

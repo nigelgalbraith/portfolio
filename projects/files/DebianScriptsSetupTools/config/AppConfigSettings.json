@@ -1,30 +1,53 @@
 {
-  "10A6S1A600": {
-    "Packages": "config/desktop/DesktopApps.json",
-    "DEB": "config/desktop/DesktopApps.json",
-    "ThirdParty": "config/desktop/DesktopApps.json",
-    "FireWall":"config/desktop/DesktopFW.json",
-    "Flatpak":"config/desktop/DesktopApps.json"
+  "YOUR DESKTOP MODEL": {
+    "Packages": "config/desktop/DesktopPackages.json",
+    "DEB": "config/desktop/DesktopDEB.json",
+    "ThirdParty": "config/desktop/DesktopThirdParty.json",
+    "FireWall": "config/desktop/DesktopFW.json",
+    "Flatpak": "config/desktop/DesktopFlatpak.json",
+    "Network": "config/desktop/DesktopNetwork.json",
+    "Archive": "config/desktop/DesktopArchive.json",
+    "Docker": "config/desktop/DesktopDocker.json",
+    "RDP": "config/desktop/DesktopRDP.json",
+    "IPTV": "config/desktop/DesktopIPCam.json",
+    "DOSBox": "config/desktop/DesktopMSDOS.json"
   },
-  "HPCompaqElite8300SFF": {
-    "Packages": "config/mediaCentre/MediaCentreApps.json",
-    "DEB": "config/mediaCentre/MediaCentreApps.json",
+  "YOUR MEDIACENTRE MODEL": {
+    "Packages": "config/mediaCentre/MediaCentrePackages.json",
+    "DEB": "config/mediaCentre/MediaCentreDEB.json",
     "Services": "config/mediaCentre/MediaCentreServices.json",
-    "FireWall":"config/mediaCentre/MediaCentreFW.json"
+    "FireWall": "config/mediaCentre/MediaCentreFW.json",
+    "Flatpak": "config/mediaCentre/MediaCentreFlatpak.json",
+    "Network": "config/mediaCentre/MediaCentreNetwork.json",
+    "Archive": "config/mediaCentre/MediaCentreArchive.json",
+    "RDP": "config/mediaCentre/MediaCentreRDP.json",
+    "IPTV": "config/mediaCentre/MediaCentreIPCam.json"
   },
-  "HPEliteBook2540p": {
-    "Packages": "config/laptop/LaptopApps.json",
-    "DEB": "config/laptop/LaptopApps.json",
-    "ThirdParty": "config/laptop/LaptopApps.json",
-    "FireWall":"config/laptop/LaptopFW.json",
-    "Flatpak":"config/laptop/LaptopApps.json"
+  "YOUR LAPTOP MODEL": {
+    "Packages": "config/laptop/LaptopPackages.json",
+    "DEB": "config/laptop/LaptopDEB.json",
+    "ThirdParty": "config/laptop/LaptopThirdParty.json",
+    "FireWall": "config/laptop/LaptopFW.json",
+    "Flatpak": "config/laptop/LaptopFlatpak.json",
+    "Network": "config/laptop/LaptopNetwork.json",
+    "Archive": "config/laptop/LaptopArchive.json",
+    "Docker": "config/laptop/LaptopDocker.json",
+    "RDP": "config/laptop/LaptopRDP.json",
+    "IPTV": "config/laptop/LaptopIPCam.json",
+    "DOSBox": "config/laptop/LaptopMSDOS.json"
   },
     "default": {
-    "Packages": "config/default/DefaultApps.json",
-    "DEB": "config/default/DefaultApps.json",
-    "ThirdParty": "config/default/DefaultApps.json",
-    "FireWall":"config/default/DefaultFW.json",
-    "Flatpak":"config/default/DefaultApps.json",
-    "Services": "config/default/DefaultServices.json"
+    "Packages": "config/default/DefaultPackages.json",
+    "DEB": "config/default/DefaultDEB.json",
+    "ThirdParty": "config/default/DefaultThirdParty.json",
+    "FireWall": "config/default/DefaultFW.json",
+    "Flatpak": "config/default/DefaultFlatpak.json",
+    "Services": "config/default/DefaultServices.json",
+    "Network": "config/default/DefaultNetwork.json",
+    "Archive": "config/default/DefaultArchive.json",
+    "Docker": "config/default/DefaultDocker.json",
+    "RDP": "config/default/DefaultRDP.json",
+    "IPTV": "config/default/DefaultIPCam.json",
+    "DOSBox": "config/defualt/DefaultMSDOS.json"
   }
 }

@@ -1,0 +1,12 @@
+{
+  "Default": {
+    "RDP": {
+      "Example1": {
+        "UserName": "rdpuser1"
+      },
+      "Example2": {
+        "UserName": "rdpuser2"
+      }
+    }
+  }
+}

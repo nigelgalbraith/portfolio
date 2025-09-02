@@ -17,8 +17,7 @@ import subprocess
 
 FLATHUB_URL = "https://flathub.org/repo/flathub.flatpakrepo"
 
-
-def check_flatpak_status(flatpak_id):
+def check_flatpak_status(flatpak_id: str) -> bool:
     """
     Check if a Flatpak application is installed.
 
@@ -26,13 +25,23 @@ def check_flatpak_status(flatpak_id):
         flatpak_id (str): The Flatpak application ID (e.g., "org.gimp.GIMP").
 
     Returns:
-        str: "INSTALLED" or "NOT INSTALLED"
+        bool: True if installed, False otherwise.
 
     Example:
-        check_flatpak_status("org.mozilla.firefox")
+        check_flatpak_status("org.mozilla.firefox")  # → True / False
     """
-    result = subprocess.run(["flatpak", "list", "--app"], stdout=subprocess.PIPE)
-    return "INSTALLED" if flatpak_id in result.stdout.decode() else "NOT INSTALLED"
+    try:
+        result = subprocess.run(
+            ["flatpak", "list", "--app", "--columns=application"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            check=False,
+            text=True,
+        )
+        return flatpak_id in result.stdout.splitlines()
+    except Exception:
+        return False
+
 
 
 def ensure_flathub():

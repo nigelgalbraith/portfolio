@@ -1,0 +1,30 @@
+{
+  "Default": {
+    "Games": {
+      "Example1": {
+        "Name": "Example Game One",
+        "DownloadURL": "https://example.com/game1.zip",
+        "ExtractTo": "~/games/game1",
+        "CheckPath": "~/games/game1",
+        "StripTopLevel": true,
+        "LaunchCmd": "dosbox -c \"mount c ~/games/game1\" -c \"c:\" -c \"game1.exe\"",
+        "PostInstall": [
+          "echo 'Post-install step for Game One'"
+        ],
+        "Notes": "Runs in DOSBox. Default launch assumes GAME1.EXE is present."
+      },
+      "Example2": {
+        "Name": "Example Game Two",
+        "DownloadURL": "https://example.com/game2.zip",
+        "ExtractTo": "~/games/game2",
+        "CheckPath": "~/games/game2",
+        "StripTopLevel": false,
+        "LaunchCmd": "dosbox -c \"mount c ~/games/game2\" -c \"c:\" -c \"game2.bat\"",
+        "PostInstall": [
+          "echo 'Post-install step for Game Two'"
+        ],
+        "Notes": "Another sample DOSBox game with a BAT launcher."
+      }
+    }
+  }
+}

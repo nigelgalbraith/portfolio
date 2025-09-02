@@ -15,10 +15,14 @@ Requires:
 """
 
 import subprocess
+import shutil
 from pathlib import Path
+from typing import Dict, List
 
 
-def check_package(pkg):
+import subprocess
+
+def check_package(pkg: str) -> bool:
     """
     Check if a package is installed using dpkg-query.
 
@@ -26,38 +30,34 @@ def check_package(pkg):
         pkg (str): The package name to check.
 
     Returns:
-        str: "INSTALLED" or "NOT INSTALLED"
+        bool: True if installed, False otherwise.
 
     Example:
-        check_package("curl")  # → "INSTALLED"
+        check_package("curl")  # → True
     """
     try:
-        output = subprocess.check_output(["dpkg-query", "-W", "-f=${Status}", pkg])
-        if b"install ok installed" in output:
-            return "INSTALLED"
+        output = subprocess.check_output(
+            ["dpkg-query", "-W", "-f=${Status}", pkg],
+            stderr=subprocess.DEVNULL
+        )
+        return b"install ok installed" in output
     except subprocess.CalledProcessError:
-        pass
-    return "NOT INSTALLED"
+        return False
 
 
-def filter_by_status(items: dict, match_statuses: list | str) -> list:
+def filter_by_status(package_status: Dict[str, bool], wanted: bool) -> List[str]:
     """
-    Filter a dict of items by one or more matching statuses.
+    Return package names whose installed status matches `wanted`.
 
     Args:
-        items (dict): Dictionary of {item_name: status}.
-        match_statuses (str or list): Status or list of statuses to match.
+        package_status: Dict of {package_name: is_installed_bool}
+        wanted: True to select installed pkgs, False to select not installed
 
     Returns:
-        list: Names of items with matching status.
-
-    Example:
-        filter_by_status({"foo": "INSTALLED", "bar": "MISSING"}, "MISSING")
-        # → ["bar"]
+        List[str]: matching package names
     """
-    if isinstance(match_statuses, str):
-        match_statuses = [match_statuses]
-    return [name for name, status in items.items() if status in match_statuses]
+    return [name for name, is_installed in package_status.items() if is_installed is wanted]
+
 
 
 def install_packages(packages):
@@ -157,19 +157,30 @@ def uninstall_deb_package(name):
         return True
     return False
 
-
-def start_service_if_enabled(enable_flag, service):
+def check_binary_installed(binary_name: str, symlink_path: Path | None = None) -> str:
     """
-    Enable and start a service if the flag is set to "true".
+    Check if a binary is installed on the system, either in PATH or at a specific symlink.
 
     Args:
-        enable_flag (str): Should be "true" (case-sensitive) to activate.
-        service (str): The systemd service name.
+        binary_name (str): Name of the binary to check (e.g. "xteve").
+        symlink_path (Path | None): Optional explicit path to the binary or symlink.
 
-    Example:
-        start_service_if_enabled("true", "plexmediaserver")
+    Returns:
+        str: "INSTALLED" if found, "NOT INSTALLED" otherwise.
+
+    Examples:
+        >>> check_binary_installed("ls")
+        'INSTALLED'
+        
+        >>> check_binary_installed("xteve", Path("/usr/local/bin/xteve"))
+        'NOT INSTALLED'   # if missing
     """
-    if enable_flag == "true" and service:
-        print(f"Starting service: {service}")
-        subprocess.run(["sudo", "systemctl", "enable", service])
-        subprocess.run(["sudo", "systemctl", "start", service])
+    # 1) Check explicit path first
+    if symlink_path and Path(symlink_path).exists():
+        return "INSTALLED"
+
+    # 2) Check PATH for the binary
+    if shutil.which(binary_name):
+        return "INSTALLED"
+
+    return "NOT INSTALLED"

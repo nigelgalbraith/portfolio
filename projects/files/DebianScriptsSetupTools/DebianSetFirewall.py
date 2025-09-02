@@ -1,59 +1,94 @@
 #!/usr/bin/env python3
 
 import os
+import sys
 import json
-import subprocess
 import datetime
+import subprocess
 from pathlib import Path
-from shutil import which
 
-from modules.display_utils import print_dict_table, print_list_section
-from modules.system_utils import check_account, get_model, ensure_dependencies_installed, secure_logs_for_user
-from modules.json_utils import build_indexed_jobs, get_indexed_field_list, get_value_from_json
+from modules.display_utils import print_dict_table, print_list_section, confirm
+from modules.system_utils import (
+    check_account, ensure_dependencies_installed, secure_logs_for_user, get_model
+)
+from modules.json_utils import load_json  # <-- consistent with other scripts
 from modules.logger_utils import log_and_print, setup_logging, rotate_logs
 from modules.firewall_utils import allow_application, allow_port_for_ip, allow_port_range_for_ip
 
-# === CONSTANTS ===
+# === CONFIG PATHS & KEYS ===
 PRIMARY_CONFIG = "config/AppConfigSettings.json"
 CONFIG_KEY = "FireWall"
+CONFIG_TYPE = "firewall"
+CONFIG_EXAMPLE = "config/desktop/DesktopFW.json"
+DEFAULT_CONFIG = "default"  # <-- model → default fallback, like other scripts
+
+# === LOGGING ===
 TIMESTAMP = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 LOGS_TO_KEEP = 10
 ROTATE_LOG_NAME = "fw_settings_*.log"
-REQUIRED_USER = "root"
+LOG_DIR_NAME = "logs"
+LOG_FILE_PREFIX = "fw"
+
+# === DEPENDENCIES ===
 DEPENDENCIES = ["ufw", "iptables"]
-KEY_APPLICATIONS = "Applications"
-KEY_SINGLE_PORTS = "SinglePorts"
-KEY_PORT_RANGES = "PortRanges"
-KEY_PORT = "Port"
-KEY_PROTOCOL = "Protocol"
-KEY_IPS = "IPs"
-KEY_START_PORT = "StartPort"
-KEY_END_PORT = "EndPort"
+
+# === USER & MODEL ===
+REQUIRED_USER = "root"
+
+# === JSON FIELD NAMES ===
+KEY_APPLICATIONS = "Applications"     # optional list[str]
+KEY_SINGLE_PORTS = "SinglePorts"      # optional list[dict]
+KEY_PORT_RANGES  = "PortRanges"       # optional list[dict]
+KEY_PORT         = "Port"             # required in each single-port rule
+KEY_PROTOCOL     = "Protocol"         # required in rules
+KEY_IPS          = "IPs"              # optional list[str]
+KEY_START_PORT   = "StartPort"        # required in each range rule
+KEY_END_PORT     = "EndPort"          # required in each range rule
+
+# === CONFIG NOTES ===
+DEFAULT_CONFIG_NOTE = (
+    "NOTE: The default {config_type} configuration is being used.\n"
+    "To customize {config_type} for model '{model}', create a model-specific config file.\n"
+    "e.g. - '{example}' and add an entry for '{model}' in '{primary}'."
+)
+
+# === CONSTANTS ===
+CONFIRM_PROMPT = "\nProceed with applying these rules? [y/n]: "  # Confirmation prompt constant
 
 
 def main():
-    """Main function to apply model-specific firewall rules."""
+    """Apply model-specific firewall rules with consistent flow and logging."""
 
     # Validate account
     if not check_account(REQUIRED_USER):
         return
 
-    # Setup logging
+    # Setup logging under invoking user's home
     sudo_user = os.getenv("SUDO_USER")
     log_home = Path("/home") / sudo_user if sudo_user else Path.home()
-    log_dir = log_home / "logs" / "fw"
+    log_dir = log_home / LOG_DIR_NAME / LOG_FILE_PREFIX
     log_file = log_dir / f"fw_settings_{TIMESTAMP}.log"
     setup_logging(log_file, log_dir)
 
-    # Install required CLI tools
+    # Ensure dependencies
     ensure_dependencies_installed(DEPENDENCIES)
 
-    # Detect model and load config paths
+    # Detect model
     model = get_model()
     log_and_print(f"Detected model: {model}")
 
-    # Load firewall path using fallback-enabled function
-    firewall_path, used_default = get_value_from_json(PRIMARY_CONFIG, model, CONFIG_KEY)
+    # === Resolve firewall config path using bracket lookups (model → default fallback)
+    try:
+        primary_cfg = load_json(PRIMARY_CONFIG)
+        try:
+            firewall_path = primary_cfg[model][CONFIG_KEY]
+            used_default = False
+        except KeyError:
+            firewall_path = primary_cfg[DEFAULT_CONFIG][CONFIG_KEY]
+            used_default = True
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        log_and_print(f"Failed to read PRIMARY_CONFIG '{PRIMARY_CONFIG}': {e}")
+        return
 
     if not firewall_path or not Path(firewall_path).exists():
         log_and_print(f"Firewall config not found for model '{model}' or fallback.")
@@ -61,68 +96,109 @@ def main():
 
     log_and_print(f"Using firewall config: {firewall_path}")
 
-    # Warn if fallback is used
     if used_default:
-        log_and_print("NOTE: The default service configuration is being used.")
-        log_and_print(f"To customize services for model '{model}', create a model-specific config file")
-        log_and_print(f"e.g. -'config/desktop/DesktopFW.json' and add an entry for '{model}' in 'config/AppConfigSettings.json'.")
-        model = "default"
+        log_and_print(
+            DEFAULT_CONFIG_NOTE.format(
+                config_type=CONFIG_TYPE,
+                model=model,
+                example=CONFIG_EXAMPLE,
+                primary=PRIMARY_CONFIG,
+            )
+        )
 
-    # Show rules before applying
-    with open(firewall_path) as f:
-        data = json.load(f)
-    print_list_section(data.get(model, {}).get(KEY_APPLICATIONS, []), KEY_APPLICATIONS)
-    print_dict_table(data.get(model, {}).get(KEY_SINGLE_PORTS, []), [KEY_PORT, KEY_PROTOCOL, KEY_IPS], KEY_SINGLE_PORTS)
-    print_dict_table(data.get(model, {}).get(KEY_PORT_RANGES, []), [KEY_START_PORT, KEY_END_PORT, KEY_PROTOCOL, KEY_IPS], KEY_PORT_RANGES)
-
-    # Confirm action
-    confirm = input("\nProceed with applying these rules? (y/n): ").strip().lower()
-    if confirm != "y":
-        print("Aborted by user.")
+    # === Load model block strictly (brackets)
+    try:
+        fw_cfg = load_json(firewall_path)
+        model_block = fw_cfg[model][CONFIG_KEY]   # dict with sections
+    except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
+        log_and_print(f"Invalid or missing model block in '{firewall_path}': {e}")
         return
 
-    # Reset and configure UFW
-    subprocess.run(["ufw", "--force", "reset"], check=True)
-    subprocess.run(["ufw", "--force", "enable"], check=True)
-    subprocess.run(["ufw", "logging", "on"], check=True)
-    log_and_print("UFW reset and enabled.")
+    # Optional sections (safe .get for lists)
+    applications  = model_block.get(KEY_APPLICATIONS, [])     # list[str]
+    single_ports  = model_block.get(KEY_SINGLE_PORTS, [])     # list[dict]
+    port_ranges   = model_block.get(KEY_PORT_RANGES, [])      # list[dict]
 
-    # Apply application profiles
-    for app in data.get(model, {}).get(KEY_APPLICATIONS, []):
-        log_and_print(f"Allowing application profile: {app}")
-        result = allow_application(app)
-        log_and_print(result)
+    # Show planned rules
+    print_list_section(applications, KEY_APPLICATIONS)
+    print_dict_table(single_ports, [KEY_PORT, KEY_PROTOCOL, KEY_IPS], KEY_SINGLE_PORTS)
+    print_dict_table(port_ranges,  [KEY_START_PORT, KEY_END_PORT, KEY_PROTOCOL, KEY_IPS], KEY_PORT_RANGES)
 
-    # Apply single ports per IP
-    single_jobs = build_indexed_jobs(firewall_path, model, KEY_SINGLE_PORTS, [KEY_PORT, KEY_PROTOCOL])
-    for index, rule in single_jobs.items():
-        ips = get_indexed_field_list(firewall_path, model, KEY_SINGLE_PORTS, index, KEY_IPS)
-        for ip in ips:
-            log_and_print(f"Allowing {rule[KEY_PROTOCOL]} port {rule[KEY_PORT]} from {ip}")
-            result = allow_port_for_ip(rule[KEY_PORT], rule[KEY_PROTOCOL], ip)
+    # Confirm (default Yes)
+    if not confirm(CONFIRM_PROMPT, log_fn=log_and_print):
+        log_and_print("Aborted by user.")
+        return
+
+    # Apply rules
+    apps_applied = singles_applied = ranges_applied = 0
+
+    try:
+        # Reset & enable UFW
+        subprocess.run(["ufw", "--force", "reset"], check=True)
+        subprocess.run(["ufw", "--force", "enable"], check=True)
+        subprocess.run(["ufw", "logging", "on"], check=True)
+        log_and_print("UFW reset and enabled.")
+
+        # Application profiles (strings)
+        for app in applications:
+            log_and_print(f"Allowing application profile: {app}")
+            result = allow_application(app)
             log_and_print(result)
+            apps_applied += 1
 
-    # Apply port ranges per IP
-    range_jobs = build_indexed_jobs(firewall_path, model, KEY_PORT_RANGES, [KEY_START_PORT, KEY_END_PORT, KEY_PROTOCOL])
-    for index, rule in range_jobs.items():
-        ips = get_indexed_field_list(firewall_path, model, KEY_PORT_RANGES, index, KEY_IPS)
-        for ip in ips:
-            log_and_print(f"Allowing {rule[KEY_PROTOCOL]} ports {rule[KEY_START_PORT]}–{rule[KEY_END_PORT]} from {ip}")
-            result = allow_port_range_for_ip(rule[KEY_START_PORT], rule[KEY_END_PORT], rule[KEY_PROTOCOL], ip)
-            log_and_print(result)
+        # Single ports per IP (dicts) — use brackets for required fields, .get for optional IPs
+        for rule in single_ports:
+            try:
+                port = rule[KEY_PORT]
+                proto = rule[KEY_PROTOCOL]
+            except KeyError as e:
+                log_and_print(f"Skipping invalid SinglePorts rule (missing {e.args[0]}): {rule}")
+                continue
 
-    # Reload UFW and display summary
-    subprocess.run(["ufw", "reload"], check=True)
-    log_and_print("Firewall rules applied successfully.")
-    log_and_print("=== UFW Status Summary ===")
-    result = subprocess.run(["ufw", "status", "verbose"], capture_output=True, text=True)
-    for line in result.stdout.strip().splitlines():
-        log_and_print(line)
+            ips = rule.get(KEY_IPS, [])
+            if isinstance(ips, str):
+                ips = [ips]
+            for ip in ips or []:
+                log_and_print(f"Allowing {proto} port {port} from {ip}")
+                result = allow_port_for_ip(port, proto, ip)
+                log_and_print(result)
+                singles_applied += 1
 
-    # Set log dir permissions and rotate old logs
-    secure_logs_for_user(log_dir, sudo_user)
-    rotate_logs(log_dir, LOGS_TO_KEEP, ROTATE_LOG_NAME)
-    log_and_print(f"\nAll actions complete. Log: {log_file}")
+        # Port ranges per IP (dicts) — brackets for required fields, .get for optional IPs
+        for rule in port_ranges:
+            try:
+                start_port = rule[KEY_START_PORT]
+                end_port   = rule[KEY_END_PORT]
+                proto      = rule[KEY_PROTOCOL]
+            except KeyError as e:
+                log_and_print(f"Skipping invalid PortRanges rule (missing {e.args[0]}): {rule}")
+                continue
+
+            ips = rule.get(KEY_IPS, [])
+            if isinstance(ips, str):
+                ips = [ips]
+            for ip in ips or []:
+                log_and_print(f"Allowing {proto} ports {start_port}–{end_port} from {ip}")
+                result = allow_port_range_for_ip(start_port, end_port, proto, ip)
+                log_and_print(result)
+                ranges_applied += 1
+
+        # Reload & show summary
+        subprocess.run(["ufw", "reload"], check=True)
+        log_and_print("Firewall rules applied successfully.")
+        log_and_print("=== UFW Status Summary ===")
+        result = subprocess.run(["ufw", "status", "verbose"], capture_output=True, text=True)
+        for line in result.stdout.strip().splitlines():
+            log_and_print(line)
+
+    finally:
+        # Totals + secure + rotate
+        log_and_print(
+            f"\nApplied rules — Apps: {apps_applied}, Single-ports: {singles_applied}, Port-ranges: {ranges_applied}"
+        )
+        secure_logs_for_user(log_dir, sudo_user)
+        rotate_logs(log_dir, LOGS_TO_KEEP, ROTATE_LOG_NAME)
+        log_and_print(f"All actions complete. Log: {log_file}")
 
 
 if __name__ == "__main__":
