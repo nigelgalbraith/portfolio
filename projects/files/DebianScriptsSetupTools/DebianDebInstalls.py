@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-import os
 import datetime
-import json
+import os
+import shutil
 from pathlib import Path
 
 from modules.logger_utils import setup_logging, log_and_print, rotate_logs
 from modules.system_utils import check_account, get_model, ensure_dependencies_installed
-from modules.json_utils import load_json, build_jobs_from_block
+from modules.json_utils import load_json, resolve_value
 from modules.package_utils import (
     check_package,
     filter_by_status,
@@ -14,7 +14,7 @@ from modules.package_utils import (
     install_deb_file,
     uninstall_deb_package,
 )
-from modules.display_utils import format_status_summary, select_from_list, confirm
+from modules.display_utils import format_status_summary, select_from_list, confirm, print_dict_table
 from modules.service_utils import start_service_standard
 
 # === CONFIG PATHS & KEYS ===
@@ -76,6 +76,12 @@ DEFAULT_CONFIG_NOTE = (
     "e.g. - '{example}' and add an entry for '{model}' in '{primary}'."
 )
 
+# === CONSTANTS ===
+# Define constant field names to ensure consistency
+PACKAGE_NAME_FIELD = 'Package Name'
+DOWNLOAD_URL_FIELD = 'Download URL'
+ENABLE_SERVICE_FIELD = 'Enable Service'
+
 
 def main():
     # Logging
@@ -92,14 +98,15 @@ def main():
 
     # Resolve DEB config path (model → default fallback)
     primary_cfg = load_json(PRIMARY_CONFIG)
-    try:
-        deb_file = primary_cfg[model][DEB_KEY]
-        used_default = False
-    except KeyError:
-        deb_file = primary_cfg[DEFAULT_CONFIG][DEB_KEY]
-        used_default = True
+    deb_file, used_default = resolve_value(
+        primary_cfg,
+        model,
+        DEB_KEY,
+        DEFAULT_CONFIG,
+        check_file=True  # Ensures the config file path is valid
+    )
 
-    if not deb_file or not Path(deb_file).exists():
+    if not deb_file:
         log_and_print(f"Invalid {CONFIG_TYPE.upper()} config path for model '{model}' or fallback.")
         return
     log_and_print(f"Using {CONFIG_TYPE.upper()} config file: {deb_file}")
@@ -115,13 +122,9 @@ def main():
         )
 
     # Load DEB config JSON
-    try:
-        deb_cfg = load_json(deb_file)
-        deb_block = deb_cfg[model][DEB_KEY]
-        deb_keys = sorted(deb_block.keys())
-    except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
-        log_and_print(f"No packages found for model '{model}' in {deb_file}: {e}")
-        return
+    deb_cfg = load_json(deb_file)
+    deb_block = deb_cfg.get(model, {}).get(DEB_KEY, {})
+    deb_keys = sorted(deb_block.keys())
 
     if not deb_keys:
         log_and_print(f"No packages found for model '{model}'")
@@ -155,27 +158,33 @@ def main():
     # Filter package names
     if choice == ACTION_INSTALL:
         action = INSTALLATION_ACTION
-        pkg_names = sorted(filter_by_status(package_status, False))
+        pkg_names = sorted(filter_by_status(package_status, False))  # not installed
         prompt = PROMPT_INSTALL
     else:
         action = UNINSTALLATION_ACTION
-        pkg_names = sorted(filter_by_status(package_status, True))
+        pkg_names = sorted(filter_by_status(package_status, True))   # installed
         prompt = PROMPT_REMOVE
 
     if not pkg_names:
         log_and_print(f"No {DEB_LABEL} to process for {action}.")
         return
 
-    # Map packages
-    jobs = build_jobs_from_block(
-        deb_block,
-        pkg_names,
-        [JSON_BLOCK_DL_KEY, JSON_FIELD_ENABLE_SERVICE],
-    )
+    # Show the plan table with dynamic keys (directly from `deb_block` instead of `jobs`)
+    plan_rows = []
+    for pkg in pkg_names:
+        meta = deb_block.get(pkg, {})
+        plan_rows.append({
+            PACKAGE_NAME_FIELD: pkg,
+            DOWNLOAD_URL_FIELD: meta.get(JSON_BLOCK_DL_KEY, ""),
+            ENABLE_SERVICE_FIELD: meta.get(JSON_FIELD_ENABLE_SERVICE, ""),
+        })
 
-    # Show plan
-    log_and_print(f"The following {DEB_LABEL} will be processed for {action}:")
-    log_and_print("  " + "\n  ".join(pkg_names))
+    # Show the plan table
+    print_dict_table(
+        plan_rows,
+        field_names=[PACKAGE_NAME_FIELD, DOWNLOAD_URL_FIELD, ENABLE_SERVICE_FIELD],
+        label=f"Planned {action.title()} (Deb Package details)"
+    )
 
     # Confirm
     if not confirm(prompt, log_fn=log_and_print):
@@ -184,30 +193,34 @@ def main():
 
     # Execute
     success_count = 0
-    try:
-        for pkg in pkg_names:
-            url = jobs[pkg].get(JSON_BLOCK_DL_KEY)
-            enable_service = jobs[pkg].get(JSON_FIELD_ENABLE_SERVICE)
+    for pkg in pkg_names:
+        meta = deb_block.get(pkg, {})
+        if not meta:
+            continue
 
-            if choice == ACTION_INSTALL:
-                deb_path = download_deb_file(pkg, url, DOWNLOAD_DIR)
-                if deb_path and install_deb_file(deb_path, pkg):
-                    log_and_print(f"{DEB_LABEL} {INSTALLED_LABEL}: {pkg}")
-                    start_service_standard(enable_service, pkg)
-                    deb_path.unlink(missing_ok=True)
-                    success_count += 1
-                else:
-                    log_and_print(f"{INSTALL_FAIL_MSG}: {pkg}")
+        # Extract relevant metadata for each package directly from `deb_block`
+        download_url = meta.get(JSON_BLOCK_DL_KEY, "")
+        enable_service = meta.get(JSON_FIELD_ENABLE_SERVICE, "")
+
+        if choice == ACTION_INSTALL:
+            deb_path = download_deb_file(pkg, download_url, DOWNLOAD_DIR)
+            if deb_path and install_deb_file(deb_path, pkg):
+                log_and_print(f"{DEB_LABEL} {INSTALLED_LABEL}: {pkg}")
+                start_service_standard(enable_service, pkg)
+                deb_path.unlink(missing_ok=True)
+                success_count += 1
             else:
-                if uninstall_deb_package(pkg):
-                    log_and_print(f"{DEB_LABEL} {UNINSTALLED_LABEL}: {pkg}")
-                    success_count += 1
-                else:
-                    log_and_print(f"{UNINSTALL_FAIL_MSG}: {pkg}")
-    finally:
-        rotate_logs(LOG_DIR, LOGS_TO_KEEP, ROTATE_LOG_NAME)
-        log_and_print(f"\nAll actions complete. {action.title()}ed: {success_count}")
-        log_and_print(f"You can find the full log here: {LOG_FILE}")
+                log_and_print(f"{INSTALL_FAIL_MSG}: {pkg}")
+        else:
+            if uninstall_deb_package(pkg):
+                log_and_print(f"{DEB_LABEL} {UNINSTALLED_LABEL}: {pkg}")
+                success_count += 1
+            else:
+                log_and_print(f"{UNINSTALL_FAIL_MSG}: {pkg}")
+
+    rotate_logs(LOG_DIR, LOGS_TO_KEEP, ROTATE_LOG_NAME)
+    log_and_print(f"\nAll actions complete. {action.title()}ed: {success_count}")
+    log_and_print(f"You can find the full log here: {LOG_FILE}")
 
 
 if __name__ == "__main__":

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-import os
-import json
 import datetime
+import os
+import shutil
 from pathlib import Path
 
 from modules.logger_utils import setup_logging, log_and_print, rotate_logs
@@ -10,11 +10,11 @@ from modules.system_utils import (
     get_model,
     ensure_dependencies_installed,
     expand_path,
-    move_to_trash,       # user-space trash
-    sudo_remove_path,    # privileged removal fallback
+    move_to_trash,
+    sudo_remove_path,
 )
-from modules.json_utils import load_json, build_jobs_from_block
-from modules.display_utils import format_status_summary, select_from_list, confirm
+from modules.json_utils import load_json, resolve_value
+from modules.display_utils import format_status_summary, select_from_list, confirm, print_dict_table
 from modules.package_utils import filter_by_status
 from modules.service_utils import start_service_standard
 from modules.archive_utils import (
@@ -22,23 +22,23 @@ from modules.archive_utils import (
     download_archive_file,
     install_archive_file,
     uninstall_archive_install,
+    build_archive_install_status,
+    run_post_install_commands,
+    handle_cleanup_and_log_failure,
 )
 
 # === CONFIG PATHS & KEYS ===
-PRIMARY_CONFIG = "config/AppConfigSettings.json"
-ARCHIVE_KEY = "Archive"
-CONFIG_TYPE = "archive"
-CONFIG_EXAMPLE = "config/desktop/DesktopArchives.json"
-DEFAULT_CONFIG = "default"
-
-# === DIRECTORIES ===
-DOWNLOAD_DIR = Path("/tmp/archive_downloads")
+PRIMARY_CONFIG  = "config/AppConfigSettings.json"
+ARCHIVE_KEY     = "Archive"
+CONFIG_TYPE     = "archive"
+CONFIG_EXAMPLE  = "config/desktop/DesktopArchives.json"
+DEFAULT_CONFIG  = "default"
 
 # === LOGGING ===
-LOG_DIR = Path.home() / "logs" / "archive"
-LOGS_TO_KEEP = 10
-TIMESTAMP = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-LOG_FILE = LOG_DIR / f"archive_install_{TIMESTAMP}.log"
+LOG_DIR         = Path.home() / "logs" / "archive"
+LOGS_TO_KEEP    = 10
+TIMESTAMP       = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+LOG_FILE        = LOG_DIR / f"archive_install_{TIMESTAMP}.log"
 ROTATE_LOG_NAME = "archive_install_*.log"
 
 # === DEPENDENCIES ===
@@ -48,18 +48,21 @@ DEPENDENCIES = ["wget", "tar", "unzip"]
 REQUIRED_USER = "Standard"
 
 # === JSON FIELD KEYS ===
-JSON_BLOCK_DL_KEY       = "DownloadURL"
-JSON_FIELD_EXTRACT_TO   = "ExtractTo"
-JSON_FIELD_CHECK_PATH   = "CheckPath"
-JSON_FIELD_STRIP_TOP    = "StripTopLevel"
-JSON_FIELD_POST_INSTALL = "PostInstall"
-JSON_FIELD_ENABLE_SVC   = "EnableService"
-JSON_FIELD_TRASH_PATHS  = "TrashPaths"
+NAME_KEY                = "Name"
+STATUS_KEY              = "Status"
+DOWNLOAD_URL_KEY        = "DownloadURL"
+EXTRACT_TO_KEY          = "ExtractTo"
+CHECK_PATH_KEY          = "CheckPath"
+STRIP_TOP_LEVEL_KEY     = "StripTopLevel"
+POST_INSTALL_KEY        = "PostInstall"
+ENABLE_SERVICE_KEY      = "EnableService"
+TRASH_PATHS_KEY         = "TrashPaths"
+DL_PATH_KEY             = "DownloadPath"
 
 # === LABELS ===
-SUMMARY_LABEL   = "Archive Package"
-ARCHIVE_LABEL   = "archive packages"
-INSTALLED_LABEL = "INSTALLED"
+SUMMARY_LABEL     = "Archive Package"
+ARCHIVE_LABEL     = "archive packages"
+INSTALLED_LABEL   = "INSTALLED"
 UNINSTALLED_LABEL = "UNINSTALLED"
 
 # === MENU LABELS ===
@@ -82,9 +85,9 @@ UNINSTALL_FAIL_MSG = "UNINSTALL FAILED"
 PROMPT_INSTALL = f"Proceed with {INSTALLATION_ACTION}? [y/n]: "
 PROMPT_REMOVE  = f"Proceed with {UNINSTALLATION_ACTION}? [y/n]: "
 
-# === INPUT CONSTANTS ===
-VALID_YES = ("y", "yes")
-VALID_NO  = ("n", "no")
+# === DOWNLOAD LOCATION ===
+DOWNLOAD_DIR = Path("/tmp/archive_downloads")
+DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 # === CONFIG NOTES ===
 DEFAULT_CONFIG_NOTE = (
@@ -103,21 +106,23 @@ def main():
         return
     ensure_dependencies_installed(DEPENDENCIES)
 
-    # Ensure download directory exists
-    DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
-
     # Detect model and resolve config
     model = get_model()
     log_and_print(f"Detected model: {model}")
-    primary_cfg = load_json(PRIMARY_CONFIG)
-    try:
-        archive_cfg_file = primary_cfg[model][ARCHIVE_KEY]
-        used_default = False
-    except KeyError:
-        archive_cfg_file = primary_cfg[DEFAULT_CONFIG][ARCHIVE_KEY]
-        used_default = True
 
-    if not archive_cfg_file or not Path(archive_cfg_file).exists():
+    # Load primary config (match packages program behavior)
+    primary_cfg = load_json(PRIMARY_CONFIG)
+
+    # Resolve archive config file via model → default fallback
+    archive_cfg_file, used_default = resolve_value(
+        primary_cfg,
+        model,
+        ARCHIVE_KEY,
+        DEFAULT_CONFIG,
+        check_file=True,  # ensures the returned string path exists
+    )
+
+    if not archive_cfg_file:
         log_and_print(f"Invalid {CONFIG_TYPE} config path for model '{model}' or fallback.")
         return
 
@@ -132,25 +137,21 @@ def main():
             )
         )
 
-    # Load ARCHIVE config and extract package keys for this model
-    try:
-        archive_cfg = load_json(archive_cfg_file)
-        model_block = archive_cfg[model][ARCHIVE_KEY]
-        archive_keys = sorted(model_block.keys())
-    except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
-        log_and_print(f"No {ARCHIVE_LABEL} found for model '{model}' in {archive_cfg_file}: {e}")
+    # Load ARCHIVE config and get the per-model items (dict: name -> metadata)
+    archive_cfg = load_json(archive_cfg_file)
+    items = archive_cfg.get(model, {}).get(ARCHIVE_KEY)
+    if not isinstance(items, dict) or not items:
+        log_and_print(f"No {ARCHIVE_LABEL} defined for model '{model}' in {archive_cfg_file}")
         return
 
-    if not archive_keys:
-        log_and_print(f"No {ARCHIVE_LABEL} found for model '{model}'.")
-        return
-
-    # Boolean install state
-    status = {}
-    for pkg in archive_keys:
-        cfg = model_block[pkg]
-        probe_path = expand_path(cfg.get(JSON_FIELD_CHECK_PATH) or cfg.get(JSON_FIELD_EXTRACT_TO, ""))
-        status[pkg] = check_archive_installed(probe_path)
+    # Compute install status per item (consistent helper)
+    status = build_archive_install_status(
+        items,
+        key_check=CHECK_PATH_KEY,
+        key_extract=EXTRACT_TO_KEY,
+        path_expander=expand_path,
+        checker=check_archive_installed,
+    )
 
     # Summary
     summary = format_status_summary(
@@ -188,24 +189,34 @@ def main():
         log_and_print(f"No {ARCHIVE_LABEL} to process for {action}.")
         return
 
-    # Build jobs
-    jobs = build_jobs_from_block(
-        model_block,
-        pkg_names,
-        [
-            JSON_BLOCK_DL_KEY,
-            JSON_FIELD_EXTRACT_TO,
-            JSON_FIELD_CHECK_PATH,
-            JSON_FIELD_STRIP_TOP,
-            JSON_FIELD_POST_INSTALL,
-            JSON_FIELD_ENABLE_SVC,
-            JSON_FIELD_TRASH_PATHS,
-        ],
-    )
+    # Show the plan table with dynamic keys
+    plan_rows = []
+    for name, meta in items.items():
+        plan_rows.append({
+            NAME_KEY: name,
+            STATUS_KEY: INSTALLED_LABEL if status.get(name) else UNINSTALLED_LABEL,
+            DOWNLOAD_URL_KEY: meta.get(DOWNLOAD_URL_KEY, ""),
+            EXTRACT_TO_KEY: meta.get(EXTRACT_TO_KEY, ""),
+            CHECK_PATH_KEY: meta.get(CHECK_PATH_KEY, ""),
+            STRIP_TOP_LEVEL_KEY: bool(meta.get(STRIP_TOP_LEVEL_KEY, False)),
+            POST_INSTALL_KEY: meta.get(POST_INSTALL_KEY, []),
+            ENABLE_SERVICE_KEY: meta.get(ENABLE_SERVICE_KEY, ""),
+        })
 
-    # Show plan
-    log_and_print(f"The following {ARCHIVE_LABEL} will be processed for {action}:")
-    log_and_print("  " + "\n  ".join(pkg_names))
+    print_dict_table(
+        plan_rows,
+        field_names=[
+            NAME_KEY,
+            STATUS_KEY,
+            DOWNLOAD_URL_KEY,
+            EXTRACT_TO_KEY,
+            CHECK_PATH_KEY,
+            STRIP_TOP_LEVEL_KEY,
+            POST_INSTALL_KEY,
+            ENABLE_SERVICE_KEY,
+        ],
+        label=f"Planned {action} (full archive inventory)"
+    )
 
     # Confirm
     if not confirm(prompt, log_fn=log_and_print):
@@ -214,87 +225,92 @@ def main():
 
     # Execute
     success_count = 0
-    try:
-        for pkg in pkg_names:
-            meta = jobs[pkg]
-            if choice == ACTION_INSTALL:
-                url = meta.get(JSON_BLOCK_DL_KEY)
-                extract_to = expand_path(meta.get(JSON_FIELD_EXTRACT_TO, ""))
+    for pkg in pkg_names:
+        meta = items.get(pkg, {})
+        if not meta:
+            continue
 
-                if not url or not extract_to:
-                    log_and_print(f"{INSTALL_FAIL_MSG}: {pkg} (missing URL or ExtractTo)")
-                    continue
+        # Extract relevant metadata for each package
+        download_url    = meta.get(DOWNLOAD_URL_KEY, "")
+        extract_to      = os.path.expanduser(meta.get(EXTRACT_TO_KEY, ""))
+        strip_top_level = bool(meta.get(STRIP_TOP_LEVEL_KEY, False))
 
-                archive_path = download_archive_file(pkg, url, DOWNLOAD_DIR)
-                if not archive_path:
-                    log_and_print(f"{DOWNLOAD_FAIL_MSG}: {pkg}")
-                    continue
+        if choice == ACTION_INSTALL:
+            if not download_url or not extract_to:
+                log_and_print(f"{INSTALL_FAIL_MSG}: {pkg} (missing URL or ExtractTo)")
+                continue
 
-                ok = install_archive_file(
-                    archive_path,
-                    extract_to,
-                    bool(meta.get(JSON_FIELD_STRIP_TOP, False))
-                )
-                archive_path.unlink(missing_ok=True)
+            error = None
+            archive_path = None
+
+            # Download (fatal if fails)
+            archive_path = download_archive_file(pkg, download_url, DOWNLOAD_DIR)
+            if not archive_path:
+                error = f"{DOWNLOAD_FAIL_MSG}: {pkg}"
+            else:
+                # Install (fatal if fails)
+                ok = install_archive_file(archive_path, extract_to, strip_top_level)
+                # Cleanup (always attempt)
+                handle_cleanup_and_log_failure(archive_path, ok, pkg, log_and_print, INSTALL_FAIL_MSG)
                 if not ok:
-                    log_and_print(f"{INSTALL_FAIL_MSG}: {pkg}")
-                    continue
+                    error = f"{INSTALL_FAIL_MSG}: {pkg}"
 
-                # Post-install
-                raw_cmds = meta.get(JSON_FIELD_POST_INSTALL)
-                if isinstance(raw_cmds, str):
-                    cmds = [os.path.expanduser(raw_cmds)]
-                elif isinstance(raw_cmds, list):
-                    cmds = [os.path.expanduser(c) for c in raw_cmds if isinstance(c, str)]
-                else:
-                    cmds = []
+            # Post-install (non-fatal)
+            if not error:
+                if not run_post_install_commands(meta.get(POST_INSTALL_KEY)):
+                    log_and_print(f"Post-install had failures for {pkg}")
 
-                for cmd in cmds:
-                    rc = os.system(cmd)
-                    if rc != 0:
-                        log_and_print(f"PostInstall failed (rc={rc}) for {pkg}: {cmd}")
-                        break
-
-                log_and_print(f"ARCHIVE {INSTALLED_LABEL}: {pkg}")
-
-                # Optional service enable
-                enable_service = meta.get(JSON_FIELD_ENABLE_SVC)
+            # Service enable (non-fatal)
+            if not error:
+                enable_service = meta.get(ENABLE_SERVICE_KEY)
                 if enable_service:
                     try:
                         start_service_standard(enable_service, pkg)
-                    except Exception:
-                        log_and_print(f"Could not enable/start {enable_service} (ignored).")
+                    except Exception as e:
+                        log_and_print(f"Service enable/start warning for {pkg} ({enable_service}): {e}")
 
-                success_count += 1
+            # Final outcome
+            if error:
+                log_and_print(error)
+                continue
 
-            else:  # REMOVE
-                check_path = expand_path(
-                    meta.get(JSON_FIELD_CHECK_PATH) or meta.get(JSON_FIELD_EXTRACT_TO, "")
-                )
+            log_and_print(f"ARCHIVE {INSTALLED_LABEL}: {pkg}")
+            success_count += 1
 
-                trash_list = meta.get(JSON_FIELD_TRASH_PATHS) or []
-                if isinstance(trash_list, str):
-                    trash_list = [trash_list]
+        else:  # REMOVE
+            error = None
 
-                for t in trash_list:
-                    expanded = expand_path(t)
-                    if move_to_trash(expanded):
-                        log_and_print(f"Trashed: {expanded}")
-                    elif sudo_remove_path(expanded):
-                        log_and_print(f"Trashed (sudo): {expanded}")
-                    else:
-                        log_and_print(f"Failed to trash: {expanded}")
+            check_path = expand_path(meta.get(CHECK_PATH_KEY) or meta.get(EXTRACT_TO_KEY, ""))
 
-                if uninstall_archive_install(check_path):
-                    log_and_print(f"ARCHIVE {UNINSTALLED_LABEL}: {pkg}")
-                    success_count += 1
+            # Best-effort trash (non-fatal)
+            trash_list = meta.get(TRASH_PATHS_KEY) or []
+            if isinstance(trash_list, str):
+                trash_list = [trash_list]
+
+            for t in trash_list:
+                expanded = expand_path(t)
+                if move_to_trash(expanded):
+                    log_and_print(f"Trashed: {expanded}")
+                elif sudo_remove_path(expanded):
+                    log_and_print(f"Trashed (sudo): {expanded}")
                 else:
-                    log_and_print(f"{UNINSTALL_FAIL_MSG}: {pkg}")
+                    log_and_print(f"Failed to trash: {expanded}")
 
-    finally:
-        rotate_logs(LOG_DIR, LOGS_TO_KEEP, ROTATE_LOG_NAME)
-        log_and_print(f"\nAll actions complete. {action.title()}ed: {success_count}")
-        log_and_print(f"You can find the full log here: {LOG_FILE}")
+            # Uninstall (fatal if fails)
+            if not uninstall_archive_install(check_path):
+                error = f"{UNINSTALL_FAIL_MSG}: {pkg}"
+
+            # Final outcome
+            if error:
+                log_and_print(error)
+                continue
+
+            log_and_print(f"ARCHIVE {UNINSTALLED_LABEL}: {pkg}")
+            success_count += 1
+
+    rotate_logs(LOG_DIR, LOGS_TO_KEEP, ROTATE_LOG_NAME)
+    log_and_print(f"\nAll actions complete. {action.title()}ed: {success_count}")
+    log_and_print(f"You can find the full log here: {LOG_FILE}")
 
 
 if __name__ == "__main__":

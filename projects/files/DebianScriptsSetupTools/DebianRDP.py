@@ -10,7 +10,7 @@ from modules.system_utils import (
     check_account, get_model,
     ensure_user_exists
 )
-from modules.json_utils import load_json  # <-- consistent loader
+from modules.json_utils import load_json, resolve_value
 from modules.display_utils import format_status_summary, select_from_list
 from modules.package_utils import check_package, install_packages
 from modules.service_utils import enable_and_start_service, check_service_status
@@ -19,40 +19,40 @@ from modules.rdp_utils import (
 )
 
 # === CONFIG PATHS & KEYS ===
-PRIMARY_CONFIG          = "config/AppConfigSettings.json"
-RDP_KEY                 = "RDP"
-DEFAULT_CONFIG          = "default"  # model → default fallback, like other scripts
+PRIMARY_CONFIG = "config/AppConfigSettings.json"
+RDP_KEY = "RDP"
+DEFAULT_CONFIG = "default"  # model → default fallback, like other scripts
 
 # === USER & DEPS ===
-REQUIRED_USER           = "root"
-DEPENDENCIES            = ["xrdp", "xfce4", "xfce4-goodies"]
+REQUIRED_USER = "root"
+DEPENDENCIES = ["xrdp", "xfce4", "xfce4-goodies"]
 
 # === XRDP/SESSION SETTINGS ===
-SESSION_CMD             = "startxfce4"
-XSESSION_FILE           = ".xsession"
-SKELETON_DIR            = "/etc/skel"
-USER_HOME_BASE          = "/home"
-XRDP_USER_DEFAULT       = "xrdp"
-SSL_GROUP               = "ssl-cert"
-XRDP_SERVICE            = "xrdp"
+SESSION_CMD = "startxfce4"
+XSESSION_FILE = ".xsession"
+SKELETON_DIR = "/etc/skel"
+USER_HOME_BASE = "/home"
+XRDP_USER_DEFAULT = "xrdp"
+SSL_GROUP = "ssl-cert"
+XRDP_SERVICE = "xrdp"
 
 # === LOGGING ===
-LOG_SUBDIR              = "logs/rdp"
-TIMESTAMP               = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-LOGS_TO_KEEP            = 10
-ROTATE_LOG_NAME         = "rdp_install_*.log"
+LOG_SUBDIR = "logs/rdp"
+TIMESTAMP = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+LOGS_TO_KEEP = 10
+ROTATE_LOG_NAME = "rdp_install_*.log"
 
 # === LABELS ===
-SUMMARY_LABEL           = "XRDP"
-INSTALLED_LABEL         = "INSTALLED"
-NOT_INSTALLED_LABEL     = "NOT INSTALLED"
+SUMMARY_LABEL = "XRDP"
+INSTALLED_LABEL = "INSTALLED"
+NOT_INSTALLED_LABEL = "NOT INSTALLED"
 
 # === MENU ===
 MENU_TITLE = "Select an option"
-ACTION_INSTALL_LABEL    = "Install XRDP + XFCE"
-ACTION_REMOVE_LABEL     = "Uninstall XRDP"
-ACTION_RENEW_LABEL      = "Regenerate XRDP keys/certs"
-ACTION_EXIT_LABEL       = "Exit"
+ACTION_INSTALL_LABEL = "Install XRDP + XFCE"
+ACTION_REMOVE_LABEL = "Uninstall XRDP"
+ACTION_RENEW_LABEL = "Regenerate XRDP keys/certs"
+ACTION_EXIT_LABEL = "Exit"
 MENU_OPTIONS = [
     ACTION_INSTALL_LABEL,
     ACTION_REMOVE_LABEL,
@@ -66,7 +66,7 @@ DEFAULT_CONFIG_NOTE = (
     "To customize {config_type} for model '{model}', create a model-specific config file.\n"
     "e.g. - '{example}' and add an entry for '{model}' in '{primary}'."
 )
-CONFIG_TYPE    = "rdp"
+CONFIG_TYPE = "rdp"
 CONFIG_EXAMPLE = "config/desktop/DesktopRDP.json"
 
 
@@ -79,9 +79,9 @@ def main() -> None:
 
     # Setup logging
     sudo_user = os.getenv("SUDO_USER")
-    log_home  = Path("/home") / sudo_user if sudo_user else Path.home()
-    log_dir   = log_home / LOG_SUBDIR  # logs will be inside the user's home directory
-    log_file  = log_dir / f"rdp_install_{TIMESTAMP}.log"  # log file with timestamp
+    log_home = Path("/home") / sudo_user if sudo_user else Path.home()
+    log_dir = log_home / LOG_SUBDIR  # logs will be inside the user's home directory
+    log_file = log_dir / f"rdp_install_{TIMESTAMP}.log"  # log file with timestamp
     setup_logging(log_file, log_dir)  # Initialize logging
 
     # Detect model
@@ -90,14 +90,15 @@ def main() -> None:
 
     # === Resolve RDP config path (model → default fallback) ===
     primary_cfg = load_json(PRIMARY_CONFIG)
-    try:
-        rdp_cfg_path = primary_cfg[model][RDP_KEY]
-        used_default = False
-    except KeyError:
-        rdp_cfg_path = primary_cfg[DEFAULT_CONFIG][RDP_KEY]
-        used_default = True
+    rdp_cfg_path, used_default = resolve_value(
+        primary_cfg,
+        model,
+        RDP_KEY,
+        DEFAULT_CONFIG,
+        check_file=True  # Ensures the config file path is valid
+    )
 
-    if not rdp_cfg_path or not Path(rdp_cfg_path).exists():
+    if not rdp_cfg_path:
         log_and_print(f"RDP config not found for model '{model}' or fallback.")
         return
     log_and_print(f"Using RDP config file: {rdp_cfg_path}")
@@ -113,12 +114,8 @@ def main() -> None:
         )
 
     # === Load model block strictly ===
-    try:
-        cfg = load_json(rdp_cfg_path)
-        model_block = cfg[model][RDP_KEY]  
-    except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
-        log_and_print(f"Invalid or missing RDP block for model '{model}' in {rdp_cfg_path}: {e}")
-        return
+    net_cfg = load_json(rdp_cfg_path)
+    model_block = net_cfg[model][RDP_KEY]  # {pkg: {url,key,codename,component}}
 
     # Optional username override in JSON; default to XRDP_USER_DEFAULT
     rdp_user = (model_block.get("UserName") or XRDP_USER_DEFAULT).strip()

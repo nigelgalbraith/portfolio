@@ -16,8 +16,8 @@ from modules.service_utils import (
     restart_service, ensure_service_installed, stop_and_disable_service, remove_path, check_service_status
 )
 from modules.camera_utils import write_m3u, remove_m3u, ensure_dummy_xmltv, find_extracted_binary
-from modules.json_utils import load_json, build_jobs_from_block
-from modules.display_utils import format_status_summary, select_from_list, confirm
+from modules.json_utils import load_json, resolve_value
+from modules.display_utils import format_status_summary, select_from_list, confirm, print_dict_table
 from modules.package_utils import check_package, check_binary_installed
 from modules.archive_utils import (
     download_archive_file,
@@ -45,7 +45,7 @@ KEY_DOWNLOAD_URL        = "DownloadURL"
 KEY_INSTALL_DIR         = "InstallDir"
 KEY_SYMLINK_PATH        = "SymlinkPath"
 KEY_APT_PACKAGE         = "AptPackageName"
-KEY_CAMERAS             = "Cameras"
+KEY_CAMS                = "Cameras"
 
 # === CAMERA FIELDS ===
 CAM_NAME_KEY            = "Name"
@@ -93,6 +93,18 @@ CONFIRM_PROMPT = "Proceed with {action_label} for '{service_key}'? [Y/n]: "
 CONFIRM_ABORTED_MSG = "Cancelled by user."
 CONFIRM_LOG_MSG = "Log: {log_file}"
 
+# === CONSTANTS FOR COLUMN HEADERS ===
+COL_FIELD           = "Field"
+COL_ACTION          = "Action"
+COL_SERVICE         = "Service"
+COL_SERVICE_NAME    = "Service Name"
+COL_INSTALL_DIR     = "Install Directory"
+COL_SYMLINK_PATH    = "Symlink Path"
+COL_URL             = "URL"
+COL_TO              = "Install Path"
+COL_VALUE           = "Value"
+
+
 def main() -> None:
     # Validate account
     if not check_account(expected_user=REQUIRED_USER):
@@ -113,14 +125,15 @@ def main() -> None:
     log_and_print(f"Detected model: {model}")
 
     primary_cfg = load_json(PRIMARY_CONFIG)
-    try:
-        iptv_cfg_path = primary_cfg[model][CONFIG_ROOT_KEY]
-        used_default = False
-    except KeyError:
-        iptv_cfg_path = primary_cfg[DEFAULT_CONFIG][CONFIG_ROOT_KEY]
-        used_default = True
+    iptv_cfg_path, used_default = resolve_value(
+        primary_cfg,
+        model,
+        CONFIG_ROOT_KEY,
+        DEFAULT_CONFIG,
+        check_file=True  # ensures the config file path is valid
+    )
 
-    if not iptv_cfg_path or not Path(iptv_cfg_path).exists():
+    if not iptv_cfg_path:
         log_and_print(f"Invalid IPTV config path for model '{model}' or fallback.")
         return
 
@@ -136,21 +149,15 @@ def main() -> None:
         )
 
     # Load per-model IPTV block (service blocks live directly under model)
-    try:
-        iptv_cfg = load_json(iptv_cfg_path)
-        model_block = iptv_cfg[model]  # { service_key: { ...fields... }, ... }
-    except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
-        log_and_print(f"Nothing to do: missing model block '{model}' in IPTV config: {e}")
-        return
+    iptv_cfg    = load_json(iptv_cfg_path)
+    model_block = iptv_cfg[model]  # { service_key: { ...fields... }, ... }
+    service_keys = sorted(model_block.keys())
 
-    if not isinstance(model_block, dict) or not model_block:
+    if not service_keys:
         log_and_print("No service blocks found under this model.")
         return
 
     # List service blocks via keys (bracket-based approach)
-    service_keys = sorted(model_block.keys())
-
-    # If multiple, let the user choose which service block to manage
     service_key = (
         select_from_list("Select service block", service_keys)
         if len(service_keys) > 1 else service_keys[0]
@@ -163,7 +170,7 @@ def main() -> None:
         return
 
     iptv = model_block.get(service_key, {}) or {}
-    cams = iptv.get(KEY_CAMERAS, []) or []
+    cams = iptv.get(KEY_CAMS, []) or []
 
     # Read config values (tolerant via .get)
     service_name   = (iptv.get(KEY_SERVICE_NAME) or "").strip()
@@ -209,6 +216,19 @@ def main() -> None:
         log_and_print(f"Log: {log_file}")
         return
 
+    # Show the summary table
+    print_dict_table(
+        [
+            {COL_FIELD: COL_ACTION,       COL_VALUE: ADD_ACTION if choice == ACTION_ADD_LABEL else REMOVE_ACTION},
+            {COL_FIELD: COL_SERVICE,      COL_VALUE: service_key},
+            {COL_FIELD: COL_SERVICE_NAME, COL_VALUE: service_name},
+            {COL_FIELD: COL_INSTALL_DIR,  COL_VALUE: str(install_dir)},
+            {COL_FIELD: COL_SYMLINK_PATH, COL_VALUE: str(symlink_path)},
+        ],
+        [COL_FIELD, COL_VALUE],
+        SUMMARY_LABEL
+    )
+
     # What currently exists?
     service_unit_exists = bool(service_name) and Path(f"/etc/systemd/system/{service_name}.service").exists()
     m3u_exists         = Path(m3u_path).exists()
@@ -233,7 +253,7 @@ def main() -> None:
 
     action_label = ADD_ACTION if choice == ACTION_ADD_LABEL else REMOVE_ACTION
 
-    # Use the confirm function here
+    # Confirm
     if not confirm(f"Proceed with {action_label} for '{service_key}'? [Y/n]: ", log_fn=log_and_print):
         log_and_print("Cancelled by user.")
         secure_logs_for_user(log_dir, sudo_user)
@@ -289,13 +309,15 @@ def main() -> None:
 
             if not install_archive_file(archive_path, work_root, strip_top_level=True):
                 log_and_print("ERROR: Extract failed.")
-                archive_path.unlink(missing_ok=True)
+                if not remove_path(archive_path):
+                    log_and_print(f"WARNING: Cleanup failed for archive {archive_path}")
                 secure_logs_for_user(log_dir, sudo_user)
                 rotate_logs(log_dir, LOGS_TO_KEEP, ROTATE_LOG_NAME)
                 log_and_print(f"Log: {log_file}")
                 return
 
-            archive_path.unlink(missing_ok=True)
+            if not remove_path(archive_path):
+                log_and_print(f"WARNING: Cleanup failed for archive {archive_path}")
 
             candidate = find_extracted_binary(work_root, binary_name)
             if not candidate:
@@ -364,11 +386,13 @@ def main() -> None:
         else:
             log_and_print(f"WARNING: Failed to remove M3U → {m3u_path}")
 
-        # Remove XMLTV
+        # Remove XMLTV (use remove_path instead of .unlink)
         if Path(xmltv_path).exists():
-            Path(xmltv_path).unlink()
-            log_and_print(f"Removed XMLTV: {xmltv_path}")
-            success_count += 1
+            if remove_path(xmltv_path):
+                log_and_print(f"Removed XMLTV: {xmltv_path}")
+                success_count += 1
+            else:
+                log_and_print(f"WARNING: Failed to remove XMLTV: {xmltv_path}")
         else:
             log_and_print(f"WARNING: XMLTV file not found: {xmltv_path}")
 
@@ -376,7 +400,7 @@ def main() -> None:
         if service_name:
             stop_and_disable_service(service_name)
 
-            # Reload systemd (use the reload_systemd function)
+            # Reload systemd
             if not reload_systemd():
                 log_and_print("Failed to reload systemd after stopping the service.")
                 secure_logs_for_user(log_dir, sudo_user)
@@ -384,12 +408,14 @@ def main() -> None:
                 log_and_print(f"Log: {log_file}")
                 return
 
-        # Remove unit file (unlink)
+        # Remove unit file (use remove_path)
         unit_file = Path(f"/etc/systemd/system/{service_name}.service") if service_name else None
         if unit_file and unit_file.exists():
-            remove_path(unit_file)
-            log_and_print(f"Removed service unit: {unit_file}")
-            success_count += 1
+            if remove_path(unit_file):
+                log_and_print(f"Removed service unit: {unit_file}")
+                success_count += 1
+            else:
+                log_and_print(f"WARNING: Failed to remove service unit: {unit_file}")
         else:
             log_and_print(f"Service unit file for {service_name} does not exist.")
 
@@ -408,15 +434,13 @@ def main() -> None:
             else:
                 log_and_print(f"WARNING: couldn't move to Trash: {install_dir}")
 
-        # Reload systemd after changes (using the reload_systemd function)
+        # Reload systemd after changes
         if not reload_systemd():
             log_and_print("Failed to reload systemd after cleaning up.")
             secure_logs_for_user(log_dir, sudo_user)
             rotate_logs(log_dir, LOGS_TO_KEEP, ROTATE_LOG_NAME)
             log_and_print(f"Log: {log_file}")
             return
-
-
 
     # Wrap up
     secure_logs_for_user(log_dir, sudo_user)

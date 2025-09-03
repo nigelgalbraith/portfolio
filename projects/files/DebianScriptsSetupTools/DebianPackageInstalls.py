@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
-import os
 import datetime
-import json
 from pathlib import Path
 
 from modules.logger_utils import setup_logging, log_and_print, rotate_logs
 from modules.system_utils import check_account, get_model
 from modules.package_utils import check_package, filter_by_status, install_packages, uninstall_packages
 from modules.display_utils import format_status_summary, select_from_list, confirm
-from modules.json_utils import load_json
+from modules.json_utils import load_json, resolve_value
 
 # === CONFIG PATHS & KEYS ===
 PRIMARY_CONFIG  = "config/AppConfigSettings.json"
@@ -70,14 +68,15 @@ def main():
 
     # Resolve package config file (model → default fallback)
     primary_config = load_json(PRIMARY_CONFIG)
-    try:
-        package_file = primary_config[model][PACKAGES_KEY]
-        used_default = False
-    except KeyError:
-        package_file = primary_config[DEFAULT_CONFIG][PACKAGES_KEY]
-        used_default = True
+    package_file, used_default = resolve_value(
+        primary_config,
+        model,
+        PACKAGES_KEY,
+        DEFAULT_CONFIG,
+        check_file=True
+    )
 
-    if not package_file or not os.path.isfile(package_file):
+    if not package_file:
         log_and_print(f"No valid {CONFIG_TYPE} config file found for model '{model}'")
         return
 
@@ -93,13 +92,24 @@ def main():
         )
 
     # Load package list
-    try:
-        pkg_config = load_json(package_file)
-        packages_list = pkg_config[model][PACKAGES_KEY]
-        package_status = {pkg: check_package(pkg) for pkg in packages_list}
-    except (KeyError, json.JSONDecodeError) as e:
-        log_and_print(f"Could not read {PACKAGES_KEY} from {package_file}: {e}")
+    pkg_config = load_json(package_file)
+    packages_list = pkg_config.get(model, {}).get(PACKAGES_KEY)
+
+    if not packages_list:
+        log_and_print(f"No {PACKAGES_KEY} defined for model '{model}' in {package_file}")
         return
+
+    # normalize/dedupe if someone added duplicates in JSON
+    packages_list = list(dict.fromkeys(packages_list))
+    packages_list = sorted(model_block.keys())
+
+    # Validate shape
+    if not all(isinstance(p, str) and p.strip() for p in packages_list):
+        log_and_print(f"Invalid entries in {PACKAGES_KEY} for model '{model}' (expected list of package names).")
+        return
+
+    # Build current status map BEFORE using it in summary/jobs
+    package_status = {pkg: check_package(pkg) for pkg in packages_list}
 
     # Summary
     summary = format_status_summary(
@@ -140,7 +150,7 @@ def main():
     log_and_print(f"The following {PACKAGES_KEY} will be processed for {action}:")
     log_and_print("  " + "\n  ".join(jobs))
 
-    # Confirm (default Yes)
+    # Confirm
     if not confirm(prompt, log_fn=log_and_print):
         log_and_print("User cancelled.")
         return

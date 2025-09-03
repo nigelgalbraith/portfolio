@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 
 import os
-import json
-import subprocess
 import datetime
+import subprocess
 from pathlib import Path
 
 from modules.logger_utils import (
@@ -13,7 +12,7 @@ from modules.system_utils import (
     check_account, get_model, ensure_dependencies_installed, secure_logs_for_user
 )
 from modules.json_utils import (
-    load_json, validate_meta
+    load_json, resolve_value, validate_meta
 )
 from modules.display_utils import format_status_summary, select_from_list
 from modules.service_utils import (
@@ -27,41 +26,41 @@ from modules.service_utils import (
 from modules.package_utils import filter_by_status
 
 # === CONFIG PATHS & KEYS ===
-PRIMARY_CONFIG = "config/AppConfigSettings.json"
-SERVICE_KEY = "Services"
-CONFIG_TYPE = "services"
-CONFIG_EXAMPLE = "config/desktop/DesktopServices.json"
-DEFAULT_CONFIG = "default"  # used for fallback when model-specific entry is missing
+PRIMARY_CONFIG     = "config/AppConfigSettings.json"
+SERVICE_KEY        = "Services"
+CONFIG_TYPE        = "services"
+CONFIG_EXAMPLE     = "config/desktop/DesktopServices.json"
+DEFAULT_CONFIG     = "default"                # used for fallback when model-specific entry is missing
 
 # === LOGGING ===
-TIMESTAMP = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-LOGS_TO_KEEP = 10
-ROTATE_LOG_NAME = "services_install_*.log"
+TIMESTAMP          = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+LOGS_TO_KEEP       = 10
+ROTATE_LOG_NAME    = "services_install_*.log"
 
 # === DEPENDENCIES ===
-DEPENDENCIES = ["logrotate"]
+DEPENDENCIES       = ["logrotate"]
 
 # === USER & MODEL ===
-REQUIRED_USER = "root"
+REQUIRED_USER      = "root"
 
 # === LABELS ===
-SUMMARY_LABEL = "Service"
-SERVICE_LABEL = "services"
-ENABLED_LABEL = "ENABLED"
-DISABLED_LABEL = "DISABLED"
+SUMMARY_LABEL      = "Service"
+SERVICE_LABEL      = "services"
+ENABLED_LABEL      = "ENABLED"
+DISABLED_LABEL     = "DISABLED"
 
 # === ACTIONS ===
-INSTALLATION_ACTION = "installation"
+INSTALLATION_ACTION   = "installation"
 UNINSTALLATION_ACTION = "uninstallation"
 
 # === MENU ===
-MENU_TITLE     = "Choose an option"
-ACTION_SETUP   = f"Setup {SERVICE_LABEL}"
-ACTION_REMOVE  = f"Remove {SERVICE_LABEL}"
-ACTION_LOGS    = "Show logs"
-ACTION_EXIT    = "Exit"
+MENU_TITLE         = "Choose an option"
+ACTION_SETUP       = f"Setup {SERVICE_LABEL}"
+ACTION_REMOVE      = f"Remove {SERVICE_LABEL}"
+ACTION_LOGS        = "Show logs"
+ACTION_EXIT        = "Exit"
 
-MENU_OPTIONS = [
+MENU_OPTIONS       = [
     ACTION_SETUP,
     ACTION_REMOVE,
     ACTION_LOGS,
@@ -115,20 +114,17 @@ def main():
     model = get_model()
     log_and_print(f"Detected model: {model}")
 
-    # --- Resolve config via bracket lookups (model → default fallback) ---
-    try:
-        primary_cfg = load_json(PRIMARY_CONFIG)
-        try:
-            services_file = primary_cfg[model][SERVICE_KEY]
-            used_default = False
-        except KeyError:
-            services_file = primary_cfg[DEFAULT_CONFIG][SERVICE_KEY]
-            used_default = True
-    except (FileNotFoundError, json.JSONDecodeError) as e:
-        log_and_print(f"Failed to read PRIMARY_CONFIG '{PRIMARY_CONFIG}': {e}")
-        return
+    # Resolve config using resolve_value (model → default fallback)
+    primary_cfg = load_json(PRIMARY_CONFIG)
+    services_file, used_default = resolve_value(
+        primary_cfg,
+        model,
+        SERVICE_KEY,
+        DEFAULT_CONFIG,
+        check_file=True  # ensures the config file path is valid
+    )
 
-    if not services_file or not Path(services_file).exists():
+    if not services_file:
         log_and_print(f"No valid {CONFIG_TYPE} config file found for model '{model}' or fallback.")
         return
 
@@ -144,17 +140,10 @@ def main():
             )
         )
 
-    # --- Load model block & keys (strict bracket access) ---
-    try:
-        services_data = load_json(services_file)
-        model_block = services_data[model][SERVICE_KEY]   # {key: meta}
-        service_keys = sorted(model_block.keys())
-    except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
-        log_and_print(f"No {SERVICE_LABEL} found for model '{model}' in {services_file}: {e}")
-        secure_logs_for_user(log_dir, sudo_user)
-        rotate_logs(log_dir, LOGS_TO_KEEP, ROTATE_LOG_NAME)
-        log_and_print(f"\nAll actions complete. Log: {log_file}")
-        return
+    # Load model block & keys (strict bracket access)
+    services_data = load_json(services_file)
+    model_block = services_data[model][SERVICE_KEY]   # {key: meta}
+    service_keys = sorted(model_block.keys())
 
     if not service_keys:
         log_and_print(f"No {SERVICE_LABEL} found.")
@@ -258,33 +247,26 @@ def main():
                 continue
 
             service_name = meta.get(SERVICE_NAME, key)
-            try:
-                # Install logrotate cfg (optional)
-                if LOGROTATE_CFG in meta and meta.get(LOG_PATH):
-                    target_name = Path(meta[LOG_PATH]).name
-                    install_logrotate_config(meta[LOGROTATE_CFG], target_name)
+            # Install logrotate cfg (optional)
+            if LOGROTATE_CFG in meta and meta.get(LOG_PATH):
+                target_name = Path(meta[LOG_PATH]).name
+                install_logrotate_config(meta[LOGROTATE_CFG], target_name)
 
-                # Copy script and optional config
-                copy_template(meta[SCRIPT_SRC], meta[SCRIPT_DEST])
-                if meta.get(CONFIG_SRC) and meta.get(CONFIG_DEST):
-                    copy_template(meta[CONFIG_SRC], meta[CONFIG_DEST])
+            # Copy script and optional config
+            copy_template(meta[SCRIPT_SRC], meta[SCRIPT_DEST])
+            if meta.get(CONFIG_SRC) and meta.get(CONFIG_DEST):
+                copy_template(meta[CONFIG_SRC], meta[CONFIG_DEST])
 
-                # Create unit file (no start yet)
-                create_service(meta[SERVICE_SRC], meta[SERVICE_DEST])
+            # Create unit file (no start yet)
+            create_service(meta[SERVICE_SRC], meta[SERVICE_DEST])
 
-                # Ensure log file exists
-                Path(meta[LOG_PATH]).touch(mode=DEFAULT_FILE_MODE, exist_ok=True)
+            # Ensure log file exists
+            Path(meta[LOG_PATH]).touch(mode=DEFAULT_FILE_MODE, exist_ok=True)
 
-                prepared.append((key, meta, service_name))
-            except Exception as e:
-                log_and_print(f"PREP FAILED: {service_name} ({e})")
-                continue
+            prepared.append((key, meta, service_name))
 
         # Reload systemd once
-        try:
-            subprocess.run(["systemctl", "daemon-reload"], check=True)
-        except Exception as e:
-            log_and_print(f"daemon-reload failed: {e}")
+        subprocess.run(["systemctl", "daemon-reload"], check=True)
 
         # Enable+Start in order
         for key, meta, service_name in prepared:

@@ -12,7 +12,7 @@ from modules.system_utils import (
 )
 from modules.logger_utils import log_and_print, setup_logging, rotate_logs
 from modules.display_utils import print_dict_table, confirm, select_from_list
-from modules.json_utils import load_json
+from modules.json_utils import load_json, resolve_value
 from modules.network_utils import (
     nmcli_ok, connection_exists, bring_up_connection,
     create_static_connection, modify_static_connection,
@@ -39,7 +39,7 @@ DEPENDENCIES = ["nmcli"]
 # === USER & MODEL ===
 REQUIRED_USER = "root"
 
-# === FIELDS (for summary table only) ===
+# === CONSTANTS ===
 FIELD_MODEL      = "Model"
 FIELD_SSID       = "SSID"
 FIELD_ACTION     = "Action"
@@ -49,7 +49,6 @@ FIELD_ADDRESS    = "Address"
 FIELD_GATEWAY    = "Gateway"
 FIELD_DNS        = "DNS"
 
-# === ACTIONS ===
 ACTION_STATIC_CONST = "Static"
 ACTION_DHCP_CONST   = "DHCP"
 
@@ -70,14 +69,14 @@ DEFAULT_CONFIG_NOTE = (
     "e.g. - '{example}' and add an entry for '{model}' in '{primary}'."
 )
 
+# === PROMPT MESSAGES ===
+CONFIRM_MESSAGE = "\nApply these settings now? [y/n]: "
+
 # === CONSTANTS FOR FIELDS SUMMARY ===
 FIELD = "Field"
 VALUE = "Value"
 CONNECTION_NAME = "ConnectionName"
 SUMMARY_LABEL = "Network presets"
-
-# === PROMPT MESSAGES ===
-CONFIRM_MESSAGE = "\nApply these settings now? [y/n]: "
 
 
 def main() -> None:
@@ -105,23 +104,18 @@ def main() -> None:
     log_and_print(f"Detected model: {model}")
 
     # === Resolve path to model-specific Network config (model → default fallback)
-    try:
-        primary_cfg = load_json(PRIMARY_CONFIG)
-        try:
-            network_cfg_path = primary_cfg[model][CONFIG_KEY]
-            used_default = False
-        except KeyError:
-            network_cfg_path = primary_cfg[DEFAULT_CONFIG][CONFIG_KEY]
-            used_default = True
-    except (FileNotFoundError, json.JSONDecodeError) as e:
-        log_and_print(f"Failed to read PRIMARY_CONFIG '{PRIMARY_CONFIG}': {e}")
-        return
+    network_cfg_file, used_default = resolve_value(
+        load_json(PRIMARY_CONFIG),
+        model,
+        CONFIG_KEY,
+        DEFAULT_CONFIG,
+        check_file=True
+    )
 
-    if not network_cfg_path or not Path(network_cfg_path).exists():
-        log_and_print(f"Network presets config not found for model '{model}' or fallback.")
+    if not network_cfg_file:
+        log_and_print(f"Invalid {CONFIG_TYPE.upper()} config path for model '{model}' or fallback.")
         return
-
-    log_and_print(f"Using network presets config: {network_cfg_path}")
+    log_and_print(f"Using network presets config: {network_cfg_file}")
     if used_default:
         log_and_print(
             DEFAULT_CONFIG_NOTE.format(
@@ -133,15 +127,8 @@ def main() -> None:
         )
 
     # === Load model block strictly
-    try:
-        net_cfg = load_json(network_cfg_path)
-        networks_block = net_cfg[model]["Networks"]  # {SSID: {...}}
-    except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
-        log_and_print(f"Invalid or missing 'Networks' block for model '{model}' in {network_cfg_path}: {e}")
-        secure_logs_for_user(log_dir, sudo_user)
-        rotate_logs(log_dir, LOGS_TO_KEEP, ROTATE_LOG_NAME)
-        log_and_print(f"Done. Log: {log_file}")
-        return
+    network_cfg = load_json(network_cfg_file)
+    networks_block = network_cfg[model]["Networks"]  # {SSID: {...}}
 
     if not isinstance(networks_block, dict) or not networks_block:
         log_and_print(f"No SSIDs found in network presets for model '{model}'.")
@@ -178,14 +165,7 @@ def main() -> None:
     log_and_print(f"Selected SSID: {selected_ssid}")
 
     # Build preset (strict)
-    try:
-        preset = build_preset(networks_block, selected_ssid)
-    except (KeyError, TypeError) as e:
-        log_and_print(str(e))
-        secure_logs_for_user(log_dir, sudo_user)
-        rotate_logs(log_dir, LOGS_TO_KEEP, ROTATE_LOG_NAME)
-        log_and_print(f"Done. Log: {log_file}")
-        return
+    preset = build_preset(networks_block, selected_ssid)
 
     # Summary table
     summary_rows = [
@@ -204,14 +184,7 @@ def main() -> None:
     action = ACTION_STATIC_CONST if choice == ACTION_STATIC else ACTION_DHCP_CONST
 
     # Validate preset (strict per action)
-    try:
-        validate_preset(preset, action)
-    except ValueError as e:
-        log_and_print(f"ERROR: {e}")
-        secure_logs_for_user(log_dir, sudo_user)
-        rotate_logs(log_dir, LOGS_TO_KEEP, ROTATE_LOG_NAME)
-        log_and_print(f"Done. Log: {log_file}")
-        return
+    validate_preset(preset, action)
 
     # Confirm (default Yes)
     if not confirm(CONFIRM_MESSAGE, log_fn=log_and_print):
@@ -227,28 +200,24 @@ def main() -> None:
     log_and_print(f"Connection '{name}' exists: {exists}")
 
     success = False
-    try:
-        if choice == ACTION_STATIC_CONST:
-            if exists:
-                log_and_print(f"Modifying to Static: {name}")
-                modify_static_connection(preset, selected_ssid)
-            else:
-                log_and_print(f"Creating Static: {name}")
-                create_static_connection(preset, selected_ssid)
+    if choice == ACTION_STATIC_CONST:
+        if exists:
+            log_and_print(f"Modifying to Static: {name}")
+            modify_static_connection(preset, selected_ssid)
         else:
-            if exists:
-                log_and_print(f"Modifying to DHCP: {name}")
-                modify_dhcp_connection(preset, selected_ssid)
-            else:
-                log_and_print(f"Creating DHCP: {name}")
-                create_dhcp_connection(preset, selected_ssid)
+            log_and_print(f"Creating Static: {name}")
+            create_static_connection(preset, selected_ssid)
+    else:
+        if exists:
+            log_and_print(f"Modifying to DHCP: {name}")
+            modify_dhcp_connection(preset, selected_ssid)
+        else:
+            log_and_print(f"Creating DHCP: {name}")
+            create_dhcp_connection(preset, selected_ssid)
 
-        bring_up_connection(name)
-        log_and_print("Configuration completed successfully.")
-        success = True
-
-    except subprocess.CalledProcessError as e:
-        log_and_print(f"Command failed: {e}")
+    bring_up_connection(name)
+    log_and_print("Configuration completed successfully.")
+    success = True
 
     # Harden & rotate logs
     secure_logs_for_user(log_dir, sudo_user)
@@ -257,6 +226,7 @@ def main() -> None:
         log_and_print(f"Done. Log: {log_file}")
     else:
         log_and_print(f"Completed with errors. Log: {log_file}")
+
 
 if __name__ == "__main__":
     main()

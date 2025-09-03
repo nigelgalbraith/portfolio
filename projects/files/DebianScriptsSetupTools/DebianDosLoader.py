@@ -7,7 +7,7 @@ from pathlib import Path
 
 from modules.logger_utils import setup_logging, log_and_print, rotate_logs
 from modules.system_utils import check_account, ensure_dependencies_installed, get_model, expand_path, move_to_trash
-from modules.json_utils import load_json, build_id_to_name, build_jobs_from_block
+from modules.json_utils import load_json, resolve_value
 from modules.display_utils import print_dict_table, select_from_list, confirm
 from modules.archive_utils import download_archive_file, install_archive_file, check_archive_installed
 
@@ -98,35 +98,32 @@ DEFAULT_CONFIG_NOTE = (
 
 
 def main() -> None:
-    # --- NOTE: Enforce expected account (prevents running as wrong user) ---
+    # === Validate expected user and initialize logging ===
     if not check_account(expected_user=REQUIRED_USER):
         return
-
-    # --- NOTE: Initialize logging as early as possible to capture everything below ---
     setup_logging(LOG_FILE, LOG_DIR)
 
-    # --- NOTE: Ensure external tools exist before we try to call them (fail-fast) ---
+    # === Ensure external dependencies are installed (fail-fast if missing) ===
     ensure_dependencies_installed(DEPENDENCIES)
 
-    # --- NOTE: Detect model and resolve the per-model DOSBox config path (fallback to 'default') ---
+    # === Detect model and resolve per-model DOSBox config path (fallback to 'default') ===
     model = get_model()
     log_and_print(f"Detected model: {model}")
 
     primary_cfg = load_json(PRIMARY_CONFIG)
-    try:
-        cfg_path = primary_cfg[model][DOSBOX_KEY]
-        used_default = False
-    except KeyError:
-        cfg_path = primary_cfg[DEFAULT_CONFIG][DOSBOX_KEY]
-        used_default = True
+    dosbox_cfg_path, used_default = resolve_value(
+        primary_cfg,
+        model,
+        DOSBOX_KEY,
+        DEFAULT_CONFIG,
+        check_file=True  # Ensures the config file path is valid
+    )
 
-    if not cfg_path or not Path(cfg_path).exists():
+    if not dosbox_cfg_path:
         log_and_print(f"DOSBox config not found for model '{model}' or fallback.")
         return
-
-    log_and_print(f"Using DOSBox config: {cfg_path}")
+    log_and_print(f"Using DOSBox config: {dosbox_cfg_path}")
     if used_default:
-        # --- NOTE: Surface that we’re using a default configuration to guide future customization ---
         log_and_print(
             DEFAULT_CONFIG_NOTE.format(
                 config_type=CONFIG_TYPE,
@@ -136,31 +133,23 @@ def main() -> None:
             )
         )
 
-    # --- NOTE: Load the model’s game block strictly via bracket indexing (fail if shape is wrong) ---
-    try:
-        cfg = load_json(cfg_path)
-        id_to_meta = cfg[model][GAMES_KEY]   # dict of {game_id: {...}}
-    except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
-        log_and_print(f"No games defined for model '{model}' in {cfg_path}: {e}")
-        return
+    # === Load the model's game block strictly (ensure it's in the correct format) ===
+    dosbox_cfg = load_json(dosbox_cfg_path)
+    model_block = dosbox_cfg[model][GAMES_KEY]  # {game_id: {...}}
 
-    if not isinstance(id_to_meta, dict) or not id_to_meta:
-        log_and_print("No games defined in DOSBox config.")
-        return
+    # === Build lightweight name map for UI labels (use game ID if no name) ===
+    id_to_name = {cid: model_block[cid].get(FIELD_NAME, cid) for cid in model_block}
 
-    # --- NOTE: Build lightweight name map for nicer UI labels (falls back to id) ---
-    id_to_name = build_id_to_name(id_to_meta, FIELD_NAME)
-
-    # --- NOTE: Probe install status up-front so menus can show installed vs not installed ---
+    # === Check install status of each game upfront (show installed vs uninstalled games in UI) ===
     status = {}
-    for gid, meta in id_to_meta.items():
+    for gid, meta in model_block.items():
         probe = meta.get(FIELD_CHECK_PATH) or meta.get(FIELD_EXTRACT_TO) or ""
         status[gid] = check_archive_installed(probe)
 
     installed_ids     = sorted([gid for gid, v in status.items() if v])
     not_installed_ids = sorted([gid for gid, v in status.items() if not v])
 
-    # --- NOTE: Print a quick status table (human-friendly overview before taking action) ---
+    # === Print a quick overview of installed vs uninstalled games ===
     rows = []
     for gid in sorted(status.keys()):
         rows.append({
@@ -169,7 +158,7 @@ def main() -> None:
         })
     print_dict_table(rows, [GAME_LABEL, STATUS_LABEL], SUMMARY_TBL_LABEL)
 
-    # --- NOTE: Single action picker (consistent UX via select_from_list) ---
+    # === Show action picker for the user (select from install/remove/run) ===
     choice = None
     while choice not in MENU_OPTIONS:
         choice = select_from_list(MENU_TITLE, MENU_OPTIONS)
@@ -182,21 +171,21 @@ def main() -> None:
         log_and_print(f"Done. Log: {LOG_FILE}")
         return
 
-    # --- NOTE: Create scratch directory once; reused by installers ---
+    # === Create a temporary directory for downloads if needed ===
     DL_TMP_DIR.mkdir(parents=True, exist_ok=True)
 
     # =========================
     # ========== INSTALL ======
     # =========================
     if choice == ACTION_INSTALL:
-        # --- NOTE: If everything is already installed, bail early ---
+        # === Bail early if all games are already installed ===
         if not not_installed_ids:
             log_and_print("No games to process for installation.")
             rotate_logs(LOG_DIR, LOGS_TO_KEEP, ROTATE_LOG_NAME)
             log_and_print(f"Done. Log: {LOG_FILE}")
             return
 
-        # --- NOTE: Pick a game to install (labels show id and friendly name) ---
+        # === Choose a game to install from the list of uninstalled games ===
         install_options = [f"{gid} — {id_to_name.get(gid, gid)}" for gid in not_installed_ids]
         sel_label = select_from_list(GAME_MENU_INSTALL, install_options)
         if not sel_label:
@@ -206,20 +195,16 @@ def main() -> None:
             return
         sel_id = sel_label.split(" — ", 1)[0]
 
-        # --- NOTE: Pull only the fields we need for this step (keeps code tidy) ---
-        jobs = build_jobs_from_block(
-            id_to_meta,
-            [sel_id],
-            [FIELD_NAME, FIELD_DOWNLOAD_URL, FIELD_EXTRACT_TO, FIELD_STRIP_TOP, FIELD_POSTINSTALL]
-        )
-        meta = jobs.get(sel_id, {}) or {}
+        # === Extract necessary data for the selected game ===
+        jobs = {sel_id: model_block.get(sel_id, {})}
+        meta = jobs.get(sel_id, {})
 
         name       = (meta.get(FIELD_NAME) or sel_id).strip()
         url        = (meta.get(FIELD_DOWNLOAD_URL) or "").strip()
         extract_to = expand_path(meta.get(FIELD_EXTRACT_TO, ""))
         strip_top  = bool(meta.get(FIELD_STRIP_TOP, True))
 
-        # --- NOTE: Show install plan before we mutate anything (safer UX) ---
+        # === Display install plan before proceeding ===
         print_dict_table(
             [
                 {COL_FIELD: ROW_ACTION, COL_VALUE: VAL_INSTALL},
@@ -231,7 +216,7 @@ def main() -> None:
             INSTALL_SUMMARY
         )
 
-        # --- NOTE: Last-chance confirmation gate (consistent yes/no UX via confirm()) ---
+        # === Confirm the installation action (last chance) ===
         if not confirm(PROMPT_INSTALL, log_fn=log_and_print):
             log_and_print("Cancelled by user.")
             rotate_logs(LOG_DIR, LOGS_TO_KEEP, ROTATE_LOG_NAME)
@@ -244,7 +229,7 @@ def main() -> None:
             log_and_print(f"Done. Log: {LOG_FILE}")
             return
 
-        # --- NOTE: Download, extract, then optional post-install steps ---
+        # === Download, extract, and optionally post-install ===
         archive_path = download_archive_file(name, url, DL_TMP_DIR)
         if not archive_path:
             log_and_print("DOWNLOAD FAILED.")
@@ -278,14 +263,14 @@ def main() -> None:
     # ========== REMOVE =======
     # =========================
     elif choice == ACTION_REMOVE:
-        # --- NOTE: Nothing to remove? exit early ---
+        # === Bail early if no installed games to remove ===
         if not installed_ids:
             log_and_print("No games to process for removal.")
             rotate_logs(LOG_DIR, LOGS_TO_KEEP, ROTATE_LOG_NAME)
             log_and_print(f"Done. Log: {LOG_FILE}")
             return
 
-        # --- NOTE: Pick an installed game to remove ---
+        # === Choose a game to remove from the list of installed games ===
         remove_options = [f"{gid} — {id_to_name.get(gid, gid)}" for gid in installed_ids]
         sel_label = select_from_list(GAME_MENU_REMOVE, remove_options)
         if not sel_label:
@@ -295,17 +280,13 @@ def main() -> None:
             return
         sel_id = sel_label.split(" — ", 1)[0]
 
-        jobs = build_jobs_from_block(
-            id_to_meta,
-            [sel_id],
-            [FIELD_NAME, FIELD_CHECK_PATH, FIELD_EXTRACT_TO]
-        )
-        meta = jobs.get(sel_id, {}) or {}
+        jobs = {sel_id: model_block.get(sel_id, {})}
+        meta = jobs.get(sel_id, {})
 
         name = (meta.get(FIELD_NAME) or sel_id).strip()
         check_path = expand_path(meta.get(FIELD_CHECK_PATH) or meta.get(FIELD_EXTRACT_TO, ""))
 
-        # --- NOTE: Show removal plan before mutating (safety) ---
+        # === Display removal plan before proceeding ===
         print_dict_table(
             [
                 {COL_FIELD: ROW_ACTION, COL_VALUE: VAL_REMOVE},
@@ -322,7 +303,7 @@ def main() -> None:
             log_and_print(f"Done. Log: {LOG_FILE}")
             return
 
-        # --- NOTE: Non-destructive removal by moving to Trash (reversible) ---
+        # === Non-destructive removal (move to trash) ===
         if move_to_trash(check_path):
             log_and_print(f"REMOVED (to Trash): {name} ({sel_id})")
         else:
@@ -332,14 +313,14 @@ def main() -> None:
     # =========== RUN =========
     # =========================
     elif choice == ACTION_RUN:
-        # --- NOTE: Must be installed to run ---
+        # === Ensure game is installed before running ===
         if not installed_ids:
             log_and_print("No installed games to run.")
             rotate_logs(LOG_DIR, LOGS_TO_KEEP, ROTATE_LOG_NAME)
             log_and_print(f"Done. Log: {LOG_FILE}")
             return
 
-        # --- NOTE: Pick which installed game to launch ---
+        # === Pick an installed game to run ===
         run_options = [f"{gid} — {id_to_name.get(gid, gid)}" for gid in installed_ids]
         sel_label = select_from_list(GAME_MENU_RUN, run_options)
         if not sel_label:
@@ -349,18 +330,14 @@ def main() -> None:
             return
         sel_id = sel_label.split(" — ", 1)[0]
 
-        jobs = build_jobs_from_block(
-            id_to_meta,
-            [sel_id],
-            [FIELD_NAME, FIELD_LAUNCH, FIELD_EXTRACT_TO]
-        )
-        meta = jobs.get(sel_id, {}) or {}
+        jobs = {sel_id: model_block.get(sel_id, {})}
+        meta = jobs.get(sel_id, {})
 
         name       = (meta.get(FIELD_NAME) or sel_id).strip()
         launch     = (meta.get(FIELD_LAUNCH) or "").strip()
         extract_to = str(expand_path(meta.get(FIELD_EXTRACT_TO, "")))
 
-        # --- NOTE: Provide a sensible default DOSBox command when none is configured ---
+        # === Provide default launch command if none is set ===
         if not launch:
             launch = DEFAULT_LAUNCH_CMD.format(extract_to=extract_to)
 

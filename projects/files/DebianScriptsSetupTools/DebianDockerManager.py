@@ -14,7 +14,7 @@ from modules.system_utils import (
 from modules.logger_utils import setup_logging, log_and_print, rotate_logs
 from modules.archive_utils import download_archive_file, install_archive_file
 from modules.display_utils import print_dict_table, select_from_list, confirm
-from modules.json_utils import load_json, build_id_to_name, build_jobs_from_block
+from modules.json_utils import load_json, resolve_value
 from modules.docker_utils import (
     docker_image_exists,
     build_docker_container,
@@ -26,54 +26,54 @@ from modules.docker_utils import (
 )
 
 # === CONFIG PATHS & KEYS ===
-PRIMARY_CONFIG   = "config/AppConfigSettings.json"
-DOCKER_KEY       = "Docker"
-CONFIG_TYPE      = "docker"
-CONFIG_EXAMPLE   = "config/desktop/DesktopDocker.json"
-DEFAULT_CONFIG   = "default"  # model → default fallback
+PRIMARY_CONFIG = "config/AppConfigSettings.json"
+DOCKER_KEY = "Docker"
+CONFIG_TYPE = "docker"
+CONFIG_EXAMPLE = "config/desktop/DesktopDocker.json"
+DEFAULT_CONFIG = "default"  # model → default fallback
 
 # === LOGGING ===
-TIMESTAMP        = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-LOG_DIR          = Path.home() / "logs" / "docker"
-LOG_FILE         = LOG_DIR / f"docker_mgr_{TIMESTAMP}.log"
-LOGS_TO_KEEP     = 10
-ROTATE_LOG_NAME  = "docker_mgr_*.log"
+TIMESTAMP = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+LOG_DIR = Path.home() / "logs" / "docker"
+LOG_FILE = LOG_DIR / f"docker_mgr_{TIMESTAMP}.log"
+LOGS_TO_KEEP = 10
+ROTATE_LOG_NAME = "docker_mgr_*.log"
 
 # === DEPENDENCIES ===
-DEPENDENCIES     = ["docker"]
+DEPENDENCIES = ["docker"]
 
 # === USER & MODEL ===
-REQUIRED_USER    = "Standard"
+REQUIRED_USER = "Standard"
 
 # === JSON FIELD NAMES ===
-CONTAINERS_KEY   = "Containers"
-FIELD_ACTION     = "Action"
-FIELD_NAME       = "Name"
-FIELD_IMAGE      = "Image"
-FIELD_PORT       = "Port"
-FIELD_LOCATION   = "Location"
-FIELD_DOWNLOAD   = "Download"
+CONTAINERS_KEY = "Containers"
+FIELD_ACTION = "Action"
+FIELD_NAME = "Name"
+FIELD_IMAGE = "Image"
+FIELD_PORT = "Port"
+FIELD_LOCATION = "Location"
+FIELD_DOWNLOAD = "Download"
 
 # === TABLE/ROW LABEL CONSTANTS ===
-COL_FIELD     = "Field"
-COL_VALUE     = "Value"
-ROW_ACTION    = "Action"
-ROW_NAME      = "Name"
-ROW_IMAGE     = "Image"
-ROW_PORT      = "Port"
-ROW_LOCATION  = "Location"
+COL_FIELD = "Field"
+COL_VALUE = "Value"
+ROW_ACTION = "Action"
+ROW_NAME = "Name"
+ROW_IMAGE = "Image"
+ROW_PORT = "Port"
+ROW_LOCATION = "Location"
 
 # === SUMMARY TITLES ===
 DOCKER_SELECTION_SUMMARY = "Docker Selection"
 
 # === MENU ===
-MENU_TITLE      = "Select an option"
-ACTION_START    = "Start container"
-ACTION_STOP     = "Stop container"
-ACTION_REMOVE   = "Remove container"
-ACTION_STATUS   = "Show container status"
+MENU_TITLE = "Select an option"
+ACTION_START = "Start container"
+ACTION_STOP = "Stop container"
+ACTION_REMOVE = "Remove container"
+ACTION_STATUS = "Show container status"
 ACTION_DOWNLOAD = "Download container source"
-ACTION_EXIT     = "Exit"
+ACTION_EXIT = "Exit"
 
 MENU_OPTIONS = [
     ACTION_START,
@@ -85,7 +85,7 @@ MENU_OPTIONS = [
 ]
 
 CONTAINER_MENU_TITLE = "Available Containers"
-CONTAINER_MENU_EXIT  = "Exit"
+CONTAINER_MENU_EXIT = "Exit"
 
 # === GROUPS ===
 DOCKER_GROUP = "docker"
@@ -98,7 +98,7 @@ PROMPT_REBUILD = "Image '{image}' exists. Rebuild from '{location}'? [y/n]: "
 MUTATING_ACTIONS = {ACTION_START, ACTION_STOP, ACTION_REMOVE, ACTION_DOWNLOAD}
 
 # === TEMP DOWNLOADS ===
-DL_TMP_DIR       = Path("/tmp/docker_downloads")
+DL_TMP_DIR = Path("/tmp/docker_downloads")
 
 # === CONFIG NOTES ===
 DEFAULT_CONFIG_NOTE = (
@@ -113,12 +113,16 @@ def main() -> None:
     if not check_account(expected_user=REQUIRED_USER):
         return
 
-    # Setup logging under invoking user's home
-    setup_logging(LOG_FILE, LOG_DIR)
+    # Setup logging
+    sudo_user = os.getenv("SUDO_USER")
+    log_home = Path("/home") / sudo_user if sudo_user else Path.home()
+    log_dir = log_home / "logs" / "docker"  # logs will be inside the user's home directory
+    log_file = log_dir / f"docker_mgr_{TIMESTAMP}.log"  # log file with timestamp
+    setup_logging(log_file, log_dir)  # Initialize logging
 
     # Current user (needed for docker group check)
     owner_user = os.getenv("USER") or getpass.getuser()
-    
+
     # Ensure docker CLI exists
     ensure_dependencies_installed(DEPENDENCIES)
 
@@ -130,23 +134,22 @@ def main() -> None:
         else:
             log_and_print(f"Failed to add user '{owner_user}' to '{DOCKER_GROUP}'. Docker may not work until fixed.")
 
-
     # Detect model and resolve per-model docker config path (model → default fallback)
     model = get_model()
     log_and_print(f"Detected model: {model}")
 
     primary_cfg = load_json(PRIMARY_CONFIG)
-    try:
-        docker_cfg_path = primary_cfg[model][DOCKER_KEY]
-        used_default = False
-    except KeyError:
-        docker_cfg_path = primary_cfg[DEFAULT_CONFIG][DOCKER_KEY]
-        used_default = True
+    docker_cfg_path, used_default = resolve_value(
+        primary_cfg,
+        model,
+        DOCKER_KEY,
+        DEFAULT_CONFIG,
+        check_file=True  # Ensures the config file path is valid
+    )
 
-    if not docker_cfg_path or not Path(docker_cfg_path).exists():
+    if not docker_cfg_path:
         log_and_print(f"Docker config not found for model '{model}' or fallback.")
         return
-
     log_and_print(f"Using Docker config: {docker_cfg_path}")
     if used_default:
         log_and_print(
@@ -159,23 +162,11 @@ def main() -> None:
         )
 
     # Load containers JSON and extract model block strictly
-    try:
-        cfg = load_json(docker_cfg_path)
-        model_block = cfg[model][CONTAINERS_KEY]  # {container_id: {...}}
-    except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
-        log_and_print(f"Invalid or missing Containers block for model '{model}' in {docker_cfg_path}: {e}")
-        rotate_logs(LOG_DIR, LOGS_TO_KEEP, ROTATE_LOG_NAME)
-        log_and_print(f"Done. Log: {LOG_FILE}")
-        return
-
-    if not isinstance(model_block, dict) or not model_block:
-        log_and_print("No containers defined in the Docker config.")
-        rotate_logs(LOG_DIR, LOGS_TO_KEEP, ROTATE_LOG_NAME)
-        log_and_print(f"Done. Log: {LOG_FILE}")
-        return
+    docker_cfg = load_json(docker_cfg_path)
+    model_block = docker_cfg[model][CONTAINERS_KEY]  # {container_id: {...}}
 
     # Build mapping of IDs -> Names directly from model_block
-    id_to_name = build_id_to_name(model_block, FIELD_NAME)
+    id_to_name = {cid: model_block[cid].get(FIELD_NAME, cid) for cid in model_block}
 
     # === Action menu ===
     choice = None
@@ -216,29 +207,20 @@ def main() -> None:
         log_and_print(f"Done. Log: {LOG_FILE}")
         return
 
-    sel_id = ids[sel_index]
-
-    # Use build_jobs_from_block (consistent with DOSBox) to fetch fields
-    jobs = build_jobs_from_block(
-        model_block,
-        [sel_id],
-        [FIELD_NAME, FIELD_IMAGE, FIELD_PORT, FIELD_LOCATION, FIELD_DOWNLOAD],
-    )
-    meta = jobs.get(sel_id, {}) or {}
-
-    sel_name     = (meta.get(FIELD_NAME) or sel_id).strip()
-    image        = (meta.get(FIELD_IMAGE) or "").strip()
-    port         = (meta.get(FIELD_PORT) or "").strip()
-    location     = expand_path((meta.get(FIELD_LOCATION) or "").strip())
-    download_url = (meta.get(FIELD_DOWNLOAD) or "").strip()
+    # Extract metadata from block
+    sel_name = block.get(FIELD_NAME, sel_id).strip()
+    image = block.get(FIELD_IMAGE, "").strip()
+    port = block.get(FIELD_PORT, "").strip()
+    location = expand_path(block.get(FIELD_LOCATION, "").strip())
+    download_url = block.get(FIELD_DOWNLOAD, "").strip()
 
     # Summary table
     print_dict_table(
         [
-            {COL_FIELD: ROW_ACTION,   COL_VALUE: choice},
-            {COL_FIELD: ROW_NAME,     COL_VALUE: sel_name},
-            {COL_FIELD: ROW_IMAGE,    COL_VALUE: image or "(none)"},
-            {COL_FIELD: ROW_PORT,     COL_VALUE: port or "(none)"},
+            {COL_FIELD: ROW_ACTION, COL_VALUE: choice},
+            {COL_FIELD: ROW_NAME, COL_VALUE: sel_name},
+            {COL_FIELD: ROW_IMAGE, COL_VALUE: image or "(none)"},
+            {COL_FIELD: ROW_PORT, COL_VALUE: port or "(none)"},
             {COL_FIELD: ROW_LOCATION, COL_VALUE: str(location) or "(none)"},
         ],
         [COL_FIELD, COL_VALUE],
@@ -252,63 +234,60 @@ def main() -> None:
             return
 
     # Execute action
-    try:
-        if choice == ACTION_START:  # Start
-            if not image:
-                log_and_print("Image name is required to start a container.")
-                return
-            if docker_image_exists(image):
-                # default False (previous prompt showed [y/N])
-                if confirm(PROMPT_REBUILD.format(image=image, location=location), log_fn=log_and_print):
-                    if not build_docker_container(sel_name, str(location), image):
-                        log_and_print("Build failed. Aborting start.")
-                        return
-            elif location:
+    if choice == ACTION_START:  # Start
+        if not image:
+            log_and_print("Image name is required to start a container.")
+            return
+        if docker_image_exists(image):
+            # default False (previous prompt showed [y/N])
+            if confirm(PROMPT_REBUILD.format(image=image, location=location), log_fn=log_and_print):
                 if not build_docker_container(sel_name, str(location), image):
                     log_and_print("Build failed. Aborting start.")
                     return
-            start_container(sel_name, port, image)
-
-        elif choice == ACTION_STOP:  # Stop
-            if not docker_container_exists(sel_name):
-                log_and_print(f"Container '{sel_name}' does not exist. Nothing to stop.")
-            else:
-                stop_container(sel_name)
-
-        elif choice == ACTION_REMOVE:  # Remove
-            if not docker_container_exists(sel_name):
-                log_and_print(f"Container '{sel_name}' does not exist. Nothing to remove.")
-            else:
-                remove_container(sel_name)
-
-        elif choice == ACTION_STATUS:  # Status
-            if not docker_container_exists(sel_name):
-                log_and_print(f"Container '{sel_name}' does not exist.")
-            else:
-                log_and_print(status_container(sel_name))
-
-        elif choice == ACTION_DOWNLOAD:  # Download source
-            if not location or not download_url:
-                log_and_print("No download URL defined for this container.")
+        elif location:
+            if not build_docker_container(sel_name, str(location), image):
+                log_and_print("Build failed. Aborting start.")
                 return
-            target_dir = Path(location).expanduser().resolve()
-            target_dir.parent.mkdir(parents=True, exist_ok=True)
-            log_and_print(f"Downloading source for '{sel_name}' from {download_url} ...")
-            DL_TMP_DIR.mkdir(parents=True, exist_ok=True)
-            archive_path = download_archive_file(sel_name, download_url, DL_TMP_DIR)
-            if not archive_path:
-                log_and_print("Download failed.")
-                return
-            log_and_print(f"Extracting archive into {target_dir} ...")
-            ok = install_archive_file(archive_path, target_dir, strip_top_level=True)
-            archive_path.unlink(missing_ok=True)
-            if ok:
-                log_and_print(f"Source downloaded and extracted to {target_dir}")
-            else:
-                log_and_print("Extraction failed.")
+        start_container(sel_name, port, image)
 
-    except subprocess.CalledProcessError as e:
-        log_and_print(f"Command failed: {e}")
+    elif choice == ACTION_STOP:  # Stop
+        if not docker_container_exists(sel_name):
+            log_and_print(f"Container '{sel_name}' does not exist. Nothing to stop.")
+        else:
+            stop_container(sel_name)
+
+    elif choice == ACTION_REMOVE:  # Remove
+        if not docker_container_exists(sel_name):
+            log_and_print(f"Container '{sel_name}' does not exist. Nothing to remove.")
+        else:
+            remove_container(sel_name)
+
+    elif choice == ACTION_STATUS:  # Status
+        if not docker_container_exists(sel_name):
+            log_and_print(f"Container '{sel_name}' does not exist.")
+        else:
+            log_and_print(status_container(sel_name))
+
+    elif choice == ACTION_DOWNLOAD:  # Download source
+        if not location or not download_url:
+            log_and_print("No download URL defined for this container.")
+            return
+        target_dir = Path(location).expanduser().resolve()
+        target_dir.parent.mkdir(parents=True, exist_ok=True)
+        log_and_print(f"Downloading source for '{sel_name}' from {download_url} ...")
+        DL_TMP_DIR.mkdir(parents=True, exist_ok=True)
+        archive_path = download_archive_file(sel_name, download_url, DL_TMP_DIR)
+        if not archive_path:
+            log_and_print("Download failed.")
+            return
+        log_and_print(f"Extracting archive into {target_dir} ...")
+        ok = install_archive_file(archive_path, target_dir, strip_top_level=True)
+        archive_path.unlink(missing_ok=True)
+        if ok:
+            log_and_print(f"Source downloaded and extracted to {target_dir}")
+        else:
+            log_and_print("Extraction failed.")
+
 
     # rotate logs
     rotate_logs(LOG_DIR, LOGS_TO_KEEP, ROTATE_LOG_NAME)

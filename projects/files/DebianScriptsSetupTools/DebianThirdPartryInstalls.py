@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 import json
 import datetime
 import subprocess
@@ -6,9 +7,9 @@ from pathlib import Path
 
 from modules.logger_utils import setup_logging, log_and_print, rotate_logs
 from modules.system_utils import check_account, get_model, ensure_dependencies_installed
-from modules.json_utils import load_json, build_jobs_from_block
+from modules.json_utils import load_json, resolve_value
 from modules.package_utils import check_package, install_packages, uninstall_packages, filter_by_status
-from modules.display_utils import format_status_summary, select_from_list, confirm
+from modules.display_utils import format_status_summary, select_from_list, confirm, print_dict_table
 from modules.apt_repo_utils import (
     add_apt_repository,
     remove_apt_repo_and_keyring,
@@ -43,6 +44,11 @@ JSON_COMPONENT = "component"
 
 # === KEYRING ===
 KEY_RING_BASEPATH = "/usr/share/keyrings/"
+
+# === CONSTANTS (Field Names for Consistency) ===
+PACKAGE_NAME_FIELD = "Package Name"
+DOWNLOAD_URL_FIELD = "Download URL"
+ENABLE_SERVICE_FIELD = "Enable Service"
 
 # === LABELS ===
 SUMMARY_LABEL = "Third-Party Package"
@@ -93,17 +99,17 @@ def main():
 
     # Resolve third-party config (model → default fallback)
     primary_cfg = load_json(PRIMARY_CONFIG)
-    try:
-        tp_file = primary_cfg[model][THIRD_PARTY_KEY]
-        used_default = False
-    except KeyError:
-        tp_file = primary_cfg[DEFAULT_CONFIG][THIRD_PARTY_KEY]
-        used_default = True
+    tp_file, used_default = resolve_value(
+        primary_cfg,
+        model,
+        THIRD_PARTY_KEY,
+        DEFAULT_CONFIG,
+        check_file=True  # Ensures the config file path is valid
+    )
 
-    if not tp_file or not Path(tp_file).exists():
+    if not tp_file:
         log_and_print(f"Invalid {CONFIG_TYPE.upper()} config path for model '{model}' or fallback.")
         return
-
     log_and_print(f"Using {CONFIG_TYPE} config file: {tp_file}")
 
     if used_default:
@@ -117,13 +123,9 @@ def main():
         )
 
     # Load third-party config and extract package keys for this model
-    try:
-        tp_cfg = load_json(tp_file)
-        model_block = tp_cfg[model][THIRD_PARTY_KEY]  # {pkg: {url,key,codename,component}}
-        tp_keys = sorted(model_block.keys())
-    except (FileNotFoundError, json.JSONDecodeError, KeyError) as e:
-        log_and_print(f"No {TP_LABEL} found for model '{model}' in {tp_file}: {e}")
-        return
+    tp_cfg = load_json(tp_file)
+    model_block = tp_cfg[model][THIRD_PARTY_KEY]  # {pkg: {url,key,codename,component}}
+    tp_keys = sorted(model_block.keys())
 
     if not tp_keys:
         log_and_print(f"No {TP_LABEL} found for model '{model}'.")
@@ -132,7 +134,7 @@ def main():
     # Boolean status (is the package currently installed)
     package_status = {pkg: check_package(pkg) for pkg in tp_keys}
 
-    # Summary with boolean→label mapping
+    # Summary
     summary = format_status_summary(
         package_status,
         label=SUMMARY_LABEL,
@@ -166,16 +168,21 @@ def main():
         log_and_print(f"No {TP_LABEL} to process for {action}.")
         return
 
-    # Map package names → required JSON fields from model_block
-    jobs = build_jobs_from_block(
-        model_block,
-        pkg_names,
-        [JSON_URL, JSON_KEY, JSON_CODENAME, JSON_COMPONENT],
-    )
+    # Show plan table with details (directly from `model_block`)
+    plan_rows = []
+    for pkg in pkg_names:
+        meta = model_block.get(pkg, {})
+        plan_rows.append({
+            PACKAGE_NAME_FIELD: pkg,
+            DOWNLOAD_URL_FIELD: meta.get(JSON_URL, ""),
+            ENABLE_SERVICE_FIELD: meta.get(JSON_KEY, ""),
+        })
 
-    # Show plan
-    log_and_print(f"The following {TP_LABEL} will be processed for {action}:")
-    log_and_print("  " + "\n  ".join(pkg_names))
+    print_dict_table(
+        plan_rows,
+        field_names=[PACKAGE_NAME_FIELD, DOWNLOAD_URL_FIELD, ENABLE_SERVICE_FIELD],
+        label=f"Planned {action.title()} (Third-Party Package details)"
+    )
 
     # Confirm (shared confirm helper; strict y/n)
     if not confirm(PROMPT_PROCEED.format(action=action), log_fn=log_and_print):
@@ -184,44 +191,39 @@ def main():
 
     # Execute per package (count successes)
     success_count = 0
-    try:
-        for pkg in pkg_names:
-            try:
-                meta = jobs[pkg]
-                url = meta.get(JSON_URL)
-                key = meta.get(JSON_KEY)
-                codename = meta.get(JSON_CODENAME)
-                component = meta.get(JSON_COMPONENT)
+    for pkg in pkg_names:
+        meta = model_block.get(pkg, {})
+        url = meta.get(JSON_URL)
+        key = meta.get(JSON_KEY)
+        codename = meta.get(JSON_CODENAME)
+        component = meta.get(JSON_COMPONENT)
 
-                if choice == ACTION_INSTALL:
-                    log_and_print(f"INSTALLING: {pkg}")
-                    keyring_path = f"{KEY_RING_BASEPATH}{pkg}.gpg"
+        if choice == ACTION_INSTALL:
+            log_and_print(f"INSTALLING: {pkg}")
+            keyring_path = f"{KEY_RING_BASEPATH}{pkg}.gpg"
 
-                    # Skip adding repo if a conflicting entry exists (already present w/different keyring)
-                    if url and conflicting_repo_entry_exists(url, keyring_path):
-                        log_and_print(f"Repo for {pkg} already exists with a different keyring. Skipping repo add.")
-                    else:
-                        add_apt_repository(pkg, url, key, codename, component)
+            # Skip adding repo if a conflicting entry exists (already present w/different keyring)
+            if url and conflicting_repo_entry_exists(url, keyring_path):
+                log_and_print(f"Repo for {pkg} already exists with a different keyring. Skipping repo add.")
+            else:
+                add_apt_repository(pkg, url, key, codename, component)
 
-                    # Install the package
-                    install_packages([pkg])
-                    log_and_print(f"APT {INSTALLED_LABEL}: {pkg}")
-                    success_count += 1
-                else:
-                    log_and_print(f"UNINSTALLING: {pkg}")
-                    if uninstall_packages([pkg]):
-                        remove_apt_repo_and_keyring(pkg)
-                        log_and_print(f"APT {UNINSTALLED_LABEL}: {pkg}")
-                        success_count += 1
-                    else:
-                        log_and_print(f"{UNINSTALL_FAIL_MSG}: {pkg}")
-            except subprocess.CalledProcessError:
-                msg = INSTALL_FAIL_MSG if choice == ACTION_INSTALL else UNINSTALL_FAIL_MSG
-                log_and_print(f"{msg}: {pkg}")
-    finally:
-        rotate_logs(LOG_DIR, LOGS_TO_KEEP, ROTATE_LOG_NAME)
-        log_and_print(f"\nAll actions complete. {action.title()}ed: {success_count}")
-        log_and_print(f"You can find the full log here: {LOG_FILE}")
+            # Install the package
+            install_packages([pkg])
+            log_and_print(f"APT {INSTALLED_LABEL}: {pkg}")
+            success_count += 1
+        else:
+            log_and_print(f"UNINSTALLING: {pkg}")
+            if uninstall_packages([pkg]):
+                remove_apt_repo_and_keyring(pkg)
+                log_and_print(f"APT {UNINSTALLED_LABEL}: {pkg}")
+                success_count += 1
+            else:
+                log_and_print(f"{UNINSTALL_FAIL_MSG}: {pkg}")
+
+    rotate_logs(LOG_DIR, LOGS_TO_KEEP, ROTATE_LOG_NAME)
+    log_and_print(f"\nAll actions complete. {action.title()}ed: {success_count}")
+    log_and_print(f"You can find the full log here: {LOG_FILE}")
 
 
 if __name__ == "__main__":
