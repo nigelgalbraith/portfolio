@@ -115,7 +115,7 @@ def main():
     print_dict_table(port_ranges,  [KEY_START_PORT, KEY_END_PORT, KEY_PROTOCOL, KEY_IPS], KEY_PORT_RANGES)
 
     # === Confirm before applying rules ===
-    if not confirm(CONFIRM_PROMPT, log_fn=log_and_print):
+    if not confirm(CONFIRM_PROMPT):
         log_and_print("Aborted by user.")
         return
 

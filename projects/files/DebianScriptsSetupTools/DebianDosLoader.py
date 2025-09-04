@@ -217,7 +217,7 @@ def main() -> None:
         )
 
         # === Confirm the installation action (last chance) ===
-        if not confirm(PROMPT_INSTALL, log_fn=log_and_print):
+        if not confirm(PROMPT_INSTALL):
             log_and_print("Cancelled by user.")
             rotate_logs(LOG_DIR, LOGS_TO_KEEP, ROTATE_LOG_NAME)
             log_and_print(f"Done. Log: {LOG_FILE}")
@@ -297,7 +297,7 @@ def main() -> None:
             REMOVAL_SUMMARY
         )
 
-        if not confirm(PROMPT_REMOVE, log_fn=log_and_print):
+        if not confirm(PROMPT_REMOVE):
             log_and_print("Cancelled by user.")
             rotate_logs(LOG_DIR, LOGS_TO_KEEP, ROTATE_LOG_NAME)
             log_and_print(f"Done. Log: {LOG_FILE}")
@@ -351,16 +351,17 @@ def main() -> None:
             RUN_SUMMARY
         )
 
-        if not confirm(PROMPT_RUN, log_fn=log_and_print):
+        if not confirm(PROMPT_RUN):
             log_and_print("Cancelled by user.")
             rotate_logs(LOG_DIR, LOGS_TO_KEEP, ROTATE_LOG_NAME)
             log_and_print(f"Done. Log: {LOG_FILE}")
             return
-        
+
         try:
             subprocess.run(launch, shell=True, check=True)
         except subprocess.CalledProcessError as e:
             log_and_print(f"Launch failed: {e}")
+
 
     # --- NOTE: Always rotate at the end so old logs don’t pile up ---
     rotate_logs(LOG_DIR, LOGS_TO_KEEP, ROTATE_LOG_NAME)

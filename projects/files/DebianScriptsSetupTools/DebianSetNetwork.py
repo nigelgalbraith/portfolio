@@ -187,7 +187,7 @@ def main() -> None:
     validate_preset(preset, action)
 
     # Confirm (default Yes)
-    if not confirm(CONFIRM_MESSAGE, log_fn=log_and_print):
+    if not confirm(CONFIRM_MESSAGE):
         log_and_print("User cancelled.")
         secure_logs_for_user(log_dir, sudo_user)
         rotate_logs(log_dir, LOGS_TO_KEEP, ROTATE_LOG_NAME)

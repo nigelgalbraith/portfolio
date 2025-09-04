@@ -254,7 +254,7 @@ def main() -> None:
     action_label = ADD_ACTION if choice == ACTION_ADD_LABEL else REMOVE_ACTION
 
     # Confirm
-    if not confirm(f"Proceed with {action_label} for '{service_key}'? [Y/n]: ", log_fn=log_and_print):
+    if not confirm(f"Proceed with {action_label} for '{service_key}'? [Y/n]: "):
         log_and_print("Cancelled by user.")
         secure_logs_for_user(log_dir, sudo_user)
         rotate_logs(log_dir, LOGS_TO_KEEP, ROTATE_LOG_NAME)

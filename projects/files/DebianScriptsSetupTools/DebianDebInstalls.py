@@ -187,7 +187,7 @@ def main():
     )
 
     # Confirm
-    if not confirm(prompt, log_fn=log_and_print):
+    if not confirm(prompt):
         log_and_print("User cancelled.")
         return
 

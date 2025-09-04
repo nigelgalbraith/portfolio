@@ -219,7 +219,7 @@ def main():
     )
 
     # Confirm
-    if not confirm(prompt, log_fn=log_and_print):
+    if not confirm(prompt):
         log_and_print("User cancelled.")
         return
 
@@ -264,10 +264,7 @@ def main():
             if not error:
                 enable_service = meta.get(ENABLE_SERVICE_KEY)
                 if enable_service:
-                    try:
-                        start_service_standard(enable_service, pkg)
-                    except Exception as e:
-                        log_and_print(f"Service enable/start warning for {pkg} ({enable_service}): {e}")
+                    start_service_standard(enable_service, pkg)
 
             # Final outcome
             if error:

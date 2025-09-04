@@ -225,8 +225,7 @@ def main():
     log_and_print("  " + "\n  ".join(plan_lines))
 
     # Confirm (default Yes)
-    resp = input(f"Proceed with {action}? [Y/n]: ").strip().lower()
-    if resp in ("n", "no"):
+    if not confirm(f"Proceed with {action}? [Y/n]: "):
         log_and_print("Cancelled by user.")
         secure_logs_for_user(log_dir, sudo_user)
         rotate_logs(log_dir, LOGS_TO_KEEP, ROTATE_LOG_NAME)

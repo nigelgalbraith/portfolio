@@ -229,7 +229,7 @@ def main() -> None:
 
     # Confirm only for mutating actions
     if choice in MUTATING_ACTIONS:
-        if not confirm(PROMPT_PROCEED.format(action=choice.lower(), name=sel_name), log_fn=log_and_print):
+        if not confirm(PROMPT_PROCEED.format(action=choice.lower(), name=sel_name)):
             log_and_print("User cancelled.")
             return
 
@@ -240,7 +240,7 @@ def main() -> None:
             return
         if docker_image_exists(image):
             # default False (previous prompt showed [y/N])
-            if confirm(PROMPT_REBUILD.format(image=image, location=location), log_fn=log_and_print):
+            if confirm(PROMPT_REBUILD.format(image=image, location=location)):
                 if not build_docker_container(sel_name, str(location), image):
                     log_and_print("Build failed. Aborting start.")
                     return

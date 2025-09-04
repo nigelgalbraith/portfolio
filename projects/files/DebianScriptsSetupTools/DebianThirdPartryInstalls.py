@@ -185,7 +185,7 @@ def main():
     )
 
     # Confirm (shared confirm helper; strict y/n)
-    if not confirm(PROMPT_PROCEED.format(action=action), log_fn=log_and_print):
+    if not confirm(PROMPT_PROCEED.format(action=action)):
         log_and_print("User cancelled.")
         return
 
