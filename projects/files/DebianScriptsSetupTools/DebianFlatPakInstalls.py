@@ -178,7 +178,7 @@ class FlatpakInstaller:
         log_and_print(f"Using {config_type.upper()} config file: {flatpak_file}")
         if used_default:
             log_and_print(
-                DEFAULT_CONFIG_NOTE.format(
+                default_config_note.format(
                     config_type=config_type,
                     model=model,
                     example=example_path,
@@ -229,7 +229,7 @@ class FlatpakInstaller:
         self.state = STATE_PREPARE_PLAN
         return (choice == action_install)
 
-    def prepare_plan(self, app_status, model_block, label, install_action, uninstall_action, action_install_bool):
+    def prepare_plan(self, app_status, model_block, label, install_action, uninstall_action, action_install_bool, app_name_field, remote_field):
         """Compute selected apps, print plan; advance to CONFIRM or back to MENU_SELECTION. Returns app_names or None."""
         if action_install_bool:
             action = install_action
@@ -247,13 +247,13 @@ class FlatpakInstaller:
         for app in app_names:
             remote = model_block.get(app, {}).get(REMOTE_KEY, "")
             plan_rows.append({
-                APP_NAME_FIELD: app,
-                REMOTE_FIELD: remote,
+                app_name_field: app,
+                remote_field: remote,
             })
 
         print_dict_table(
             plan_rows,
-            field_names=[APP_NAME_FIELD, REMOTE_FIELD],
+            field_names=[app_name_field, remote_field],
             label=f"Planned {label} (App details)"
         )
 
@@ -363,7 +363,7 @@ class FlatpakInstaller:
                 selected_apps = self.prepare_plan(
                     app_status, model_block, FLATPAK_LABEL,
                     INSTALLATION_ACTION, UNINSTALLATION_ACTION,
-                    action_install
+                    action_install, APP_NAME_FIELD, REMOTE_FIELD
                 )
                 if self.state != STATE_CONFIRM:
                     continue
