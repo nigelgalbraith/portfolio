@@ -328,8 +328,7 @@ class ArchiveInstaller:
 
     def install_archives(self, pkg_names, items, download_url_key, extract_url_key,
                          strip_top_level_key, download_dir, install_fail_msg,
-                         download_fail_msg, installed_label):
-        """Install archives; advance to POST_INSTALL. Returns list of successfully installed packages."""
+                         download_fail_msg, installed_label, dl_path_key):
         succeeded = []
         for pkg in pkg_names:
             meta = items.get(pkg, {})
@@ -337,14 +336,18 @@ class ArchiveInstaller:
                 continue
 
             download_url = meta.get(download_url_key, "")
-            extract_to = expand_path(meta.get(extract_url_key, ""))
+            extract_to   = expand_path(meta.get(extract_url_key, ""))
             strip_top_level = bool(meta.get(strip_top_level_key, False))
+
+            # choose per-package download path if set, else fallback to global
+            dl_path = expand_path(meta.get(dl_path_key, "")) if meta.get(dl_path_key) else download_dir
+            Path(dl_path).mkdir(parents=True, exist_ok=True)
 
             if not download_url or not extract_to:
                 log_and_print(f"{install_fail_msg}: {pkg} (missing URL or ExtractTo)")
                 continue
 
-            archive_path = download_archive_file(pkg, download_url, download_dir)
+            archive_path = download_archive_file(pkg, download_url, dl_path)
             if not archive_path:
                 log_and_print(f"{download_fail_msg}: {pkg}")
                 continue
@@ -547,7 +550,7 @@ class ArchiveInstaller:
                     DOWNLOAD_URL_KEY, EXTRACT_TO_KEY,
                     STRIP_TOP_LEVEL_KEY, DOWNLOAD_DIR,
                     INSTALL_FAIL_MSG, DOWNLOAD_FAIL_MSG,
-                    INSTALLED_LABEL
+                    INSTALLED_LABEL, DL_PATH_KEY 
                 )
 
             # Post-Install Steps

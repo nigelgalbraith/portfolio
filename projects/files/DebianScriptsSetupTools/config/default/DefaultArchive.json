@@ -10,10 +10,15 @@
           "chmod +x ~/apps/tool1/bin/tool1",
           "ln -s ~/apps/tool1/bin/tool1 ~/bin/tool1"
         ],
+        "PostUninstall": [
+          "echo 'Tool1 uninstalled successfully'"
+        ],
         "TrashPaths": [
           "~/apps/tool1",
           "~/bin/tool1"
-        ]
+        ],
+        "DownloadPath": "/tmp/archive_downloads/tool1",
+        "EnableService": []
       },
       "Example2": {
         "DownloadURL": "https://example.com/games/game2.tar.gz",
@@ -23,9 +28,14 @@
         "PostInstall": [
           "chmod +x ~/games/game2/start.sh"
         ],
+        "PostUninstall": [
+          "echo 'Game2 removed from system'"
+        ],
         "TrashPaths": [
           "~/games/game2"
-        ]
+        ],
+        "DownloadPath": "/tmp/archive_downloads/game2",
+        "EnableService": []
       }
     }
   }
