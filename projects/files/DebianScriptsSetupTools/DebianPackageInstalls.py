@@ -66,6 +66,11 @@ SUMMARY_LABEL     = "Package"
 INSTALLED_LABEL   = "INSTALLED"
 UNINSTALLED_LABEL = "UNINSTALLED"
 
+# === ACTION WORDS ===
+INSTALLATION_ACTION   = "installation"
+UNINSTALLATION_ACTION = "uninstallation"
+
+
 # === MENU LABELS ===
 MENU_TITLE     = "Select an option"
 ACTION_INSTALL = f"Install required {PACKAGES_KEY}"
@@ -90,37 +95,37 @@ STATE_INITIAL         = 'INITIAL'
 STATE_MODEL_DETECTION = 'MODEL_DETECTION'
 STATE_PACKAGE_LOADING = 'PACKAGE_LOADING'
 STATE_PACKAGE_STATUS  = 'PACKAGE_STATUS'
-STATE_MENU_SELECTION  = 'MENU_SELECTION'
-STATE_CONFIRM         = 'CONFIRM'
-STATE_INSTALL_STATE   = 'INSTALL_STATE'
-STATE_UNINSTALL_STATE = 'UNINSTALL_STATE'
-STATE_FINALIZE        = 'FINALIZE'
+STATE_PREPARE          = 'PREPARE' 
+STATE_MENU_SELECTION   = 'MENU_SELECTION'
+STATE_CONFIRM          = 'CONFIRM'
+STATE_INSTALL_STATE    = 'INSTALL_STATE'
+STATE_UNINSTALL_STATE  = 'UNINSTALL_STATE'
+STATE_FINALIZE         = 'FINALIZE'
 
+# === MESSAGES ===
+MSG_LOGGING_FINAL = f"You can find the full log here: {LOG_FILE}"
 
 class PackageInstaller:
     def __init__(self):
         """Initialize the installer state and variables."""
         self.state = STATE_INITIAL
-        self.model = None
-        self.package_file = None
-        self.packages_list = []
-        self.package_status = {}
-        self.finalize_msg = None
 
 
     def setup(self, log_file, log_dir, required_user):
-        """Setup logging and verify user account; advance to MODEL_DETECTION on success."""
+        """Setup logging and verify user account; advance to MODEL_DETECTION on success.
+        Returns an optional finalize_msg if verification fails."""
         setup_logging(log_file, log_dir)
         if not check_account(expected_user=required_user):
-            self.finalize_msg = "User account verification failed."
             self.state = STATE_FINALIZE
-            return
+            return "User account verification failed."
         self.state = STATE_MODEL_DETECTION
+        return None
 
 
     def detect_model(self, primary_config, config_type, packages_key,
                      default_config_note, default_config, config_example):
-        """Detect the system model and select the configuration file; advance to PACKAGE_LOADING."""
+        """Detect the system model and select the configuration file; advance to PACKAGE_LOADING.
+        Returns (model, package_file, finalize_msg)."""
         model = get_model()
         log_and_print(f"Detected model: {model}")
 
@@ -130,9 +135,8 @@ class PackageInstaller:
         )
 
         if not package_file:
-            self.finalize_msg = f"No valid {config_type} config file found for model '{model}'"
             self.state = STATE_FINALIZE
-            return None, None
+            return None, None, f"No valid {config_type} config file found for model '{model}'"
 
         log_and_print(f"Using {config_type} config file '{package_file}'")
         if used_default:
@@ -142,25 +146,25 @@ class PackageInstaller:
                 )
             )
         self.state = STATE_PACKAGE_LOADING
-        return model, package_file
+        return model, package_file, None
 
 
     def load_packages(self, package_file, model, packages_key):
-        """Load the package list for the given model; advance to PACKAGE_STATUS."""
+        """Load the package list for the given model; advance to PACKAGE_STATUS.
+        Returns (packages_list, finalize_msg)."""
         pkg_config = load_json(package_file)
         packages_list = pkg_config.get(model, {}).get(packages_key)
         if not packages_list:
-            self.finalize_msg = f"No {packages_key} defined for model '{model}'"
             self.state = STATE_FINALIZE
-            return None
+            return None, f"No {packages_key} defined for model '{model}'"
         packages_list = list(dict.fromkeys(packages_list))
         packages_list = sorted(packages_list)
         self.state = STATE_PACKAGE_STATUS
-        return packages_list
+        return packages_list, None
 
 
     def build_status_map(self, packages_list, label_installed, label_uninstalled, summary_label):
-        """Build and print the current status map; advance to MENU_SELECTION."""
+        """Build and print the current status map; advance to MENU_SELECTION. Returns package_status."""
         package_status = {pkg: check_package(pkg) for pkg in packages_list}
         summary = format_status_summary(
             package_status,
@@ -173,134 +177,151 @@ class PackageInstaller:
         return package_status
 
 
-    def select_action(self, menu_title, menu_options):
-        """Prompt user to select an action from the menu."""
+    def select_action(self, menu_title, menu_options, action_install, action_remove, action_cancel):
+        """Prompt user; return True for install, False for uninstall, or None if cancelled (state -> FINALIZE)."""
         choice = None
         while choice not in menu_options:
             choice = select_from_list(menu_title, menu_options)
             if choice not in menu_options:
                 log_and_print("Invalid selection. Please choose a valid option.")
-        return choice
+
+        if choice == action_cancel:
+            self.state = STATE_FINALIZE
+            return None
+
+        self.state = STATE_PREPARE
+        return (choice == action_install)
 
 
-    def prepare_jobs(self, packages_key, package_status, action_kind: bool, *, verb: str, msg_no_jobs: str):
-        """Prepare jobs based on action_kind; advance to CONFIRM or MENU_SELECTION and return jobs list."""
+    def prepare_jobs(self, packages_key, package_status, action_kind,
+                    action_install, action_remove, verb_install, verb_uninstall):
+        """Prepare jobs for installation or uninstallation based on action_kind (True for install, False for uninstall)."""
+        verb = verb_install if action_kind else verb_uninstall
+        action = action_install if action_kind else action_remove
+
         if action_kind:  
-            jobs = sorted(filter_by_status(package_status, False))
-        else:           
-            jobs = sorted(filter_by_status(package_status, True))
+            jobs = sorted(filter_by_status(package_status, False))  
+        else: 
+            jobs = sorted(filter_by_status(package_status, True)) 
 
-        if jobs:
-            log_and_print(f"The following {packages_key} will be processed for {verb}:")
-            log_and_print("  " + "\n  ".join(jobs))
-            self.state = STATE_CONFIRM
-        else:
-            log_and_print(msg_no_jobs)
+        if not jobs:
+            log_and_print(f"No packages to process for {verb}.")
             self.state = STATE_MENU_SELECTION
-
+            return None
+        log_and_print(f"The following {packages_key} will be processed for {verb}:")
+        log_and_print("  " + "\n  ".join(jobs))
+        self.state = STATE_CONFIRM
         return jobs
 
 
-    def confirm_action(self, action_kind: bool, prompt: str):
-        """Ask the user to confirm the selected action; advance to INSTALL/UNINSTALL or show status on cancel."""
+    def confirm_action(self, prompt_install, prompt_remove, action_install_bool):
+        """Confirm; advance to INSTALL/UNINSTALL or back to PACKAGE_STATUS.
+        Returns True to proceed, False to cancel."""
+        prompt = prompt_install if action_install_bool else prompt_remove
         if not confirm(prompt):
             log_and_print("User cancelled.")
-            self.finalize_msg = "Operation was cancelled by the user."
             self.state = STATE_PACKAGE_STATUS
-        else:
-            if action_kind:
-                self.state = STATE_INSTALL_STATE
-            else:
-                self.state = STATE_UNINSTALL_STATE
+            return False
+        self.state = STATE_INSTALL_STATE if action_install_bool else STATE_UNINSTALL_STATE
+        return True
 
 
-    def install_packages_state(self, jobs, packages_key, label_installed):
-        """Execute the installation action; advance to PACKAGE_STATUS."""
+    def install_packages_state(self, jobs, packages_key, label_installed, model):
+        """Execute the installation action; advance to PACKAGE_STATUS and return finalize_msg."""
+        finalize_msg = None
         if jobs:
             install_packages(jobs)
-            log_and_print(f"{label_installed}: {' '.join(jobs)} (Model: {self.model})")
-            self.finalize_msg = f"{label_installed}: {' '.join(jobs)} (Model: {self.model})"
+            finalize_msg = f"{label_installed}: {' '.join(jobs)} (Model: {model})"
+            log_and_print(finalize_msg)
         self.state = STATE_PACKAGE_STATUS
+        return finalize_msg
 
 
-    def uninstall_packages_state(self, jobs, packages_key, label_uninstalled):
-        """Execute the uninstallation action; advance to PACKAGE_STATUS."""
+    def uninstall_packages_state(self, jobs, packages_key, label_uninstalled, model):
+        """Execute the uninstallation action; advance to PACKAGE_STATUS and return finalize_msg."""
+        finalize_msg = None
         if jobs:
             uninstall_packages(jobs)
-            log_and_print(f"{label_uninstalled}: {' '.join(jobs)} (Model: {self.model})")
-            self.finalize_msg = f"{label_uninstalled}: {' '.join(jobs)} (Model: {self.model})"
+            finalize_msg = f"{label_uninstalled}: {' '.join(jobs)} (Model: {model})"
+            log_and_print(finalize_msg)
         self.state = STATE_PACKAGE_STATUS
+        return finalize_msg
 
 
-# === Main Function ===
+    # === Main Function ===
     def main(self):
         """Run startup states, then loop through menu and actions with status refresh."""
-        action_kind = None  # To store the action type (install or uninstall)
-        jobs = []  # To store the list of jobs (packages to install/uninstall)
+        jobs = []           
+        model = None
+        package_file = None
+        packages_list = []
+        package_status = {}
+        finalize_msg = None
 
         while self.state != STATE_FINALIZE:
-            # Initial setup state
+            # Setup
             if self.state == STATE_INITIAL:
-                self.setup(LOG_FILE, LOG_DIR, REQUIRED_USER)
+                finalize_msg = self.setup(LOG_FILE, LOG_DIR, REQUIRED_USER)
 
-            # Detect the system model and choose the appropriate configuration file
+            # Detect model & config
             if self.state == STATE_MODEL_DETECTION:
-                model, package_file = self.detect_model(
+                model, package_file, finalize_msg = self.detect_model(
                     PRIMARY_CONFIG, CONFIG_TYPE, PACKAGES_KEY,
                     DEFAULT_CONFIG_NOTE, DEFAULT_CONFIG, CONFIG_EXAMPLE
                 )
-                # If finalization state is reached, continue the loop
                 if self.state == STATE_FINALIZE:
-                    continue
-                self.model, self.package_file = model, package_file
+                    continue 
 
-            # Load the package list from the selected configuration
+            # Load block
             if self.state == STATE_PACKAGE_LOADING:
-                self.packages_list = self.load_packages(self.package_file, self.model, PACKAGES_KEY)
+                packages_list, finalize_msg = self.load_packages(package_file, model, PACKAGES_KEY)
                 if self.state == STATE_FINALIZE:
-                    continue  # If finalization state is reached, skip the rest
+                    continue 
 
-            # Build and print the current package status summary
+            # Status
             if self.state == STATE_PACKAGE_STATUS:
-                self.package_status = self.build_status_map(
-                    self.packages_list, INSTALLED_LABEL, UNINSTALLED_LABEL, SUMMARY_LABEL
-                )   
+                package_status = self.build_status_map(
+                    packages_list, INSTALLED_LABEL, UNINSTALLED_LABEL, SUMMARY_LABEL
+                )
 
-            # Present the menu options for the user to choose an action
+            # Menu
             if self.state == STATE_MENU_SELECTION:
-                action = self.select_action(MENU_TITLE, MENU_OPTIONS)
-                if action == ACTION_CANCEL:
-                    self.finalize_msg = MSG_CANCEL  # User canceled, so exit
+                action_install = self.select_action(MENU_TITLE, MENU_OPTIONS, ACTION_INSTALL, ACTION_REMOVE, ACTION_CANCEL)
+
+                if action_install is None:
                     self.state = STATE_FINALIZE
-                elif action == ACTION_INSTALL:
-                    action_kind = True  # Flag for install action
-                    jobs = self.prepare_jobs(
-                        PACKAGES_KEY, self.package_status, action_kind,
-                        verb=VERB_INSTALLATION, msg_no_jobs=MSG_NO_INSTALL_JOBS
-                    )
-                elif action == ACTION_REMOVE:
-                    action_kind = False  # Flag for uninstall action
-                    jobs = self.prepare_jobs(
-                        PACKAGES_KEY, self.package_status, action_kind,
-                        verb=VERB_UNINSTALLATION, msg_no_jobs=MSG_NO_UNINSTALL_JOBS
-                    )
+                    finalize_msg = MSG_CANCEL
+                    continue
 
-            # Prompt user to confirm the action (install or uninstall)
+            # Prepare jobs
+            if self.state == STATE_PREPARE:
+                jobs = self.prepare_jobs(
+                    PACKAGES_KEY, package_status, action_install,
+                    INSTALLATION_ACTION, UNINSTALLATION_ACTION,
+                    VERB_INSTALLATION, VERB_UNINSTALLATION
+                )
+
+                if self.state == STATE_CONFIRM:
+                    continue
+
+            # Confirm
             if self.state == STATE_CONFIRM:
-                prompt = PROMPT_INSTALL if action_kind else PROMPT_REMOVE
-                self.confirm_action(action_kind, prompt)
+                proceed = self.confirm_action(PROMPT_INSTALL, PROMPT_REMOVE, action_install)
+                if not proceed:
+                    continue
 
-            # Execute the installation action if confirmed
+            # Execute Install
             if self.state == STATE_INSTALL_STATE:
-                self.install_packages_state(jobs, PACKAGES_KEY, INSTALLED_LABEL)
+                finalize_msg = self.install_packages_state(jobs, PACKAGES_KEY, INSTALLED_LABEL, model)
 
-            # Execute the uninstallation action if confirmed
+            # Execute Uninstall
             if self.state == STATE_UNINSTALL_STATE:
-                self.uninstall_packages_state(jobs, PACKAGES_KEY, UNINSTALLED_LABEL)
+                finalize_msg = self.uninstall_packages_state(jobs, PACKAGES_KEY, UNINSTALLED_LABEL, model)
 
-        # Finalization steps, rotate logs and print the completion message
+        # Rotate logs and print the completion message
         rotate_logs(LOG_DIR, LOGS_TO_KEEP, ROTATE_LOG_NAME)
-        log_and_print(self.finalize_msg)
+        if finalize_msg:
+            log_and_print(finalize_msg)
         log_and_print(MSG_LOGGING_FINAL)
 
 

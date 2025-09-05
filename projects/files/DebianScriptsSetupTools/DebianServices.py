@@ -14,7 +14,7 @@ from modules.system_utils import (
 from modules.json_utils import (
     load_json, resolve_value, validate_meta
 )
-from modules.display_utils import format_status_summary, select_from_list
+from modules.display_utils import format_status_summary, select_from_list, confirm
 from modules.service_utils import (
     check_service_status,
     copy_template,
