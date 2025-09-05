@@ -40,11 +40,13 @@ Methods:
 Dependencies:
     - wget, tar, unzip (for downloading and extracting packages)
     - Python 3.6+ with subprocess, pathlib, json modules
+
+Notes:
+    - Per-package "DownloadPath" in JSON is REQUIRED (no global fallback).
 """
 
 import datetime
 import os
-import shutil
 from pathlib import Path
 
 from modules.logger_utils import setup_logging, log_and_print, rotate_logs
@@ -98,10 +100,10 @@ EXTRACT_TO_KEY          = "ExtractTo"
 CHECK_PATH_KEY          = "CheckPath"
 STRIP_TOP_LEVEL_KEY     = "StripTopLevel"
 POST_INSTALL_KEY        = "PostInstall"
-POST_UNINSTALL_KEY      = "PostUninstall"     # NEW (optional)
+POST_UNINSTALL_KEY      = "PostUninstall"
 ENABLE_SERVICE_KEY      = "EnableService"
 TRASH_PATHS_KEY         = "TrashPaths"
-DL_PATH_KEY             = "DownloadPath"
+DL_PATH_KEY             = "DownloadPath"      # REQUIRED per package
 
 # === LABELS ===
 SUMMARY_LABEL     = "Archive Package"
@@ -133,10 +135,6 @@ MSG_CANCEL        = "Cancelled by user."
 PROMPT_INSTALL = f"Proceed with {INSTALLATION_ACTION}? [y/n]: "
 PROMPT_REMOVE  = f"Proceed with {UNINSTALLATION_ACTION}? [y/n]: "
 
-# === DOWNLOAD LOCATION ===
-DOWNLOAD_DIR = Path("/tmp/archive_downloads")
-DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
-
 # === CONFIG NOTES ===
 DEFAULT_CONFIG_NOTE = (
     "NOTE: The default {config_type} configuration is being used.\n"
@@ -154,9 +152,9 @@ STATE_MENU_SELECTION    = "MENU_SELECTION"
 STATE_PREPARE_PLAN      = "PREPARE_PLAN"
 STATE_CONFIRM           = "CONFIRM"
 STATE_INSTALL_STATE     = "INSTALL_STATE"
-STATE_POST_INSTALL      = "POST_INSTALL"      # NEW
+STATE_POST_INSTALL      = "POST_INSTALL"
 STATE_UNINSTALL_STATE   = "UNINSTALL_STATE"
-STATE_POST_UNINSTALL    = "POST_UNINSTALL"    # NEW
+STATE_POST_UNINSTALL    = "POST_UNINSTALL"
 STATE_FINALIZE          = "FINALIZE"
 
 
@@ -268,11 +266,9 @@ class ArchiveInstaller:
         if action_install_bool:
             action = action_install
             pkg_names = sorted(filter_by_status(status, False))  # not installed
-            prompt = prompt_install
         else:
             action = action_uninstall
             pkg_names = sorted(filter_by_status(status, True))   # installed
-            prompt = prompt_remove
 
         if not pkg_names:
             log_and_print(f"No {archive_label} to process for {action}.")
@@ -291,8 +287,8 @@ class ArchiveInstaller:
                 strip_top_level_key: bool(meta.get(strip_top_level_key, False)),
                 post_install_key: meta.get(post_install_key, []),
                 enable_service_key: meta.get(enable_service_key, ""),
-                post_uninstall_key: meta.get(post_uninstall_key, []),   # NEW: show if present
-                trash_paths_key: meta.get(trash_paths_key, []),        # NEW: show if present
+                post_uninstall_key: meta.get(post_uninstall_key, []),
+                trash_paths_key: meta.get(trash_paths_key, []),
             })
 
         print_dict_table(
@@ -327,8 +323,10 @@ class ArchiveInstaller:
         return True
 
     def install_archives(self, pkg_names, items, download_url_key, extract_url_key,
-                         strip_top_level_key, download_dir, install_fail_msg,
+                         strip_top_level_key, install_fail_msg,
                          download_fail_msg, installed_label, dl_path_key):
+        """Install archives; advance to POST_INSTALL. Returns list of successfully installed packages.
+        Requires per-package DownloadPath in JSON."""
         succeeded = []
         for pkg in pkg_names:
             meta = items.get(pkg, {})
@@ -338,14 +336,18 @@ class ArchiveInstaller:
             download_url = meta.get(download_url_key, "")
             extract_to   = expand_path(meta.get(extract_url_key, ""))
             strip_top_level = bool(meta.get(strip_top_level_key, False))
+            dl_path = expand_path(meta.get(dl_path_key, ""))
 
-            # choose per-package download path if set, else fallback to global
-            dl_path = expand_path(meta.get(dl_path_key, "")) if meta.get(dl_path_key) else download_dir
-            Path(dl_path).mkdir(parents=True, exist_ok=True)
-
-            if not download_url or not extract_to:
-                log_and_print(f"{install_fail_msg}: {pkg} (missing URL or ExtractTo)")
+            # Validate required fields
+            missing = []
+            if not download_url: missing.append("DownloadURL")
+            if not extract_to:   missing.append("ExtractTo")
+            if not dl_path:      missing.append("DownloadPath")
+            if missing:
+                log_and_print(f"{install_fail_msg}: {pkg} (missing {', '.join(missing)})")
                 continue
+
+            Path(dl_path).mkdir(parents=True, exist_ok=True)
 
             archive_path = download_archive_file(pkg, download_url, dl_path)
             if not archive_path:
@@ -360,7 +362,7 @@ class ArchiveInstaller:
             else:
                 log_and_print(f"{install_fail_msg}: {pkg}")
 
-        # Next state: post-install tasks (even if empty list, we'll no-op)
+        # Next state: post-install tasks
         self.state = STATE_POST_INSTALL
         return succeeded
 
@@ -374,7 +376,7 @@ class ArchiveInstaller:
         count = 0
         for pkg in succeeded_pkgs:
             meta = items.get(pkg, {})
-            # Post-install shell commands (list or string)
+            # Post-install shell commands
             cmds = meta.get(post_install_key, [])
             if cmds:
                 try:
@@ -411,7 +413,7 @@ class ArchiveInstaller:
             log_and_print(f"ARCHIVE {uninstall_label}: {pkg}")
             succeeded.append(pkg)
 
-        # Next state: post-uninstall tasks (even if empty, we'll no-op)
+        # Next state: post-uninstall tasks 
         self.state = STATE_POST_UNINSTALL
         return succeeded
 
@@ -424,34 +426,23 @@ class ArchiveInstaller:
             log_and_print("No packages to post-uninstall.")
             self.state = STATE_PACKAGE_STATUS
             return 0
-
         count = 0
         for pkg in succeeded_pkgs:
             meta = items.get(pkg, {})
-
             # Optional post-uninstall commands
             pu_cmds = meta.get(post_uninstall_key, [])
             if pu_cmds:
-                try:
-                    run_post_install_commands(pu_cmds)  # reuse the same runner
-                except Exception as e:
-                    log_and_print(f"POST-UNINSTALL FAILED for {pkg}: {e}")
-                else:
+                if run_post_install_commands(pu_cmds):
                     log_and_print(f"POST-UNINSTALL OK for {pkg}")
-
+                else:
+                    log_and_print(f"POST-UNINSTALL FAILED for {pkg}")
             # Remove/move to trash extra paths
             for p in meta.get(trash_paths_key, []):
                 expanded = expand_path(p)
-                try:
-                    if not move_to_trash(expanded):
-                        sudo_remove_path(expanded)
-                except Exception as e:
-                    log_and_print(f"TRASH/REMOVE FAILED for {pkg} path '{expanded}': {e}")
-                else:
-                    log_and_print(f"REMOVED extra path for {pkg}: {expanded}")
-
+                if not move_to_trash(expanded):
+                    sudo_remove_path(expanded)
+                log_and_print(f"REMOVED extra path for {pkg}: {expanded}")
             count += 1
-
         self.state = STATE_PACKAGE_STATUS
         return count
 
@@ -464,7 +455,7 @@ class ArchiveInstaller:
         items = None
         status = None
         pkg_names = None
-        post_install_pkgs = []  
+        post_install_pkgs = []
         post_uninstall_pkgs = []
 
         while self.state != STATE_FINALIZE:
@@ -548,9 +539,9 @@ class ArchiveInstaller:
                 post_install_pkgs = self.install_archives(
                     pkg_names, items,
                     DOWNLOAD_URL_KEY, EXTRACT_TO_KEY,
-                    STRIP_TOP_LEVEL_KEY, DOWNLOAD_DIR,
+                    STRIP_TOP_LEVEL_KEY,
                     INSTALL_FAIL_MSG, DOWNLOAD_FAIL_MSG,
-                    INSTALLED_LABEL, DL_PATH_KEY 
+                    INSTALLED_LABEL, DL_PATH_KEY
                 )
 
             # Post-Install Steps
