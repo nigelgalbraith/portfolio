@@ -2,29 +2,17 @@
 # -*- coding: utf-8 -*-
 
 """
-Third-Party Installer State Machine
+Third-Party Installer State Machine (Refactored Contracts)
 
-This script manages installation and uninstallation of third-party APT packages
-using a state-machine approach. It detects the system model, loads the corresponding 
-configuration, and provides a menu for the user to install or uninstall packages.
-
-Workflow:
-    1. Setup logging and verify user account.
-    2. Ensure required dependencies (e.g., curl, gpg) are installed.
-    3. Detect system model and load configuration.
-    4. Display package installation/uninstallation status.
-    5. Allow the user to install, uninstall, or cancel.
-    6. Confirm action and proceed with installation/uninstallation.
-    7. Finalize by rotating logs and printing summary.
-
-States:
-    INITIAL → DEP_CHECK → MODEL_DETECTION → CONFIG_LOADING → PACKAGE_STATUS
-    → MENU_SELECTION → PREPARE_PLAN → CONFIRM → INSTALL_STATE/UNINSTALL_STATE → FINALIZE
+This refactor aligns the third-party APT installer with your other state machines:
+- State-mutating methods update `self` (state/fields) and don't return tuples.
+- Single-use messages are inlined (no extra globals).
+- Prompts live in ACTION_DATA and are picked via `self.action_install`.
+- Selected package list is cleared after each action to avoid stale state.
+- Unknown-state guard added to the main loop.
 """
 
-import json
 import datetime
-import subprocess
 from pathlib import Path
 
 from modules.logger_utils import setup_logging, log_and_print, rotate_logs
@@ -39,17 +27,22 @@ from modules.apt_repo_utils import (
 )
 
 # === CONFIG PATHS & KEYS ===
-PRIMARY_CONFIG = "config/AppConfigSettings.json"
-THIRD_PARTY_KEY = "ThirdParty"
-CONFIG_TYPE = "third-party"
-CONFIG_EXAMPLE = "config/desktop/DesktopThirdParty.json"
-DEFAULT_CONFIG = "default"  # used for fallback when model-specific entry is missing
+PRIMARY_CONFIG   = "config/AppConfigSettings.json"
+THIRD_PARTY_KEY  = "ThirdParty"
+CONFIG_TYPE      = "third-party"
+CONFIG_EXAMPLE   = "config/desktop/DesktopThirdParty.json"
+DEFAULT_CONFIG   = "default"
+DEFAULT_CONFIG_NOTE = (
+    "NOTE: The default {config_type} configuration is being used.\n"
+    "To customize {config_type} for model '{model}', create a model-specific config file.\n"
+    "e.g. - '{example}' and add an entry for '{model}' in '{primary}'."
+)
 
 # === LOGGING ===
-LOG_DIR = Path.home() / "logs" / "thirdparty"
-LOGS_TO_KEEP = 10
-TIMESTAMP = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-LOG_FILE = LOG_DIR / f"thirdparty_install_{TIMESTAMP}.log"
+LOG_DIR         = Path.home() / "logs" / "thirdparty"
+LOGS_TO_KEEP    = 10
+TIMESTAMP       = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+LOG_FILE        = LOG_DIR / f"thirdparty_install_{TIMESTAMP}.log"
 ROTATE_LOG_NAME = "thirdparty_install_*.log"
 
 # === DEPENDENCIES ===
@@ -58,53 +51,46 @@ DEPENDENCIES = ["curl", "gpg"]
 # === USER & MODEL ===
 REQUIRED_USER = "Standard"
 
-# === JSON FIELDS ===
-JSON_URL = "url"
-JSON_KEY = "key"
-JSON_CODENAME = "codename"
-JSON_COMPONENT = "component"
-
-# === KEYRING ===
-KEY_RING_BASEPATH = "/usr/share/keyrings/"
-
-# === CONSTANTS (Field Names for Consistency) ===
-PACKAGE_NAME_FIELD = "Package Name"
-DOWNLOAD_URL_FIELD = "Download URL"
+# === CONSTANTS (Field Names for Plan Table) ===
+PACKAGE_NAME_FIELD   = "Package Name"
+DOWNLOAD_URL_FIELD   = "Download URL"
 ENABLE_SERVICE_FIELD = "Enable Service"
 
 # === LABELS ===
-SUMMARY_LABEL = "Third-Party Package"
-TP_LABEL = "third-party packages"
+SUMMARY_LABEL   = "Third-Party Package"
+TP_LABEL        = "third-party packages"
 INSTALLED_LABEL = "INSTALLED"
 UNINSTALLED_LABEL = "UNINSTALLED"
 
-# === MENU LABELS ===
-MENU_TITLE      = "Select an option"
-ACTION_INSTALL  = f"Install required {THIRD_PARTY_KEY}"
-ACTION_REMOVE   = f"Uninstall all listed {THIRD_PARTY_KEY}"
-ACTION_CANCEL   = "Cancel"
-MENU_OPTIONS    = [ACTION_INSTALL, ACTION_REMOVE, ACTION_CANCEL]
-
-# === ACTIONS ===
-ACTIONS = {
-    True: "installation",
-    False: "uninstallation"
+# === MENU (dict mapping label -> action) ===
+MENU_TITLE = "Select an option"
+MENU_OPTIONS = {
+    f"Install required {THIRD_PARTY_KEY}": True,
+    f"Uninstall all listed {THIRD_PARTY_KEY}": False,
+    "Cancel": None,
 }
 
-# === FAILURE MESSAGES ===
-INSTALL_FAIL_MSG = "INSTALL FAILED"
-UNINSTALL_FAIL_MSG = "UNINSTALL FAILED"
+# === ACTION DATA (one source of truth for verbs + prompts) ===
+ACTION_DATA = {
+    True: {
+        "verb": "installation",
+        "prompt": "Proceed with installation? [y/n]: ",
+    },
+    False: {
+        "verb": "uninstallation",
+        "prompt": "Proceed with uninstallation? [y/n]: ",
+    },
+}
 
-# === CONFIRM PROMPTS ===
-PROMPT_INSTALL = f"Proceed with installation? [y/n]: "
-PROMPT_REMOVE  = f"Proceed with uninstallation? [y/n]: "
-
-# === CONFIG NOTES ===
-DEFAULT_CONFIG_NOTE = (
-    "NOTE: The default {config_type} configuration is being used.\n"
-    "To customize {config_type} for model '{model}', create a model-specific config file.\n"
-    "e.g. - '{example}' and add an entry for '{model}' in '{primary}'."
-)
+# === DETECTION CONFIG ===
+DETECTION_CONFIG = {
+    'primary_config': PRIMARY_CONFIG,
+    'config_type': CONFIG_TYPE,
+    'packages_key': THIRD_PARTY_KEY,
+    'default_config_note': DEFAULT_CONFIG_NOTE,
+    'default_config': DEFAULT_CONFIG,
+    'config_example': CONFIG_EXAMPLE,
+}
 
 # === STATE CONSTANTS ===
 STATE_INITIAL         = "INITIAL"
@@ -119,147 +105,168 @@ STATE_INSTALL_STATE   = "INSTALL_STATE"
 STATE_UNINSTALL_STATE = "UNINSTALL_STATE"
 STATE_FINALIZE        = "FINALIZE"
 
-# === MESSAGES ===
-MSG_LOGGING_FINAL = f"You can find the full log here: {LOG_FILE}"
-MSG_CANCEL        = "Cancelled by user."
-
 
 class ThirdPartyInstaller:
     def __init__(self):
-        """Initialize the installer state and variables."""
+        """Initialize installer state and fields."""
         self.state = STATE_INITIAL
+        self.model = None
+        self.tp_file = None
+        self.model_block = {}
+        self.tp_keys = []
+        self.package_status = {}
+        self.action_install = None  # True = install, False = uninstall
+        self.selected_packages = []
+        self.finalize_msg = None
 
-    def setup(self, log_file, log_dir, required_user):
-        """Setup logging and verify user account."""
+    # ====== STATE-MUTATING METHODS (no return values) ======
+
+    def setup(self, log_file: Path, log_dir: Path, required_user: str):
+        """Setup logging and verify user; advance to DEP_CHECK or FINALIZE."""
         setup_logging(log_file, log_dir)
         if not check_account(expected_user=required_user):
+            self.finalize_msg = "User account verification failed."
             self.state = STATE_FINALIZE
-            return "User account verification failed."
+            return
         self.state = STATE_DEP_CHECK
-        return None
 
-    def ensure_deps(self, deps):
-        """Ensure required dependencies are installed."""
+    def ensure_deps(self, deps: list[str]):
+        """Ensure required dependencies; advance to MODEL_DETECTION or FINALIZE."""
         if ensure_dependencies_installed(deps):
             self.state = STATE_MODEL_DETECTION
         else:
-            return "Some required dependencies failed to install."
+            self.finalize_msg = "Some required dependencies failed to install."
+            self.state = STATE_FINALIZE
 
-    def detect_model_and_config(self, primary_config, config_type, third_party_key, default_config_note, default_config, config_example):
-        """Detect model and resolve config."""
+    def detect_model(self, detection_config: dict):
+        """Detect model and resolve config; advance to CONFIG_LOADING or FINALIZE."""
         model = get_model()
         log_and_print(f"Detected model: {model}")
-        primary_cfg = load_json(primary_config)
+
+        primary_cfg = load_json(detection_config['primary_config'])
         tp_file, used_default = resolve_value(
-            primary_cfg,
-            model,
-            third_party_key,
-            default_config,
-            check_file=True
+            primary_cfg, model, detection_config['packages_key'],
+            detection_config['default_config'], check_file=True
         )
 
         if not tp_file:
+            self.finalize_msg = (
+                f"Invalid {detection_config['config_type'].upper()} config path for model '{model}' or fallback."
+            )
             self.state = STATE_FINALIZE
-            return None, None, f"Invalid {config_type.upper()} config path for model '{model}' or fallback."
-        else:
-            log_and_print(f"Using {config_type} config file: {tp_file}")
-            if used_default:
-                log_and_print(
-                    default_config_note.format(
-                        config_type=config_type,
-                        model=model,
-                        example=config_example,
-                        primary=primary_config,
-                    )
+            return
+
+        log_and_print(f"Using {detection_config['config_type']} config file: {tp_file}")
+        if used_default:
+            log_and_print(
+                detection_config['default_config_note'].format(
+                    config_type=detection_config['config_type'],
+                    model=model,
+                    example=detection_config['config_example'],
+                    primary=detection_config['primary_config'],
                 )
-            self.state = STATE_CONFIG_LOADING
-            return model, tp_file, None
+            )
 
-    def load_third_party_block(self, tp_file, model, third_party_key):
-        """Load third-party config block."""
-        tp_cfg = load_json(tp_file)
-        model_block = tp_cfg.get(model, {}).get(third_party_key, {})
-        tp_keys = sorted(model_block.keys())
+        self.model = model
+        self.tp_file = tp_file
+        self.state = STATE_CONFIG_LOADING
 
-        if not tp_keys:
-            self.state = STATE_FINALIZE
-            return None, None, f"No third-party packages found for model '{model}'."
-        else:
-            self.state = STATE_PACKAGE_STATUS
-            return model_block, tp_keys, None
+    def load_model_block(self, section_key: str, next_state: str, cancel_state: str, empty_label_for_msg: str):
+        """Load third-party block; set keys; advance to next_state or cancel_state."""
+        tp_cfg = load_json(self.tp_file)
+        model_block = (tp_cfg.get(self.model, {}) or {}).get(section_key, {})
+        keys = sorted(model_block.keys())
+        if not keys:
+            self.finalize_msg = f"No {empty_label_for_msg.lower()} found for model '{self.model}'."
+            self.state = cancel_state
+            return
+        self.model_block = model_block
+        self.tp_keys = keys
+        self.state = next_state
 
-    def build_status_map(self, installed_label, uninstalled_label, summary_label, tp_keys):
-        """Build & print package status."""
-        package_status = {pkg: check_package(pkg) for pkg in tp_keys}
+    def build_status_map(self, summary_label: str, installed_label: str, uninstalled_label: str):
+        """Compute status; advance to MENU_SELECTION."""
+        self.package_status = {pkg: check_package(pkg) for pkg in self.tp_keys}
         summary = format_status_summary(
-            package_status,
+            self.package_status,
             label=summary_label,
             count_keys=[installed_label, uninstalled_label],
             labels={True: installed_label, False: uninstalled_label},
         )
         log_and_print(summary)
         self.state = STATE_MENU_SELECTION
-        return package_status
 
-    def select_action(self, menu_title, menu_options, action_install, action_remove, action_cancel):
-        """Prompt user; return True for install, False for uninstall, or None if cancelled (state -> FINALIZE)."""
+    def select_action(self, menu_title: str, menu_options: dict):
+        """Prompt for action; set action_install or finalize on cancel."""
+        options = list(menu_options.keys())
         choice = None
-        while choice not in menu_options:
-            choice = select_from_list(menu_title, menu_options)
-            if choice not in menu_options:
+        while choice not in options:
+            choice = select_from_list(menu_title, options)
+            if choice not in options:
                 log_and_print("Invalid selection. Please choose a valid option.")
-
-        if choice == action_cancel:
+        result = menu_options[choice]
+        if result is None:
+            self.finalize_msg = "Cancelled by user."
             self.state = STATE_FINALIZE
-            return None
-
+            return
+        self.action_install = result
         self.state = STATE_PREPARE_PLAN
-        return (choice == action_install)
 
+    def prepare_plan(self, key_label: str, action_data: dict):
+        """Build and print plan; populate selected_packages; advance to CONFIRM or bounce to MENU_SELECTION."""
+        verb = action_data[self.action_install]["verb"]
+        if self.action_install:
+            pkg_names = sorted(filter_by_status(self.package_status, False))  # not installed
+        else:
+            pkg_names = sorted(filter_by_status(self.package_status, True))   # installed
 
-    def prepare_plan(self, package_status, key_block, key_label, actions_dict, action_install):
-        """Build a plan table dynamically based on the keys of each package's meta information."""
-        action = actions_dict[action_install] 
-        pkg_names = sorted(filter_by_status(package_status, False)) if action_install else sorted(filter_by_status(package_status, True))
         if not pkg_names:
-            log_and_print(f"No {key_label} to process for {action}.")
+            log_and_print(f"No {key_label} to process for {verb}.")
             self.state = STATE_MENU_SELECTION
-            return None
+            return
+
         plan_rows = []
-        seen_keys = {key_label} 
-        other_keys_ordered = [] 
+        seen_keys = {key_label}
+        other_keys_ordered = []
+
         for pkg in pkg_names:
-            meta = key_block.get(pkg, {})  
-            row = {key_label: pkg} 
-            for key, value in meta.items():
-                row[key] = value
-                if key not in seen_keys:
-                    seen_keys.add(key)
-                    other_keys_ordered.append(key)
+            meta = self.model_block.get(pkg, {}) or {}
+            row = {key_label: pkg}
+            for k, v in meta.items():
+                row[k] = v
+                if k not in seen_keys:
+                    seen_keys.add(k)
+                    other_keys_ordered.append(k)
             plan_rows.append(row)
+
         field_names = [key_label] + other_keys_ordered
         print_dict_table(
             plan_rows,
             field_names=field_names,
-            label=f"Planned {action.title()} ({key_label})"
+            label=f"Planned {verb.title()} ({key_label})",
         )
+
+        self.selected_packages = pkg_names
         self.state = STATE_CONFIRM
-        return pkg_names
 
-
-    def confirm_action(self, prompt, false_state):
-        """Confirm the action; return True to proceed, False to cancel."""
+    def confirm_action(self, action_data: dict):
+        """Confirm the chosen action; advance to install/uninstall or bounce to PACKAGE_STATUS."""
+        prompt = action_data[self.action_install]["prompt"]
         proceed = confirm(prompt)
         if not proceed:
             log_and_print("User cancelled.")
-            self.state = false_state
-        return proceed
+            self.state = STATE_PACKAGE_STATUS
+            return
+        self.state = STATE_INSTALL_STATE if self.action_install else STATE_UNINSTALL_STATE
+        return
+        self.state = STATE_INSTALL_STATE if self.action_install else STATE_UNINSTALL_STATE
 
-    def install_third_party_state(self, selected_packages, model_block):
-        """Install selected third-party packages."""
+    def install_third_party_state(self, installed_label: str):
+        """Install selected packages; clear selection; advance to PACKAGE_STATUS."""
         success_count = 0
-        for pkg in selected_packages:
-            meta = model_block.get(pkg, {})
+        total = len(self.selected_packages)
+        for pkg in self.selected_packages:
+            meta = self.model_block.get(pkg, {}) or {}
             url = meta.get("url")
             key = meta.get("key")
             codename = meta.get("codename")
@@ -272,108 +279,83 @@ class ThirdPartyInstaller:
                 add_apt_repository(pkg, url, key, codename, component)
 
             install_packages([pkg])
-            log_and_print(f"APT {INSTALLED_LABEL}: {pkg}")
+            log_and_print(f"APT {installed_label}: {pkg}")
             success_count += 1
-        self.state = STATE_PACKAGE_STATUS
-        return f"Installed successfully: {success_count}"
 
-    def uninstall_third_party_state(self, selected_packages, model_block):
-        """Uninstall selected third-party packages."""
+        self.finalize_msg = f"Installed successfully: {success_count}/{total}"
+        self.selected_packages = []
+        self.state = STATE_PACKAGE_STATUS
+
+    def uninstall_third_party_state(self, uninstalled_label: str):
+        """Uninstall selected packages; clear selection; advance to PACKAGE_STATUS."""
         success_count = 0
-        for pkg in selected_packages:
+        total = len(self.selected_packages)
+        for pkg in self.selected_packages:
             log_and_print(f"UNINSTALLING: {pkg}")
             if uninstall_packages([pkg]):
                 remove_apt_repo_and_keyring(pkg)
-                log_and_print(f"APT {UNINSTALLED_LABEL}: {pkg}")
+                log_and_print(f"APT {uninstalled_label}: {pkg}")
                 success_count += 1
             else:
-                log_and_print(f"{UNINSTALL_FAIL_MSG}: {pkg}")
+                log_and_print(f"APT uninstall failed: {pkg}")
+        self.finalize_msg = f"Uninstalled successfully: {success_count}/{total}"
+        self.selected_packages = []
         self.state = STATE_PACKAGE_STATUS
-        return f"Uninstalled successfully: {success_count}"
+
+    # ====== DRIVER ======
 
     def main(self):
         """Run startup states, then loop through menu and actions."""
-        model = None
-        tp_file = None
-        model_block = {}
-        tp_keys = []
-        package_status = {}
-        selected_packages = []
-        finalize_msg = None
-        action_install = None
-
         while self.state != STATE_FINALIZE:
-            # Setup
             if self.state == STATE_INITIAL:
-                finalize_msg = self.setup(LOG_FILE, LOG_DIR, REQUIRED_USER)
+                self.setup(LOG_FILE, LOG_DIR, REQUIRED_USER)
 
-            # Dependencies
-            if self.state == STATE_DEP_CHECK:
-                finalize_msg = self.ensure_deps(DEPENDENCIES)
-                if self.state == STATE_FINALIZE:
-                    continue
+            elif self.state == STATE_DEP_CHECK:
+                self.ensure_deps(DEPENDENCIES)
 
-            # Detect model & config
-            if self.state == STATE_MODEL_DETECTION:
-                model, tp_file, finalize_msg = self.detect_model_and_config(
-                    PRIMARY_CONFIG, CONFIG_TYPE, THIRD_PARTY_KEY, DEFAULT_CONFIG_NOTE, DEFAULT_CONFIG, CONFIG_EXAMPLE
-                )
-                if finalize_msg:
-                    log_and_print(finalize_msg)
-                    continue
+            elif self.state == STATE_MODEL_DETECTION:
+                self.detect_model(DETECTION_CONFIG)
 
-            # Load block
-            if self.state == STATE_CONFIG_LOADING:
-                model_block, tp_keys, finalize_msg = self.load_third_party_block(tp_file, model, THIRD_PARTY_KEY)
-                if finalize_msg:
-                    log_and_print(finalize_msg)
-                    continue
-
-            # Status
-            if self.state == STATE_PACKAGE_STATUS:
-                package_status = self.build_status_map(
-                    INSTALLED_LABEL, UNINSTALLED_LABEL, SUMMARY_LABEL, tp_keys
+            elif self.state == STATE_CONFIG_LOADING:
+                self.load_model_block(
+                    section_key=THIRD_PARTY_KEY,
+                    next_state=STATE_PACKAGE_STATUS,
+                    cancel_state=STATE_FINALIZE,
+                    empty_label_for_msg=TP_LABEL,
                 )
 
-            # Menu
-            if self.state == STATE_MENU_SELECTION:
-                action_install = self.select_action(
-                    MENU_TITLE, MENU_OPTIONS, ACTION_INSTALL, ACTION_REMOVE, ACTION_CANCEL
-                )   
-                if self.state == STATE_FINALIZE:
-                    finalize_msg = MSG_CANCEL
-                    continue
-
-            # Plan
-            if self.state == STATE_PREPARE_PLAN:
-                selected_packages = self.prepare_plan(package_status, model_block, TP_LABEL, ACTIONS, action_install)
-                if self.state != STATE_CONFIRM:
-                    continue
-
-            # Confirm
-            if self.state == STATE_CONFIRM:
-                prompt = PROMPT_INSTALL if action_install else PROMPT_REMOVE
-                proceed = self.confirm_action(prompt, STATE_PACKAGE_STATUS)
-                if not proceed:
-                    continue
-                self.state = STATE_INSTALL_STATE if action_install else STATE_UNINSTALL_STATE
-
-            # Execute
-            if self.state == STATE_INSTALL_STATE:
-                finalize_msg = self.install_third_party_state(
-                    selected_packages, model_block
-                )       
-
-            if self.state == STATE_UNINSTALL_STATE:
-                finalize_msg = self.uninstall_third_party_state(
-                    selected_packages, model_block
+            elif self.state == STATE_PACKAGE_STATUS:
+                self.build_status_map(
+                    summary_label=SUMMARY_LABEL,
+                    installed_label=INSTALLED_LABEL,
+                    uninstalled_label=UNINSTALLED_LABEL,
                 )
+
+            elif self.state == STATE_MENU_SELECTION:
+                self.select_action(MENU_TITLE, MENU_OPTIONS)
+
+            elif self.state == STATE_PREPARE_PLAN:
+                self.prepare_plan(TP_LABEL, ACTION_DATA)
+
+            elif self.state == STATE_CONFIRM:
+                self.confirm_action(ACTION_DATA)
+
+            elif self.state == STATE_INSTALL_STATE:
+                self.install_third_party_state(INSTALLED_LABEL)
+
+            elif self.state == STATE_UNINSTALL_STATE:
+                self.uninstall_third_party_state(UNINSTALLED_LABEL)
+
+            else:
+                log_and_print(f"Unknown state '{self.state}', finalizing.")
+                self.finalize_msg = self.finalize_msg or "Unknown state encountered."
+                self.state = STATE_FINALIZE
 
         # Finalization
         rotate_logs(LOG_DIR, LOGS_TO_KEEP, ROTATE_LOG_NAME)
-        if finalize_msg:
-            log_and_print(finalize_msg)
-        log_and_print(MSG_LOGGING_FINAL)
+        if self.finalize_msg:
+            log_and_print(self.finalize_msg)
+        log_and_print(f"You can find the full log here: {LOG_FILE}")
 
 
 if __name__ == "__main__":
