@@ -19,23 +19,6 @@ Workflow:
 States:
     INITIAL → DEP_CHECK → MODEL_DETECTION → CONFIG_LOADING → PACKAGE_STATUS → MENU_SELECTION  
     → PREPARE_PLAN → CONFIRM → INSTALL_STATE/UNINSTALL_STATE → FINALIZE
-
-Methods:
-    - setup: Setup logging and verify user account.
-    - ensure_deps: Ensure required dependencies (e.g., wget) are installed.
-    - detect_model_and_config: Detect model and load configuration.
-    - load_deb_block: Load DEB package list for the model.
-    - build_status_map: Build and print the package status summary.
-    - select_action: Prompt user to select an action (install, uninstall, cancel).
-    - prepare_plan: Prepare the installation/uninstallation plan.
-    - confirm_action: Confirm the selected action before proceeding.
-    - install_packages_state: Install selected packages.
-    - uninstall_packages_state: Uninstall selected packages.
-    - main: Main loop to manage the state machine and package actions.
-
-Dependencies:
-    - wget (for downloading packages)
-    - Python 3.6+ with subprocess, pathlib, and json modules.
 """
 
 import datetime
@@ -61,63 +44,66 @@ from modules.display_utils import (
 from modules.service_utils import start_service_standard
 
 # === CONFIG PATHS & KEYS ===
-PRIMARY_CONFIG = "config/AppConfigSettings.json"
-DEB_KEY       = "DEB"
-CONFIG_TYPE   = "deb"
-CONFIG_EXAMPLE = "config/desktop/DesktopDeb.json"
-DEFAULT_CONFIG = "default"
-
-# === DIRECTORIES ===
-DOWNLOAD_DIR = Path("/tmp/deb_downloads")
-
-# === LOGGING ===
-LOG_DIR = Path.home() / "logs" / "deb"
-LOGS_TO_KEEP = 10
-TIMESTAMP = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-LOG_FILE = LOG_DIR / f"deb_install_{TIMESTAMP}.log"
-ROTATE_LOG_NAME = "deb_install_*.log"
-
-# === DEPENDENCIES ===
-DEPENDENCIES = ["wget"]
-
-# === JSON FIELDS ===
-JSON_BLOCK_DL_KEY = "DownloadURL"
-JSON_FIELD_ENABLE_SERVICE = "EnableService"
-
-# === USER & MODEL ===
-REQUIRED_USER = "Standard"
-
-# === LABELS ===
-SUMMARY_LABEL     = "Deb Package"
-DEB_LABEL         = "DEB Packages"
-INSTALLED_LABEL   = "INSTALLED"
-UNINSTALLED_LABEL = "UNINSTALLED"
-
-# === MENU LABELS ===
-MENU_TITLE      = "Select an option"
-ACTION_INSTALL  = f"Install required {DEB_LABEL}"
-ACTION_REMOVE   = f"Uninstall all listed {DEB_LABEL}"
-ACTION_CANCEL   = "Cancel"
-MENU_OPTIONS    = [ACTION_INSTALL, ACTION_REMOVE, ACTION_CANCEL]
-
-# === ACTION WORDS ===
-INSTALLATION_ACTION   = "installation"
-UNINSTALLATION_ACTION = "uninstallation"
-
-# === FAILURE MESSAGES ===
-UNINSTALL_FAIL_MSG = "UNINSTALL FAILED"
-INSTALL_FAIL_MSG   = "INSTALL FAILED"
-
-# === CONFIRM PROMPTS ===
-PROMPT_INSTALL = f"Proceed with {INSTALLATION_ACTION}? [y/n]: "
-PROMPT_REMOVE  = f"Proceed with {UNINSTALLATION_ACTION}? [y/n]: "
-
-# === CONFIG NOTES ===
+PRIMARY_CONFIG   = "config/AppConfigSettings.json"
+DEB_KEY          = "DEB"
+CONFIG_TYPE      = "deb"
+CONFIG_EXAMPLE   = "config/desktop/DesktopDeb.json"
+DEFAULT_CONFIG   = "default"
 DEFAULT_CONFIG_NOTE = (
     "NOTE: The default {config_type} configuration is being used.\n"
     "To customize {config_type} for model '{model}', create a model-specific config file.\n"
     "e.g. - '{example}' and add an entry for '{model}' in '{primary}'."
 )
+
+# === DETECTION CONFIG (same pattern as your package installer) ===
+DETECTION_CONFIG = {
+    'primary_config': PRIMARY_CONFIG,
+    'config_type': CONFIG_TYPE,
+    'packages_key': DEB_KEY,
+    'default_config_note': DEFAULT_CONFIG_NOTE,
+    'default_config': DEFAULT_CONFIG,
+    'config_example': CONFIG_EXAMPLE,
+}
+
+# === DIRECTORIES ===
+DOWNLOAD_DIR = Path("/tmp/deb_downloads")
+
+# === LOGGING ===
+LOG_DIR        = Path.home() / "logs" / "deb"
+LOGS_TO_KEEP   = 10
+TIMESTAMP      = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+LOG_FILE       = LOG_DIR / f"deb_install_{TIMESTAMP}.log"
+ROTATE_LOG_NAME = "deb_install_*.log"
+
+# === DEPENDENCIES ===
+DEPENDENCIES = ["wget"]
+
+# === USER & MODEL ===
+REQUIRED_USER = "Standard"
+
+# === LABELS ===
+DEB_LABEL         = "DEB Packages"
+
+# === MENU (dict-mapped like your package installer) ===
+MENU_TITLE = "Select an option"
+MENU_OPTIONS = {
+    f"Install required {DEB_LABEL}": True,
+    f"Uninstall all listed {DEB_LABEL}": False,
+    "Cancel": None,
+}
+
+# === ACTION WORDS / PROMPTS ===
+ACTIONS = {
+    True: "installation",
+    False: "uninstallation"
+}
+
+PROMPT_INSTALL        = "Proceed with installation? [y/n]: "
+PROMPT_REMOVE         = "Proceed with uninstallation? [y/n]: "
+
+# === FAILURE MESSAGES ===
+UNINSTALL_FAIL_MSG = "UNINSTALL FAILED"
+INSTALL_FAIL_MSG   = "INSTALL FAILED"
 
 # === PLAN TABLE FIELD LABELS ===
 PACKAGE_NAME_FIELD   = "Package Name"
@@ -146,7 +132,7 @@ class DebInstaller:
     def __init__(self):
         """Initialize the installer state and variables."""
         self.state = STATE_INITIAL
-
+        
 
     def setup(self, log_file, log_dir, required_user):
         """Setup logging and verify user account; advance to DEP_CHECK on success.
@@ -168,173 +154,153 @@ class DebInstaller:
             self.state = STATE_FINALIZE
 
 
-    def detect_model_and_config(self, primary_config, config_type, deb_key,
-                                default_config_note, default_config, config_example):
-        """Detect model and resolve config; advance to CONFIG_LOADING.
-        Returns (model, deb_file, finalize_msg|None)."""
+    def detect_model(self, detection_config):
+        """Detect system model and resolve config; advance to CONFIG_LOADING (consistent with your style)."""
         model = get_model()
         log_and_print(f"Detected model: {model}")
 
-        primary_cfg = load_json(primary_config)
-        deb_file, used_default = resolve_value(
-            primary_cfg, model, deb_key, default_config, check_file=True
+        primary_cfg = load_json(detection_config['primary_config'])
+        cfg_file, used_default = resolve_value(
+            primary_cfg, model, detection_config['packages_key'], detection_config['default_config'], check_file=True
         )
-
-        if not deb_file:
+        if not cfg_file:
             self.state = STATE_FINALIZE
-            return None, None, f"Invalid {config_type.upper()} config path for model '{model}' or fallback."
-
-        log_and_print(f"Using {config_type.upper()} config file: {deb_file}")
+            return None, None, f"Invalid {detection_config['config_type'].upper()} config path for model '{model}' or fallback."
+        log_and_print(f"Using {detection_config['config_type'].upper()} config file: {cfg_file}")
         if used_default:
             log_and_print(
-                default_config_note.format(
-                    config_type=config_type,
+                detection_config['default_config_note'].format(
+                    config_type=detection_config['config_type'],
                     model=model,
-                    example=config_example,
-                    primary=primary_config,
+                    example=detection_config['config_example'],
+                    primary=detection_config['primary_config'],
                 )
             )
         self.state = STATE_CONFIG_LOADING
-        return model, deb_file, None
+        return model, cfg_file, None
 
 
-    def load_deb_block(self, deb_file, model, deb_key):
-        """Load model block; advance to PACKAGE_STATUS.
-        Returns (deb_block, deb_keys, finalize_msg|None)."""
-        deb_cfg = load_json(deb_file)
-        deb_block = deb_cfg.get(model, {}).get(deb_key, {})
-        deb_keys = sorted(deb_block.keys())
-
-        if not deb_keys:
-            self.state = STATE_FINALIZE
-            return None, None, f"No packages found for model '{model}'."
-
-        self.state = STATE_PACKAGE_STATUS
-        return deb_block, deb_keys, None
-
-
-    def build_status_map(self, installed_label, uninstalled_label, summary_label, deb_keys):
+    def build_status_map(self, summary_label, keys):
         """Build & print status; advance to MENU_SELECTION. Returns package_status dict."""
-        package_status = {pkg: check_package(pkg) for pkg in deb_keys}
+        package_status = {pkg: check_package(pkg) for pkg in keys}
         summary = format_status_summary(
             package_status,
             label=summary_label,
-            count_keys=[installed_label, uninstalled_label],
-            labels={True: installed_label, False: uninstalled_label},
+            count_keys=["Installed", "Uninstalled"],
+            labels={True: "Installed", False: "Uninstalled"},
         )
         log_and_print(summary)
         self.state = STATE_MENU_SELECTION
         return package_status
 
 
-    def select_action(self, menu_title, menu_options, action_install, action_remove, action_cancel):
-        """Prompt user; return True for install, False for uninstall, or None if cancelled (state -> FINALIZE)."""
+    def select_action(self, menu_title, menu_data):
+        """Prompt user; return mapped value from menu_data (True/False/None)."""
+        options = list(menu_data.keys())
         choice = None
-        while choice not in menu_options:
-            choice = select_from_list(menu_title, menu_options)
-            if choice not in menu_options:
+        while choice not in options:
+            choice = select_from_list(menu_title, options)
+            if choice not in options:
                 log_and_print("Invalid selection. Please choose a valid option.")
-
-        if choice == action_cancel:
+        result = menu_data[choice]
+        if result is None:
             self.state = STATE_FINALIZE
             return None
-
         self.state = STATE_PREPARE_PLAN
-        return (choice == action_install)
+        return result 
 
 
-    def prepare_plan(self, package_status, deb_block, deb_label,
-                     installation_action, uninstallation_action,
-                     package_name_field, download_url_field, enable_service_field,
-                     action_install_bool, json_block_dl_key, json_feild_enable_service):
-        """Compute selected packages, print plan; advance to CONFIRM or back to MENU_SELECTION.
-        Returns selected_packages list or None."""
-        if action_install_bool:
-            action = installation_action
-            pkg_names = sorted(filter_by_status(package_status, False))  
-        else:
-            action = uninstallation_action
-            pkg_names = sorted(filter_by_status(package_status, True))  
+    def confirm_action(self, prompt, false_state):
+        """Confirm the action; return True to proceed, False to cancel."""
+        proceed = confirm(prompt)
+        if not proceed:
+            log_and_print("User cancelled.")
+            self.state = false_state
+        return proceed
 
+
+    def load_model_block(self, cfg_file, model, section_key, next_state, cancel_state):
+        """Loads a specified section from a config file, advancing to the next state on success, or FINALIZE if missing."""
+        cfg = load_json(cfg_file)
+        block = cfg.get(model, {}).get(section_key, {})
+        keys = sorted(block.keys())
+        if not keys:
+            self.state = cancel_state
+            return None, None, f"No {section_key} found."
+
+        self.state = next_state
+        return block, keys, None
+
+
+    def prepare_plan(self, package_status, key_block, key_label, actions_dict, action_install):
+        """Build a plan table dynamically based on the keys of each package's meta information."""
+        action = actions_dict[action_install] 
+        pkg_names = sorted(filter_by_status(package_status, False)) if action_install else sorted(filter_by_status(package_status, True))
         if not pkg_names:
-            log_and_print(f"No {deb_label} to process for {action}.")
+            log_and_print(f"No {key_label} to process for {action}.")
             self.state = STATE_MENU_SELECTION
             return None
-
         plan_rows = []
+        seen_keys = {key_label} 
+        other_keys_ordered = [] 
         for pkg in pkg_names:
-            meta = deb_block.get(pkg, {}) or {}
-            plan_rows.append({
-                package_name_field: pkg,
-                download_url_field: meta.get(json_block_dl_key, ""),
-                enable_service_field: meta.get(json_feild_enable_service, ""),
-            })
-
+            meta = key_block.get(pkg, {})  
+            row = {key_label: pkg} 
+            for key, value in meta.items():
+                row[key] = value
+                if key not in seen_keys:
+                    seen_keys.add(key)
+                    other_keys_ordered.append(key)
+            plan_rows.append(row)
+        field_names = [key_label] + other_keys_ordered
         print_dict_table(
             plan_rows,
-            field_names=[package_name_field, download_url_field, enable_service_field],
-            label=f"Planned {action.title()} (Deb Package details)"
+            field_names=field_names,
+            label=f"Planned {action.title()} ({key_label})"
         )
-
         self.state = STATE_CONFIRM
         return pkg_names
 
 
-    def confirm_action(self, prompt_install, prompt_remove, action_install_bool):
-        """Confirm; advance to INSTALL/UNINSTALL or back to PACKAGE_STATUS.
-        Returns True to proceed, False to cancel."""
-        prompt = prompt_install if action_install_bool else prompt_remove
-        if not confirm(prompt):
-            log_and_print("User cancelled.")
-            self.state = STATE_PACKAGE_STATUS
-            return False
-        self.state = STATE_INSTALL_STATE if action_install_bool else STATE_UNINSTALL_STATE
-        return True
-
-
-    def install_packages_state(self, selected_packages, deb_block, deb_label,
-                               installed_label, install_fail_msg, download_dir, model):
+    def install_packages_state(self, selected_packages, deb_block):
         """Install selected packages; advance to PACKAGE_STATUS; return finalize_msg string."""
         success = 0
         total = len(selected_packages)
         for pkg in selected_packages:
             meta = deb_block.get(pkg, {}) or {}
-            download_url = meta.get(JSON_BLOCK_DL_KEY, "")
-            enable_service = meta.get(JSON_FIELD_ENABLE_SERVICE, "")
-
+            download_url = meta.get("DownloadURL")
+            enable_service = meta.get("EnableService")
+            download_dir = Path(meta.get("download_dir", "/tmp/deb_downloads"))
             deb_path = download_deb_file(pkg, download_url, download_dir)
             ok = False
             if deb_path:
                 ok = install_deb_file(deb_path, pkg)
-                handle_cleanup(deb_path, ok, pkg, install_fail_msg)
+                handle_cleanup(deb_path, ok, pkg, "INSTALL FAILED")
             else:
-                log_and_print(f"{install_fail_msg}: {pkg}")
-
+                log_and_print(f"Deb Package download failed: {pkg}")
             if ok:
-                log_and_print(f"{deb_label} {INSTALLED_LABEL}: {pkg}")
+                log_and_print(f"Deb Packages installed: {pkg}")
                 start_service_standard(enable_service, pkg)
                 success += 1
 
         self.state = STATE_PACKAGE_STATUS
-        return f"Installed successfully: {success}/{total} (Model: {model})"
+        return f"Installed successfully: {success}/{total}"
 
 
-    def uninstall_packages_state(self, selected_packages, deb_label,
-                                 uninstalled_label, uninstall_fail_msg, model):
+    def uninstall_packages_state(self, selected_packages):
         """Uninstall selected packages; advance to PACKAGE_STATUS; return finalize_msg string."""
         success = 0
         total = len(selected_packages)
         for pkg in selected_packages:
             ok = uninstall_deb_package(pkg)
             if ok:
-                log_and_print(f"{deb_label} {uninstalled_label}: {pkg}")
+                log_and_print(f"Deb Packages uninstalled: {pkg}")
                 success += 1
             else:
-                log_and_print(f"{uninstall_fail_msg}: {pkg}")
+                log_and_print(f"Deb Package uninstall failed: {pkg}")
 
         self.state = STATE_PACKAGE_STATUS
-        return f"Uninstalled successfully: {success}/{total} (Model: {model})"
-
+        return f"Uninstalled successfully: {success}/{total})"
 
     # === MAIN ===
     def main(self):
@@ -361,62 +327,50 @@ class DebInstaller:
 
             # Detect model & config
             if self.state == STATE_MODEL_DETECTION:
-                model, deb_file, finalize_msg = self.detect_model_and_config(
-                    PRIMARY_CONFIG, CONFIG_TYPE, DEB_KEY,
-                    DEFAULT_CONFIG_NOTE, DEFAULT_CONFIG, CONFIG_EXAMPLE
-                )
+                model, deb_file, finalize_msg = self.detect_model(DETECTION_CONFIG)
                 if self.state == STATE_FINALIZE:
                     continue
 
             # Load block
             if self.state == STATE_CONFIG_LOADING:
-                deb_block, deb_keys, finalize_msg = self.load_deb_block(deb_file, model, DEB_KEY)
+                deb_block, deb_keys, finalize_msg = self.load_model_block(
+                    deb_file, model, DEB_KEY, STATE_PACKAGE_STATUS, STATE_FINALIZE
+                )
                 if self.state == STATE_FINALIZE:
                     continue
 
             # Status
             if self.state == STATE_PACKAGE_STATUS:
-                package_status = self.build_status_map(
-                    INSTALLED_LABEL, UNINSTALLED_LABEL, SUMMARY_LABEL, deb_keys
-                )
+                package_status = self.build_status_map(DEB_LABEL, deb_keys)
 
             # Menu
             if self.state == STATE_MENU_SELECTION:
-                action_install = self.select_action(
-                    MENU_TITLE, MENU_OPTIONS, ACTION_INSTALL, ACTION_REMOVE, ACTION_CANCEL
-                )             
+                action_install = self.select_action(MENU_TITLE, MENU_OPTIONS)
                 if self.state == STATE_FINALIZE:
                     finalize_msg = MSG_CANCEL
                     continue
 
             # Plan
             if self.state == STATE_PREPARE_PLAN:
-                selected_packages = self.prepare_plan(
-                    package_status, deb_block, DEB_LABEL,
-                    INSTALLATION_ACTION, UNINSTALLATION_ACTION,
-                    PACKAGE_NAME_FIELD, DOWNLOAD_URL_FIELD, ENABLE_SERVICE_FIELD,
-                    action_install, JSON_BLOCK_DL_KEY, JSON_FIELD_ENABLE_SERVICE
-                )
+                selected_packages = self.prepare_plan( package_status, deb_block,
+                                                       DEB_LABEL, ACTIONS, action_install)
                 if self.state != STATE_CONFIRM:
                     continue
 
             # Confirm
             if self.state == STATE_CONFIRM:
-                proceed = self.confirm_action(PROMPT_INSTALL, PROMPT_REMOVE, action_install)
+                prompt = PROMPT_INSTALL if action_install else PROMPT_REMOVE
+                proceed = self.confirm_action(prompt, STATE_PACKAGE_STATUS)
                 if not proceed:
                     continue
+                self.state = STATE_INSTALL_STATE if action_install else STATE_UNINSTALL_STATE
 
             # Execute
             if self.state == STATE_INSTALL_STATE:
-                finalize_msg = self.install_packages_state(
-                    selected_packages, deb_block, DEB_LABEL,
-                    INSTALLED_LABEL, INSTALL_FAIL_MSG, DOWNLOAD_DIR, model
-                )
+                finalize_msg = self.install_packages_state(selected_packages, deb_block)
 
             if self.state == STATE_UNINSTALL_STATE:
-                finalize_msg = self.uninstall_packages_state(
-                    selected_packages, DEB_LABEL, UNINSTALLED_LABEL, UNINSTALL_FAIL_MSG, model
-                )
+                finalize_msg = self.uninstall_packages_state(selected_packages)
 
         # Finalization steps
         rotate_logs(LOG_DIR, LOGS_TO_KEEP, ROTATE_LOG_NAME)

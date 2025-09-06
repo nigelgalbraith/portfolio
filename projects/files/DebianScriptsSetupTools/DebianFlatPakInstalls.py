@@ -64,6 +64,11 @@ REMOTE_KEY = "remote"
 CONFIG_TYPE = "flatpak"
 CONFIG_EXAMPLE = "config/desktop/DesktopFlatpak.json"
 DEFAULT_CONFIG = "default"
+DEFAULT_CONFIG_NOTE = (
+    "NOTE: The default {config_type} configuration is being used.\n"
+    "To customize {config_type} for model '{model}', create a model-specific config file.\n"
+    "e.g. - '{example}' and add an entry for '{model}' in '{primary}'."
+)
 
 # === LOGGING ===
 LOG_DIR = Path.home() / "logs" / "flatpak"
@@ -85,23 +90,25 @@ INSTALLED_LABEL = "INSTALLED"
 UNINSTALLED_LABEL = "UNINSTALLED"
 
 # === ACTIONS ===
-INSTALLATION_ACTION = "installation"
-UNINSTALLATION_ACTION = "uninstallation"
+ACTIONS = {
+    True: "installation",
+    False: "uninstallation"
+}
 
 # === MENU LABELS ===
-MENU_TITLE      = "Select an option"
-ACTION_INSTALL  = f"Install required {FLATPAK_LABEL}"
-ACTION_REMOVE   = f"Uninstall all listed {FLATPAK_LABEL}"
-ACTION_CANCEL   = "Cancel"
-MENU_OPTIONS    = [ACTION_INSTALL, ACTION_REMOVE, ACTION_CANCEL]
+MENU_TITLE = "Select an option"
+ACTION_INSTALL = f"Install required {FLATPAK_LABEL}"
+ACTION_REMOVE = f"Uninstall all listed {FLATPAK_LABEL}"
+ACTION_CANCEL = "Cancel"
+MENU_OPTIONS = [ACTION_INSTALL, ACTION_REMOVE, ACTION_CANCEL]
 
 # === FAILURE MESSAGES ===
 INSTALL_FAIL_MSG = "FLATPAK INSTALL FAILED"
 UNINSTALL_FAIL_MSG = "FLATPAK UNINSTALL FAILED"
 
 # === PROMPTS ===
-PROMPT_INSTALL = f"Proceed with {INSTALLATION_ACTION}? [y/n]: "
-PROMPT_REMOVE  = f"Proceed with {UNINSTALLATION_ACTION}? [y/n]: "
+PROMPT_INSTALL = f"Proceed with installation? [y/n]: "
+PROMPT_REMOVE = f"Proceed with uninstallation? [y/n]: "
 
 # === CONFIG NOTES ===
 DEFAULT_CONFIG_NOTE = (
@@ -112,25 +119,25 @@ DEFAULT_CONFIG_NOTE = (
 
 # === CONSTANTS (Field Names) ===
 APP_NAME_FIELD = "App Name"
-REMOTE_FIELD   = "Remote"
+REMOTE_FIELD = "Remote"
 
 # === STATE CONSTANTS ===
-STATE_INITIAL         = "INITIAL"
-STATE_DEP_CHECK       = "DEP_CHECK"
-STATE_REMOTE_SETUP    = "REMOTE_SETUP"
+STATE_INITIAL = "INITIAL"
+STATE_DEP_CHECK = "DEP_CHECK"
+STATE_REMOTE_SETUP = "REMOTE_SETUP"
 STATE_MODEL_DETECTION = "MODEL_DETECTION"
-STATE_CONFIG_LOADING  = "CONFIG_LOADING"
-STATE_PACKAGE_STATUS  = "PACKAGE_STATUS"
-STATE_MENU_SELECTION  = "MENU_SELECTION"
-STATE_PREPARE_PLAN    = "PREPARE_PLAN"
-STATE_CONFIRM         = "CONFIRM"
-STATE_INSTALL_STATE   = "INSTALL_STATE"
+STATE_CONFIG_LOADING = "CONFIG_LOADING"
+STATE_PACKAGE_STATUS = "PACKAGE_STATUS"
+STATE_MENU_SELECTION = "MENU_SELECTION"
+STATE_PREPARE_PLAN = "PREPARE_PLAN"
+STATE_CONFIRM = "CONFIRM"
+STATE_INSTALL_STATE = "INSTALL_STATE"
 STATE_UNINSTALL_STATE = "UNINSTALL_STATE"
-STATE_FINALIZE        = "FINALIZE"
+STATE_FINALIZE = "FINALIZE"
 
 # === MESSAGES ===
 MSG_LOGGING_FINAL = f"You can find the full log here: {LOG_FILE}"
-MSG_CANCEL        = "Cancelled by user."
+MSG_CANCEL = "Cancelled by user."
 
 
 class FlatpakInstaller:
@@ -214,12 +221,12 @@ class FlatpakInstaller:
         self.state = STATE_MENU_SELECTION
         return app_status
 
-    def select_action(self, menu_title, menu_options, action_install, action_remove, action_cancel):
+    def select_action(self, menu_title, menu_data, action_install, action_remove, action_cancel):
         """Prompt user; return True for install, False for uninstall, or None if cancelled (state -> FINALIZE)."""
         choice = None
-        while choice not in menu_options:
-            choice = select_from_list(menu_title, menu_options)
-            if choice not in menu_options:
+        while choice not in menu_data:
+            choice = select_from_list(menu_title, menu_data)
+            if choice not in menu_data:
                 log_and_print("Invalid selection. Please choose a valid option.")
 
         if choice == action_cancel:
@@ -229,74 +236,68 @@ class FlatpakInstaller:
         self.state = STATE_PREPARE_PLAN
         return (choice == action_install)
 
-    def prepare_plan(self, app_status, model_block, label, install_action, uninstall_action, action_install_bool, app_name_field, remote_field):
-        """Compute selected apps, print plan; advance to CONFIRM or back to MENU_SELECTION. Returns app_names or None."""
-        if action_install_bool:
-            action = install_action
-            app_names = sorted(filter_by_status(app_status, False))  # not installed
-        else:
-            action = uninstall_action
-            app_names = sorted(filter_by_status(app_status, True))   # installed
-
-        if not app_names:
-            log_and_print(f"No {label} to process for {action}.")
+    def prepare_plan(self, package_status, key_block, key_label, actions_dict, action_install):
+        """Build a plan table dynamically based on the keys of each package's meta information."""
+        action = actions_dict[action_install] 
+        pkg_names = sorted(filter_by_status(package_status, False)) if action_install else sorted(filter_by_status(package_status, True))
+        if not pkg_names:
+            log_and_print(f"No {key_label} to process for {action}.")
             self.state = STATE_MENU_SELECTION
             return None
-
         plan_rows = []
-        for app in app_names:
-            remote = model_block.get(app, {}).get(REMOTE_KEY, "")
-            plan_rows.append({
-                app_name_field: app,
-                remote_field: remote,
-            })
-
+        seen_keys = {key_label} 
+        other_keys_ordered = [] 
+        for pkg in pkg_names:
+            meta = key_block.get(pkg, {})  
+            row = {key_label: pkg} 
+            for key, value in meta.items():
+                row[key] = value
+                if key not in seen_keys:
+                    seen_keys.add(key)
+                    other_keys_ordered.append(key)
+            plan_rows.append(row)
+        field_names = [key_label] + other_keys_ordered
         print_dict_table(
             plan_rows,
-            field_names=[app_name_field, remote_field],
-            label=f"Planned {label} (App details)"
+            field_names=field_names,
+            label=f"Planned {action.title()} ({key_label})"
         )
-
         self.state = STATE_CONFIRM
-        return app_names
+        return pkg_names
 
-    def confirm_action(self, prompt_install, prompt_remove, action_install_bool):
-        """Confirm; advance to INSTALL/UNINSTALL or back to PACKAGE_STATUS. Returns True to proceed."""
-        prompt = prompt_install if action_install_bool else prompt_remove
-        if not confirm(prompt):
+    def confirm_action(self, prompt, false_state):
+        """Confirm the action; return True to proceed, False to cancel."""
+        proceed = confirm(prompt)
+        if not proceed:
             log_and_print("User cancelled.")
-            self.state = STATE_PACKAGE_STATUS
-            return False
-        self.state = STATE_INSTALL_STATE if action_install_bool else STATE_UNINSTALL_STATE
-        return True
+            self.state = false_state
+        return proceed
 
-    def install_flatpaks_state(self, selected_apps, model_block, installed_label, install_fail_msg):
-        """Install selected apps; advance to PACKAGE_STATUS; return finalize_msg string."""
+    def install_flatpaks_state(self, selected_apps, model_block):
+        """Install selected Flatpak apps; advance to PACKAGE_STATUS; return finalize_msg string."""
         success = 0
         total = len(selected_apps)
         for app in selected_apps:
             remote = model_block.get(app, {}).get(REMOTE_KEY, None)
+            ok = False
             ok = install_flatpak_app(app, remote)
-            if ok:
-                log_and_print(f"FLATPAK {installed_label}: {app}")
-                success += 1
-            else:
-                log_and_print(f"{install_fail_msg}: {app}")
-
+            log_and_print(f"FLATPAK {INSTALLED_LABEL}: {app}")
+            success += 1
         self.state = STATE_PACKAGE_STATUS
         return f"Installed successfully: {success}/{total}"
 
-    def uninstall_flatpaks_state(self, selected_apps, uninstalled_label, uninstall_fail_msg):
-        """Uninstall selected apps; advance to PACKAGE_STATUS; return finalize_msg string."""
+
+    def uninstall_flatpaks_state(self, selected_apps):
+        """Uninstall selected Flatpak apps; advance to PACKAGE_STATUS; return finalize_msg string."""
         success = 0
         total = len(selected_apps)
         for app in selected_apps:
-            ok = uninstall_flatpak_app(app)
+            ok = uninstall_flatpak_app(app)  
             if ok:
-                log_and_print(f"FLATPAK {uninstalled_label}: {app}")
+                log_and_print(f"Flatpak app uninstalled: {app}")
                 success += 1
             else:
-                log_and_print(f"{uninstall_fail_msg}: {app}")
+                log_and_print(f"Flatpak app uninstall failed: {app}")
 
         self.state = STATE_PACKAGE_STATUS
         return f"Uninstalled successfully: {success}/{total}"
@@ -348,7 +349,7 @@ class FlatpakInstaller:
             # Status
             if self.state == STATE_PACKAGE_STATUS:
                 app_status = self.build_status_map(
-                    INSTALLED_LABEL, UNINSTALLED_LABEL, SUMMARY_LABEL, app_ids
+                    INSTALLED_LABEL, UNINSTALLED_LABEL, FLATPAK_LABEL, app_ids
                 )
 
             # Menu
@@ -360,29 +361,28 @@ class FlatpakInstaller:
 
             # Plan
             if self.state == STATE_PREPARE_PLAN:
-                selected_apps = self.prepare_plan(
-                    app_status, model_block, FLATPAK_LABEL,
-                    INSTALLATION_ACTION, UNINSTALLATION_ACTION,
-                    action_install, APP_NAME_FIELD, REMOTE_FIELD
-                )
+                selected_apps = self.prepare_plan(app_status, model_block, FLATPAK_LABEL, ACTIONS, action_install)
                 if self.state != STATE_CONFIRM:
                     continue
 
             # Confirm
             if self.state == STATE_CONFIRM:
-                proceed = self.confirm_action(PROMPT_INSTALL, PROMPT_REMOVE, action_install)
+                prompt = PROMPT_INSTALL if action_install else PROMPT_REMOVE
+                proceed = self.confirm_action(prompt, STATE_PACKAGE_STATUS)
                 if not proceed:
                     continue
+                self.state = STATE_INSTALL_STATE if action_install else STATE_UNINSTALL_STATE
 
             # Execute
             if self.state == STATE_INSTALL_STATE:
                 finalize_msg = self.install_flatpaks_state(
-                    selected_apps, model_block, INSTALLED_LABEL, INSTALL_FAIL_MSG
+                    selected_apps, model_block
                 )
+
 
             if self.state == STATE_UNINSTALL_STATE:
                 finalize_msg = self.uninstall_flatpaks_state(
-                    selected_apps, UNINSTALLED_LABEL, UNINSTALL_FAIL_MSG
+                    selected_apps
                 )
 
         # Finalization
