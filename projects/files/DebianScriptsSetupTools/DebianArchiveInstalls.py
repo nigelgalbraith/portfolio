@@ -112,7 +112,6 @@ TRASH_PATHS_KEY         = "TrashPaths"
 DL_PATH_KEY             = "DownloadPath"    
 
 # === LABELS ===
-SUMMARY_LABEL     = "Archive Package"
 ARCHIVE_LABEL     = "archive packages"
 INSTALLED_LABEL   = "INSTALLED"
 UNINSTALLED_LABEL = "UNINSTALLED"
@@ -224,21 +223,20 @@ class ArchiveInstaller:
 
         if not archive_keys:
             self.state = STATE_FINALIZE
-            return None, None, f"No {ARCHIVE_LABEL.lower()} found."
+            return None, None, f"No {archive_key.lower()} found."
 
         self.state = STATE_PACKAGE_STATUS
         return model_block, archive_keys, None
 
 
-    def build_status_map(self, archive_block, key_check, key_extract, path_expander, checker, 
-                         summary_label, installed_label, uninstalled_label):
-        """Build & print status; advance to MENU_SELECTION."""
+    def build_status_map_archive(self, archive_block, summary_label, installed_label, uninstalled_label):
+        """Build & print status for archives; advance to MENU_SELECTION."""
         status = build_archive_install_status(
             archive_block,
-            key_check=key_check,
-            key_extract=key_extract,
-            path_expander=path_expander,
-            checker=checker,
+            key_check="CheckPath",
+            key_extract="ExtractTo",
+            path_expander=expand_path,
+            checker=check_archive_installed,
         )
         summary = format_status_summary(
             status,
@@ -249,7 +247,7 @@ class ArchiveInstaller:
         log_and_print(summary)
         self.state = STATE_MENU_SELECTION
         return status
-
+    
 
     def select_action(self, menu_title, menu_options, action_install, action_remove, action_cancel):
         """Prompt user; return True for install, False for uninstall, or None if cancelled (state -> FINALIZE)."""
@@ -304,43 +302,41 @@ class ArchiveInstaller:
         return proceed
 
 
-    def install_archives(self, pkg_names, archive_block, download_url_key, extract_url_key,
-                         strip_top_level_key, install_fail_msg,
-                         download_fail_msg, installed_label, dl_path_key):
+    def install_archives(self, pkg_names, archive_block):
         """Install archives; advance to POST_INSTALL. Returns list of successfully installed packages."""
         succeeded = []
         for pkg in pkg_names:
-            meta = archive_block.get(pkg, {})  
+            meta = archive_block.get(pkg, {})
             if not meta:
                 continue
-            download_url = meta.get(download_url_key, "")
-            extract_to   = expand_path(meta.get(extract_url_key, ""))
-            strip_top_level = bool(meta.get(strip_top_level_key, False))
-            dl_path = expand_path(meta.get(dl_path_key, ""))
+            download_url    = meta.get("DownloadURL", "")
+            extract_to      = expand_path(meta.get("ExtractTo", ""))
+            strip_top_level = bool(meta.get("StripTopLevel", False))
+            dl_path         = expand_path(meta.get("DownloadPath", ""))
             missing = []
             if not download_url: missing.append("DownloadURL")
             if not extract_to:   missing.append("ExtractTo")
             if not dl_path:      missing.append("DownloadPath")
             if missing:
-                log_and_print(f"{install_fail_msg}: {pkg} (missing {', '.join(missing)})")
+                log_and_print(f"INSTALL FAILED: {pkg} (missing {', '.join(missing)})")
                 continue
             Path(dl_path).mkdir(parents=True, exist_ok=True)
             archive_path = download_archive_file(pkg, download_url, dl_path)
             if not archive_path:
-                log_and_print(f"{download_fail_msg}: {pkg}")
+                log_and_print(f"DOWNLOAD FAILED: {pkg}")
                 continue
             ok = install_archive_file(archive_path, extract_to, strip_top_level)
-            handle_cleanup(archive_path, ok, pkg, install_fail_msg)
+            handle_cleanup(archive_path, ok, pkg, "INSTALL FAILED")
             if ok:
-                log_and_print(f"ARCHIVE {installed_label}: {pkg}")
+                log_and_print(f"ARCHIVE INSTALLED: {pkg}")
                 succeeded.append(pkg)
             else:
-                log_and_print(f"{install_fail_msg}: {pkg}")
+                log_and_print(f"INSTALL FAILED: {pkg}")
         self.state = STATE_POST_INSTALL
         return succeeded
 
 
-    def post_install_steps(self, succeeded_pkgs, archive_block, post_install_key, enable_service_key):
+    def post_install_steps(self, succeeded_pkgs, archive_block):
         """Run post-install commands and optionally enable/start services for succeeded packages."""
         if not succeeded_pkgs:
             log_and_print("No packages to post-install.")
@@ -348,45 +344,39 @@ class ArchiveInstaller:
             return 0
         count = 0
         for pkg in succeeded_pkgs:
-            meta = archive_block.get(pkg, {})  
-            cmds = meta.get(post_install_key, [])
+            meta = archive_block.get(pkg, {}) or {}
+            cmds = meta.get("PostInstall") or []
+            if isinstance(cmds, str):
+                cmds = [cmds]
             if cmds:
-                try:
-                    run_post_install_commands(cmds)
-                except Exception as e:
-                    log_and_print(f"POST-INSTALL FAILED for {pkg}: {e}")
-                else:
-                    log_and_print(f"POST-INSTALL OK for {pkg}")
-            svc = meta.get(enable_service_key, "")
+                run_post_install_commands(cmds)
+                log_and_print(f"POST-INSTALL OK for {pkg}")
+            svc = meta.get("EnableService", "")
             if svc:
-                try:
-                    start_service_standard(svc)
-                except Exception as e:
-                    log_and_print(f"SERVICE START FAILED for {pkg} ({svc}): {e}")
-                else:
-                    log_and_print(f"SERVICE STARTED for {pkg} ({svc})")
+                start_service_standard(svc)
+                log_and_print(f"SERVICE STARTED for {pkg} ({svc})")
             count += 1
         self.state = STATE_PACKAGE_STATUS
         return count
 
 
-    def uninstall_archives(self, pkg_names, archive_block, check_path_key, extract_to_key,
-                           uninstall_fail_msg, uninstall_label):
+
+    def uninstall_archives(self, pkg_names, archive_block):
         """Uninstall archives; advance to POST_UNINSTALL. Returns list of successfully uninstalled packages."""
         succeeded = []
         for pkg in pkg_names:
-            meta = archive_block.get(pkg, {})  
-            check_path = expand_path(meta.get(check_path_key) or meta.get(extract_to_key, ""))
+            meta = archive_block.get(pkg, {}) or {}
+            check_path = expand_path(meta.get("CheckPath") or meta.get("ExtractTo", ""))
             if not uninstall_archive_install(check_path):
-                log_and_print(f"{uninstall_fail_msg}: {pkg}")
+                log_and_print(f"UNINSTALL FAILED: {pkg}")
                 continue
-            log_and_print(f"ARCHIVE {uninstall_label}: {pkg}")
+            log_and_print(f"ARCHIVE UNINSTALLED: {pkg}")
             succeeded.append(pkg)
         self.state = STATE_POST_UNINSTALL
         return succeeded
 
 
-    def post_uninstall_steps(self, succeeded_pkgs, archive_block, trash_paths_key, post_uninstall_key):
+    def post_uninstall_steps(self, succeeded_pkgs, archive_block):
         """Handle extra cleanup after successful uninstalls."""
         if not succeeded_pkgs:
             log_and_print("No packages to post-uninstall.")
@@ -394,21 +384,24 @@ class ArchiveInstaller:
             return 0
         count = 0
         for pkg in succeeded_pkgs:
-            meta = archive_block.get(pkg, {})
-            pu_cmds = meta.get(post_uninstall_key, [])
+            meta = archive_block.get(pkg, {}) or {}
+            pu_cmds = meta.get("PostUninstall") or []
+            if isinstance(pu_cmds, str):
+                pu_cmds = [pu_cmds]
             if pu_cmds:
                 if run_post_install_commands(pu_cmds):
                     log_and_print(f"POST-UNINSTALL OK for {pkg}")
                 else:
                     log_and_print(f"POST-UNINSTALL FAILED for {pkg}")
-            for p in meta.get(trash_paths_key, []):
+            for p in meta.get("TrashPaths", []):
                 expanded = expand_path(p)
-                if not move_to_trash(expanded):
-                    sudo_remove_path(expanded)
-                log_and_print(f"REMOVED extra path for {pkg}: {expanded}")
+                removed = move_to_trash(expanded) or sudo_remove_path(expanded)
+                if removed:
+                    log_and_print(f"REMOVED extra path for {pkg}: {expanded}")
             count += 1
         self.state = STATE_PACKAGE_STATUS
         return count
+
 
 
     # === MAIN === #
@@ -453,15 +446,11 @@ class ArchiveInstaller:
 
             # Package Status
             if self.state == STATE_PACKAGE_STATUS:
-                status = self.build_status_map(
+                status = self.build_status_map_archive(
                     archive_block,
-                    CHECK_PATH_KEY,
-                    EXTRACT_TO_KEY,
-                    expand_path,
-                    check_archive_installed,
-                    SUMMARY_LABEL,
+                    ARCHIVE_LABEL,
                     INSTALLED_LABEL,
-                    UNINSTALLED_LABEL
+                    UNINSTALLED_LABEL,
                 )
 
             # Menu
@@ -484,35 +473,19 @@ class ArchiveInstaller:
 
             # Install Packages
             if self.state == STATE_INSTALL_STATE:
-                post_install_pkgs = self.install_archives(
-                    pkg_names, archive_block,
-                    DOWNLOAD_URL_KEY, EXTRACT_TO_KEY,
-                    STRIP_TOP_LEVEL_KEY,
-                    INSTALL_FAIL_MSG, DOWNLOAD_FAIL_MSG,
-                    INSTALLED_LABEL, DL_PATH_KEY
-                )
+                post_install_pkgs = self.install_archives(pkg_names, archive_block)
 
             # Post-Install Steps
             if self.state == STATE_POST_INSTALL:
-                self.post_install_steps(
-                    post_install_pkgs, archive_block,
-                    POST_INSTALL_KEY, ENABLE_SERVICE_KEY
-                )
+                self.post_install_steps(post_install_pkgs, archive_block)
 
             # Uninstall Packages
             if self.state == STATE_UNINSTALL_STATE:
-                post_uninstall_pkgs = self.uninstall_archives(
-                    pkg_names, archive_block, CHECK_PATH_KEY,
-                    EXTRACT_TO_KEY, UNINSTALL_FAIL_MSG,
-                    UNINSTALLED_LABEL
-                )
+                post_uninstall_pkgs = self.uninstall_archives(pkg_names, archive_block)
 
             # Post-Uninstall Steps
             if self.state == STATE_POST_UNINSTALL:
-                self.post_uninstall_steps(
-                    post_uninstall_pkgs, archive_block,
-                    TRASH_PATHS_KEY, POST_UNINSTALL_KEY
-                )
+                self.post_uninstall_steps(post_uninstall_pkgs, archive_block)
 
         # Finalization
         rotate_logs(LOG_DIR, LOGS_TO_KEEP, ROTATE_LOG_NAME)
