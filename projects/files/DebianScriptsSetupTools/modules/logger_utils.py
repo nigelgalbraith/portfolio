@@ -126,4 +126,3 @@ def install_logrotate_config(template_path, target_name, target_dir="/etc/logrot
     dest_path = Path(target_dir) / target_name
     copyfile(template_path, dest_path)
     os.chmod(dest_path, 0o644)
-    log_and_print(f"Installed logrotate config: {dest_path}")
