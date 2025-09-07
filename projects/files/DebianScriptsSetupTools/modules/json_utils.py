@@ -12,7 +12,7 @@ Features:
 
 Assumes well-structured JSON files organized by top-level keys like models or configurations.
 """
-
+import os
 import json
 from pathlib import Path
 from typing import Callable, Optional, Union, Sequence
@@ -31,26 +31,6 @@ def load_json(config_path: Union[str, Path]):
     with open(config_path) as f:
         return json.load(f)
     
-
-def build_jobs_from_block(block: dict, pkg_names: list, fields: list) -> dict:
-    """
-    Build a dictionary of job configurations for selected packages.
-
-    Args:
-        block (dict): The JSON block mapping package names → settings dict.
-        pkg_names (list): List of package names to include.
-        fields (list): List of field names to extract for each package.
-
-    Returns:
-        dict: Mapping of package → {field: value, ...}.
-              Missing fields will be set to None.
-    """
-    jobs = {}
-    for pkg in pkg_names:
-        pkg_cfg = block.get(pkg, {})  
-        jobs[pkg] = {field: pkg_cfg.get(field) for field in fields}
-    return jobs
-
 
 def build_id_to_name(block: dict, field_name: str) -> dict:
     """
@@ -93,4 +73,33 @@ def validate_meta(meta: dict, required_fields: list[str], optional_pairs: list[t
                     missing.append(b)
 
     return missing
+
+
+def resolve_value(data: dict, primary_key: str, secondary_key: str, default_key="default", check_file=True):
+    """Resolve a nested dictionary value with fallback to default.
+    
+    Args:
+        data (dict): Dictionary to search (often loaded JSON).
+        primary_key (str): First-level key to check (e.g., model name).
+        secondary_key (str): Second-level key to extract (e.g., "Packages").
+        default_key (str): Fallback key if primary_key not found.
+        check_file (bool): If True, verify string values exist as files.
+    
+    Returns:
+        tuple[value | None, bool]: (resolved value, used_default flag).
+    """
+    try:
+        value = data[primary_key][secondary_key]
+        used_default = False
+    except KeyError:
+        try:
+            value = data[default_key][secondary_key]
+            used_default = True
+        except KeyError:
+            return None, True
+
+    if check_file and isinstance(value, str) and not os.path.isfile(value):
+        return None, used_default
+
+    return value, used_default
 

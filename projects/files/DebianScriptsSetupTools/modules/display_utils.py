@@ -62,19 +62,15 @@ def format_status_summary(
     return "\n".join(lines)
 
 
-
-
-def print_dict_table(items, field_names, label, col_widths=None):
+def print_dict_table(items, field_names, label):
     """
-    Print a table for a list of dictionaries with fixed-width columns.
-    Supports multi-line cells if a value is a list.
+    Print a table for a list of dictionaries with dynamically sized columns based on the longest value in each column.
+    Each column will be at least as wide as the length of its title. Supports multi-line cells if a value is a list.
 
     Args:
         items (list of dict): List of dictionaries containing the same fields.
         field_names (list): List of keys to display as columns.
         label (str): Label for the table section.
-        col_widths (list of int, optional): Fixed widths for each column.
-            If None, defaults to 30 for first col, 20 for others.
 
     Example:
         jobs = [
@@ -87,9 +83,15 @@ def print_dict_table(items, field_names, label, col_widths=None):
         print(f"\n{label.upper()}: (None)")
         return
 
-    # Default widths: 30 for first column, 20 for the rest
-    if col_widths is None:
-        col_widths = [30] + [20] * (len(field_names) - 1)
+    # Dynamically calculate column widths based on the longest value in each column,
+    # and ensure each column is at least as wide as the column title
+    col_widths = []
+    for i, field in enumerate(field_names):
+        # Get the max length for each field in the data
+        max_length = max(len(str(item.get(field, ""))) for item in items)
+        # Ensure the width is at least as wide as the column title
+        col_width = max(len(field), max_length) + 2  # Add some padding
+        col_widths.append(col_width)
 
     print(f"\n{label.upper()}:")
     # Header
@@ -127,7 +129,6 @@ def print_dict_table(items, field_names, label, col_widths=None):
                 else:
                     row_parts.append(" " * col_widths[columns.index(col)])
             print("  " + "  ".join(row_parts))
-
 
 
 def print_list_section(items, label):
@@ -176,8 +177,7 @@ def confirm(
     prompt: str = "Proceed? [y/n]: ",
     *,
     valid_yes: tuple[str, ...] = ("y", "yes"),
-    valid_no: tuple[str, ...] = ("n", "no"),
-    log_fn=None,
+    valid_no: tuple[str, ...] = ("n", "no")
 ) -> bool:
     """
     Prompt user for a yes/no answer until valid input is provided.
@@ -187,8 +187,6 @@ def confirm(
         prompt: Text to show the user (include your own [y/n] hint).
         valid_yes: Accepted tokens for "yes" (case-insensitive).
         valid_no: Accepted tokens for "no" (case-insensitive).
-        log_fn: Optional logging function (e.g., log_and_print). If provided,
-                invalid inputs will be reported via this function.
 
     Returns:
         True for yes, False for no.
@@ -202,10 +200,8 @@ def confirm(
             return True
         if resp in no:
             return False
-        if log_fn:
-            log_fn(f"Invalid input. Please enter one of: {', '.join(valid_yes + valid_no)}.")
-        else:
-            print(f"Invalid input. Please enter one of: {', '.join(valid_yes + valid_no)}.")
+        print(f"Invalid input. Please enter one of: {', '.join(valid_yes + valid_no)}.")
+
 
 
 

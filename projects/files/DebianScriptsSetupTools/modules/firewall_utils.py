@@ -89,3 +89,112 @@ def allow_port_range_for_ip(start, end, proto, ip):
         ["ufw", "allow", "proto", proto, "from", ip, "to", "any", "port", f"{start}:{end}"],
         capture_output=True, text=True
     ).stdout
+
+
+def reset_ufw():
+    """
+    Reset UFW rules (removes all existing rules).
+
+    Args:
+        None
+
+    Returns:
+        str: UFW output after reset.
+
+    Example:
+        reset_ufw()
+    """
+    return subprocess.run(["ufw", "--force", "reset"], capture_output=True, text=True).stdout
+
+
+def enable_ufw():
+    """
+    Enable UFW and turn on logging.
+
+    Args:
+        None
+
+    Returns:
+        str: Combined UFW output from enable + logging commands.
+
+    Example:
+        enable_ufw()
+    """
+    out1 = subprocess.run(["ufw", "--force", "enable"], capture_output=True, text=True).stdout
+    out2 = subprocess.run(["ufw", "logging", "on"], capture_output=True, text=True).stdout
+    return f"{out1}\n{out2}".strip()
+
+
+def reload_ufw():
+    """
+    Reload UFW rules to apply changes.
+
+    Args:
+        None
+
+    Returns:
+        str: UFW output after reload.
+
+    Example:
+        reload_ufw()
+    """
+    return subprocess.run(["ufw", "reload"], capture_output=True, text=True).stdout
+
+
+def disable_ufw():
+    """
+    Disable UFW (Uncomplicated Firewall).
+
+    Args:
+        None
+
+    Returns:
+        str: UFW output after disabling.
+
+    Example:
+        disable_ufw()
+    """
+    return subprocess.run(["ufw", "disable"], capture_output=True, text=True).stdout
+
+
+def status_ufw() -> str:
+    """
+    Get the current UFW status in verbose mode.
+
+    Returns:
+        str: The full `ufw status verbose` output.
+
+    Example:
+        result = status_ufw()
+        print(result)
+    """
+    result = subprocess.run(
+        ["ufw", "status", "verbose"],
+        capture_output=True,
+        text=True
+    )
+    return result.stdout.strip()
+
+
+def enable_logging_ufw() -> str:
+    """
+    Enable UFW logging.
+
+    Args:
+        None
+
+    Returns:
+        str: UFW output from the command.
+
+    Example:
+        >>> print(enable_logging_ufw())
+        'Logging enabled'
+    """
+    return subprocess.run(
+        ["ufw", "logging", "on"],
+        capture_output=True,
+        text=True
+    ).stdout
+
+
+

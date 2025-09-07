@@ -15,6 +15,7 @@ import subprocess
 from pathlib import Path
 from typing import Iterable, Optional
 
+
 # Recognized archive extensions (lowercased)
 ARCHIVE_EXTENSIONS = (".tar.gz", ".tgz", ".tar.xz", ".tar.bz2", ".zip")
 
@@ -28,16 +29,21 @@ def check_archive_installed(path: Path | str) -> bool:
                            Typically the same as the ExtractTo path, or a binary path.
 
     Returns:
-        bool: True if the path exists, False otherwise.
-
-    Example:
-        >>> check_archive_installed("/opt/mytool")
-        True
+        bool: True if the path exists and is a file/directory, False otherwise.
     """
     try:
         p = Path(os.path.expanduser(str(path)))
-        return p.exists()
-    except Exception:
+        # Check if the path exists, and if it's a file or directory (based on your need)
+        if p.exists():
+            # Check if it's a directory (if that's expected for your installation)
+            if p.is_dir():
+                return True
+            # Or if it's a file (if that’s expected)
+            elif p.is_file():
+                return True
+        return False
+    except Exception as e:
+        print(f"Error checking path {path}: {e}")
         return False
 
 
@@ -115,7 +121,6 @@ def download_file(name: str, url: str, download_dir: Path) -> Optional[Path]:
         return None
 
 
-
 def install_archive_file(archive_path: Path | str,
                          extract_to: Path | str,
                          strip_top_level: bool = False) -> bool:
@@ -130,29 +135,47 @@ def install_archive_file(archive_path: Path | str,
 
     Returns:
         bool: True on success, False on any failure.
-
-    Examples:
-        >>> install_archive_file("/tmp/app.tar.gz", "/opt/app", strip_top_level=True)
-        True
     """
     try:
         archive_path = Path(archive_path)
         extract_to = Path(extract_to)
-        extract_to.mkdir(parents=True, exist_ok=True)
 
-        suffix = "".join(archive_path.suffixes).lower()
-        if suffix.endswith((".tar.gz", ".tgz", ".tar.xz", ".tar.bz2")):
-            subprocess.run(["tar", "-xf", str(archive_path), "-C", str(extract_to)], check=True)
-        elif suffix.endswith(".zip"):
-            subprocess.run(["unzip", "-o", str(archive_path), "-d", str(extract_to)], check=True)
-        else:
+        # Check if archive exists
+        if not archive_path.exists():
+            print(f"Error: Archive file {archive_path} does not exist.")
             return False
 
+        # Make sure the target directory exists
+        extract_to.mkdir(parents=True, exist_ok=True)
+
+        # Determine file type based on extension
+        suffix = "".join(archive_path.suffixes).lower()
+        print(f"Attempting to extract {archive_path} to {extract_to}")
+
+        if suffix.endswith((".tar.gz", ".tgz", ".tar.xz", ".tar.bz2")):
+            # Extract with tar
+            print(f"Extracting tar archive: {archive_path}")
+            subprocess.run(["tar", "-xf", str(archive_path), "-C", str(extract_to)], check=True)
+        elif suffix.endswith(".zip"):
+            # Extract with unzip
+            print(f"Extracting zip archive: {archive_path}")
+            subprocess.run(["unzip", "-o", str(archive_path), "-d", str(extract_to)], check=True)
+        else:
+            print(f"Unsupported file type: {suffix}")
+            return False
+
+        # After extraction, check if we need to strip the top-level directory
         if strip_top_level:
             _strip_top_level_dir(extract_to)
 
+        print(f"Archive {archive_path} extracted successfully.")
         return True
-    except Exception:
+
+    except subprocess.CalledProcessError as e:
+        print(f"Error during extraction: {e}")
+        return False
+    except Exception as e:
+        print(f"Unexpected error: {e}")
         return False
 
 
@@ -236,26 +259,114 @@ def create_symlink(target: Path | str, link_path: Path | str) -> bool:
         return False
 
 
-def run_post_install_commands(cmds: Iterable[str]) -> bool:
+def run_post_install_commands(post_install_cmds):
     """
-    Run arbitrary post-install shell commands (best-effort).
+    Run post-install commands. Each command is expanded and executed.
+    Prints any failures.
 
     Args:
-        cmds: Iterable of shell command strings.
+        post_install_cmds (str | list): Command(s) to run after installation.
 
     Returns:
-        bool: True if all commands returned rc==0, else False.
-
-    Example:
-        >>> run_post_install_commands([
-        ...   "chmod +x /opt/app/bin/app",
-        ...   "ln -sf /opt/app/bin/app ~/.local/bin/app"
-        ... ])
-        True
+        bool: True if all commands succeeded, False if any failed.
     """
-    ok = True
-    for cmd in cmds or []:
+    # Normalize to a list of commands
+    if isinstance(post_install_cmds, str):
+        cmds = [os.path.expanduser(post_install_cmds)]
+    elif isinstance(post_install_cmds, list):
+        cmds = [os.path.expanduser(c) for c in post_install_cmds if isinstance(c, str)]
+    else:
+        cmds = []
+
+    all_ok = True
+    for cmd in cmds:
         rc = os.system(cmd)
         if rc != 0:
-            ok = False
-    return ok
+            print(f"PostInstall failed (rc={rc}): {cmd}")
+            all_ok = False
+    return all_ok
+
+
+
+def build_archive_install_status(
+    items: dict,
+    key_check: str = "CheckPath",
+    key_extract: str = "ExtractTo",
+    path_expander=None,
+    checker=check_archive_installed
+) -> dict:
+    """
+    Build a mapping of {item_name: installed_bool} from a block of config items.
+
+    Args:
+        items (dict):
+            A dictionary where keys are item names (e.g., "Firefox", "NodeJS")
+            and values are dictionaries of metadata fields.
+            Example:
+            {
+                "Firefox": {"CheckPath": "~/apps/firefox/firefox"},
+                "NodeJS": {"ExtractTo": "~/apps/node"}
+            }
+        key_check (str, default="CheckPath"):
+            The metadata field name used to directly check installation.
+        key_extract (str, default="ExtractTo"):
+            The fallback metadata field if `key_check` is not present.
+        path_expander (callable, optional):
+            A function to expand paths before checking.
+            Defaults to `os.path.expanduser`. You can pass your own (e.g. `expand_path`).
+        checker (callable, default=check_archive_installed):
+            A function that accepts a path string and returns True/False
+            depending on whether the item is installed.
+
+    Returns:
+        dict: A mapping {item_name: bool}, True if installed, False otherwise.
+
+    Example:
+        >>> items = {
+        ...     "Firefox": {"CheckPath": "~/apps/firefox/firefox"},
+        ...     "NodeJS": {"ExtractTo": "~/apps/node"},
+        ... }
+        >>> status = build_install_status(items, path_expander=os.path.expanduser)
+        >>> print(status)
+        {"Firefox": True, "NodeJS": False}
+    """
+    if path_expander is None:
+        path_expander = os.path.expanduser
+
+    status: dict[str, bool] = {}
+    for name, cfg in (items or {}).items():
+        if not isinstance(cfg, dict):
+            status[name] = False
+            continue
+        probe = cfg.get(key_check) or cfg.get(key_extract) or ""
+        probe_path = path_expander(probe)
+        status[name] = check_archive_installed(probe_path)
+    return status
+
+
+def handle_cleanup(archive_path, ok, pkg, fail_msg):
+    """
+    Cleans up the temporary archive file and logs a failure message if the installation fails.
+
+    Args:
+        archive_path (Path): The path to the temporary archive file to clean up.
+        ok (bool): The result of the installation process; False means failure.
+        pkg (str): The name of the package being processed.
+        log_fn (function): A logging function to use for logging output.
+        fail_msg (str): The failure message to log if installation fails.
+    """
+    try:
+        # Clean up the archive file
+        archive_path.unlink(missing_ok=True)
+    except Exception as e:
+        print(f"Cleanup warning (unlink failed): {archive_path} ({e})")
+    
+    if not ok:
+        print(f"{fail_msg}: {pkg}")
+
+
+
+
+
+
+

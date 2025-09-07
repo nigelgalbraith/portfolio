@@ -107,14 +107,23 @@ def ensure_dependencies_installed(dependencies):
     Args:
         dependencies (list): List of executable names to check and install.
 
+    Returns:
+        bool: True if all dependencies are installed, False otherwise.
+
     Example:
         ensure_dependencies_installed(["wget", "dmidecode"])
     """
+    success = True
     for dep in dependencies:
         if which(dep) is None:
             print(f"{dep} not found. Attempting to install.")
-            subprocess.run(["sudo", "apt", "update", "-y"], check=True)
-            subprocess.run(["sudo", "apt", "install", "-y", dep], check=True)
+            try:
+                subprocess.run(["sudo", "apt", "update", "-y"], check=True)
+                subprocess.run(["sudo", "apt", "install", "-y", dep], check=True)
+            except subprocess.CalledProcessError:
+                print(f"Failed to install {dep}.")
+                success = False 
+    return success
 
 
 def sudo_remove_path(path: Path | str) -> bool:
