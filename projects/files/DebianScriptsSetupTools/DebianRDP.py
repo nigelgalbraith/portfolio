@@ -1,16 +1,60 @@
 #!/usr/bin/env python3
-"""
-XRDP Installer State Machine (Refactored, param-driven)
+# -*- coding: utf-8 -*-
 
-- State-mutating methods update `self` and take parameters instead of reading module globals.
-- ACTION_DATA is the single source of truth for prompts, verbs, and guard conditions.
-- Menu uses a dict mapping label -> action key; Cancel/Exit maps to None.
-- Unknown-state guard in the main loop.
+"""
+RDP Configuration State Machine
+
+Automates the setup and management of RDP (Remote Desktop Protocol) services 
+for model-specific environments using a deterministic state machine. Each 
+workflow step is mapped to an explicit state, ensuring predictable transitions 
+and clear separation of responsibilities.
+
+Key Features:
+- Detects the current system model and loads the appropriate RDP configuration 
+  from JSON (with fallback to a default config).
+- Ensures required dependencies (e.g. xrdp, system packages) are installed 
+  before proceeding.
+- Configures RDP services and related settings as defined in the model config.
+- Provides a menu-driven interface for enabling, disabling, or cancelling 
+  RDP setup.
+- Displays a plan of configuration changes before applying them.
+- Confirms the user’s action before making modifications.
+- Logs all operations to a timestamped file and automatically rotates old logs.
+- Centralizes user-facing messages and action definitions for consistency and 
+  easy customization.
+
+Workflow:
+    INITIAL → DEP_CHECK → MODEL_DETECTION → CONFIG_LOADING → STATUS
+    → MENU_SELECTION → PREPARE → CONFIRM
+    → (ENABLE_STATE | DISABLE_STATE) → STATUS → ... → FINALIZE
+
+Dependencies:
+- Standard Python (>=3.8)
+- RDP-capable system (e.g. Debian/Ubuntu with xrdp)
+- Custom `modules` package shipped with this project, including:
+    - logger_utils: logging, printing, log rotation
+    - system_utils: account verification, model detection, dependency checks
+    - json_utils: configuration loading and value resolution
+    - display_utils: menu, confirmation, summary formatting
+    - service_utils: service enable/disable operations
+
+Intended Usage:
+Run this script directly. The program will:
+    1. Verify the user account and check dependencies.
+    2. Detect the system model and load its RDP configuration.
+    3. Display current RDP status.
+    4. Let the user choose enable/disable/cancel.
+    5. Apply the requested changes with confirmation and logging.
 """
 
-import os
+
+from __future__ import annotations
+
 import datetime
+import os
+from enum import Enum, auto
 from pathlib import Path
+from typing import Callable, Dict, Optional
 
 from modules.logger_utils import setup_logging, log_and_print, rotate_logs
 from modules.system_utils import check_account, get_model, ensure_user_exists
@@ -27,336 +71,313 @@ from modules.rdp_utils import (
 
 # === CONFIG PATHS & KEYS ===
 PRIMARY_CONFIG   = "config/AppConfigSettings.json"
-RDP_KEY          = "RDP"
 CONFIG_TYPE      = "rdp"
+RDP_KEY          = "RDP"
 CONFIG_EXAMPLE   = "config/desktop/DesktopRDP.json"
 DEFAULT_CONFIG   = "default"
-DEFAULT_CONFIG_NOTE = (
-    "NOTE: The default {config_type} configuration is being used.\n"
-    "To customize {config_type} for model '{model}', create a model-specific config file.\n"
-    "e.g. - '{example}' and add an entry for '{model}' in '{primary}'."
-)
 
 DETECTION_CONFIG = {
-    'primary_config': PRIMARY_CONFIG,
-    'config_type': CONFIG_TYPE,
-    'packages_key': RDP_KEY,
-    'default_config_note': DEFAULT_CONFIG_NOTE,
-    'default_config': DEFAULT_CONFIG,
-    'config_example': CONFIG_EXAMPLE,
+    "primary_config": PRIMARY_CONFIG,
+    "config_type": CONFIG_TYPE,
+    "packages_key": RDP_KEY,
+    "default_config_note": (
+        "NOTE: The default {config_type} configuration is being used.\n"
+        "To customize {config_type} for model '{model}', create a model-specific config file.\n"
+        "e.g. - '{example}' and add an entry for '{model}' in '{primary}'."
+    ),
+    "default_config": DEFAULT_CONFIG,
+    "config_example": CONFIG_EXAMPLE,
 }
-
-# === USER ===
-REQUIRED_USER    = "root"
 
 # === LOGGING ===
-LOG_SUBDIR       = "logs/rdp"
-TIMESTAMP        = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-LOGS_TO_KEEP     = 10
-ROTATE_LOG_NAME  = "rdp_install_*.log"
+LOG_SUBDIR      = "logs/rdp"
+LOGS_TO_KEEP    = 10
+ROTATE_LOG_NAME = "rdp_install_*.log"
 
-# === LABELS ===
-INSTALLED_LABEL      = "INSTALLED"
-NOT_INSTALLED_LABEL  = "NOT INSTALLED"
-SUMMARY_LABEL        = "XRDP Service"
+# === USER / LABELS ===
+REQUIRED_USER     = "root"
+SUMMARY_LABEL     = "XRDP Service"
+INSTALLED_LABEL   = "INSTALLED"
+NOT_INSTALLED     = "NOT INSTALLED"
 
-# === MENU ===
-MENU_TITLE           = "Select an option"
-MENU_OPTIONS = {
-    "Install XRDP + XFCE": "install",
-    "Uninstall XRDP": "uninstall",
-    "Regenerate XRDP keys/certs": "renew",
-    "Exit": None,
+# === CENTRALIZED MESSAGES ===
+MESSAGES = {
+    "user_verification_failed": "User account verification failed.",
+    "unknown_state": "Unknown state encountered.",
+    "unknown_state_fmt": "Unknown state '{state}', finalizing.",
+    "cancelled": "Operation was cancelled by the user.",
+    "invalid_selection": "Invalid selection. Please choose a valid option.",
+    "no_jobs_fmt": "No {what} to process for {verb}.",
+    "detected_model_fmt": "Detected model: {model}",
+    "using_config_fmt": "Using {ctype} config file: {path}",
+    "log_final_fmt": "All actions complete. Log: {log_file}",
 }
 
-# === ACTION DATA (prompts, verbs, guards, next states) ===
-STATE_INITIAL         = "INITIAL"
-STATE_MODEL_DETECTION = "MODEL_DETECTION"
-STATE_CONFIG_LOADING  = "CONFIG_LOADING"
-STATE_PACKAGE_STATUS  = "PACKAGE_STATUS"
-STATE_MENU_SELECTION  = "MENU_SELECTION"
-STATE_PREPARE_PLAN    = "STATE_PREPARE_PLAN"
-STATE_CONFIRM         = "CONFIRM"
-STATE_INSTALL_STATE   = "INSTALL_STATE"
-STATE_UNINSTALL_STATE = "UNINSTALL_STATE"
-STATE_RENEW_STATE     = "RENEW_STATE"
-STATE_FINALIZE        = "FINALIZE"
-
-ACTION_DATA = {
-    "install": {
+# === ACTIONS ===
+ACTIONS: Dict[str, Dict] = {
+    "_meta": {"title": "Select an option"},
+    "Install XRDP + XFCE": {
         "verb": "installation",
         "prompt": "Proceed with XRDP installation? [y/n]: ",
+        "next_state": "INSTALL_STATE",
         "requires_present": False,
         "requires_absent": True,
-        "next_state": STATE_INSTALL_STATE,
-        "fail_msg": "No XRDP to process for installation (already present).",
     },
-    "uninstall": {
+    "Uninstall XRDP": {
         "verb": "uninstallation",
         "prompt": "Proceed with XRDP uninstallation? [y/n]: ",
+        "next_state": "UNINSTALL_STATE",
         "requires_present": True,
         "requires_absent": False,
-        "next_state": STATE_UNINSTALL_STATE,
-        "fail_msg": "No XRDP to process for uninstallation.",
     },
-    "renew": {
+    "Regenerate XRDP keys/certs": {
         "verb": "renewal",
         "prompt": "Proceed with regenerating XRDP keys/certs? [y/n]: ",
+        "next_state": "RENEW_STATE",
         "requires_present": True,
         "requires_absent": False,
-        "next_state": STATE_RENEW_STATE,
-        "fail_msg": "No XRDP to process for key regeneration.",
+    },
+    "Exit": {
+        "verb": None,
+        "prompt": None,
+        "next_state": None,
+        "requires_present": None,
+        "requires_absent": None,
     },
 }
+
+# === STATE ENUM ===
+class State(Enum):
+    INITIAL = auto()
+    MODEL_DETECTION = auto()
+    CONFIG_LOADING = auto()
+    PACKAGE_STATUS = auto()
+    MENU_SELECTION = auto()
+    PREPARE = auto()
+    CONFIRM = auto()
+    INSTALL_STATE = auto()
+    UNINSTALL_STATE = auto()
+    RENEW_STATE = auto()
+    FINALIZE = auto()
 
 
 class RDPInstaller:
-    def __init__(self):
-        self.state = STATE_INITIAL
-        self.model = None
-        self.cfg_path = None
-        self.model_block = {}
-        self.xrdp_present = False
-        self.menu_action = None  # one of: install|uninstall|renew
-        self.finalize_msg = None
+    def __init__(self) -> None:
+        self.state: State = State.INITIAL
+        self.finalize_msg: Optional[str] = None
 
-    # ====== STATE-MUTATING HELPERS (param-driven) ======
+        self.log_dir: Optional[Path] = None
+        self.log_file: Optional[Path] = None
 
-    def setup(self, log_file: Path, log_dir: Path, required_user: str):
-        setup_logging(log_file, log_dir)
+        self.model: Optional[str] = None
+        self.config_path: Optional[str] = None
+        self.rdp_block: Optional[Dict] = None
+
+        self.service_present: bool = False
+        self.current_action_key: Optional[str] = None
+
+
+    def setup(self, required_user: str, messages: Dict[str, str]) -> None:
+        sudo_user = os.getenv("SUDO_USER")
+        base_home = Path("/home") / sudo_user if sudo_user else Path.home()
+        self.log_dir = base_home / LOG_SUBDIR
+        ts = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        self.log_file = self.log_dir / f"rdp_install_{ts}.log"
+
+        setup_logging(self.log_file, self.log_dir)
         if not check_account(expected_user=required_user):
-            self.finalize_msg = "User account verification failed."
-            self.state = STATE_FINALIZE
+            self.finalize_msg = messages["user_verification_failed"]
+            self.state = State.FINALIZE
             return
-        self.state = STATE_MODEL_DETECTION
+        self.state = State.MODEL_DETECTION
 
-    def detect_model(self, detection_config: dict):
+        
+    def detect_model(self, detection_cfg: Dict, messages: Dict[str, str]) -> None:
         model = get_model()
-        log_and_print(f"Detected model: {model}")
-        primary_cfg = load_json(detection_config['primary_config'])
+        log_and_print(messages["detected_model_fmt"].format(model=model))
+        primary_cfg = load_json(detection_cfg["primary_config"])
         cfg_path, used_default = resolve_value(
-            primary_cfg, model, detection_config['packages_key'],
-            detection_config['default_config'], check_file=True
+            primary_cfg,
+            model,
+            detection_cfg["packages_key"],
+            detection_cfg["default_config"],
+            check_file=True,
         )
         if not cfg_path:
             self.finalize_msg = (
-                f"Invalid {detection_config['config_type'].upper()} config path for model '{model}' or fallback."
+                f"Invalid {detection_cfg['config_type'].upper()} config path for model '{model}' or fallback."
             )
-            self.state = STATE_FINALIZE
+            self.state = State.FINALIZE
             return
-        log_and_print(f"Using {detection_config['config_type'].upper()} config file: {cfg_path}")
+        log_and_print(messages["using_config_fmt"].format(
+            ctype=detection_cfg["config_type"].upper(), path=cfg_path
+        ))
         if used_default:
             log_and_print(
-                detection_config['default_config_note'].format(
-                    config_type=detection_config['config_type'],
+                detection_cfg["default_config_note"].format(
+                    config_type=detection_cfg["config_type"],
                     model=model,
-                    example=detection_config['config_example'],
-                    primary=detection_config['primary_config'],
+                    example=detection_cfg["config_example"],
+                    primary=detection_cfg["primary_config"],
                 )
             )
         self.model = model
-        self.cfg_path = cfg_path
-        self.state = STATE_CONFIG_LOADING
+        self.config_path = cfg_path
+        self.state = State.CONFIG_LOADING
 
-    def load_model_block(self, section_key: str, next_state: str, cancel_state: str):
-        cfg = load_json(self.cfg_path)
-        block = (cfg.get(self.model) or {}).get(section_key, {})
-        if not block:
-            self.finalize_msg = f"No {section_key.lower()} block found for model '{self.model}'."
-            self.state = cancel_state
+
+    def load_rdp_block(self, rdp_key: str) -> None:
+        cfg = load_json(self.config_path)
+        self.rdp_block = (cfg.get(self.model) or {}).get(rdp_key, {})
+        if not self.rdp_block:
+            self.finalize_msg = f"No {rdp_key.lower()} found."
+            self.state = State.FINALIZE
             return
-        self.model_block = block
-        self.state = next_state
+        self.state = State.PACKAGE_STATUS
 
-    def build_status_map_rdp(self, dependencies_key: str, service_key: str,
-                             summary_label: str, installed_label: str, uninstalled_label: str):
-        deps = self.model_block[dependencies_key]
-        svc  = self.model_block[service_key]
-        pkg_all_installed = all(check_package(pkg) for pkg in deps)
+
+    def build_status_map(self, installed_label: str, not_installed_label: str) -> None:
+        svc = self.rdp_block["ServiceName"]
+        deps = self.rdp_block["Dependencies"]
+        pkg_all_installed = all(check_package(p) == installed_label for p in deps)
         svc_enabled = check_service_status(svc)
-        self.xrdp_present = bool(pkg_all_installed or svc_enabled)
-        status = {svc: self.xrdp_present}
+        self.service_present = bool(pkg_all_installed or svc_enabled)
         summary = format_status_summary(
-            status,
-            label=summary_label,
-            count_keys=[installed_label, uninstalled_label],
-            labels={True: installed_label, False: uninstalled_label},
+            {svc: self.service_present},
+            label="XRDP",
+            count_keys=[installed_label, not_installed_label],
+            labels={True: installed_label, False: not_installed_label},
         )
         log_and_print(summary)
-        self.state = STATE_MENU_SELECTION
+        self.state = State.MENU_SELECTION
 
-    def select_action(self, menu_title: str, menu_options: dict):
-        labels = list(menu_options.keys())
+
+    def select_action(self, actions: Dict[str, Dict], messages: Dict[str, str]) -> None:
+        title = actions.get("_meta", {}).get("title", "Select an option")
+        options = [k for k in actions.keys() if k != "_meta"]
         choice = None
-        while choice not in labels:
-            choice = select_from_list(menu_title, labels)
-            if choice not in labels:
-                log_and_print("Invalid selection. Please choose a valid option.")
-        action = menu_options[choice]
-        if action is None:
-            self.finalize_msg = "Cancelled by user."
-            self.state = STATE_FINALIZE
+        while choice not in options:
+            choice = select_from_list(title, options)
+            if choice not in options:
+                log_and_print(messages["invalid_selection"])
+        spec = actions[choice]
+        if spec["next_state"] is None:
+            self.finalize_msg = messages["cancelled"]
+            self.state = State.FINALIZE
             return
-        self.menu_action = action  # install|uninstall|renew
-        self.state = STATE_PREPARE_PLAN
+        if spec.get("requires_present") and not self.service_present:
+            log_and_print(messages["no_jobs_fmt"].format(what="XRDP", verb=spec["verb"]))
+            self.state = State.PACKAGE_STATUS
+            return
+        if spec.get("requires_absent") and self.service_present:
+            log_and_print(messages["no_jobs_fmt"].format(what="XRDP", verb=spec["verb"]))
+            self.state = State.PACKAGE_STATUS
+            return
+        self.current_action_key = choice
+        self.state = State.PREPARE
 
-    def prepare_plan(self, key_label: str, actions_dict: dict):
-        action = actions_dict[self.menu_action]["verb"]
-        service_name = self.model_block.get("ServiceName", "xrdp")
-        row = {key_label: service_name}
-        # Include all config keys in the preview table
-        for k, v in self.model_block.items():
-            row[k] = v
-        field_names = [key_label] + list(self.model_block.keys())
-        print_dict_table([row], field_names=field_names, label=f"Planned {action.title()} ({key_label})")
-        self.state = STATE_CONFIRM
 
-    def confirm_action(self, action_data: dict):
-        prompt = action_data[self.menu_action]["prompt"]
-        proceed = confirm(prompt)
-        if not proceed:
+    def prepare(self, key_label: str, actions: Dict[str, Dict]) -> None:
+        """Show a single-row plan reflecting the chosen action and XRDP settings."""
+        spec = actions[self.current_action_key]
+        verb = spec["verb"]
+        svc = self.rdp_block.get("ServiceName", "xrdp")
+        row = {key_label: svc} | self.rdp_block
+        print_dict_table([row], field_names=[key_label] + list(self.rdp_block.keys()),
+                         label=f"Planned {verb.title()} ({key_label})")
+        self.state = State.CONFIRM
+
+
+    def confirm(self, actions: Dict[str, Dict]) -> None:
+        spec = actions[self.current_action_key]
+        if not confirm(spec["prompt"]):
             log_and_print("User cancelled.")
-            self.state = STATE_PACKAGE_STATUS
+            self.state = State.PACKAGE_STATUS
             return
-        self.state = action_data[self.menu_action]["next_state"]
+        self.state = State[spec["next_state"]]
 
-    def install_rdp_state(self, user_key: str, service_key: str, deps_key: str,
-                          session_cmd_key: str, xsession_key: str, skel_dir_key: str,
-                          home_base_key: str, groups_key: str):
-        user_name   = self.model_block[user_key]
-        service     = self.model_block[service_key]
-        deps        = self.model_block[deps_key]
-        session_cmd = self.model_block[session_cmd_key]
-        xsession    = self.model_block[xsession_key]
-        skel_dir    = self.model_block[skel_dir_key]
-        home_base   = self.model_block[home_base_key]
-        groups      = self.model_block[groups_key]
 
+    def install_state(self) -> None:
+        u = self.rdp_block["UserName"]
+        svc = self.rdp_block["ServiceName"]
+        deps = self.rdp_block["Dependencies"]
+        session_cmd = self.rdp_block["SessionCmd"]
+        xsession = self.rdp_block["XsessionFile"]
+        skel_dir = self.rdp_block["SkeletonDir"]
+        home_base = self.rdp_block["UserHomeBase"]
+        groups = self.rdp_block["Groups"]
         log_and_print("Installing XRDP packages...")
         install_packages(deps)
         log_and_print("Configuring XRDP and session...")
-        if not ensure_user_exists(user_name):
-            log_and_print(f"ERROR: Could not create or verify user '{user_name}'. Aborting.")
-            self.state = STATE_PACKAGE_STATUS
+        if not ensure_user_exists(u):
+            log_and_print(f"ERROR: Could not create or verify user '{u}'. Aborting.")
+            self.state = State.PACKAGE_STATUS
             return
         configure_xsession(session_cmd, xsession, skel_dir, home_base)
-        for group in groups:
-            configure_group_access(user_name, group)
-        enable_and_start_service(service)
+        for g in groups:
+            configure_group_access(u, g)
+
+        enable_and_start_service(svc)
         log_and_print("XRDP with XFCE installed and configured successfully.")
-        self.state = STATE_PACKAGE_STATUS
+        self.state = State.PACKAGE_STATUS
 
-    def uninstall_rdp_state(self, service_key: str, deps_key: str, xsession_key: str,
-                            home_base_key: str, skel_dir_key: str):
-        service     = self.model_block[service_key]
-        deps        = self.model_block[deps_key]
-        xsession    = self.model_block[xsession_key]
-        home_base   = self.model_block[home_base_key]
-        skel_dir    = self.model_block[skel_dir_key]
+
+    def uninstall_state(self) -> None:
+        svc = self.rdp_block["ServiceName"]
+        deps = self.rdp_block["Dependencies"]
+        xsession = self.rdp_block["XsessionFile"]
+        home_base = self.rdp_block["UserHomeBase"]
+        skel_dir = self.rdp_block["SkeletonDir"]
         log_and_print("Uninstalling XRDP...")
-        uninstall_rdp(deps, service, xsession, home_base, skel_dir)
+        uninstall_rdp(deps, svc, xsession, home_base, skel_dir)
         log_and_print("Uninstall complete.")
-        self.state = STATE_PACKAGE_STATUS
+        self.state = State.PACKAGE_STATUS
 
-    def renew_keys_state(self, service_key: str):
-        service = self.model_block[service_key]
+
+    def renew_state(self) -> None:
+        svc = self.rdp_block["ServiceName"]
         log_and_print("Regenerating XRDP keys/certs...")
-        ok, msg = regenerate_xrdp_keys(service_name=service)
+        ok, msg = regenerate_xrdp_keys(service_name=svc)
         if ok:
             log_and_print("XRDP keys/certs regenerated successfully.")
         else:
             log_and_print(f"Key regeneration failed: {msg}")
-        self.state = STATE_PACKAGE_STATUS
+        self.state = State.PACKAGE_STATUS
 
-    # ====== DRIVER ======
 
-    def main(self):
-        # Prepare log paths first (respect sudo user home)
-        sudo_user = os.getenv("SUDO_USER")
-        log_home = Path("/home") / sudo_user if sudo_user else Path.home()
-        log_dir = log_home / LOG_SUBDIR
-        log_file = log_dir / f"rdp_install_{TIMESTAMP}.log"
+    # === MAIN / DISPATCH ===
+    def main(self) -> None:
+        handlers: Dict[State, Callable[[], None]] = {
+            State.INITIAL:         lambda: self.setup(REQUIRED_USER, MESSAGES),
+            State.MODEL_DETECTION: lambda: self.detect_model(DETECTION_CONFIG, MESSAGES),
+            State.CONFIG_LOADING:  lambda: self.load_rdp_block(RDP_KEY),
+            State.PACKAGE_STATUS:  lambda: self.build_status_map(INSTALLED_LABEL, NOT_INSTALLED),
+            State.MENU_SELECTION:  lambda: self.select_action(ACTIONS, MESSAGES),
+            State.PREPARE:         lambda: self.prepare("XRDP", ACTIONS),
+            State.CONFIRM:         lambda: self.confirm(ACTIONS),
+            State.INSTALL_STATE:   lambda: self.install_state(),
+            State.UNINSTALL_STATE: lambda: self.uninstall_state(),
+            State.RENEW_STATE:     lambda: self.renew_state(),
+        }
 
-        while self.state != STATE_FINALIZE:
-            if self.state == STATE_INITIAL:
-                self.setup(log_file, log_dir, REQUIRED_USER)
-
-            elif self.state == STATE_MODEL_DETECTION:
-                self.detect_model(DETECTION_CONFIG)
-
-            elif self.state == STATE_CONFIG_LOADING:
-                self.load_model_block(
-                    section_key=RDP_KEY,
-                    next_state=STATE_PACKAGE_STATUS,
-                    cancel_state=STATE_FINALIZE,
-                )
-
-            elif self.state == STATE_PACKAGE_STATUS:
-                # compute status and gate actions on presence
-                self.build_status_map_rdp(
-                    dependencies_key="Dependencies",
-                    service_key="ServiceName",
-                    summary_label=SUMMARY_LABEL,
-                    installed_label=INSTALLED_LABEL,
-                    uninstalled_label=NOT_INSTALLED_LABEL,
-                )
-
-            elif self.state == STATE_MENU_SELECTION:
-                self.select_action(MENU_TITLE, MENU_OPTIONS)
-                if self.state == STATE_FINALIZE:
-                    continue
-                # guard based on presence/absence
-                guard = ACTION_DATA[self.menu_action]
-                if guard["requires_present"] and not self.xrdp_present:
-                    log_and_print(guard["fail_msg"])
-                    self.state = STATE_PACKAGE_STATUS
-                    continue
-                if guard["requires_absent"] and self.xrdp_present:
-                    log_and_print(guard["fail_msg"])
-                    self.state = STATE_PACKAGE_STATUS
-                    continue
-                self.state = STATE_PREPARE_PLAN
-
-            elif self.state == STATE_PREPARE_PLAN:
-                self.prepare_plan(key_label=RDP_KEY, actions_dict=ACTION_DATA)
-
-            elif self.state == STATE_CONFIRM:
-                self.confirm_action(ACTION_DATA)
-
-            elif self.state == STATE_INSTALL_STATE:
-                self.install_rdp_state(
-                    user_key="UserName",
-                    service_key="ServiceName",
-                    deps_key="Dependencies",
-                    session_cmd_key="SessionCmd",
-                    xsession_key="XsessionFile",
-                    skel_dir_key="SkeletonDir",
-                    home_base_key="UserHomeBase",
-                    groups_key="Groups",
-                )
-
-            elif self.state == STATE_UNINSTALL_STATE:
-                self.uninstall_rdp_state(
-                    service_key="ServiceName",
-                    deps_key="Dependencies",
-                    xsession_key="XsessionFile",
-                    home_base_key="UserHomeBase",
-                    skel_dir_key="SkeletonDir",
-                )
-
-            elif self.state == STATE_RENEW_STATE:
-                self.renew_keys_state(service_key="ServiceName")
-
+        while self.state != State.FINALIZE:
+            fn = handlers.get(self.state)
+            if fn:
+                fn()
             else:
-                log_and_print(f"Unknown state '{self.state}', finalizing.")
-                self.finalize_msg = self.finalize_msg or "Unknown state encountered."
-                self.state = STATE_FINALIZE
+                log_and_print(MESSAGES["unknown_state_fmt"].format(
+                    state=getattr(self.state, "name", str(self.state))
+                ))
+                self.finalize_msg = self.finalize_msg or MESSAGES["unknown_state"]
+                self.state = State.FINALIZE
 
         # Finalization
-        rotate_logs(log_dir, LOGS_TO_KEEP, ROTATE_LOG_NAME)
+        if self.log_dir:
+            rotate_logs(self.log_dir, LOGS_TO_KEEP, ROTATE_LOG_NAME)
         if self.finalize_msg:
             log_and_print(self.finalize_msg)
-        log_and_print(f"\nAll actions complete. Log: {log_file}")
+        if self.log_file:
+            log_and_print(MESSAGES["log_final_fmt"].format(log_file=self.log_file))
 
 
 if __name__ == "__main__":
