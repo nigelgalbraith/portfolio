@@ -105,6 +105,7 @@ DETECTION_CONFIG = {
 DOWNLOAD_DIR = Path("/tmp/deb_downloads")
 
 # === LOGGING ===
+LOG_PREFIX      = "deb_install"
 LOG_DIR         = Path.home() / "logs" / "deb"
 LOGS_TO_KEEP    = 10
 ROTATE_LOG_NAME = "deb_install_*.log"
@@ -168,6 +169,11 @@ PACKAGE_NAME_FIELD   = "Package Name"
 DOWNLOAD_URL_FIELD   = "Download URL"
 ENABLE_SERVICE_FIELD = "Enable Service"
 
+# === META KEYS ===
+KEY_DOWNLOAD_URL = "DownloadURL"
+KEY_ENABLE_SERVICE = "EnableService"
+KEY_DOWNLOAD_DIR = "download_dir"
+
 
 # === STATE ENUM ===
 class State(Enum):
@@ -208,12 +214,13 @@ class DebInstaller:
         self.selected_packages: List[str] = []
 
 
-    def setup(self, log_dir: Path, required_user: str, messages: Dict[str, str]) -> None:
+    def setup(self, log_dir: Path, log_prefix: str, required_user: str, messages: Dict[str, str]) -> None:
         """Setup logging and verify user; advance to DEP_CHECK or FINALIZE."""
         timestamp = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
         self.log_dir = log_dir
-        self.log_file = log_dir / f"deb_install_{timestamp}.log"
+        self.log_file = log_dir / f"{log_prefix}_{timestamp}.log"
         setup_logging(self.log_file, log_dir)
+
         if not check_account(expected_user=required_user):
             self.finalize_msg = messages["user_verification_failed"]
             self.state = State.FINALIZE
@@ -355,15 +362,15 @@ class DebInstaller:
         self.state = State[spec["next_state"]]
 
 
-    def install_packages_state(self) -> None:
+    def install_packages_state(self, key_url: str, key_enable: str, key_dir: str) -> None:
         """Install selected packages; clear selection; advance to PACKAGE_STATUS."""
         success = 0
         total = len(self.selected_packages)
         for pkg in self.selected_packages:
             meta = self.deb_block.get(pkg, {}) or {}
-            download_url = meta.get("DownloadURL")
-            enable_service = meta.get("EnableService")
-            download_dir = Path(meta.get("download_dir", str(DOWNLOAD_DIR)))
+            download_url = meta.get(key_url)
+            enable_service = meta.get(key_enable)
+            download_dir = Path(meta.get(key_dir))
             deb_path = download_deb_file(pkg, download_url, download_dir)
             ok = False
             if deb_path:
@@ -378,6 +385,7 @@ class DebInstaller:
         self.finalize_msg = f"Installed successfully: {success}/{total}"
         self.selected_packages = []
         self.state = State.PACKAGE_STATUS
+
 
 
     def uninstall_packages_state(self) -> None:
@@ -400,7 +408,7 @@ class DebInstaller:
     def main(self) -> None:
         """Run the state machine with a dispatch table until FINALIZE."""
         handlers: Dict[State, Callable[[], None]] = {
-            State.INITIAL:           lambda: self.setup(LOG_DIR, REQUIRED_USER, MESSAGES),
+            State.INITIAL:           lambda: self.setup(LOG_DIR, LOG_PREFIX, REQUIRED_USER, MESSAGES),
             State.DEP_CHECK:         lambda: self.ensure_deps(DEPENDENCIES, MESSAGES),
             State.MODEL_DETECTION:   lambda: self.detect_model(DETECTION_CONFIG, MESSAGES),
             State.CONFIG_LOADING:    lambda: self.load_model_block(DEB_KEY, State.PACKAGE_STATUS, State.FINALIZE),
@@ -408,7 +416,7 @@ class DebInstaller:
             State.MENU_SELECTION:    lambda: self.select_action(ACTIONS, MESSAGES),
             State.PREPARE_PLAN:      lambda: self.prepare_plan(DEB_LABEL, ACTIONS, MESSAGES),
             State.CONFIRM:           lambda: self.confirm_action(ACTIONS),
-            State.INSTALL_STATE:     lambda: self.install_packages_state(),
+            State.INSTALL_STATE:     lambda: self.install_packages_state(KEY_DOWNLOAD_URL, KEY_ENABLE_SERVICE, KEY_DOWNLOAD_DIR),
             State.UNINSTALL_STATE:   lambda: self.uninstall_packages_state(),
         }
 

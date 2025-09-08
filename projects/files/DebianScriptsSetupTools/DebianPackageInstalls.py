@@ -80,6 +80,7 @@ DETECTION_CONFIG = {
 }
 
 # === LOGGING  ===
+LOG_PREFIX      = "packages_install"
 LOG_DIR         = Path.home() / "logs" / "packages"
 LOGS_TO_KEEP    = 10
 ROTATE_LOG_NAME = "packages_install_*.log"
@@ -169,12 +170,14 @@ class PackageInstaller:
         self.jobs: List[str] = []
         self.current_action_key: Optional[str] = None
 
-    def setup(self, log_dir: Path, required_user: str, messages: Dict[str, str]) -> None:
+
+    def setup(self, log_dir: Path, log_prefix: str, required_user: str, messages: Dict[str, str]) -> None:
         """Initialize logging and verify user; advance to MODEL_DETECTION or FINALIZE."""
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         self.log_dir = log_dir
-        self.log_file = log_dir / f"packages_install_{timestamp}.log"
+        self.log_file = log_dir / f"{log_prefix}_{timestamp}.log"
         setup_logging(self.log_file, log_dir)
+
         if not check_account(expected_user=required_user):
             self.finalize_msg = messages["user_verification_failed"]
             self.state = State.FINALIZE
@@ -320,7 +323,7 @@ class PackageInstaller:
     def main(self) -> None:
         """Run the state machine until FINALIZE via a dispatch table. """
         handlers: Dict[State, Callable[[], None]] = {
-            State.INITIAL:           lambda: self.setup(LOG_DIR, REQUIRED_USER, MESSAGES),
+            State.INITIAL:           lambda: self.setup(LOG_DIR, LOG_PREFIX, REQUIRED_USER, MESSAGES),
             State.MODEL_DETECTION:   lambda: self.detect_model(DETECTION_CONFIG, MESSAGES),
             State.PACKAGE_LOADING:   lambda: self.load_packages(PACKAGES_KEY, MESSAGES),
             State.PACKAGE_STATUS:    lambda: self.build_status_map(PACKAGES_KEY, INSTALLED_LABEL, UNINSTALLED_LABEL),

@@ -70,30 +70,30 @@ DETECTION_CONFIG = {
 }
 
 # === LOGGING ===
+LOG_FILE_PREFIX = "net"
 LOG_SUBDIR      = "logs/net"
 LOGS_TO_KEEP    = 10
-ROTATE_LOG_NAME = "net_settings_*.log"
+ROTATE_LOG_NAME = f"{LOG_FILE_PREFIX}_settings_*.log"
 
 # === RUNTIME ===
 REQUIRED_USER = "root"
 DEPENDENCIES  = ["nmcli"]
 
-# === FIELD KEYS  ===
-FIELD = "Field"
-VALUE = "Value"
-FIELD_KEYS = {
-    "model": "Model",
-    "ssid": "SSID",
-    "action": "Action",
-    "conn_name": "ConnectionName",
-    "interface": "Interface",
-    "address": "Address",
-    "gateway": "Gateway",
-    "dns": "DNS",
-}
+# === FIELD KEYS ===
+KEY_MODEL      = "Model"
+KEY_SSID       = "SSID"
+KEY_ACTION     = "Action"
+KEY_CONN_NAME  = "ConnectionName"
+KEY_INTERFACE  = "Interface"
+KEY_ADDRESS    = "Address"
+KEY_GATEWAY    = "Gateway"
+KEY_DNS        = "DNS"
 
 # === LABELS ===
 SUMMARY_LABEL = "Network presets"
+LABEL_FIELD   = "Field"
+LABEL_VALUE   = "Value"
+
 
 # === CENTRALIZED MESSAGES ===
 MESSAGES = {
@@ -190,7 +190,7 @@ class NetworkPresetCLI:
         self.preset: Optional[Dict] = None
 
 
-    def setup(self, log_subdir: str, required_user: str, messages: Dict[str, str]) -> None:
+    def setup(self, log_subdir: str, file_prefix: str, required_user: str, messages: Dict[str, str]) -> None:
         """Compute log path in the invoking user's home; init logging; verify user; → DEP_CHECK or FINALIZE."""
         if not check_account(required_user):
             self.finalize_msg = messages["user_verification_failed"]
@@ -200,7 +200,7 @@ class NetworkPresetCLI:
         log_home = Path("/home") / self.sudo_user if self.sudo_user else Path.home()
         self.log_dir = log_home / log_subdir
         ts = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        self.log_file = self.log_dir / f"net_settings_{ts}.log"
+        self.log_file = self.log_dir / f"{file_prefix}_settings_{ts}.log"
         setup_logging(self.log_file, self.log_dir)
         self.state = State.DEP_CHECK
 
@@ -300,7 +300,10 @@ class NetworkPresetCLI:
         self.state = State.PREPARE_PLAN
 
 
-    def prepare_plan(self, messages: Dict[str, str]) -> None:
+    def prepare_plan(self, messages: Dict[str, str], summary_label: str, label_field: str,
+                     label_value: str, key_model: str, key_ssid: str, key_action: str,
+                     key_conn_name: str, key_interface: str, key_address: str,
+                     key_gateway: str, key_dns: str) -> None:
         """Build preset and print summary; → CONFIRM."""
         if not self.current_action_key:
             log_and_print(messages["invalid_selection"])
@@ -309,16 +312,16 @@ class NetworkPresetCLI:
         preset = build_preset(self.networks_block, self.selected_ssid)
         is_static = (self.current_action_key == "Static")
         rows = [
-            {FIELD: FIELD_KEYS["model"],     VALUE: self.model},
-            {FIELD: FIELD_KEYS["ssid"],      VALUE: self.selected_ssid},
-            {FIELD: FIELD_KEYS["action"],    VALUE: self.current_action_key},
-            {FIELD: FIELD_KEYS["conn_name"], VALUE: preset.get(FIELD_KEYS["conn_name"], self.selected_ssid)},
-            {FIELD: FIELD_KEYS["interface"], VALUE: preset.get(FIELD_KEYS["interface"], "")},
-            {FIELD: FIELD_KEYS["address"],   VALUE: preset.get(FIELD_KEYS["address"], "-") if is_static else "-"},
-            {FIELD: FIELD_KEYS["gateway"],   VALUE: preset.get(FIELD_KEYS["gateway"], "-") if is_static else "-"},
-            {FIELD: FIELD_KEYS["dns"],       VALUE: preset.get(FIELD_KEYS["dns"], "-") if is_static else "-"},
+            {label_field: key_model,     label_value: self.model},
+            {label_field: key_ssid,      label_value: self.selected_ssid},
+            {label_field: key_action,    label_value: self.current_action_key},
+            {label_field: key_conn_name, label_value: preset.get(key_conn_name, self.selected_ssid)},
+            {label_field: key_interface, label_value: preset.get(key_interface, "")},
+            {label_field: key_address,   label_value: preset.get(key_address, "-") if is_static else "-"},
+            {label_field: key_gateway,   label_value: preset.get(key_gateway, "-") if is_static else "-"},
+            {label_field: key_dns,       label_value: preset.get(key_dns, "-") if is_static else "-"},
         ]
-        print_dict_table(rows, [FIELD, VALUE], SUMMARY_LABEL)
+        print_dict_table(rows, [label_field, label_value], summary_label)
         validate_preset(preset, self.current_action_key)
         self.preset = preset
         self.state = State.CONFIRM
@@ -332,11 +335,12 @@ class NetworkPresetCLI:
             self.state = State.MENU_SELECTION
             return
         self.state = State[spec["next_state"]]
+        
 
-    def apply_static(self, messages: Dict[str, str]) -> None:
+    def apply_static(self, messages: Dict[str, str], key_conn_name: str) -> None:
         """Create/modify connection for Static; bring up; → FINALIZE."""
         assert self.preset is not None
-        name = self.preset[FIELD_KEYS["conn_name"]]
+        name = self.preset.get(key_conn_name, self.selected_ssid)
         exists = connection_exists(name)
         log_and_print(messages["conn_exists_fmt"].format(name=name, exists=exists))
         if exists:
@@ -350,10 +354,10 @@ class NetworkPresetCLI:
         self.state = State.FINALIZE
 
 
-    def apply_dhcp(self, messages: Dict[str, str]) -> None:
+    def apply_dhcp(self, messages: Dict[str, str], key_conn_name: str) -> None:
         """Create/modify connection for DHCP; bring up; → FINALIZE."""
         assert self.preset is not None
-        name = self.preset[FIELD_KEYS["conn_name"]]
+        name = self.preset.get(key_conn_name, self.selected_ssid)
         exists = connection_exists(name)
         log_and_print(messages["conn_exists_fmt"].format(name=name, exists=exists))
         if exists:
@@ -370,16 +374,18 @@ class NetworkPresetCLI:
     # === MAIN === 
     def main(self) -> None:
         handlers: Dict[State, Callable[[], None]] = {
-            State.INITIAL:         lambda: self.setup(LOG_SUBDIR, REQUIRED_USER, MESSAGES),
+            State.INITIAL:         lambda: self.setup(LOG_SUBDIR, LOG_FILE_PREFIX, REQUIRED_USER, MESSAGES),
             State.DEP_CHECK:       lambda: self.ensure_deps(DEPENDENCIES, MESSAGES),
             State.MODEL_DETECTION: lambda: self.detect_model(DETECTION_CONFIG, MESSAGES),
             State.CONFIG_LOADING:  lambda: self.load_config(FEATURE_KEY, MESSAGES),
             State.MENU_SELECTION:  lambda: self.select_action(ACTIONS, MESSAGES),
             State.SSID_SELECTION:  lambda: self.select_ssid(MESSAGES),
-            State.PREPARE_PLAN:    lambda: self.prepare_plan(MESSAGES),
+            State.PREPARE_PLAN:    lambda: self.prepare_plan(MESSAGES, SUMMARY_LABEL, LABEL_FIELD, LABEL_VALUE,
+                                                          KEY_MODEL, KEY_SSID, KEY_ACTION, KEY_CONN_NAME,
+                                                          KEY_INTERFACE, KEY_ADDRESS, KEY_GATEWAY, KEY_DNS),
             State.CONFIRM:         lambda: self.confirm_action(ACTIONS),
-            State.APPLY_STATIC:    lambda: self.apply_static(MESSAGES), 
-            State.APPLY_DHCP:      lambda: self.apply_dhcp(MESSAGES),
+            State.APPLY_STATIC:    lambda: self.apply_static(MESSAGES, KEY_CONN_NAME),
+            State.APPLY_DHCP:      lambda: self.apply_dhcp(MESSAGES, KEY_CONN_NAME),
         }
 
         while self.state != State.FINALIZE:

@@ -90,9 +90,10 @@ DETECTION_CONFIG = {
 }
 
 # === LOGGING ===
+LOG_FILE_PREFIX = "rdp"
 LOG_SUBDIR      = "logs/rdp"
 LOGS_TO_KEEP    = 10
-ROTATE_LOG_NAME = "rdp_install_*.log"
+ROTATE_LOG_NAME = f"{LOG_FILE_PREFIX}_install_*.log"
 
 # === USER / LABELS ===
 REQUIRED_USER     = "root"
@@ -111,6 +112,9 @@ MESSAGES = {
     "detected_model_fmt": "Detected model: {model}",
     "using_config_fmt": "Using {ctype} config file: {path}",
     "log_final_fmt": "All actions complete. Log: {log_file}",
+    "renew_start": "Regenerating XRDP keys/certs...",
+    "renew_ok": "XRDP keys/certs regenerated successfully.",
+    "renew_fail": "Key regeneration failed.",
 }
 
 # === ACTIONS ===
@@ -146,6 +150,23 @@ ACTIONS: Dict[str, Dict] = {
     },
 }
 
+# === JSON FIELD KEYS ===
+KEY_SERVICE_NAME = "ServiceName"
+KEY_DEPENDENCIES = "Dependencies"
+KEY_USER_NAME    = "UserName"
+KEY_SESSION_CMD  = "SessionCmd"
+KEY_XSESSION     = "XsessionFile"
+KEY_SKEL_DIR     = "SkeletonDir"
+KEY_HOME_BASE    = "UserHomeBase"
+KEY_GROUPS       = "Groups"
+KEY_SSL_CERT_DIR = "SslCertDir"
+KEY_SSL_KEY_DIR  = "SslKeyDir"
+KEY_XRDP_DIR     = "XrdpDir"
+
+# === LABELS ===
+LABEL_XRDP = "XRDP"
+
+
 # === STATE ENUM ===
 class State(Enum):
     INITIAL = auto()
@@ -177,13 +198,12 @@ class RDPInstaller:
         self.current_action_key: Optional[str] = None
 
 
-    def setup(self, required_user: str, messages: Dict[str, str]) -> None:
+    def setup(self, required_user: str, messages: Dict[str, str], file_prefix: str) -> None:
         sudo_user = os.getenv("SUDO_USER")
         base_home = Path("/home") / sudo_user if sudo_user else Path.home()
         self.log_dir = base_home / LOG_SUBDIR
         ts = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        self.log_file = self.log_dir / f"rdp_install_{ts}.log"
-
+        self.log_file = self.log_dir / f"{file_prefix}_install_{ts}.log"
         setup_logging(self.log_file, self.log_dir)
         if not check_account(expected_user=required_user):
             self.finalize_msg = messages["user_verification_failed"]
@@ -236,15 +256,15 @@ class RDPInstaller:
         self.state = State.PACKAGE_STATUS
 
 
-    def build_status_map(self, installed_label: str, not_installed_label: str) -> None:
-        svc = self.rdp_block["ServiceName"]
-        deps = self.rdp_block["Dependencies"]
+    def build_status_map(self, key_service: str, key_deps: str, summary_label: str, installed_label: str, not_installed_label: str) -> None:
+        svc = self.rdp_block[key_service]
+        deps = self.rdp_block[key_deps]
         pkg_all_installed = all(check_package(p) == installed_label for p in deps)
         svc_enabled = check_service_status(svc)
         self.service_present = bool(pkg_all_installed or svc_enabled)
         summary = format_status_summary(
             {svc: self.service_present},
-            label="XRDP",
+            label=summary_label,
             count_keys=[installed_label, not_installed_label],
             labels={True: installed_label, False: not_installed_label},
         )
@@ -277,16 +297,16 @@ class RDPInstaller:
         self.state = State.PREPARE
 
 
-    def prepare(self, key_label: str, actions: Dict[str, Dict]) -> None:
+    def prepare(self, key_label: str, key_service: str, actions: Dict[str, Dict]) -> None:
         """Show a single-row plan reflecting the chosen action and XRDP settings."""
         spec = actions[self.current_action_key]
         verb = spec["verb"]
-        svc = self.rdp_block.get("ServiceName", "xrdp")
+        svc = self.rdp_block.get(key_service)
         row = {key_label: svc} | self.rdp_block
         print_dict_table([row], field_names=[key_label] + list(self.rdp_block.keys()),
                          label=f"Planned {verb.title()} ({key_label})")
         self.state = State.CONFIRM
-
+        
 
     def confirm(self, actions: Dict[str, Dict]) -> None:
         spec = actions[self.current_action_key]
@@ -297,15 +317,17 @@ class RDPInstaller:
         self.state = State[spec["next_state"]]
 
 
-    def install_state(self) -> None:
-        u = self.rdp_block["UserName"]
-        svc = self.rdp_block["ServiceName"]
-        deps = self.rdp_block["Dependencies"]
-        session_cmd = self.rdp_block["SessionCmd"]
-        xsession = self.rdp_block["XsessionFile"]
-        skel_dir = self.rdp_block["SkeletonDir"]
-        home_base = self.rdp_block["UserHomeBase"]
-        groups = self.rdp_block["Groups"]
+    def install_state(self, key_user: str, key_service: str, key_deps: str,
+                      key_session: str, key_xsession: str, key_skel: str,
+                      key_home: str, key_groups: str) -> None:
+        u = self.rdp_block[key_user]
+        svc = self.rdp_block[key_service]
+        deps = self.rdp_block[key_deps]
+        session_cmd = self.rdp_block[key_session]
+        xsession = self.rdp_block[key_xsession]
+        skel_dir = self.rdp_block[key_skel]
+        home_base = self.rdp_block[key_home]
+        groups = self.rdp_block[key_groups]
         log_and_print("Installing XRDP packages...")
         install_packages(deps)
         log_and_print("Configuring XRDP and session...")
@@ -316,48 +338,48 @@ class RDPInstaller:
         configure_xsession(session_cmd, xsession, skel_dir, home_base)
         for g in groups:
             configure_group_access(u, g)
-
         enable_and_start_service(svc)
         log_and_print("XRDP with XFCE installed and configured successfully.")
         self.state = State.PACKAGE_STATUS
 
 
-    def uninstall_state(self) -> None:
-        svc = self.rdp_block["ServiceName"]
-        deps = self.rdp_block["Dependencies"]
-        xsession = self.rdp_block["XsessionFile"]
-        home_base = self.rdp_block["UserHomeBase"]
-        skel_dir = self.rdp_block["SkeletonDir"]
+    def uninstall_state(self, key_service: str, key_deps: str, key_xsession: str,
+                        key_home: str, key_skel: str) -> None:
+        svc = self.rdp_block[key_service]
+        deps = self.rdp_block[key_deps]
+        xsession = self.rdp_block[key_xsession]
+        home_base = self.rdp_block[key_home]
+        skel_dir = self.rdp_block[key_skel]
         log_and_print("Uninstalling XRDP...")
         uninstall_rdp(deps, svc, xsession, home_base, skel_dir)
         log_and_print("Uninstall complete.")
         self.state = State.PACKAGE_STATUS
 
 
-    def renew_state(self) -> None:
-        svc = self.rdp_block["ServiceName"]
-        log_and_print("Regenerating XRDP keys/certs...")
-        ok, msg = regenerate_xrdp_keys(service_name=svc)
-        if ok:
-            log_and_print("XRDP keys/certs regenerated successfully.")
-        else:
-            log_and_print(f"Key regeneration failed: {msg}")
+    def renew_state(self, key_service: str, key_ssl_cert_dir: str, key_ssl_key_dir: str, key_xrdp_dir: str, messages: Dict[str, str]) -> None:
+        svc = self.rdp_block[key_service]
+        cert_dir = Path(self.rdp_block[key_ssl_cert_dir])
+        key_dir  = Path(self.rdp_block[key_ssl_key_dir])
+        xrdp_dir = Path(self.rdp_block[key_xrdp_dir])
+        log_and_print(messages["renew_start"])
+        ok = regenerate_xrdp_keys(service_name=svc, ssl_cert_dir=cert_dir, ssl_key_dir=key_dir, xrdp_dir=xrdp_dir)
+        log_and_print(messages["renew_ok"] if ok else messages["renew_fail"])
         self.state = State.PACKAGE_STATUS
-
 
     # === MAIN / DISPATCH ===
     def main(self) -> None:
         handlers: Dict[State, Callable[[], None]] = {
-            State.INITIAL:         lambda: self.setup(REQUIRED_USER, MESSAGES),
+            State.INITIAL:         lambda: self.setup(REQUIRED_USER, MESSAGES, LOG_FILE_PREFIX),
             State.MODEL_DETECTION: lambda: self.detect_model(DETECTION_CONFIG, MESSAGES),
             State.CONFIG_LOADING:  lambda: self.load_rdp_block(RDP_KEY),
-            State.PACKAGE_STATUS:  lambda: self.build_status_map(INSTALLED_LABEL, NOT_INSTALLED),
+            State.PACKAGE_STATUS:  lambda: self.build_status_map(KEY_SERVICE_NAME, KEY_DEPENDENCIES, SUMMARY_LABEL, INSTALLED_LABEL, NOT_INSTALLED),
             State.MENU_SELECTION:  lambda: self.select_action(ACTIONS, MESSAGES),
-            State.PREPARE:         lambda: self.prepare("XRDP", ACTIONS),
+            State.PREPARE:         lambda: self.prepare(LABEL_XRDP, KEY_SERVICE_NAME, ACTIONS),
             State.CONFIRM:         lambda: self.confirm(ACTIONS),
-            State.INSTALL_STATE:   lambda: self.install_state(),
-            State.UNINSTALL_STATE: lambda: self.uninstall_state(),
-            State.RENEW_STATE:     lambda: self.renew_state(),
+            State.INSTALL_STATE:   lambda: self.install_state(KEY_USER_NAME, KEY_SERVICE_NAME, KEY_DEPENDENCIES, KEY_SESSION_CMD, KEY_XSESSION,
+                                                              KEY_SKEL_DIR, KEY_HOME_BASE, KEY_GROUPS),
+            State.UNINSTALL_STATE: lambda: self.uninstall_state(KEY_SERVICE_NAME, KEY_DEPENDENCIES, KEY_XSESSION, KEY_HOME_BASE, KEY_SKEL_DIR),
+            State.RENEW_STATE:     lambda: self.renew_state(KEY_SERVICE_NAME, KEY_SSL_CERT_DIR, KEY_SSL_KEY_DIR, KEY_XRDP_DIR, MESSAGES),
         }
 
         while self.state != State.FINALIZE:

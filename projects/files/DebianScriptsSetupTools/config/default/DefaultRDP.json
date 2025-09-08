@@ -1,12 +1,17 @@
 {
   "Default": {
     "RDP": {
-      "Example1": {
-        "UserName": "rdpuser1"
-      },
-      "Example2": {
-        "UserName": "rdpuser2"
-      }
+      "UserName": "xrdp",
+      "ServiceName": "xrdp",
+      "SessionCmd": "startxfce4",
+      "XsessionFile": ".xsession",
+      "SkeletonDir": "/etc/skel",
+      "UserHomeBase": "/home",
+      "Groups": ["ssl-cert"],
+      "Dependencies": ["xrdp", "xfce4", "xfce4-goodies"],
+      "SslCertDir": "/etc/ssl/certs",
+      "SslKeyDir": "/etc/ssl/private",
+      "XrdpDir": "/etc/xrdp"
     }
   }
 }

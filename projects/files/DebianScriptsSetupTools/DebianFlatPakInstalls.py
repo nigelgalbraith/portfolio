@@ -97,6 +97,7 @@ DETECTION_CONFIG = {
 }
 
 # === LOGGING  ===
+LOG_PREFIX      = "flatpak_install"
 LOG_DIR         = Path.home() / "logs" / "flatpak"
 LOGS_TO_KEEP    = 10
 ROTATE_LOG_NAME = "flatpak_install_*.log"
@@ -194,18 +195,18 @@ class FlatpakInstaller:
         self.current_action_key: Optional[str] = None
         
 
-    def setup(self, log_dir: Path, required_user: str, messages: Dict[str, str]) -> None:
+    def setup(self, log_dir: Path, log_prefix: str, required_user: str, messages: Dict[str, str]) -> None:
         """Initialize logging and verify user; advance to DEP_CHECK or FINALIZE."""
-        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        ts = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         self.log_dir = log_dir
-        self.log_file = log_dir / f"flatpak_install_{timestamp}.log"
+        self.log_file = log_dir / f"{log_prefix}_{ts}.log"
         setup_logging(self.log_file, log_dir)
         if not check_account(expected_user=required_user):
             self.finalize_msg = messages["user_verification_failed"]
             self.state = State.FINALIZE
             return
         self.state = State.DEP_CHECK
-
+        
         
     def ensure_deps(self, deps: List[str], messages: Dict[str, str]) -> None:
         """Ensure dependencies; advance to REMOTE_SETUP or FINALIZE."""
@@ -384,7 +385,7 @@ class FlatpakInstaller:
     def main(self) -> None:
         """Run the state machine to FINALIZE via a dispatch table."""
         handlers: Dict[State, Callable[[], None]] = {
-            State.INITIAL:         lambda: self.setup(LOG_DIR, REQUIRED_USER, MESSAGES),
+            State.INITIAL:         lambda: self.setup(LOG_DIR, LOG_PREFIX, REQUIRED_USER, MESSAGES),
             State.DEP_CHECK:       lambda: self.ensure_deps(DEPENDENCIES, MESSAGES),
             State.REMOTE_SETUP:    lambda: self.ensure_remote(),
             State.MODEL_DETECTION: lambda: self.detect_model(DETECTION_CONFIG, MESSAGES),

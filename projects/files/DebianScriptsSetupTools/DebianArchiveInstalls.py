@@ -96,6 +96,7 @@ DETECTION_CONFIG = {
 }
 
 # === LOGGING ===
+LOG_PREFIX      = "archive_install"
 LOG_DIR         = Path.home() / "logs" / "archive"
 LOGS_TO_KEEP    = 10
 ROTATE_LOG_NAME = "archive_install_*.log"
@@ -108,21 +109,18 @@ REQUIRED_USER     = "Standard"
 ARCHIVE_LABEL     = "archive packages"
 INSTALLED_LABEL   = "INSTALLED"
 UNINSTALLED_LABEL = "UNINSTALLED"
+SUMMARY_LABEL     = "Archive applications"
 
-# === JSON FIELD KEYS  ===
-FIELD_KEYS = {
-    "name": "Name",
-    "status": "Status",
-    "download_url": "DownloadURL",
-    "extract_to": "ExtractTo",
-    "check_path": "CheckPath",
-    "strip_top_level": "StripTopLevel",
-    "post_install": "PostInstall",
-    "post_uninstall": "PostUninstall",
-    "enable_service": "EnableService",
-    "trash_paths": "TrashPaths",
-    "download_path": "DownloadPath",
-}
+# === JSON FIELD KEYS ===
+DOWNLOAD_URL_KEY     = "DownloadURL"
+EXTRACT_TO_KEY       = "ExtractTo"
+STRIP_TOP_LEVEL_KEY  = "StripTopLevel"
+DOWNLOAD_PATH_KEY    = "DownloadPath"
+POST_INSTALL_KEY     = "PostInstall"
+ENABLE_SERVICE_KEY   = "EnableService"
+CHECK_PATH_KEY       = "CheckPath"
+POST_UNINSTALL_KEY   = "PostUninstall"
+TRASH_PATHS_KEY      = "TrashPaths"
 
 # === CENTRALIZED MESSAGES ===
 MESSAGES = {
@@ -219,11 +217,11 @@ class ArchiveInstaller:
         self.post_uninstall_pkgs: List[str] = []
 
    
-    def setup(self, log_dir: Path, required_user: str, messages: Dict[str, str]) -> None:
+    def setup(self, log_dir: Path, log_prefix: str, required_user: str, messages: Dict[str, str]) -> None:
         """Compute log path, init logging, verify user; → DEP_CHECK|FINALIZE."""
         ts = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         self.log_dir = log_dir
-        self.log_file = log_dir / f"archive_install_{ts}.log"
+        self.log_file = log_dir / f"{log_prefix}_{ts}.log"
         setup_logging(self.log_file, log_dir)
         if not check_account(expected_user=required_user):
             self.finalize_msg = messages["user_verification_failed"]
@@ -294,15 +292,18 @@ class ArchiveInstaller:
         self.state = State.PACKAGE_STATUS
 
 
-    def build_status_map(self, summary_label: str, installed_label: str, uninstalled_label: str) -> None:
+    def build_status_map(self, check_key: str, extract_key: str, summary_label: str, installed_label: str, uninstalled_label: str) -> None:
         """Compute archive install status and print a summary; → MENU_SELECTION."""
-        self.status_map = build_archive_install_status(
-            self.model_block,
-            key_check=FIELD_KEYS["check_path"],
-            key_extract=FIELD_KEYS["extract_to"],
-            path_expander=expand_path,
-            checker=check_archive_installed,
-        )
+        self.status_map = {
+            pkg: build_archive_install_status(
+                self.model_block.get(pkg, {}) or {},
+                key_check=check_key,
+                key_extract=extract_key,
+                path_expander=expand_path,
+                checker=check_archive_installed,
+                )
+                for pkg in self.pkg_keys
+            }
         summary = format_status_summary(
             self.status_map,
             label=summary_label,
@@ -372,23 +373,24 @@ class ArchiveInstaller:
         self.state = State[spec["next_state"]]
 
 
-    def install_archives_state(self) -> None:
+    def install_archives_state(self, download_url_key: str, extract_to_key: str, strip_top_key: str, download_path_key: str) -> None:
         """Install selected archives; collect successes; → POST_INSTALL."""
         ok_names: List[str] = []
         total = len(self.selected_packages)
         for pkg in self.selected_packages:
             meta = self.model_block.get(pkg, {}) or {}
-            download_url    = meta.get(FIELD_KEYS["download_url"], "")
-            extract_to      = expand_path(meta.get(FIELD_KEYS["extract_to"], ""))
-            strip_top_level = bool(meta.get(FIELD_KEYS["strip_top_level"], False))
-            dl_path         = expand_path(meta.get(FIELD_KEYS["download_path"], ""))
+            download_url    = meta.get(download_url_key, "")
+            extract_to      = expand_path(meta.get(extract_to_key, ""))
+            strip_top_level = bool(meta.get(strip_top_key, False))
+            dl_path         = expand_path(meta.get(download_path_key, ""))
             missing = []
-            if not download_url: missing.append(FIELD_KEYS["download_url"])
-            if not extract_to:   missing.append(FIELD_KEYS["extract_to"])
-            if not dl_path:      missing.append(FIELD_KEYS["download_path"])
+            if not download_url: missing.append(download_url_key)
+            if not extract_to:   missing.append(extract_to_key)
+            if not dl_path:      missing.append(download_path_key)
             if missing:
                 log_and_print(MESSAGES["install_failed_fmt"].format(
-                    what="ARCHIVE", pkg=f"{pkg} (missing {', '.join(missing)})"
+                    what="ARCHIVE",
+                    pkg=f"{pkg} (missing {', '.join(missing)})"
                 ))
                 continue
             Path(dl_path).mkdir(parents=True, exist_ok=True)
@@ -396,7 +398,6 @@ class ArchiveInstaller:
             if not archive_path:
                 log_and_print(MESSAGES["download_failed_fmt"].format(pkg=pkg))
                 continue
-
             ok = install_archive_file(archive_path, extract_to, strip_top_level)
             handle_cleanup(archive_path, ok, pkg, "INSTALL FAILED")
             if ok:
@@ -410,37 +411,35 @@ class ArchiveInstaller:
         self.state = State.POST_INSTALL
 
 
-    def post_install_steps_state(self) -> None:
+    def post_install_steps_state(self, post_install_key: str, enable_service_key: str) -> None:
         """Run per-package post-install commands and start services; → PACKAGE_STATUS."""
-        if not self.post_install_pkgs:
+        if not getattr(self, "post_install_pkgs", None):
             log_and_print(MESSAGES["no_post_install"])
             self.state = State.PACKAGE_STATUS
             return
         for pkg in self.post_install_pkgs:
             meta = self.model_block.get(pkg, {}) or {}
-            cmds = meta.get(FIELD_KEYS["post_install"]) or []
+            cmds = meta.get(post_install_key) or []
             if isinstance(cmds, str):
                 cmds = [cmds]
             if cmds:
                 run_post_install_commands(cmds)
                 log_and_print(MESSAGES["post_install_ok_fmt"].format(pkg=pkg))
-
-            svc = meta.get(FIELD_KEYS["enable_service"], "")
+            svc = meta.get(enable_service_key, "")
             if svc:
                 start_service_standard(svc)
                 log_and_print(MESSAGES["service_started_fmt"].format(pkg=pkg, svc=svc))
         self.state = State.PACKAGE_STATUS
 
 
-    def uninstall_archives_state(self) -> None:
+    def uninstall_archives_state(self, check_path_key: str, extract_to_key: str) -> None:
         """Uninstall selected archives; collect successes; → POST_UNINSTALL."""
         ok_names: List[str] = []
         total = len(self.selected_packages)
         for pkg in self.selected_packages:
             meta = self.model_block.get(pkg, {}) or {}
-            check_path = expand_path(
-                meta.get(FIELD_KEYS["check_path"]) or meta.get(FIELD_KEYS["extract_to"], "")
-            )
+            check_path = meta.get(check_path_key) or meta.get(extract_to_key, "")
+            check_path = expand_path(check_path)
             if not uninstall_archive_install(check_path):
                 log_and_print(MESSAGES["uninstall_failed_fmt"].format(pkg=pkg))
                 continue
@@ -452,15 +451,15 @@ class ArchiveInstaller:
         self.state = State.POST_UNINSTALL
 
 
-    def post_uninstall_steps_state(self) -> None:
+    def post_uninstall_steps_state(self, post_uninstall_key: str, trash_paths_key: str) -> None:
         """Run post-uninstall commands and trash/cleanup paths; → PACKAGE_STATUS."""
-        if not self.post_uninstall_pkgs:
+        if not getattr(self, "post_uninstall_pkgs", None):
             log_and_print(MESSAGES["no_post_uninstall"])
             self.state = State.PACKAGE_STATUS
             return
         for pkg in self.post_uninstall_pkgs:
             meta = self.model_block.get(pkg, {}) or {}
-            pu_cmds = meta.get(FIELD_KEYS["post_uninstall"]) or []
+            pu_cmds = meta.get(post_uninstall_key) or []
             if isinstance(pu_cmds, str):
                 pu_cmds = [pu_cmds]
             if pu_cmds:
@@ -468,7 +467,7 @@ class ArchiveInstaller:
                     log_and_print(MESSAGES["post_uninstall_ok_fmt"].format(pkg=pkg))
                 else:
                     log_and_print(MESSAGES["post_uninstall_fail_fmt"].format(pkg=pkg))
-            for p in meta.get(FIELD_KEYS["trash_paths"], []):
+            for p in meta.get(trash_paths_key, []):
                 expanded = expand_path(p)
                 removed = move_to_trash(expanded) or sudo_remove_path(expanded)
                 if removed:
@@ -480,18 +479,18 @@ class ArchiveInstaller:
     def main(self) -> None:
         """Run the state machine until FINALIZE via a dispatch table."""
         handlers: Dict[State, Callable[[], None]] = {
-            State.INITIAL:         lambda: self.setup(LOG_DIR, REQUIRED_USER, MESSAGES),
+            State.INITIAL:         lambda: self.setup(LOG_DIR, LOG_PREFIX, REQUIRED_USER, MESSAGES),
             State.DEP_CHECK:       lambda: self.ensure_deps(DEPENDENCIES, MESSAGES),
             State.MODEL_DETECTION: lambda: self.detect_model(DETECTION_CONFIG, MESSAGES),
             State.CONFIG_LOADING:  lambda: self.load_model_block(ARCHIVE_KEY, ARCHIVE_LABEL),
-            State.PACKAGE_STATUS:  lambda: self.build_status_map(ARCHIVE_LABEL, INSTALLED_LABEL, UNINSTALLED_LABEL),
+            State.PACKAGE_STATUS:  lambda: self.build_status_map(CHECK_PATH_KEY, EXTRACT_TO_KEY, SUMMARY_LABEL, INSTALLED_LABEL, UNINSTALLED_LABEL),
             State.MENU_SELECTION:  lambda: self.select_action(ACTIONS, MESSAGES),
             State.PREPARE_PLAN:    lambda: self.prepare_plan(ARCHIVE_LABEL, ACTIONS, MESSAGES),
             State.CONFIRM:         lambda: self.confirm_action(ACTIONS),
-            State.INSTALL_STATE:   lambda: self.install_archives_state(),
-            State.POST_INSTALL:    lambda: self.post_install_steps_state(),
-            State.UNINSTALL_STATE: lambda: self.uninstall_archives_state(),
-            State.POST_UNINSTALL:  lambda: self.post_uninstall_steps_state(),
+            State.INSTALL_STATE:   lambda: self.install_archives_state(DOWNLOAD_URL_KEY, EXTRACT_TO_KEY, STRIP_TOP_LEVEL_KEY, DOWNLOAD_PATH_KEY),
+            State.POST_INSTALL:    lambda: self.post_install_steps_state(POST_INSTALL_KEY, ENABLE_SERVICE_KEY),
+            State.UNINSTALL_STATE: lambda: self.uninstall_archives_state(CHECK_PATH_KEY, EXTRACT_TO_KEY),
+            State.POST_UNINSTALL:  lambda: self.post_uninstall_steps_state(POST_UNINSTALL_KEY, TRASH_PATHS_KEY),
         }
 
         while self.state != State.FINALIZE:

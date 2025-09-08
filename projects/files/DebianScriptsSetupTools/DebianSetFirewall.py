@@ -96,7 +96,23 @@ KEY_START_PORT   = "StartPort"
 KEY_END_PORT     = "EndPort"         
 
 # === LABELS ===
-SUMMARY_LABEL = "Firewall rules"
+SUMMARY_LABELS = {
+    "_meta": {
+        "title": "Firewall rules",  
+    },
+    "applications": {
+        "label": "Firewall Applications",
+        "columns": None,  
+    },
+    "single_ports": {
+        "label": "Single-Port Rules",
+        "columns": ["Port", "Protocol", "IPs"],
+    },
+    "port_ranges": {
+        "label": "Port-Range Rules",
+        "columns": ["StartPort", "EndPort", "Protocol", "IPs"],
+    },
+}
 
 # === CENTRALIZED MESSAGES ===
 MESSAGES = {
@@ -167,12 +183,6 @@ ACTIONS: Dict[str, Dict] = {
 # === FIELD LABELS  ===
 FIELD = "Field"
 VALUE = "Value"
-
-SUMMARY_LABELS = {
-    "applications": "Firewall Applications",
-    "single_ports": "Single-Port Rules",
-    "port_ranges":  "Port-Range Rules",
-}
 
 # === STATE ENUM ===
 class State(Enum):
@@ -280,7 +290,7 @@ class FirewallCLI:
         self.state = State.CONFIG_LOADING
 
 
-    def load_config(self, feature_key: str, messages: Dict[str, str]) -> None:
+    def load_config(self, feature_key: str, apps_key: str, single_key: str, ranges_key: str, messages: Dict[str, str]) -> None:
         """Load firewall block from <model> → feature_key; → MENU_SELECTION or FINALIZE."""
         cfg = load_json(self.config_path)
         block = (cfg.get(self.model, {}) or {}).get(feature_key, {})
@@ -289,9 +299,9 @@ class FirewallCLI:
             self.state = State.FINALIZE
             return
         self.firewall_block = block
-        self.applications = block.get("Applications", []) or []
-        self.single_ports = block.get("SinglePorts", []) or []
-        self.port_ranges  = block.get("PortRanges", []) or []
+        self.applications = block.get(apps_key, []) or []
+        self.single_ports = block.get(single_key, []) or []
+        self.port_ranges  = block.get(ranges_key, []) or []
         if not (self.applications or self.single_ports or self.port_ranges):
             self.finalize_msg = messages.get("no_rules_fmt", f"No firewall rules found for model '{self.model}'.")
             self.state = State.FINALIZE
@@ -319,15 +329,16 @@ class FirewallCLI:
             self.state = State.CONFIRM
 
 
-    def prepare_plan(self, messages: Dict[str, str]) -> None:
+    def prepare_plan(self, messages: Dict[str, str], summary_labels: Dict[str, Dict]) -> None:
         """Show planned rules (apps, single ports, ranges); → CONFIRM."""
         if not (self.applications or self.single_ports or self.port_ranges):
             self.finalize_msg = messages.get("no_rules_fmt", "No firewall rules to process.")
             self.state = State.FINALIZE
             return
-        print_list_section(self.applications, SUMMARY_LABELS["applications"])
-        print_dict_table(self.single_ports, ["Port", "Protocol", "IPs"], SUMMARY_LABELS["single_ports"])
-        print_dict_table(self.port_ranges, ["StartPort", "EndPort", "Protocol", "IPs"], SUMMARY_LABELS["port_ranges"])
+        log_and_print(f"\n=== {summary_labels['_meta']['title']} ===\n")
+        print_list_section(self.applications, summary_labels["applications"]["label"])
+        print_dict_table(self.single_ports, summary_labels["single_ports"]["columns"], summary_labels["single_ports"]["label"])
+        print_dict_table(self.port_ranges, summary_labels["port_ranges"]["columns"], summary_labels["port_ranges"]["label"])
         self.state = State.CONFIRM
 
 
@@ -336,6 +347,7 @@ class FirewallCLI:
         if not confirm(spec["prompt"]):
             log_and_print("User cancelled.")
             self.state = State.MENU_SELECTION
+            return
         self.state = State[spec["next_state"]]
 
 
@@ -370,15 +382,15 @@ class FirewallCLI:
         self.state = State.APPLY_SINGLE_PORTS
 
 
-    def apply_single_port_rules_state(self, messages: Dict[str, str]) -> None:
+    def apply_single_port_rules_state(self, messages: Dict[str, str], key_port: str, key_proto: str, key_ips: str) -> None:
         """Allow single ports per IP; → APPLY_PORT_RANGES."""
         for rule in self.single_ports:
-            port = rule.get("Port")
-            proto = rule.get("Protocol")
+            port = rule.get(key_port)
+            proto = rule.get(key_proto)
             if not port or not proto:
                 log_and_print(messages["skipping_single_invalid_fmt"].format(rule=rule))
                 continue
-            ips = rule.get("IPs", [])
+            ips = rule.get(key_ips, [])
             if isinstance(ips, str):
                 ips = [ips]
             for ip in ips or []:
@@ -389,16 +401,16 @@ class FirewallCLI:
         self.state = State.APPLY_PORT_RANGES
 
 
-    def apply_port_range_rules_state(self, messages: Dict[str, str]) -> None:
+    def apply_port_range_rules_state(self, messages: Dict[str, str], key_start: str, key_end: str, key_proto: str, key_ips: str) -> None:
         """Allow port ranges per IP; → UFW_RELOAD_STATUS."""
         for rule in self.port_ranges:
-            start_port = rule.get("StartPort")
-            end_port   = rule.get("EndPort")
-            proto      = rule.get("Protocol")
+            start_port = rule.get(key_start)
+            end_port   = rule.get(key_end)
+            proto      = rule.get(key_proto)
             if not start_port or not end_port or not proto:
                 log_and_print(messages["skipping_range_invalid_fmt"].format(rule=rule))
                 continue
-            ips = rule.get("IPs", [])
+            ips = rule.get(key_ips, [])
             if isinstance(ips, str):
                 ips = [ips]
             for ip in ips or []:
@@ -407,7 +419,7 @@ class FirewallCLI:
                 log_and_print(result)
                 self.ranges_applied += 1
         self.state = State.UFW_RELOAD_STATUS
-        
+
 
     def ufw_reload_and_status_state(self, messages: Dict[str, str]) -> None:
         """Reload UFW, print status and totals; → FINALIZE."""
@@ -469,14 +481,14 @@ class FirewallCLI:
             State.INITIAL:            lambda: self.setup(LOG_DIR_NAME, LOG_FILE_PREFIX, REQUIRED_USER, MESSAGES),
             State.DEP_CHECK:          lambda: self.ensure_deps(DEPENDENCIES),
             State.MODEL_DETECTION:    lambda: self.detect_model(DETECTION_CONFIG, MESSAGES),
-            State.CONFIG_LOADING:     lambda: self.load_config(FEATURE_KEY, MESSAGES),
+            State.CONFIG_LOADING:     lambda: self.load_config(FEATURE_KEY, KEY_APPLICATIONS, KEY_SINGLE_PORTS, KEY_PORT_RANGES, MESSAGES),
             State.MENU_SELECTION:     lambda: self.select_action(ACTIONS, MESSAGES),
-            State.PREPARE_PLAN:       lambda: self.prepare_plan(MESSAGES),
+            State.PREPARE_PLAN:       lambda: self.prepare_plan(MESSAGES, SUMMARY_LABELS),
             State.CONFIRM:            lambda: self.confirm_action(ACTIONS),
             State.UFW_RESET:          lambda: self.ufw_reset_state(MESSAGES),
             State.APPLY_APPS:         lambda: self.apply_app_rules_state(MESSAGES),
-            State.APPLY_SINGLE_PORTS: lambda: self.apply_single_port_rules_state(MESSAGES),
-            State.APPLY_PORT_RANGES:  lambda: self.apply_port_range_rules_state(MESSAGES),
+            State.APPLY_SINGLE_PORTS: lambda: self.apply_single_port_rules_state(MESSAGES, KEY_PORT, KEY_PROTOCOL, KEY_IPS),
+            State.APPLY_PORT_RANGES:  lambda: self.apply_port_range_rules_state(MESSAGES, KEY_START_PORT, KEY_END_PORT, KEY_PROTOCOL, KEY_IPS),
             State.UFW_RELOAD_STATUS:  lambda: self.ufw_reload_and_status_state(MESSAGES),
             
             # utility states:

@@ -89,6 +89,7 @@ DETECTION_CONFIG = {
 }
 
 # === LOGGING ===
+LOG_PREFIX      = "thirdparty_install"
 LOG_DIR         = Path.home() / "logs" / "thirdparty"
 LOGS_TO_KEEP    = 10
 ROTATE_LOG_NAME = "thirdparty_install_*.log"
@@ -145,6 +146,13 @@ ACTIONS: Dict[str, Dict] = {
     },
 }
 
+# === META KEYS ===
+KEY_REPO_URL   = "url"
+KEY_REPO_KEY   = "key"
+KEY_CODENAME   = "codename"
+KEY_COMPONENT  = "component"
+KEY_KEYRING    = "keyring_dir"
+
 # === STATE ENUM ===
 class State(Enum):
     INITIAL = auto()
@@ -178,11 +186,13 @@ class ThirdPartyInstaller:
         self.current_action_key: Optional[str] = None
 
 
-    def setup(self, log_dir: Path, required_user: str, messages: Dict[str, str]) -> None:
+    def setup(self, log_dir: Path, log_prefix: str, required_user: str, messages: Dict[str, str]) -> None:
+        """Setup logging and verify user; advance to DEP_CHECK or FINALIZE."""
         ts = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         self.log_dir = log_dir
-        self.log_file = log_dir / f"thirdparty_install_{ts}.log"
+        self.log_file = log_dir / f"{log_prefix}_{ts}.log"
         setup_logging(self.log_file, log_dir)
+
         if not check_account(expected_user=required_user):
             self.finalize_msg = messages["user_verification_failed"]
             self.state = State.FINALIZE
@@ -306,14 +316,17 @@ class ThirdPartyInstaller:
         self.state = State[spec["next_state"]]
 
 
-    def install_state(self, installed_label: str) -> None:
-        """Add repo/key if missing, install package(s)."""
+    def install_state(self, installed_label: str, k_url: str, k_key: str, k_codename: str, k_component: str, k_keyring_dir: str,) -> None:
+        """Add repo/key if missing, then apt install each package; → PACKAGE_STATUS."""
         success, total = 0, len(self.jobs)
         for pkg in self.jobs:
-            meta = self.model_block.get(pkg, {}) or {}
-            url = meta.get("url"); key = meta.get("key")
-            codename = meta.get("codename"); component = meta.get("component")
-            keyring_path = f"/usr/share/keyrings/{pkg}.gpg"
+            meta       = self.model_block.get(pkg, {}) or {}
+            url        = meta.get(k_url)
+            key        = meta.get(k_key)
+            codename   = meta.get(k_codename)
+            component  = meta.get(k_component)
+            keyringdir = meta.get(k_keyring_dir) 
+            keyring_path = f"{keyringdir}/{pkg}.gpg"
             if not conflicting_repo_entry_exists(url, keyring_path):
                 add_apt_repository(pkg, url, key, codename, component)
             install_packages([pkg])
@@ -341,7 +354,7 @@ class ThirdPartyInstaller:
     # === MAIN ===
     def main(self) -> None:
         handlers: Dict[State, Callable[[], None]] = {
-            State.INITIAL:         lambda: self.setup(LOG_DIR, REQUIRED_USER, MESSAGES),
+            State.INITIAL:         lambda: self.setup(LOG_DIR, LOG_PREFIX, REQUIRED_USER, MESSAGES),
             State.DEP_CHECK:       lambda: self.ensure_deps(DEPENDENCIES, MESSAGES),
             State.MODEL_DETECTION: lambda: self.detect_model(DETECTION_CONFIG, MESSAGES),
             State.CONFIG_LOADING:  lambda: self.load_model_block(TP_KEY, SUMMARY_LABEL),
@@ -349,7 +362,7 @@ class ThirdPartyInstaller:
             State.MENU_SELECTION:  lambda: self.select_action(ACTIONS, MESSAGES),
             State.PREPARE:         lambda: self.prepare(SUMMARY_LABEL, ACTIONS, MESSAGES),
             State.CONFIRM:         lambda: self.confirm(ACTIONS),
-            State.INSTALL_STATE:   lambda: self.install_state(INSTALLED_LABEL),
+            State.INSTALL_STATE:   lambda: self.install_state(INSTALLED_LABEL, KEY_REPO_URL, KEY_REPO_KEY, KEY_CODENAME, KEY_COMPONENT, KEY_KEYRING ),
             State.UNINSTALL_STATE: lambda: self.uninstall_state(UNINSTALLED_LABEL),
         }
 
