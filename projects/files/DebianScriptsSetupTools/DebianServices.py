@@ -89,65 +89,27 @@ SERVICE_LABEL    = "services"
 ENABLED_LABEL    = "ENABLED"
 DISABLED_LABEL   = "DISABLED"
 
-# === MESSAGES ===
-MESSAGES = {
-    "user_verification_failed": "User account verification failed.",
-    "invalid_selection": "Invalid selection. Please choose a valid option.",
-    "cancelled": "Operation was cancelled by the user.",
-    "unknown_state": "Unknown state encountered.",
-    "unknown_state_fmt": "Unknown state '{state}', finalizing.",
-    "detected_model_fmt": "Detected model: {model}",
-    "using_config_fmt": "Using {ctype} config file: {path}",
-    "no_items_fmt": "No {what} to process for {verb}.",
-    "log_final_fmt": "You can find the full log here: {log_file}",
-    "menu_title": "Choose an option",
-
-    "confirm_install": "Proceed with installation? [y/n]: ",
-    "confirm_uninstall": "Proceed with uninstallation? [y/n]: ",
-    "confirm_restart": "Restart selected services? [y/n]: ",
-
-    "plan_header": "Planned {verb} ({label})",
-    "no_services_for_model_fmt": "No {label} found for model '{model}'.",
-
-    "restart_ok_fmt": "RESTARTED: {name}",
-    "restart_fail_fmt": "RESTART FAILED: {name} ({msg})",
-
-    "logs_menu_title": "Select a log to view",
-    "logs_back": "Back",
-    "no_logs_found": "No log paths were declared for any services.",
-
-    "restart_menu_title": "Select a service to restart",
-    "restart_all_label": "All enabled services",
-    "restart_back_label": "Back to main menu",
-    "restart_do_fmt": "Restarting: {name}",
-    "restart_totals_fmt": "Restarted successfully: {ok}/{total}",
-    
-    "restart_section_title": "PLANNED RESTART (SERVICES):",
-    "restart_confirm_prompt": "Restart these {n} service(s) in the order shown? [y/n]: ",
-}
-
 # === ACTIONS ===
 ACTIONS: Dict[str, Dict] = {
-    "_meta": {"title": "Choose an option"},
     f"Setup {SERVICE_LABEL}": {
         "install": True,
         "verb": "installation",
-        "filter_status": False,             
-        "prompt": MESSAGES["confirm_install"],
+        "filter_status": False,
+        "prompt": "Proceed with installation? [y/n]: ",
         "next_state": "INSTALL_PREPARE",
     },
     f"Remove {SERVICE_LABEL}": {
         "install": False,
         "verb": "uninstallation",
-        "filter_status": True,              
-        "prompt": MESSAGES["confirm_uninstall"],
+        "filter_status": True,
+        "prompt": "Proceed with uninstallation? [y/n]: ",
         "next_state": "UNINSTALL_STOP",
     },
     "Restart services": {
         "install": True,
         "verb": "restart",
-        "filter_status": True,          
-        "prompt": MESSAGES["confirm_restart"],
+        "filter_status": True,
+        "prompt": "Restart selected services? [y/n]: ",
         "next_state": "RESTART_SELECT",
     },
     "Show logs": {
@@ -229,11 +191,12 @@ class ServicesCLI:
         # Logging
         self.selected_log_key: Optional[str] = None
 
-    # ===== States =====
-
-    def setup(self, log_subdir: str, required_user: str, messages: Dict[str, str]) -> None:
+    # ===== Main =====
+    def setup(self, log_subdir: str, required_user: str) -> None:
         if not check_account(required_user):
-            self.finalize_msg = messages["user_verification_failed"]; self.state = State.FINALIZE; return
+            self.finalize_msg = "User account verification failed."
+            self.state = State.FINALIZE
+            return
         self.sudo_user = os.getenv("SUDO_USER")
         log_home = Path("/home") / self.sudo_user if self.sudo_user else Path.home()
         self.log_dir = log_home / log_subdir
@@ -248,9 +211,9 @@ class ServicesCLI:
         self.state = State.MODEL_DETECTION
 
 
-    def detect_model(self, detection_config: Dict, messages: Dict[str, str]) -> None:
+    def detect_model(self, detection_config: Dict) -> None:
         model = get_model()
-        log_and_print(messages["detected_model_fmt"].format(model=model))
+        log_and_print(f"Detected model: {model}")
         primary_cfg = load_json(detection_config["primary_config"])
         config_path, used_default = resolve_value(
             primary_cfg, model, detection_config["packages_key"], detection_config["default_config"], check_file=True
@@ -261,7 +224,7 @@ class ServicesCLI:
             )
             self.state = State.FINALIZE
             return
-        log_and_print(messages["using_config_fmt"].format(ctype=detection_config["config_type"], path=config_path))
+        log_and_print(f"Using {detection_config['config_type']} config file: {config_path}")
         if used_default:
             log_and_print(
                 detection_config["default_config_note"].format(
@@ -275,6 +238,7 @@ class ServicesCLI:
         self.config_path = config_path
         self.state = State.CONFIG_LOADING
 
+
     def load_model_block(self, section_key: str, summary_label_for_msg: str) -> None:
         cfg = load_json(self.config_path)
         block = (cfg.get(self.model, {}) or {}).get(section_key, {})
@@ -287,8 +251,8 @@ class ServicesCLI:
         self.service_keys = keys
         self.state = State.PACKAGE_STATUS
 
+
     def build_status_map(self, summary_label: str, enabled_label: str, disabled_label: str, key_service: str) -> None:
-        """Build status map for services and log summary; → MENU_SELECTION."""
         status: Dict[str, bool] = {}
         for key in self.service_keys:
             meta = self.model_block.get(key, {}) or {}
@@ -304,19 +268,18 @@ class ServicesCLI:
         log_and_print(summary)
         self.state = State.MENU_SELECTION
 
-
-    def select_action(self, actions: Dict[str, Dict], messages: Dict[str, str]) -> None:
-        title = actions.get("_meta", {}).get("title", messages["menu_title"])
-        options = [k for k in actions.keys() if k != "_meta"]
+    def select_action(self, actions: Dict[str, Dict]) -> None:
+        title = "Choose an option"
+        options = list(actions.keys())
         choice = None
         while choice not in options:
             choice = select_from_list(title, options)
             if choice not in options:
-                log_and_print(messages["invalid_selection"])
+                log_and_print("Invalid selection. Please choose a valid option.")
         spec = actions[choice]
         next_state = spec["next_state"]
         if next_state is None:
-            self.finalize_msg = messages["cancelled"]
+            self.finalize_msg = "Operation was cancelled by the user."
             self.state = State.FINALIZE
             return
         self.current_action_key = choice
@@ -325,25 +288,24 @@ class ServicesCLI:
         else:
             self.state = State.PREPARE_PLAN
 
-
-    def select_log_state(self, messages: Dict[str, str]) -> None:
-        """ Build a list of available logs (by service key) + Back; prompt user; → SHOW_LOG or MENU_SELECTION. """
+            
+    def select_log_state(self) -> None:
         log_map: Dict[str, str] = {}
         for key, meta in self.model_block.items():
             p = (meta or {}).get("LogPath")
             if p:
                 log_map[key] = p
         if not log_map:
-            log_and_print(messages["no_logs_found"])
+            log_and_print("No log paths were declared for any services.")
             self.state = State.MENU_SELECTION
             return
-        options = sorted(log_map.keys()) + [messages["logs_back"]]
+        options = sorted(log_map.keys()) + ["Back"]
         choice = None
         while choice not in options:
-            choice = select_from_list(messages["logs_menu_title"], options)
+            choice = select_from_list("Select a log to view", options)
             if choice not in options:
-                log_and_print(messages["invalid_selection"])
-        if choice == messages["logs_back"]:
+                log_and_print("Invalid selection. Please choose a valid option.")
+        if choice == "Back":
             self.state = State.MENU_SELECTION
             return
         self.selected_log_key = choice
@@ -352,7 +314,6 @@ class ServicesCLI:
 
 
     def show_log_state(self) -> None:
-        """ Show the selected log; return to SELECT_LOG so the user can pick another, or Back from there.  """
         if not getattr(self, "_log_map", None) or not self.selected_log_key:
             self.state = State.SELECT_LOG
             return
@@ -365,15 +326,19 @@ class ServicesCLI:
         self.state = State.SELECT_LOG
 
 
-    def prepare_plan(self, label: str, actions: Dict[str, Dict], messages: Dict[str, str], key_service: str, key_order: str) -> None:
+    def prepare_plan(self, label: str, actions: Dict[str, Dict], key_service: str, key_order: str) -> None:
         spec = actions[self.current_action_key]
         verb = spec["verb"]
         filter_status = spec["filter_status"]
         if filter_status is None:
-            log_and_print(messages["invalid_selection"]); self.state = State.MENU_SELECTION; return
+            log_and_print("Invalid selection. Please choose a valid option.")
+            self.state = State.MENU_SELECTION
+            return
         selected = filter_by_status(self.status_map, filter_status)
         if not selected:
-            log_and_print(messages["no_items_fmt"].format(what=label, verb=verb)); self.state = State.MENU_SELECTION; return
+            log_and_print(f"No {label} to process for {verb}.")
+            self.state = State.MENU_SELECTION
+            return
         ordered_pairs: List[tuple[int, str]] = []
         for key in selected:
             meta = self.model_block.get(key, {}) or {}
@@ -386,7 +351,7 @@ class ServicesCLI:
             meta = self.model_block.get(key, {}) or {}
             svc_name = meta.get(key_service, key)
             plan_lines.append(f"{key} → {svc_name} (Order {order})")
-        print_list_section(plan_lines, MESSAGES["plan_header"].format(verb=verb.title(), label=label))
+        print_list_section(plan_lines, f"Planned {verb.title()} ({label})")
         self.jobs = names
         self.state = State.CONFIRM
 
@@ -399,11 +364,11 @@ class ServicesCLI:
             return
         self.state = State[spec["next_state"]]
 
+
     def install_prepare_state(self, key_service: str, key_script_src: str, key_script_dest: str,
                               key_service_src: str, key_service_dest: str,
                               key_log_path: str, key_logrotate: str,
                               key_config_src: str, key_config_dest: str) -> None:
-        """Prepare artifacts (scripts, configs, service units, log files); → INSTALL_ENABLE or PACKAGE_STATUS."""
         self.prepared = []
         total = len(self.jobs)
         for key in self.jobs:
@@ -457,7 +422,6 @@ class ServicesCLI:
 
 
     def uninstall_stop_state(self, key_service: str) -> None:
-        """Stop and disable selected services; → UNINSTALL_REMOVE."""
         self._uninstall_total = len(self.jobs)
         self._uninstall_stopped = 0
         for key in self.jobs:
@@ -475,7 +439,6 @@ class ServicesCLI:
 
     def uninstall_remove_state(self, disabled_label: str, key_service: str, key_service_dest: str,
                                key_script_dest: str, key_config_dest: str) -> None:
-        """Remove service artifacts (unit, script, optional config); → PACKAGE_STATUS."""
         services_removed = 0
         units_removed = 0
         scripts_removed = 0
@@ -526,24 +489,29 @@ class ServicesCLI:
         self.state = State.PACKAGE_STATUS
 
 
-    def restart_select_state(self, messages: Dict[str, str], key_service: str, key_order: str) -> None:
-        """Let the user choose which service(s) to restart; → RESTART_EXECUTE_ALL | RESTART_EXECUTE_ONE."""
+    def restart_select_state(self, key_service: str, key_order: str) -> None:
         enabled_keys = [k for k, v in self.status_map.items() if v]
         if not enabled_keys:
-            log_and_print("No enabled services to restart."); self.state = State.MENU_SELECTION; return
-        options: List[str] = []; label_to_key: Dict[str, str] = {}
+            log_and_print("No enabled services to restart.")
+            self.state = State.MENU_SELECTION
+            return
+        options: List[str] = []
+        label_to_key: Dict[str, str] = {}
         for key in sorted(enabled_keys):
             unit = (self.model_block.get(key, {}) or {}).get(key_service, key)
             label = f"{key} → {unit}"
             label_to_key[label] = key
             options.append(label)
-        all_label, back_label = messages["restart_all_label"], messages["restart_back_label"]
+        all_label, back_label = "All enabled services", "Back to main menu"
         options.extend([all_label, back_label])
         choice = None
         while choice not in options:
-            choice = select_from_list(messages["restart_menu_title"], options)
-            if choice not in options: log_and_print(messages["invalid_selection"])
-        if choice == back_label: self.state = State.MENU_SELECTION; return
+            choice = select_from_list("Select a service to restart", options)
+            if choice not in options:
+                log_and_print("Invalid selection. Please choose a valid option.")
+        if choice == back_label:
+            self.state = State.MENU_SELECTION
+            return
         if choice == all_label:
             ordered_pairs: List[tuple[int, str]] = []
             for key in enabled_keys:
@@ -552,57 +520,63 @@ class ServicesCLI:
             ordered_pairs.sort()
             self.jobs = [key for _, key in ordered_pairs]
             lines = [f"- {k} → {(self.model_block[k] or {}).get(key_service, k)} (Order {o})" for o, k in ordered_pairs]
-            print_list_section(lines, messages["restart_section_title"])
-            if not confirm(messages["restart_confirm_prompt"].format(n=len(self.jobs))):
-                log_and_print("User cancelled."); self.state = State.MENU_SELECTION; return
+            print_list_section(lines, "PLANNED RESTART (SERVICES):")
+            if not confirm(f"Restart these {len(self.jobs)} service(s) in the order shown? [y/n]: "):
+                log_and_print("User cancelled.")
+                self.state = State.MENU_SELECTION
+                return
             self.state = State.RESTART_EXECUTE_ALL
         else:
             self.jobs = [label_to_key[choice]]
             unit = (self.model_block[self.jobs[0]] or {}).get(key_service, self.jobs[0])
-            print_list_section([f"- {self.jobs[0]} → {unit}"], messages["restart_section_title"])
-            if not confirm(messages["restart_confirm_prompt"].format(n=1)):
-                log_and_print("User cancelled."); self.state = State.MENU_SELECTION; return
+            print_list_section([f"- {self.jobs[0]} → {unit}"], "PLANNED RESTART (SERVICES):")
+            if not confirm("Restart these 1 service(s) in the order shown? [y/n]: "):
+                log_and_print("User cancelled.")
+                self.state = State.MENU_SELECTION
+                return
             self.state = State.RESTART_EXECUTE_ONE
 
 
     def restart_execute_all_state(self, key_service: str) -> None:
-        """Restart all selected services; → PACKAGE_STATUS."""
         ok, total = 0, len(self.jobs)
         for key in self.jobs:
             name = (self.model_block.get(key, {}) or {}).get(key_service, key)
-            log_and_print(MESSAGES["restart_do_fmt"].format(name=name))
+            log_and_print(f"Restarting: {name}")
             if restart_service(name):
-                log_and_print(MESSAGES["restart_ok_fmt"].format(name=name)); ok += 1
+                log_and_print(f"RESTARTED: {name}")
+                ok += 1
             else:
-                log_and_print(MESSAGES["restart_fail_fmt"].format(name=name, msg="systemctl restart failed"))
-        self.finalize_msg = MESSAGES["restart_totals_fmt"].format(ok=ok, total=total)
-        log_and_print(self.finalize_msg); self.jobs = []; self.state = State.PACKAGE_STATUS
+                log_and_print(f"RESTART FAILED: {name} (systemctl restart failed)")
+        self.finalize_msg = f"Restarted successfully: {ok}/{total}"
+        log_and_print(self.finalize_msg)
+        self.jobs = []
+        self.state = State.PACKAGE_STATUS
 
 
     def restart_execute_one_state(self, key_service: str) -> None:
-        """Restart a single selected service; → PACKAGE_STATUS."""
         key = self.jobs[0]
         name = (self.model_block.get(key, {}) or {}).get(key_service, key)
-        log_and_print(MESSAGES["restart_do_fmt"].format(name=name))
+        log_and_print(f"Restarting: {name}")
         if restart_service(name):
-            log_and_print(MESSAGES["restart_ok_fmt"].format(name=name))
-            self.finalize_msg = MESSAGES["restart_totals_fmt"].format(ok=1, total=1)
+            log_and_print(f"RESTARTED: {name}")
+            self.finalize_msg = "Restarted successfully: 1/1"
         else:
-            log_and_print(MESSAGES["restart_fail_fmt"].format(name=name, msg="systemctl restart failed"))
-            self.finalize_msg = MESSAGES["restart_totals_fmt"].format(ok=0, total=1)
-        log_and_print(self.finalize_msg); self.jobs = []; self.state = State.PACKAGE_STATUS
+            log_and_print(f"RESTART FAILED: {name} (systemctl restart failed)")
+            self.finalize_msg = "Restarted successfully: 0/1"
+        log_and_print(self.finalize_msg)
+        self.jobs = []
+        self.state = State.PACKAGE_STATUS
 
 
-    # ===== MAIN =====
     def main(self) -> None:
         handlers: Dict[State, Callable[[], None]] = {
-            State.INITIAL:              lambda: self.setup(LOG_SUBDIR, REQUIRED_USER, MESSAGES),
+            State.INITIAL:              lambda: self.setup(LOG_SUBDIR, REQUIRED_USER),
             State.DEP_CHECK:            lambda: self.ensure_deps(DEPENDENCIES),
-            State.MODEL_DETECTION:      lambda: self.detect_model(DETECTION_CONFIG, MESSAGES),
+            State.MODEL_DETECTION:      lambda: self.detect_model(DETECTION_CONFIG),
             State.CONFIG_LOADING:       lambda: self.load_model_block(FEATURE_KEY, SERVICE_LABEL),
             State.PACKAGE_STATUS:       lambda: self.build_status_map(SUMMARY_LABEL, ENABLED_LABEL, DISABLED_LABEL, KEY_SERVICE_NAME),
-            State.MENU_SELECTION:       lambda: self.select_action(ACTIONS, MESSAGES),
-            State.PREPARE_PLAN:         lambda: self.prepare_plan(SERVICE_LABEL, ACTIONS, MESSAGES, KEY_SERVICE_NAME, KEY_ORDER),
+            State.MENU_SELECTION:       lambda: self.select_action(ACTIONS),
+            State.PREPARE_PLAN:         lambda: self.prepare_plan(SERVICE_LABEL, ACTIONS, KEY_SERVICE_NAME, KEY_ORDER),
             State.CONFIRM:              lambda: self.confirm_action(ACTIONS),
             State.INSTALL_PREPARE:      lambda: self.install_prepare_state(KEY_SERVICE_NAME, KEY_SCRIPT_SRC, KEY_SCRIPT_DEST,
                                                                       KEY_SERVICE_SRC, KEY_SERVICE_DEST, KEY_LOG_PATH,
@@ -611,10 +585,9 @@ class ServicesCLI:
             State.UNINSTALL_STOP:       lambda: self.uninstall_stop_state(KEY_SERVICE_NAME),
             State.UNINSTALL_REMOVE:     lambda: self.uninstall_remove_state(DISABLED_LABEL, KEY_SERVICE_NAME, KEY_SERVICE_DEST,
                                                                         KEY_SCRIPT_DEST, KEY_CONFIG_DEST),
-            # Utility states
-            State.SELECT_LOG:           lambda: self.select_log_state(MESSAGES),
+            State.SELECT_LOG:           lambda: self.select_log_state(),
             State.SHOW_LOG:             lambda: self.show_log_state(),
-            State.RESTART_SELECT:       lambda: self.restart_select_state(MESSAGES, KEY_SERVICE_NAME, KEY_ORDER),
+            State.RESTART_SELECT:       lambda: self.restart_select_state(KEY_SERVICE_NAME, KEY_ORDER),
             State.RESTART_EXECUTE_ALL:  lambda: self.restart_execute_all_state(KEY_SERVICE_NAME),
             State.RESTART_EXECUTE_ONE:  lambda: self.restart_execute_one_state(KEY_SERVICE_NAME),
         }
@@ -624,17 +597,15 @@ class ServicesCLI:
             if fn:
                 fn()
             else:
-                log_and_print(MESSAGES["unknown_state_fmt"].format(
-                    state=getattr(self.state, "name", str(self.state))
-                ))
-                self.finalize_msg = self.finalize_msg or MESSAGES["unknown_state"]
+                log_and_print(f"Unknown state '{getattr(self.state, 'name', str(self.state))}', finalizing.")
+                self.finalize_msg = self.finalize_msg or "Unknown state encountered."
                 self.state = State.FINALIZE
 
         if self.log_dir:
             secure_logs_for_user(self.log_dir, self.sudo_user)
             rotate_logs(self.log_dir, LOGS_TO_KEEP, ROTATE_LOG_NAME)
         if self.log_file:
-            log_and_print(MESSAGES["log_final_fmt"].format(log_file=self.log_file))
+            log_and_print(f"You can find the full log here: {self.log_file}")
 
 
 if __name__ == "__main__":

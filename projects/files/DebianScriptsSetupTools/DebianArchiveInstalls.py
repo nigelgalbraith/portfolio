@@ -122,36 +122,8 @@ CHECK_PATH_KEY       = "CheckPath"
 POST_UNINSTALL_KEY   = "PostUninstall"
 TRASH_PATHS_KEY      = "TrashPaths"
 
-# === CENTRALIZED MESSAGES ===
-MESSAGES = {
-    "user_verification_failed": "User account verification failed.",
-    "deps_failed": "Some required dependencies failed to install.",
-    "unknown_state": "Unknown state encountered.",
-    "unknown_state_fmt": "Unknown state '{state}', finalizing.",
-    "cancelled": "Cancelled by user.",
-    "invalid_selection": "Invalid selection. Please choose a valid option.",
-    "no_items_fmt": "No {what} to process for {verb}.",
-    "detected_model_fmt": "Detected model: {model}",
-    "using_config_fmt": "Using {ctype} config file: {path}",
-    "log_final_fmt": "You can find the full log here: {log_file}",
-    "install_failed_fmt": "{what} INSTALL FAILED: {pkg}",
-    "download_failed_fmt": "DOWNLOAD FAILED: {pkg}",
-    "install_success_fmt": "Installed successfully: {ok}/{total}",
-    "no_post_install": "No packages to post-install.",
-    "post_install_ok_fmt": "POST-INSTALL OK for {pkg}",
-    "service_started_fmt": "SERVICE STARTED for {pkg} ({svc})",
-    "uninstall_failed_fmt": "UNINSTALL FAILED: {pkg}",
-    "uninstall_success_fmt": "Uninstalled successfully: {ok}/{total}",
-    "no_post_uninstall": "No packages to post-uninstall.",
-    "post_uninstall_ok_fmt": "POST-UNINSTALL OK for {pkg}",
-    "post_uninstall_fail_fmt": "POST-UNINSTALL FAILED for {pkg}",
-    "removed_extra_path_fmt": "REMOVED extra path for {pkg}: {path}",
-    "menu_title": "Select an option",
-}
-
 # === MENU / ACTIONS ===
 ACTIONS: Dict[str, Dict] = {
-    "_meta": {"title": "Select an option"},
     f"Install required {ARCHIVE_LABEL}": {
         "install": True,
         "verb": "installation",
@@ -217,32 +189,32 @@ class ArchiveInstaller:
         self.post_uninstall_pkgs: List[str] = []
 
    
-    def setup(self, log_dir: Path, log_prefix: str, required_user: str, messages: Dict[str, str]) -> None:
+    def setup(self, log_dir: Path, log_prefix: str, required_user: str) -> None:
         """Compute log path, init logging, verify user; → DEP_CHECK|FINALIZE."""
         ts = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         self.log_dir = log_dir
         self.log_file = log_dir / f"{log_prefix}_{ts}.log"
         setup_logging(self.log_file, log_dir)
         if not check_account(expected_user=required_user):
-            self.finalize_msg = messages["user_verification_failed"]
+            self.finalize_msg = "User account verification failed."
             self.state = State.FINALIZE
             return
         self.state = State.DEP_CHECK
 
 
-    def ensure_deps(self, deps: List[str], messages: Dict[str, str]) -> None:
+    def ensure_deps(self, deps: List[str]) -> None:
         """Ensure dependencies; → MODEL_DETECTION|FINALIZE."""
         if ensure_dependencies_installed(deps):
             self.state = State.MODEL_DETECTION
         else:
-            self.finalize_msg = messages["deps_failed"]
+            self.finalize_msg = "Some required dependencies failed to install."
             self.state = State.FINALIZE
 
 
-    def detect_model(self, detection_config: Dict, messages: Dict[str, str]) -> None:
+    def detect_model(self, detection_config: Dict) -> None:
         """Detect model and resolve config; → CONFIG_LOADING|FINALIZE."""
         model = get_model()
-        log_and_print(messages["detected_model_fmt"].format(model=model))
+        log_and_print(f"Detected model: {model}")
         primary_cfg = load_json(detection_config["primary_config"])
         cfg_path, used_default = resolve_value(
             primary_cfg,
@@ -260,9 +232,7 @@ class ArchiveInstaller:
             return
 
         log_and_print(
-            messages["using_config_fmt"].format(
-                ctype=detection_config["config_type"].upper(), path=cfg_path
-            )
+            f"Using {detection_config['config_type'].upper()} config file: {cfg_path}"
         )
         if used_default:
             log_and_print(
@@ -314,32 +284,32 @@ class ArchiveInstaller:
         self.state = State.MENU_SELECTION
 
 
-    def select_action(self, actions: Dict[str, Dict], messages: Dict[str, str]) -> None:
+    def select_action(self, actions: Dict[str, Dict]) -> None:
         """Prompt for action; set current_action_key; → PREPARE_PLAN|FINALIZE."""
-        menu_title = actions.get("_meta", {}).get("title", messages["menu_title"])
-        options = [k for k in actions.keys() if k != "_meta"]
+        menu_title = "Select an option"
+        options = list(actions.keys())
         choice = None
         while choice not in options:
             choice = select_from_list(menu_title, options)
             if choice not in options:
-                log_and_print(messages["invalid_selection"])
+                log_and_print("Invalid selection. Please choose a valid option.")
         spec = actions[choice]
         if spec["next_state"] is None:
-            self.finalize_msg = messages["cancelled"]
+            self.finalize_msg = "Cancelled by user."
             self.state = State.FINALIZE
             return
         self.current_action_key = choice
         self.state = State.PREPARE_PLAN
 
 
-    def prepare_plan(self, key_label: str, actions: Dict[str, Dict], messages: Dict[str, str]) -> None:
+    def prepare_plan(self, key_label: str, actions: Dict[str, Dict]) -> None:
         """Build and print plan; set selected_packages; → CONFIRM|MENU_SELECTION."""
         spec = actions[self.current_action_key]
         verb = spec["verb"]
         filter_status = spec["filter_status"]
         pkg_names = sorted(filter_by_status(self.status_map, filter_status))
         if not pkg_names:
-            log_and_print(messages["no_items_fmt"].format(what=key_label, verb=verb))
+            log_and_print(f"No {key_label} to process for {verb}.")
             self.state = State.MENU_SELECTION
             return
         rows: List[Dict[str, str]] = []
@@ -388,15 +358,12 @@ class ArchiveInstaller:
             if not extract_to:   missing.append(extract_to_key)
             if not dl_path:      missing.append(download_path_key)
             if missing:
-                log_and_print(MESSAGES["install_failed_fmt"].format(
-                    what="ARCHIVE",
-                    pkg=f"{pkg} (missing {', '.join(missing)})"
-                ))
+                log_and_print("ARCHIVE INSTALL FAILED: " + f"{pkg} (missing {', '.join(missing)})")
                 continue
             Path(dl_path).mkdir(parents=True, exist_ok=True)
             archive_path = download_archive_file(pkg, download_url, dl_path)
             if not archive_path:
-                log_and_print(MESSAGES["download_failed_fmt"].format(pkg=pkg))
+                log_and_print(f"DOWNLOAD FAILED: {pkg}")
                 continue
             ok = install_archive_file(archive_path, extract_to, strip_top_level)
             handle_cleanup(archive_path, ok, pkg, "INSTALL FAILED")
@@ -404,17 +371,17 @@ class ArchiveInstaller:
                 log_and_print(f"ARCHIVE {INSTALLED_LABEL}: {pkg}")
                 ok_names.append(pkg)
             else:
-                log_and_print(MESSAGES["install_failed_fmt"].format(what="ARCHIVE", pkg=pkg))
+                log_and_print("ARCHIVE INSTALL FAILED: " + f"{pkg}")
         self.post_install_pkgs = ok_names
         self.selected_packages = []
-        self.finalize_msg = MESSAGES["install_success_fmt"].format(ok=len(ok_names), total=total)
+        self.finalize_msg = f"Installed successfully: {len(ok_names)}/{total}"
         self.state = State.POST_INSTALL
 
 
     def post_install_steps_state(self, post_install_key: str, enable_service_key: str) -> None:
         """Run per-package post-install commands and start services; → PACKAGE_STATUS."""
         if not getattr(self, "post_install_pkgs", None):
-            log_and_print(MESSAGES["no_post_install"])
+            log_and_print("No packages to post-install.")
             self.state = State.PACKAGE_STATUS
             return
         for pkg in self.post_install_pkgs:
@@ -424,11 +391,11 @@ class ArchiveInstaller:
                 cmds = [cmds]
             if cmds:
                 run_post_install_commands(cmds)
-                log_and_print(MESSAGES["post_install_ok_fmt"].format(pkg=pkg))
+                log_and_print(f"POST-INSTALL OK for {pkg}")
             svc = meta.get(enable_service_key, "")
             if svc:
                 start_service_standard(svc)
-                log_and_print(MESSAGES["service_started_fmt"].format(pkg=pkg, svc=svc))
+                log_and_print(f"SERVICE STARTED for {pkg} ({svc})")
         self.state = State.PACKAGE_STATUS
 
 
@@ -441,20 +408,20 @@ class ArchiveInstaller:
             check_path = meta.get(check_path_key) or meta.get(extract_to_key, "")
             check_path = expand_path(check_path)
             if not uninstall_archive_install(check_path):
-                log_and_print(MESSAGES["uninstall_failed_fmt"].format(pkg=pkg))
+                log_and_print(f"UNINSTALL FAILED: {pkg}")
                 continue
             log_and_print(f"ARCHIVE {UNINSTALLED_LABEL}: {pkg}")
             ok_names.append(pkg)
         self.post_uninstall_pkgs = ok_names
         self.selected_packages = []
-        self.finalize_msg = MESSAGES["uninstall_success_fmt"].format(ok=len(ok_names), total=total)
+        self.finalize_msg = f"Uninstalled successfully: {len(ok_names)}/{total}"
         self.state = State.POST_UNINSTALL
 
 
     def post_uninstall_steps_state(self, post_uninstall_key: str, trash_paths_key: str) -> None:
         """Run post-uninstall commands and trash/cleanup paths; → PACKAGE_STATUS."""
         if not getattr(self, "post_uninstall_pkgs", None):
-            log_and_print(MESSAGES["no_post_uninstall"])
+            log_and_print("No packages to post-uninstall.")
             self.state = State.PACKAGE_STATUS
             return
         for pkg in self.post_uninstall_pkgs:
@@ -464,14 +431,14 @@ class ArchiveInstaller:
                 pu_cmds = [pu_cmds]
             if pu_cmds:
                 if run_post_install_commands(pu_cmds):
-                    log_and_print(MESSAGES["post_uninstall_ok_fmt"].format(pkg=pkg))
+                    log_and_print(f"POST-UNINSTALL OK for {pkg}")
                 else:
-                    log_and_print(MESSAGES["post_uninstall_fail_fmt"].format(pkg=pkg))
+                    log_and_print(f"POST-UNINSTALL FAILED for {pkg}")
             for p in meta.get(trash_paths_key, []):
                 expanded = expand_path(p)
                 removed = move_to_trash(expanded) or sudo_remove_path(expanded)
                 if removed:
-                    log_and_print(MESSAGES["removed_extra_path_fmt"].format(pkg=pkg, path=expanded))
+                    log_and_print(f"REMOVED extra path for {pkg}: {expanded}")
         self.state = State.PACKAGE_STATUS
 
 
@@ -479,13 +446,13 @@ class ArchiveInstaller:
     def main(self) -> None:
         """Run the state machine until FINALIZE via a dispatch table."""
         handlers: Dict[State, Callable[[], None]] = {
-            State.INITIAL:         lambda: self.setup(LOG_DIR, LOG_PREFIX, REQUIRED_USER, MESSAGES),
-            State.DEP_CHECK:       lambda: self.ensure_deps(DEPENDENCIES, MESSAGES),
-            State.MODEL_DETECTION: lambda: self.detect_model(DETECTION_CONFIG, MESSAGES),
+            State.INITIAL:         lambda: self.setup(LOG_DIR, LOG_PREFIX, REQUIRED_USER),
+            State.DEP_CHECK:       lambda: self.ensure_deps(DEPENDENCIES),
+            State.MODEL_DETECTION: lambda: self.detect_model(DETECTION_CONFIG),
             State.CONFIG_LOADING:  lambda: self.load_model_block(ARCHIVE_KEY, ARCHIVE_LABEL),
             State.PACKAGE_STATUS:  lambda: self.build_status_map(CHECK_PATH_KEY, EXTRACT_TO_KEY, SUMMARY_LABEL, INSTALLED_LABEL, UNINSTALLED_LABEL),
-            State.MENU_SELECTION:  lambda: self.select_action(ACTIONS, MESSAGES),
-            State.PREPARE_PLAN:    lambda: self.prepare_plan(ARCHIVE_LABEL, ACTIONS, MESSAGES),
+            State.MENU_SELECTION:  lambda: self.select_action(ACTIONS),
+            State.PREPARE_PLAN:    lambda: self.prepare_plan(ARCHIVE_LABEL, ACTIONS),
             State.CONFIRM:         lambda: self.confirm_action(ACTIONS),
             State.INSTALL_STATE:   lambda: self.install_archives_state(DOWNLOAD_URL_KEY, EXTRACT_TO_KEY, STRIP_TOP_LEVEL_KEY, DOWNLOAD_PATH_KEY),
             State.POST_INSTALL:    lambda: self.post_install_steps_state(POST_INSTALL_KEY, ENABLE_SERVICE_KEY),
@@ -498,10 +465,8 @@ class ArchiveInstaller:
             if handler:
                 handler()
             else:
-                log_and_print(MESSAGES["unknown_state_fmt"].format(
-                    state=getattr(self.state, "name", str(self.state))
-                ))
-                self.finalize_msg = self.finalize_msg or MESSAGES["unknown_state"]
+                log_and_print(f"Unknown state '{getattr(self.state, 'name', str(self.state))}', finalizing.")
+                self.finalize_msg = self.finalize_msg or "Unknown state encountered."
                 self.state = State.FINALIZE
 
         # Finalization
@@ -509,7 +474,7 @@ class ArchiveInstaller:
         if self.finalize_msg:
             log_and_print(self.finalize_msg)
         if self.log_file:
-            log_and_print(MESSAGES["log_final_fmt"].format(log_file=self.log_file))
+            log_and_print(f"You can find the full log here: {self.log_file}")
 
 
 if __name__ == "__main__":

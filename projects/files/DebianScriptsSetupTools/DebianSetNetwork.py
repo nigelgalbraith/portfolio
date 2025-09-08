@@ -95,42 +95,13 @@ LABEL_FIELD   = "Field"
 LABEL_VALUE   = "Value"
 
 
-# === CENTRALIZED MESSAGES ===
-MESSAGES = {
-    "user_verification_failed": "User account verification failed.",
-    "invalid_selection": "Invalid selection. Please choose a valid option.",
-    "cancelled": "Operation was cancelled by the user.",
-    "unknown_state": "Unknown state encountered.",
-    "unknown_state_fmt": "Unknown state '{state}', finalizing.",
-    "detected_model_fmt": "Detected model: {model}",
-    "using_config_fmt": "Using {ctype} config file: {path}",
-    "no_items_fmt": "No {what} to process for {verb}.",
-    "log_final_fmt": "You can find the full log here: {log_file}",
-    "menu_title": "Select an option",
-    "nmcli_missing": "ERROR: 'nmcli' not available.",
-    "no_ssids_fmt": "No SSIDs found in network presets for model '{model}'.",
-    "ssid_menu_title": "Select a Wi-Fi SSID from config",
-    "selected_ssid_fmt": "Selected SSID: {ssid}",
-    "apply_prompt": "\nApply these settings now? [y/n]: ",
-    "conn_exists_fmt": "Connection '{name}' exists: {exists}",
-    "mod_static_fmt": "Modifying to Static: {name}",
-    "new_static_fmt": "Creating Static: {name}",
-    "mod_dhcp_fmt": "Modifying to DHCP: {name}",
-    "new_dhcp_fmt": "Creating DHCP: {name}",
-    "apply_success": "Configuration completed successfully.",
-    "done_fmt": "Done. Log: {log_file}",
-    "done_with_errors_fmt": "Completed with errors. Log: {log_file}",
-    "ssid_cancelled": "SSID selection cancelled. Returning to main menu.",
-}
-
 # === ACTIONS (single source of truth) ===
 ACTIONS: Dict[str, Dict] = {
-    "_meta": {"title": "Select an option"},
     "Static": {
         "install": True,                 
         "verb": "apply static",
         "filter_status": None,           
-        "prompt": MESSAGES["apply_prompt"],
+        "prompt": "\nApply these settings now? [y/n]: ",
         "next_state": "APPLY_STATIC",
         "action_key": "Static",
     },
@@ -138,7 +109,7 @@ ACTIONS: Dict[str, Dict] = {
         "install": False,
         "verb": "apply dhcp",
         "filter_status": None,
-        "prompt": MESSAGES["apply_prompt"],
+        "prompt": "\nApply these settings now? [y/n]: ",
         "next_state": "APPLY_DHCP",
         "action_key": "DHCP",
     },
@@ -190,10 +161,10 @@ class NetworkPresetCLI:
         self.preset: Optional[Dict] = None
 
 
-    def setup(self, log_subdir: str, file_prefix: str, required_user: str, messages: Dict[str, str]) -> None:
+    def setup(self, log_subdir: str, file_prefix: str, required_user: str) -> None:
         """Compute log path in the invoking user's home; init logging; verify user; → DEP_CHECK or FINALIZE."""
         if not check_account(required_user):
-            self.finalize_msg = messages["user_verification_failed"]
+            self.finalize_msg = "User account verification failed."
             self.state = State.FINALIZE
             return
         self.sudo_user = os.getenv("SUDO_USER")
@@ -205,20 +176,20 @@ class NetworkPresetCLI:
         self.state = State.DEP_CHECK
 
 
-    def ensure_deps(self, deps: List[str], messages: Dict[str, str]) -> None:
+    def ensure_deps(self, deps: List[str]) -> None:
         """Ensure dependencies and nmcli; → MODEL_DETECTION or FINALIZE."""
         ensure_dependencies_installed(deps)
         if not nmcli_ok():
-            log_and_print(messages["nmcli_missing"])
+            log_and_print("ERROR: 'nmcli' not available.")
             self.state = State.FINALIZE
             return
         self.state = State.MODEL_DETECTION
 
 
-    def detect_model(self, detection_config: Dict, messages: Dict[str, str]) -> None:
+    def detect_model(self, detection_config: Dict) -> None:
         """Detect model and resolve config path; → CONFIG_LOADING or FINALIZE."""
         model = get_model()
-        log_and_print(messages["detected_model_fmt"].format(model=model))
+        log_and_print(f"Detected model: {model}")
         primary = load_json(detection_config["primary_config"])
         config_path, used_default = resolve_value(
             primary,
@@ -233,10 +204,7 @@ class NetworkPresetCLI:
             )
             self.state = State.FINALIZE
             return
-        log_and_print(messages["using_config_fmt"].format(
-            ctype=detection_config["config_type"],
-            path=config_path,
-        ))
+        log_and_print(f"Using {detection_config['config_type']} config file: {config_path}")
         if used_default:
             log_and_print(
                 detection_config["default_config_note"].format(
@@ -251,12 +219,12 @@ class NetworkPresetCLI:
         self.state = State.CONFIG_LOADING
 
 
-    def load_config(self, feature_key: str, messages: Dict[str, str]) -> None:
+    def load_config(self, feature_key: str) -> None:
         """Load SSID block from <model> → Networks; → MENU_SELECTION or FINALIZE."""
         cfg = load_json(self.config_path)
         networks_block = (cfg.get(self.model, {}) or {}).get(feature_key, {})
         if not isinstance(networks_block, dict) or not networks_block:
-            log_and_print(messages["no_ssids_fmt"].format(model=self.model))
+            log_and_print(f"No SSIDs found in network presets for model '{self.model}'.")
             self.state = State.FINALIZE
             return
         self.networks_block = networks_block
@@ -264,49 +232,49 @@ class NetworkPresetCLI:
         self.state = State.MENU_SELECTION
 
 
-    def select_action(self, actions: Dict[str, Dict], messages: Dict[str, str]) -> None:
+    def select_action(self, actions: Dict[str, Dict]) -> None:
         """Choose action Static/DHCP; → SSID_SELECTION or FINALIZE."""
-        title = actions.get("_meta", {}).get("title", messages["menu_title"])
-        options = [k for k in actions.keys() if k != "_meta"]
+        title = "Select an option"
+        options = list(actions.keys())
         choice = None
         while choice not in options:
             choice = select_from_list(title, options)
             if choice not in options:
-                log_and_print(messages["invalid_selection"])
+                log_and_print("Invalid selection. Please choose a valid option.")
         spec = actions[choice]
         if spec["next_state"] is None:
-            self.finalize_msg = messages["cancelled"]
+            self.finalize_msg = "Operation was cancelled by the user."
             self.state = State.FINALIZE
             return
         self.current_action_key = choice
         self.state = State.SSID_SELECTION
 
 
-    def select_ssid(self, messages: Dict[str, str]) -> None:
+    def select_ssid(self) -> None:
         """Pick SSID from config; → PREPARE_PLAN or MENU_SELECTION."""
         options = self.ssids + ["Cancel"]
         ssid = None
         while ssid not in options:
-            ssid = select_from_list(messages["ssid_menu_title"], options)
+            ssid = select_from_list("Select a Wi-Fi SSID from config", options)
             if ssid not in options:
-                log_and_print(messages["invalid_selection"])
+                log_and_print("Invalid selection. Please choose a valid option.")
 
         if ssid == "Cancel":
-            log_and_print(messages["ssid_cancelled"])
+            log_and_print("SSID selection cancelled. Returning to main menu.")
             self.state = State.MENU_SELECTION
             return
         self.selected_ssid = ssid
-        log_and_print(messages["selected_ssid_fmt"].format(ssid=ssid))
+        log_and_print(f"Selected SSID: {ssid}")
         self.state = State.PREPARE_PLAN
 
 
-    def prepare_plan(self, messages: Dict[str, str], summary_label: str, label_field: str,
+    def prepare_plan(self, summary_label: str, label_field: str,
                      label_value: str, key_model: str, key_ssid: str, key_action: str,
                      key_conn_name: str, key_interface: str, key_address: str,
                      key_gateway: str, key_dns: str) -> None:
         """Build preset and print summary; → CONFIRM."""
         if not self.current_action_key:
-            log_and_print(messages["invalid_selection"])
+            log_and_print("Invalid selection. Please choose a valid option.")
             self.state = State.MENU_SELECTION
             return
         preset = build_preset(self.networks_block, self.selected_ssid)
@@ -337,55 +305,55 @@ class NetworkPresetCLI:
         self.state = State[spec["next_state"]]
         
 
-    def apply_static(self, messages: Dict[str, str], key_conn_name: str) -> None:
+    def apply_static(self, key_conn_name: str) -> None:
         """Create/modify connection for Static; bring up; → FINALIZE."""
         assert self.preset is not None
         name = self.preset.get(key_conn_name, self.selected_ssid)
         exists = connection_exists(name)
-        log_and_print(messages["conn_exists_fmt"].format(name=name, exists=exists))
+        log_and_print(f"Connection '{name}' exists: {exists}")
         if exists:
-            log_and_print(messages["mod_static_fmt"].format(name=name))
+            log_and_print(f"Modifying to Static: {name}")
             modify_static_connection(self.preset, self.selected_ssid)
         else:
-            log_and_print(messages["new_static_fmt"].format(name=name))
+            log_and_print(f"Creating Static: {name}")
             create_static_connection(self.preset, self.selected_ssid)
         bring_up_connection(name)
-        log_and_print(messages["apply_success"])
+        log_and_print("Configuration completed successfully.")
         self.state = State.FINALIZE
 
 
-    def apply_dhcp(self, messages: Dict[str, str], key_conn_name: str) -> None:
+    def apply_dhcp(self, key_conn_name: str) -> None:
         """Create/modify connection for DHCP; bring up; → FINALIZE."""
         assert self.preset is not None
         name = self.preset.get(key_conn_name, self.selected_ssid)
         exists = connection_exists(name)
-        log_and_print(messages["conn_exists_fmt"].format(name=name, exists=exists))
+        log_and_print(f"Connection '{name}' exists: {exists}")
         if exists:
-            log_and_print(messages["mod_dhcp_fmt"].format(name=name))
+            log_and_print(f"Modifying to DHCP: {name}")
             modify_dhcp_connection(self.preset, self.selected_ssid)
         else:
-            log_and_print(messages["new_dhcp_fmt"].format(name=name))
+            log_and_print(f"Creating DHCP: {name}")
             create_dhcp_connection(self.preset, self.selected_ssid)
         bring_up_connection(name)
-        log_and_print(messages["apply_success"])
+        log_and_print("Configuration completed successfully.")
         self.state = State.FINALIZE
 
 
     # === MAIN === 
     def main(self) -> None:
         handlers: Dict[State, Callable[[], None]] = {
-            State.INITIAL:         lambda: self.setup(LOG_SUBDIR, LOG_FILE_PREFIX, REQUIRED_USER, MESSAGES),
-            State.DEP_CHECK:       lambda: self.ensure_deps(DEPENDENCIES, MESSAGES),
-            State.MODEL_DETECTION: lambda: self.detect_model(DETECTION_CONFIG, MESSAGES),
-            State.CONFIG_LOADING:  lambda: self.load_config(FEATURE_KEY, MESSAGES),
-            State.MENU_SELECTION:  lambda: self.select_action(ACTIONS, MESSAGES),
-            State.SSID_SELECTION:  lambda: self.select_ssid(MESSAGES),
-            State.PREPARE_PLAN:    lambda: self.prepare_plan(MESSAGES, SUMMARY_LABEL, LABEL_FIELD, LABEL_VALUE,
+            State.INITIAL:         lambda: self.setup(LOG_SUBDIR, LOG_FILE_PREFIX, REQUIRED_USER),
+            State.DEP_CHECK:       lambda: self.ensure_deps(DEPENDENCIES),
+            State.MODEL_DETECTION: lambda: self.detect_model(DETECTION_CONFIG),
+            State.CONFIG_LOADING:  lambda: self.load_config(FEATURE_KEY),
+            State.MENU_SELECTION:  lambda: self.select_action(ACTIONS),
+            State.SSID_SELECTION:  lambda: self.select_ssid(),
+            State.PREPARE_PLAN:    lambda: self.prepare_plan(SUMMARY_LABEL, LABEL_FIELD, LABEL_VALUE,
                                                           KEY_MODEL, KEY_SSID, KEY_ACTION, KEY_CONN_NAME,
                                                           KEY_INTERFACE, KEY_ADDRESS, KEY_GATEWAY, KEY_DNS),
             State.CONFIRM:         lambda: self.confirm_action(ACTIONS),
-            State.APPLY_STATIC:    lambda: self.apply_static(MESSAGES, KEY_CONN_NAME),
-            State.APPLY_DHCP:      lambda: self.apply_dhcp(MESSAGES, KEY_CONN_NAME),
+            State.APPLY_STATIC:    lambda: self.apply_static(KEY_CONN_NAME),
+            State.APPLY_DHCP:      lambda: self.apply_dhcp(KEY_CONN_NAME),
         }
 
         while self.state != State.FINALIZE:
@@ -393,10 +361,8 @@ class NetworkPresetCLI:
             if fn:
                 fn()
             else:
-                log_and_print(MESSAGES["unknown_state_fmt"].format(
-                    state=getattr(self.state, "name", str(self.state))
-                ))
-                self.finalize_msg = self.finalize_msg or MESSAGES["unknown_state"]
+                log_and_print(f"Unknown state '{getattr(self.state, 'name', str(self.state))}', finalizing.")
+                self.finalize_msg = self.finalize_msg or "Unknown state encountered."
                 self.state = State.FINALIZE
 
         # Finalization: secure & rotate logs, print path
@@ -404,7 +370,7 @@ class NetworkPresetCLI:
             secure_logs_for_user(self.log_dir, self.sudo_user)
             rotate_logs(self.log_dir, LOGS_TO_KEEP, ROTATE_LOG_NAME)
         if self.log_file:
-            log_and_print(MESSAGES["log_final_fmt"].format(log_file=self.log_file))
+            log_and_print(f"You can find the full log here: {self.log_file}")
 
 
 if __name__ == "__main__":

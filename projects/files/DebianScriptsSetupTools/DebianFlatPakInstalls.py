@@ -108,28 +108,11 @@ SUMMARY_LABEL     = "Flatpak applications"
 INSTALLED_LABEL   = "INSTALLED"
 UNINSTALLED_LABEL = "UNINSTALLED"
 
-# === CENTRALIZED MESSAGES ===
-MESSAGES = {
-    "user_verification_failed": "User account verification failed.",
-    "deps_failed": "Some required dependencies failed to install.",
-    "unknown_state": "Unknown state encountered.",
-    "unknown_state_fmt": "Unknown state '{state}', finalizing.",
-    "cancelled": "Cancelled by user.",
-    "invalid_selection": "Invalid selection. Please choose a valid option.",
-    "no_jobs_fmt": "No {what} to process for {verb}.",
-    "detected_model_fmt": "Detected model: {model}",
-    "using_config_fmt": "Using {ctype} config file: {path}",
-    "log_final_fmt": "You can find the full log here: {log_file}",
-}
-
 # === Dependencies to ensure ===
 DEPENDENCIES = ["flatpak"]
 
 # === (menu label → action spec) ===
 ACTIONS: Dict[str, Dict] = {
-    "_meta": {
-        "title": "Select an option",
-    },
     f"Install required {SUMMARY_LABEL}": {
         "install": True,
         "verb": "installation",
@@ -195,25 +178,25 @@ class FlatpakInstaller:
         self.current_action_key: Optional[str] = None
         
 
-    def setup(self, log_dir: Path, log_prefix: str, required_user: str, messages: Dict[str, str]) -> None:
+    def setup(self, log_dir: Path, log_prefix: str, required_user: str) -> None:
         """Initialize logging and verify user; advance to DEP_CHECK or FINALIZE."""
         ts = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         self.log_dir = log_dir
         self.log_file = log_dir / f"{log_prefix}_{ts}.log"
         setup_logging(self.log_file, log_dir)
         if not check_account(expected_user=required_user):
-            self.finalize_msg = messages["user_verification_failed"]
+            self.finalize_msg = "User account verification failed."
             self.state = State.FINALIZE
             return
         self.state = State.DEP_CHECK
         
         
-    def ensure_deps(self, deps: List[str], messages: Dict[str, str]) -> None:
+    def ensure_deps(self, deps: List[str]) -> None:
         """Ensure dependencies; advance to REMOTE_SETUP or FINALIZE."""
         if ensure_dependencies_installed(deps):
             self.state = State.REMOTE_SETUP
         else:
-            self.finalize_msg = messages["deps_failed"]
+            self.finalize_msg = "Some required dependencies failed to install."
             self.state = State.FINALIZE
 
 
@@ -223,10 +206,10 @@ class FlatpakInstaller:
         self.state = State.MODEL_DETECTION
 
 
-    def detect_model(self, detection_config: Dict, messages: Dict[str, str]) -> None:
+    def detect_model(self, detection_config: Dict) -> None:
         """Detect model and resolve config; advance to CONFIG_LOADING or FINALIZE."""
         model = get_model()
-        log_and_print(messages["detected_model_fmt"].format(model=model))
+        log_and_print(f"Detected model: {model}")
         primary_cfg = load_json(detection_config["primary_config"])
         flatpak_file, used_default = resolve_value(
             primary_cfg,
@@ -241,10 +224,7 @@ class FlatpakInstaller:
             )
             self.state = State.FINALIZE
             return
-        log_and_print(messages["using_config_fmt"].format(
-            ctype=detection_config["config_type"].upper(),
-            path=flatpak_file,
-        ))
+        log_and_print(f"Using {detection_config['config_type'].upper()} config file: {flatpak_file}")
         if used_default:
             log_and_print(
                 detection_config["default_config_note"].format(
@@ -286,31 +266,31 @@ class FlatpakInstaller:
         self.state = State.MENU_SELECTION
 
 
-    def select_action(self, actions: Dict[str, Dict], messages: Dict[str, str]) -> None:
+    def select_action(self, actions: Dict[str, Dict]) -> None:
         """Prompt for action; set current_action_key or finalize on cancel."""
-        menu_title = actions.get("_meta", {}).get("title", "Select an option")
-        options = [k for k in actions.keys() if k != "_meta"]
+        menu_title = "Select an option"
+        options = list(actions.keys())
         choice = None
         while choice not in options:
             choice = select_from_list(menu_title, options)
             if choice not in options:
-                log_and_print(messages["invalid_selection"])
+                log_and_print("Invalid selection. Please choose a valid option.")
         spec = actions[choice]
         if spec["next_state"] is None:
-            self.finalize_msg = messages["cancelled"]
+            self.finalize_msg = "Cancelled by user."
             self.state = State.FINALIZE
             return
         self.current_action_key = choice
         self.state = State.PREPARE_PLAN
 
 
-    def prepare_plan(self, key_label: str, actions: Dict[str, Dict], messages: Dict[str, str]) -> None:
+    def prepare_plan(self, key_label: str, actions: Dict[str, Dict]) -> None:
         """Build and print plan; advance to CONFIRM or bounce to MENU_SELECTION."""
         spec = actions[self.current_action_key]
         verb = spec["verb"]
         app_names = sorted(filter_by_status(self.app_status, spec["filter_status"]))
         if not app_names:
-            log_and_print(messages["no_jobs_fmt"].format(what=key_label, verb=verb))
+            log_and_print(f"No {key_label} to process for {verb}.")
             self.state = State.MENU_SELECTION
             return
         plan_rows = []
@@ -385,14 +365,14 @@ class FlatpakInstaller:
     def main(self) -> None:
         """Run the state machine to FINALIZE via a dispatch table."""
         handlers: Dict[State, Callable[[], None]] = {
-            State.INITIAL:         lambda: self.setup(LOG_DIR, LOG_PREFIX, REQUIRED_USER, MESSAGES),
-            State.DEP_CHECK:       lambda: self.ensure_deps(DEPENDENCIES, MESSAGES),
+            State.INITIAL:         lambda: self.setup(LOG_DIR, LOG_PREFIX, REQUIRED_USER),
+            State.DEP_CHECK:       lambda: self.ensure_deps(DEPENDENCIES),
             State.REMOTE_SETUP:    lambda: self.ensure_remote(),
-            State.MODEL_DETECTION: lambda: self.detect_model(DETECTION_CONFIG, MESSAGES),
+            State.MODEL_DETECTION: lambda: self.detect_model(DETECTION_CONFIG),
             State.CONFIG_LOADING:  lambda: self.load_model_block(FLATPAK_KEY, SUMMARY_LABEL),
             State.PACKAGE_STATUS:  lambda: self.build_status_map(SUMMARY_LABEL, INSTALLED_LABEL, UNINSTALLED_LABEL),
-            State.MENU_SELECTION:  lambda: self.select_action(ACTIONS, MESSAGES),
-            State.PREPARE_PLAN:    lambda: self.prepare_plan(SUMMARY_LABEL, ACTIONS, MESSAGES),
+            State.MENU_SELECTION:  lambda: self.select_action(ACTIONS),
+            State.PREPARE_PLAN:    lambda: self.prepare_plan(SUMMARY_LABEL, ACTIONS),
             State.CONFIRM:         lambda: self.confirm_action(ACTIONS),
             State.INSTALL_STATE:   lambda: self.install_flatpaks_state(REMOTE_KEY, INSTALLED_LABEL),
             State.UNINSTALL_STATE: lambda: self.uninstall_flatpaks_state(UNINSTALLED_LABEL),
@@ -404,10 +384,8 @@ class FlatpakInstaller:
                 handler()
             else:
                 # Unknown state safety net
-                log_and_print(MESSAGES["unknown_state_fmt"].format(
-                    state=getattr(self.state, "name", str(self.state))
-                ))
-                self.finalize_msg = self.finalize_msg or MESSAGES["unknown_state"]
+                log_and_print(f"Unknown state '{getattr(self.state, 'name', str(self.state))}', finalizing.")
+                self.finalize_msg = self.finalize_msg or "Unknown state encountered."
                 self.state = State.FINALIZE
 
         # Finalization
@@ -415,9 +393,8 @@ class FlatpakInstaller:
         if self.finalize_msg:
             log_and_print(self.finalize_msg)
         if self.log_file:
-            log_and_print(MESSAGES["log_final_fmt"].format(log_file=self.log_file))
+            log_and_print(f"You can find the full log here: {self.log_file}")
 
 
 if __name__ == "__main__":
     FlatpakInstaller().main()
-

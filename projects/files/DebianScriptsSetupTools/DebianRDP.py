@@ -101,25 +101,8 @@ SUMMARY_LABEL     = "XRDP Service"
 INSTALLED_LABEL   = "INSTALLED"
 NOT_INSTALLED     = "NOT INSTALLED"
 
-# === CENTRALIZED MESSAGES ===
-MESSAGES = {
-    "user_verification_failed": "User account verification failed.",
-    "unknown_state": "Unknown state encountered.",
-    "unknown_state_fmt": "Unknown state '{state}', finalizing.",
-    "cancelled": "Operation was cancelled by the user.",
-    "invalid_selection": "Invalid selection. Please choose a valid option.",
-    "no_jobs_fmt": "No {what} to process for {verb}.",
-    "detected_model_fmt": "Detected model: {model}",
-    "using_config_fmt": "Using {ctype} config file: {path}",
-    "log_final_fmt": "All actions complete. Log: {log_file}",
-    "renew_start": "Regenerating XRDP keys/certs...",
-    "renew_ok": "XRDP keys/certs regenerated successfully.",
-    "renew_fail": "Key regeneration failed.",
-}
-
 # === ACTIONS ===
 ACTIONS: Dict[str, Dict] = {
-    "_meta": {"title": "Select an option"},
     "Install XRDP + XFCE": {
         "verb": "installation",
         "prompt": "Proceed with XRDP installation? [y/n]: ",
@@ -198,7 +181,7 @@ class RDPInstaller:
         self.current_action_key: Optional[str] = None
 
 
-    def setup(self, required_user: str, messages: Dict[str, str], file_prefix: str) -> None:
+    def setup(self, required_user: str, file_prefix: str) -> None:
         sudo_user = os.getenv("SUDO_USER")
         base_home = Path("/home") / sudo_user if sudo_user else Path.home()
         self.log_dir = base_home / LOG_SUBDIR
@@ -206,15 +189,15 @@ class RDPInstaller:
         self.log_file = self.log_dir / f"{file_prefix}_install_{ts}.log"
         setup_logging(self.log_file, self.log_dir)
         if not check_account(expected_user=required_user):
-            self.finalize_msg = messages["user_verification_failed"]
+            self.finalize_msg = "User account verification failed."
             self.state = State.FINALIZE
             return
         self.state = State.MODEL_DETECTION
 
         
-    def detect_model(self, detection_cfg: Dict, messages: Dict[str, str]) -> None:
+    def detect_model(self, detection_cfg: Dict) -> None:
         model = get_model()
-        log_and_print(messages["detected_model_fmt"].format(model=model))
+        log_and_print(f"Detected model: {model}")
         primary_cfg = load_json(detection_cfg["primary_config"])
         cfg_path, used_default = resolve_value(
             primary_cfg,
@@ -229,9 +212,7 @@ class RDPInstaller:
             )
             self.state = State.FINALIZE
             return
-        log_and_print(messages["using_config_fmt"].format(
-            ctype=detection_cfg["config_type"].upper(), path=cfg_path
-        ))
+        log_and_print(f"Using {detection_cfg['config_type'].upper()} config file: {cfg_path}")
         if used_default:
             log_and_print(
                 detection_cfg["default_config_note"].format(
@@ -272,25 +253,25 @@ class RDPInstaller:
         self.state = State.MENU_SELECTION
 
 
-    def select_action(self, actions: Dict[str, Dict], messages: Dict[str, str]) -> None:
-        title = actions.get("_meta", {}).get("title", "Select an option")
-        options = [k for k in actions.keys() if k != "_meta"]
+    def select_action(self, actions: Dict[str, Dict]) -> None:
+        title = "Select an option"
+        options = list(actions.keys())
         choice = None
         while choice not in options:
             choice = select_from_list(title, options)
             if choice not in options:
-                log_and_print(messages["invalid_selection"])
+                log_and_print("Invalid selection. Please choose a valid option.")
         spec = actions[choice]
         if spec["next_state"] is None:
-            self.finalize_msg = messages["cancelled"]
+            self.finalize_msg = "Operation was cancelled by the user."
             self.state = State.FINALIZE
             return
         if spec.get("requires_present") and not self.service_present:
-            log_and_print(messages["no_jobs_fmt"].format(what="XRDP", verb=spec["verb"]))
+            log_and_print(f"No XRDP to process for {spec['verb']}.")
             self.state = State.PACKAGE_STATUS
             return
         if spec.get("requires_absent") and self.service_present:
-            log_and_print(messages["no_jobs_fmt"].format(what="XRDP", verb=spec["verb"]))
+            log_and_print(f"No XRDP to process for {spec['verb']}.")
             self.state = State.PACKAGE_STATUS
             return
         self.current_action_key = choice
@@ -356,30 +337,30 @@ class RDPInstaller:
         self.state = State.PACKAGE_STATUS
 
 
-    def renew_state(self, key_service: str, key_ssl_cert_dir: str, key_ssl_key_dir: str, key_xrdp_dir: str, messages: Dict[str, str]) -> None:
+    def renew_state(self, key_service: str, key_ssl_cert_dir: str, key_ssl_key_dir: str, key_xrdp_dir: str) -> None:
         svc = self.rdp_block[key_service]
         cert_dir = Path(self.rdp_block[key_ssl_cert_dir])
         key_dir  = Path(self.rdp_block[key_ssl_key_dir])
         xrdp_dir = Path(self.rdp_block[key_xrdp_dir])
-        log_and_print(messages["renew_start"])
+        log_and_print("Regenerating XRDP keys/certs...")
         ok = regenerate_xrdp_keys(service_name=svc, ssl_cert_dir=cert_dir, ssl_key_dir=key_dir, xrdp_dir=xrdp_dir)
-        log_and_print(messages["renew_ok"] if ok else messages["renew_fail"])
+        log_and_print("XRDP keys/certs regenerated successfully." if ok else "Key regeneration failed.")
         self.state = State.PACKAGE_STATUS
 
     # === MAIN / DISPATCH ===
     def main(self) -> None:
         handlers: Dict[State, Callable[[], None]] = {
-            State.INITIAL:         lambda: self.setup(REQUIRED_USER, MESSAGES, LOG_FILE_PREFIX),
-            State.MODEL_DETECTION: lambda: self.detect_model(DETECTION_CONFIG, MESSAGES),
+            State.INITIAL:         lambda: self.setup(REQUIRED_USER, LOG_FILE_PREFIX),
+            State.MODEL_DETECTION: lambda: self.detect_model(DETECTION_CONFIG),
             State.CONFIG_LOADING:  lambda: self.load_rdp_block(RDP_KEY),
             State.PACKAGE_STATUS:  lambda: self.build_status_map(KEY_SERVICE_NAME, KEY_DEPENDENCIES, SUMMARY_LABEL, INSTALLED_LABEL, NOT_INSTALLED),
-            State.MENU_SELECTION:  lambda: self.select_action(ACTIONS, MESSAGES),
+            State.MENU_SELECTION:  lambda: self.select_action(ACTIONS),
             State.PREPARE:         lambda: self.prepare(LABEL_XRDP, KEY_SERVICE_NAME, ACTIONS),
             State.CONFIRM:         lambda: self.confirm(ACTIONS),
             State.INSTALL_STATE:   lambda: self.install_state(KEY_USER_NAME, KEY_SERVICE_NAME, KEY_DEPENDENCIES, KEY_SESSION_CMD, KEY_XSESSION,
                                                               KEY_SKEL_DIR, KEY_HOME_BASE, KEY_GROUPS),
             State.UNINSTALL_STATE: lambda: self.uninstall_state(KEY_SERVICE_NAME, KEY_DEPENDENCIES, KEY_XSESSION, KEY_HOME_BASE, KEY_SKEL_DIR),
-            State.RENEW_STATE:     lambda: self.renew_state(KEY_SERVICE_NAME, KEY_SSL_CERT_DIR, KEY_SSL_KEY_DIR, KEY_XRDP_DIR, MESSAGES),
+            State.RENEW_STATE:     lambda: self.renew_state(KEY_SERVICE_NAME, KEY_SSL_CERT_DIR, KEY_SSL_KEY_DIR, KEY_XRDP_DIR),
         }
 
         while self.state != State.FINALIZE:
@@ -387,10 +368,8 @@ class RDPInstaller:
             if fn:
                 fn()
             else:
-                log_and_print(MESSAGES["unknown_state_fmt"].format(
-                    state=getattr(self.state, "name", str(self.state))
-                ))
-                self.finalize_msg = self.finalize_msg or MESSAGES["unknown_state"]
+                log_and_print(f"Unknown state '{getattr(self.state, 'name', str(self.state))}', finalizing.")
+                self.finalize_msg = self.finalize_msg or "Unknown state encountered."
                 self.state = State.FINALIZE
 
         # Finalization
@@ -399,7 +378,7 @@ class RDPInstaller:
         if self.finalize_msg:
             log_and_print(self.finalize_msg)
         if self.log_file:
-            log_and_print(MESSAGES["log_final_fmt"].format(log_file=self.log_file))
+            log_and_print(f"All actions complete. Log: {self.log_file}")
 
 
 if __name__ == "__main__":
