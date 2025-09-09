@@ -5,43 +5,13 @@
 Archive Installer State Machine
 
 Automates install/uninstall of model-specific *archive* packages (e.g., .tar.* / .zip)
-using a deterministic, Enum-driven state machine. Each step in the workflow is an
-explicit state with predictable transitions. Methods mutate `self` but are parameter-
-driven (no hidden globals). All user-facing strings and menu options are centralized.
-
-Key Features
-- Detects the current “model” and loads its archive spec from JSON (with default fallback).
-- Computes install status for each archive target based on configured paths.
-- Menu-driven flow: prepare plan → confirm → run action (install/uninstall).
-- Optional post-install/uninstall steps (commands, service start, trash/cleanup paths).
-- Timestamped log file per run and automatic log rotation.
-- Single ACTIONS table and centralized MESSAGES for easy customization.
-
-Workflow
-    INITIAL → DEP_CHECK → MODEL_DETECTION → CONFIG_LOADING → PACKAGE_STATUS
-    → MENU_SELECTION → PREPARE_PLAN → CONFIRM
-    → (INSTALL_STATE → POST_INSTALL | UNINSTALL_STATE → POST_UNINSTALL)
-    → PACKAGE_STATUS (repeat) → FINALIZE
-
-Configuration (JSON, per model under the `Archive` key)
-- Name, DownloadURL, ExtractTo, CheckPath, StripTopLevel
-- PostInstall, PostUninstall, EnableService, TrashPaths, DownloadPath
-
-Dependencies
-- Python 3.8+
-- System tools: wget, tar, unzip (installed in DEP_CHECK)
-- Project modules: logger_utils, system_utils, json_utils, display_utils,
-  package_utils, service_utils, archive_utils
-
-Usage
-- Run directly. The program will verify the user, detect the model, load the
-  archive config, show status, prompt for install/uninstall, and execute the plan
-  with detailed logging.
+using a deterministic, Enum-driven state machine.
 """
 
 from __future__ import annotations
 
 import datetime
+import json
 from enum import Enum, auto
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
@@ -55,7 +25,7 @@ from modules.system_utils import (
     move_to_trash,
     sudo_remove_path,
 )
-from modules.json_utils import load_json, resolve_value
+from modules.json_utils import load_json, resolve_value, validate_required_items, validate_required_list
 from modules.display_utils import (
     format_status_summary,
     select_from_list,
@@ -75,24 +45,55 @@ from modules.archive_utils import (
 )
 
 # === CONFIG PATHS & KEYS ===
-PRIMARY_CONFIG   = "config/AppConfigSettings.json"
+PRIMARY_CONFIG   = "Config/AppConfigSettings.json"
 ARCHIVE_KEY      = "Archive"
 CONFIG_TYPE      = "archive"
-CONFIG_EXAMPLE   = "config/desktop/DesktopArchives.json"
-DEFAULT_CONFIG   = "default"
+DEFAULT_CONFIG   = "Default"
+
+# Example embedded JSON structure (shown on fallback or validation errors)
+CONFIG_EXAMPLE = {
+    "Default": {
+        "Archive": {
+            "MyTool": {
+                "Name": "MyTool",
+                "DownloadURL": "https://example.com/mytool.tar.gz",
+                "DownloadPath": "/tmp/archive_downloads",
+                "ExtractTo": "~/Applications/MyTool",
+                "StripTopLevel": True,
+                "CheckPath": "~/Applications/MyTool/bin/mytool",
+                "PostInstall": ["chmod +x ~/Applications/MyTool/bin/mytool"],
+                "EnableService": None,
+                "PostUninstall": [],
+                "TrashPaths": ["~/Applications/MyTool/cache"]
+            }
+        }
+    }
+}
 
 # === DETECTION CONFIG ===
 DETECTION_CONFIG = {
     "primary_config": PRIMARY_CONFIG,
     "config_type": CONFIG_TYPE,
     "packages_key": ARCHIVE_KEY,
-    "default_config_note": (
-        "NOTE: The default {config_type} configuration is being used.\n"
-        "To customize {config_type} for model '{model}', create a model-specific config file.\n"
-        "e.g. - '{example}' and add an entry for '{model}' in '{primary}'."
-    ),
     "default_config": DEFAULT_CONFIG,
     "config_example": CONFIG_EXAMPLE,
+}
+
+# === VALIDATION CONFIG ===
+# Require these core scalars. Lists below are optional but must be list[str] when present.
+VALIDATION_CONFIG = {
+    "required_package_fields": {
+        "DownloadURL": str,
+        "DownloadPath": str,
+        "ExtractTo": str,
+        "StripTopLevel": bool,
+    },
+    "optional_list_fields": {
+        "PostInstall":   {"elem_type": str, "allow_empty": True},
+        "PostUninstall": {"elem_type": str, "allow_empty": True},
+        "TrashPaths":    {"elem_type": str, "allow_empty": True},
+    },
+    "example_config": CONFIG_EXAMPLE,
 }
 
 # === LOGGING ===
@@ -152,6 +153,10 @@ class State(Enum):
     INITIAL = auto()
     DEP_CHECK = auto()
     MODEL_DETECTION = auto()
+    JSON_TOPLEVEL_CHECK = auto()
+    JSON_MODEL_SECTION_CHECK = auto()
+    JSON_OBJECT_KEYS_CHECK = auto()   # <- NEW
+    JSON_LIST_KEYS_CHECK = auto()     # <- NEW
     CONFIG_LOADING = auto()
     PACKAGE_STATUS = auto()
     MENU_SELECTION = auto()
@@ -168,29 +173,20 @@ class ArchiveInstaller:
     def __init__(self) -> None:
         self.state: State = State.INITIAL
         self.finalize_msg: Optional[str] = None
-
-        # Set in setup()
         self.log_dir: Optional[Path] = None
         self.log_file: Optional[Path] = None
-
-        # Model/config
         self.model: Optional[str] = None
-        self.config_path: Optional[str] = None  
-
-        # Loaded model section
+        self.config_path: Optional[str] = None
+        self.archive_data: Dict[str, Dict] = {}
         self.model_block: Dict[str, Dict] = {}
         self.pkg_keys: List[str] = []
-
-        # Working sets
         self.status_map: Dict[str, bool] = {}
         self.current_action_key: Optional[str] = None
         self.selected_packages: List[str] = []
         self.post_install_pkgs: List[str] = []
         self.post_uninstall_pkgs: List[str] = []
 
-   
     def setup(self, log_dir: Path, log_prefix: str, required_user: str) -> None:
-        """Compute log path, init logging, verify user; → DEP_CHECK|FINALIZE."""
         ts = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         self.log_dir = log_dir
         self.log_file = log_dir / f"{log_prefix}_{ts}.log"
@@ -201,69 +197,153 @@ class ArchiveInstaller:
             return
         self.state = State.DEP_CHECK
 
-
     def ensure_deps(self, deps: List[str]) -> None:
-        """Ensure dependencies; → MODEL_DETECTION|FINALIZE."""
         if ensure_dependencies_installed(deps):
             self.state = State.MODEL_DETECTION
         else:
             self.finalize_msg = "Some required dependencies failed to install."
             self.state = State.FINALIZE
 
-
     def detect_model(self, detection_config: Dict) -> None:
-        """Detect model and resolve config; → CONFIG_LOADING|FINALIZE."""
+        """Detect model and resolve config; advance to validation or FINALIZE."""
         model = get_model()
         log_and_print(f"Detected model: {model}")
         primary_cfg = load_json(detection_config["primary_config"])
-        cfg_path, used_default = resolve_value(
-            primary_cfg,
-            model,
-            detection_config["packages_key"],
-            detection_config["default_config"],
-            check_file=True,
-        )
+        pk = detection_config["packages_key"]
+        dk = detection_config["default_config"]
+        primary_entry = (primary_cfg.get(model, {}) or {}).get(pk)
+        cfg_path = resolve_value(primary_cfg, model, pk, default_key=dk, check_file=True)
         if not cfg_path:
             self.finalize_msg = (
-                f"Invalid {detection_config['config_type'].upper()} config path "
-                f"for model '{model}' or fallback."
+                f"Invalid {detection_config['config_type'].upper()} config path for model '{model}' or fallback."
             )
             self.state = State.FINALIZE
             return
-
-        log_and_print(
-            f"Using {detection_config['config_type'].upper()} config file: {cfg_path}"
-        )
+        used_default = (primary_entry != cfg_path)
+        log_and_print(f"Using {detection_config['config_type'].upper()} config file: {cfg_path}")
         if used_default:
-            log_and_print(
-                detection_config["default_config_note"].format(
-                    config_type=detection_config["config_type"],
-                    model=model,
-                    example=detection_config["config_example"],
-                    primary=detection_config["primary_config"],
-                )
-            )
-        self.model = model
+            log_and_print(f"No model-specific {detection_config['config_type']} config found for '{model}'.")
+            log_and_print(f"Falling back to the '{dk}' setting in '{detection_config['primary_config']}'.")
+            self.model = dk
+        else:
+            self.model = model
         self.config_path = cfg_path
+        self.archive_data = load_json(cfg_path)
+        self.state = State.JSON_TOPLEVEL_CHECK
+
+    def validate_json_toplevel(self, example_config: Dict) -> None:
+        data = self.archive_data
+        if not isinstance(data, dict):
+            self.finalize_msg = "Invalid config: top-level must be a JSON object."
+            log_and_print(self.finalize_msg)
+            log_and_print("Example structure:")
+            log_and_print(json.dumps(example_config, indent=2))
+            self.state = State.FINALIZE
+            return
+        log_and_print("Top-level JSON structure successfully validated (object).")
+        self.state = State.JSON_MODEL_SECTION_CHECK
+
+    def validate_json_model_section(self, example_config: Dict, section_key: str) -> None:
+        data = self.archive_data
+        model = self.model
+        entry = data.get(model)
+        if not isinstance(entry, dict):
+            self.finalize_msg = f"Invalid config: section for '{model}' must be an object."
+            log_and_print(self.finalize_msg)
+            log_and_print("Example structure:")
+            log_and_print(json.dumps(example_config, indent=2))
+            self.state = State.FINALIZE
+            return
+        section = entry.get(section_key)
+        if not isinstance(section, dict) or not section:
+            self.finalize_msg = f"Invalid config: '{model}' must contain a non-empty '{section_key}' object."
+            log_and_print(self.finalize_msg)
+            log_and_print("Example structure:")
+            log_and_print(json.dumps(example_config, indent=2))
+            self.state = State.FINALIZE
+            return
+        log_and_print(f"Model section '{model}' successfully validated (object).")
+        # proceed to object/scalar checks
+        self.state = State.JSON_OBJECT_KEYS_CHECK
+
+    # ---------- NEW: object (scalar) validation ----------
+    def validate_json_object_keys(self, validation_config: Dict, section_key: str) -> None:
+        """
+        Validate required scalar/object fields for each package:
+        DownloadURL (str), DownloadPath (str), ExtractTo (str), StripTopLevel (bool)
+        """
+        model = self.model
+        entry = self.archive_data.get(model, {})
+        ok = validate_required_items(entry, section_key, validation_config["required_package_fields"])
+        if not ok:
+            self.finalize_msg = f"Invalid config: '{model}/{section_key}' failed required-field validation."
+            log_and_print(self.finalize_msg)
+            log_and_print("Example structure:")
+            log_and_print(json.dumps(validation_config["example_config"], indent=2))
+            self.state = State.FINALIZE
+            return
+
+        type_summ_required = "\n ".join(
+            f"{k} ({' or '.join(t.__name__ for t in v) if isinstance(v, tuple) else v.__name__})"
+            for k, v in validation_config["required_package_fields"].items()
+        )
+        log_and_print(f"Object keys validated for model '{model}'.")
+        log_and_print("Required fields:\n " + type_summ_required + ".")
+        self.state = State.JSON_LIST_KEYS_CHECK
+
+    def validate_json_list_keys(self, validation_config: Dict, section_key: str) -> None:
+        """
+        Validate optional list fields per package when present:
+        PostInstall, PostUninstall, TrashPaths -> list[str] (empty allowed)
+        """
+        model = self.model
+        entry = self.archive_data.get(model, {})
+        section = entry.get(section_key, {})
+        if not isinstance(section, dict):
+            self.finalize_msg = f"Invalid config: '{model}/{section_key}' must be an object."
+            log_and_print(self.finalize_msg)
+            self.state = State.FINALIZE
+            return
+
+        for pkg_name, meta in section.items():
+            if not isinstance(meta, dict):
+                self.finalize_msg = f"Invalid config: '{model}/{section_key}/{pkg_name}' must be an object."
+                log_and_print(self.finalize_msg)
+                self.state = State.FINALIZE
+                return
+            for list_key, spec in validation_config.get("optional_list_fields", {}).items():
+                if list_key in meta:
+                    if not validate_required_list(
+                        data_for_model=meta,
+                        list_key=list_key,
+                        elem_type=spec.get("elem_type", str),
+                        allow_empty=spec.get("allow_empty", True),
+                    ):
+                        self.finalize_msg = (
+                            f"Invalid config: '{model}/{section_key}/{pkg_name}/{list_key}' must be "
+                            f"a list of {spec.get('elem_type', str).__name__}"
+                            + ("" if spec.get("allow_empty", True) else " (non-empty)")
+                            + "."
+                        )
+                        log_and_print(self.finalize_msg)
+                        self.state = State.FINALIZE
+                        return
+
+        type_summ_optional = "\n ".join(
+            f"{k} (list[{spec.get('elem_type', str).__name__}])"
+            for k, spec in validation_config.get("optional_list_fields", {}).items()
+        )
+        if type_summ_optional:
+            log_and_print("List keys validated (when present):\n " + type_summ_optional + ".")
         self.state = State.CONFIG_LOADING
 
-
-    def load_model_block(self, section_key: str, summary_label_for_msg: str) -> None:
-        """Load the model-specific block from the config file; → PACKAGE_STATUS|FINALIZE."""
-        cfg = load_json(self.config_path)
-        block = (cfg.get(self.model, {}) or {}).get(section_key, {})
-        keys = sorted(block.keys())
-        if not keys:
-            self.finalize_msg = f"No {summary_label_for_msg.lower()} found for model '{self.model}'."
-            self.state = State.FINALIZE
-            return
+    def load_model_block(self, section_key: str) -> None:
+        block = self.archive_data[self.model][section_key]
         self.model_block = block
-        self.pkg_keys = keys
+        self.pkg_keys = sorted(block.keys())
         self.state = State.PACKAGE_STATUS
 
-
     def build_status_map(self, check_key: str, extract_key: str, summary_label: str, installed_label: str, uninstalled_label: str) -> None:
-        """Compute archive install status and print a summary; → MENU_SELECTION."""
         self.status_map = {
             pkg: build_archive_install_status(
                 self.model_block.get(pkg, {}) or {},
@@ -271,9 +351,9 @@ class ArchiveInstaller:
                 key_extract=extract_key,
                 path_expander=expand_path,
                 checker=check_archive_installed,
-                )
-                for pkg in self.pkg_keys
-            }
+            )
+            for pkg in self.pkg_keys
+        }
         summary = format_status_summary(
             self.status_map,
             label=summary_label,
@@ -283,9 +363,7 @@ class ArchiveInstaller:
         log_and_print(summary)
         self.state = State.MENU_SELECTION
 
-
     def select_action(self, actions: Dict[str, Dict]) -> None:
-        """Prompt for action; set current_action_key; → PREPARE_PLAN|FINALIZE."""
         menu_title = "Select an option"
         options = list(actions.keys())
         choice = None
@@ -301,9 +379,7 @@ class ArchiveInstaller:
         self.current_action_key = choice
         self.state = State.PREPARE_PLAN
 
-
     def prepare_plan(self, key_label: str, actions: Dict[str, Dict]) -> None:
-        """Build and print plan; set selected_packages; → CONFIRM|MENU_SELECTION."""
         spec = actions[self.current_action_key]
         verb = spec["verb"]
         filter_status = spec["filter_status"]
@@ -332,9 +408,7 @@ class ArchiveInstaller:
         self.selected_packages = pkg_names
         self.state = State.CONFIRM
 
-
     def confirm_action(self, actions: Dict[str, Dict]) -> None:
-        """Confirm user choice; → next_state|PACKAGE_STATUS."""
         spec = actions[self.current_action_key]
         if not confirm(spec["prompt"]):
             log_and_print("User cancelled.")
@@ -342,9 +416,7 @@ class ArchiveInstaller:
             return
         self.state = State[spec["next_state"]]
 
-
     def install_archives_state(self, download_url_key: str, extract_to_key: str, strip_top_key: str, download_path_key: str) -> None:
-        """Install selected archives; collect successes; → POST_INSTALL."""
         ok_names: List[str] = []
         total = len(self.selected_packages)
         for pkg in self.selected_packages:
@@ -377,9 +449,7 @@ class ArchiveInstaller:
         self.finalize_msg = f"Installed successfully: {len(ok_names)}/{total}"
         self.state = State.POST_INSTALL
 
-
     def post_install_steps_state(self, post_install_key: str, enable_service_key: str) -> None:
-        """Run per-package post-install commands and start services; → PACKAGE_STATUS."""
         if not getattr(self, "post_install_pkgs", None):
             log_and_print("No packages to post-install.")
             self.state = State.PACKAGE_STATUS
@@ -398,9 +468,7 @@ class ArchiveInstaller:
                 log_and_print(f"SERVICE STARTED for {pkg} ({svc})")
         self.state = State.PACKAGE_STATUS
 
-
     def uninstall_archives_state(self, check_path_key: str, extract_to_key: str) -> None:
-        """Uninstall selected archives; collect successes; → POST_UNINSTALL."""
         ok_names: List[str] = []
         total = len(self.selected_packages)
         for pkg in self.selected_packages:
@@ -417,9 +485,7 @@ class ArchiveInstaller:
         self.finalize_msg = f"Uninstalled successfully: {len(ok_names)}/{total}"
         self.state = State.POST_UNINSTALL
 
-
     def post_uninstall_steps_state(self, post_uninstall_key: str, trash_paths_key: str) -> None:
-        """Run post-uninstall commands and trash/cleanup paths; → PACKAGE_STATUS."""
         if not getattr(self, "post_uninstall_pkgs", None):
             log_and_print("No packages to post-uninstall.")
             self.state = State.PACKAGE_STATUS
@@ -441,23 +507,24 @@ class ArchiveInstaller:
                     log_and_print(f"REMOVED extra path for {pkg}: {expanded}")
         self.state = State.PACKAGE_STATUS
 
-
-    # ====== MAIN ======
     def main(self) -> None:
-        """Run the state machine until FINALIZE via a dispatch table."""
         handlers: Dict[State, Callable[[], None]] = {
-            State.INITIAL:         lambda: self.setup(LOG_DIR, LOG_PREFIX, REQUIRED_USER),
-            State.DEP_CHECK:       lambda: self.ensure_deps(DEPENDENCIES),
-            State.MODEL_DETECTION: lambda: self.detect_model(DETECTION_CONFIG),
-            State.CONFIG_LOADING:  lambda: self.load_model_block(ARCHIVE_KEY, ARCHIVE_LABEL),
-            State.PACKAGE_STATUS:  lambda: self.build_status_map(CHECK_PATH_KEY, EXTRACT_TO_KEY, SUMMARY_LABEL, INSTALLED_LABEL, UNINSTALLED_LABEL),
-            State.MENU_SELECTION:  lambda: self.select_action(ACTIONS),
-            State.PREPARE_PLAN:    lambda: self.prepare_plan(ARCHIVE_LABEL, ACTIONS),
-            State.CONFIRM:         lambda: self.confirm_action(ACTIONS),
-            State.INSTALL_STATE:   lambda: self.install_archives_state(DOWNLOAD_URL_KEY, EXTRACT_TO_KEY, STRIP_TOP_LEVEL_KEY, DOWNLOAD_PATH_KEY),
-            State.POST_INSTALL:    lambda: self.post_install_steps_state(POST_INSTALL_KEY, ENABLE_SERVICE_KEY),
-            State.UNINSTALL_STATE: lambda: self.uninstall_archives_state(CHECK_PATH_KEY, EXTRACT_TO_KEY),
-            State.POST_UNINSTALL:  lambda: self.post_uninstall_steps_state(POST_UNINSTALL_KEY, TRASH_PATHS_KEY),
+            State.INITIAL:                 lambda: self.setup(LOG_DIR, LOG_PREFIX, REQUIRED_USER),
+            State.DEP_CHECK:               lambda: self.ensure_deps(DEPENDENCIES),
+            State.MODEL_DETECTION:         lambda: self.detect_model(DETECTION_CONFIG),
+            State.JSON_TOPLEVEL_CHECK:     lambda: self.validate_json_toplevel(VALIDATION_CONFIG["example_config"]),
+            State.JSON_MODEL_SECTION_CHECK:lambda: self.validate_json_model_section(VALIDATION_CONFIG["example_config"], ARCHIVE_KEY),
+            State.JSON_OBJECT_KEYS_CHECK:  lambda: self.validate_json_object_keys(VALIDATION_CONFIG, ARCHIVE_KEY),
+            State.JSON_LIST_KEYS_CHECK:    lambda: self.validate_json_list_keys(VALIDATION_CONFIG, ARCHIVE_KEY),
+            State.CONFIG_LOADING:          lambda: self.load_model_block(ARCHIVE_KEY),
+            State.PACKAGE_STATUS:          lambda: self.build_status_map(CHECK_PATH_KEY, EXTRACT_TO_KEY, SUMMARY_LABEL, INSTALLED_LABEL, UNINSTALLED_LABEL),
+            State.MENU_SELECTION:          lambda: self.select_action(ACTIONS),
+            State.PREPARE_PLAN:            lambda: self.prepare_plan(ARCHIVE_LABEL, ACTIONS),
+            State.CONFIRM:                 lambda: self.confirm_action(ACTIONS),
+            State.INSTALL_STATE:           lambda: self.install_archives_state(DOWNLOAD_URL_KEY, EXTRACT_TO_KEY, STRIP_TOP_LEVEL_KEY, DOWNLOAD_PATH_KEY),
+            State.POST_INSTALL:            lambda: self.post_install_steps_state(POST_INSTALL_KEY, ENABLE_SERVICE_KEY),
+            State.UNINSTALL_STATE:         lambda: self.uninstall_archives_state(CHECK_PATH_KEY, EXTRACT_TO_KEY),
+            State.POST_UNINSTALL:          lambda: self.post_uninstall_steps_state(POST_UNINSTALL_KEY, TRASH_PATHS_KEY),
         }
 
         while self.state != State.FINALIZE:
@@ -469,7 +536,6 @@ class ArchiveInstaller:
                 self.finalize_msg = self.finalize_msg or "Unknown state encountered."
                 self.state = State.FINALIZE
 
-        # Finalization
         rotate_logs(LOG_DIR, LOGS_TO_KEEP, ROTATE_LOG_NAME)
         if self.finalize_msg:
             log_and_print(self.finalize_msg)

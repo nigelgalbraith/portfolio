@@ -52,13 +52,14 @@ from __future__ import annotations
 
 import datetime
 import os
+import json
 from enum import Enum, auto
 from pathlib import Path
 from typing import Callable, Dict, Optional
 
 from modules.logger_utils import setup_logging, log_and_print, rotate_logs
 from modules.system_utils import check_account, get_model, ensure_user_exists
-from modules.json_utils import load_json, resolve_value
+from modules.json_utils import load_json, resolve_value, validate_required_items, validate_required_list
 from modules.display_utils import format_status_summary, select_from_list, confirm, print_dict_table
 from modules.package_utils import check_package, install_packages
 from modules.service_utils import enable_and_start_service, check_service_status
@@ -70,11 +71,11 @@ from modules.rdp_utils import (
 )
 
 # === CONFIG PATHS & KEYS ===
-PRIMARY_CONFIG   = "config/AppConfigSettings.json"
+PRIMARY_CONFIG   = "Config/AppConfigSettings.json"
 CONFIG_TYPE      = "rdp"
 RDP_KEY          = "RDP"
-CONFIG_EXAMPLE   = "config/desktop/DesktopRDP.json"
-DEFAULT_CONFIG   = "default"
+CONFIG_EXAMPLE   = "Config/desktop/DesktopRDP.json"
+DEFAULT_CONFIG   = "Default"
 
 DETECTION_CONFIG = {
     "primary_config": PRIMARY_CONFIG,
@@ -149,11 +150,37 @@ KEY_XRDP_DIR     = "XrdpDir"
 # === LABELS ===
 LABEL_XRDP = "XRDP"
 
+# === VALIDATION CONFIG ===
+VALIDATION_CONFIG = {
+    "required_scalar_fields": [
+        "ServiceName",
+        "UserName",
+        "SessionCmd",
+        "XsessionFile",
+        "SkeletonDir",
+        "UserHomeBase",
+        "SslCertDir",
+        "SslKeyDir",
+        "XrdpDir",
+    ],
+    "required_list_fields": {
+        "Dependencies": {"elem_type": str, "allow_empty": False},
+        "Groups":      {"elem_type": str, "allow_empty": True},
+    },
+    "example_config": CONFIG_EXAMPLE,
+}
+
+
+
 
 # === STATE ENUM ===
 class State(Enum):
     INITIAL = auto()
     MODEL_DETECTION = auto()
+    JSON_TOPLEVEL_CHECK = auto()
+    JSON_MODEL_SECTION_CHECK = auto()
+    JSON_REQUIRED_SCALARS_CHECK = auto()
+    JSON_REQUIRED_LISTS_CHECK = auto() 
     CONFIG_LOADING = auto()
     PACKAGE_STATUS = auto()
     MENU_SELECTION = auto()
@@ -195,36 +222,32 @@ class RDPInstaller:
         self.state = State.MODEL_DETECTION
 
         
-    def detect_model(self, detection_cfg: Dict) -> None:
+    def detect_model(self, detection_config: Dict) -> None:
+        """Detect model and resolve config; advance to validation or FINALIZE."""
         model = get_model()
         log_and_print(f"Detected model: {model}")
-        primary_cfg = load_json(detection_cfg["primary_config"])
-        cfg_path, used_default = resolve_value(
-            primary_cfg,
-            model,
-            detection_cfg["packages_key"],
-            detection_cfg["default_config"],
-            check_file=True,
-        )
+        primary_cfg = load_json(detection_config["primary_config"])
+        pk = detection_config["packages_key"]
+        dk = detection_config["default_config"]
+        primary_entry = (primary_cfg.get(model, {}) or {}).get(pk)
+        cfg_path = resolve_value(primary_cfg, model, pk, default_key=dk, check_file=True)
         if not cfg_path:
             self.finalize_msg = (
-                f"Invalid {detection_cfg['config_type'].upper()} config path for model '{model}' or fallback."
+                f"Invalid {detection_config['config_type'].upper()} config path for model '{model}' or fallback."
             )
             self.state = State.FINALIZE
             return
-        log_and_print(f"Using {detection_cfg['config_type'].upper()} config file: {cfg_path}")
+        used_default = (primary_entry != cfg_path)
+        log_and_print(f"Using {detection_config['config_type'].upper()} config file: {cfg_path}")
         if used_default:
-            log_and_print(
-                detection_cfg["default_config_note"].format(
-                    config_type=detection_cfg["config_type"],
-                    model=model,
-                    example=detection_cfg["config_example"],
-                    primary=detection_cfg["primary_config"],
-                )
-            )
-        self.model = model
+            log_and_print(f"No model-specific {detection_config['config_type']} config found for '{model}'.")
+            log_and_print(f"Falling back to the '{dk}' setting in '{detection_config['primary_config']}'.")
+            self.model = dk
+        else:
+            self.model = model
         self.config_path = cfg_path
-        self.state = State.CONFIG_LOADING
+        self._cfg = load_json(cfg_path)
+        self.state = State.JSON_TOPLEVEL_CHECK
 
 
     def load_rdp_block(self, rdp_key: str) -> None:
@@ -235,6 +258,106 @@ class RDPInstaller:
             self.state = State.FINALIZE
             return
         self.state = State.PACKAGE_STATUS
+
+
+    def validate_json_toplevel(self, example_config: Dict) -> None:
+        data = load_json(self.config_path)
+        if not isinstance(data, dict):
+            self.finalize_msg = "Invalid config: top-level must be a JSON object."
+            log_and_print(self.finalize_msg)
+            log_and_print("Example structure:")
+            log_and_print(json.dumps(example_config, indent=2))
+            self.state = State.FINALIZE
+            return
+        self._cfg = data
+        log_and_print("Top-level JSON structure successfully validated (object).")
+        self.state = State.JSON_MODEL_SECTION_CHECK
+
+    
+    def validate_json_model_section(self, example_config: Dict, section_key: str) -> None:
+        model = self.model
+        entry = self._cfg.get(model)
+        if not isinstance(entry, dict):
+            self.finalize_msg = f"Invalid config: section for '{model}' must be an object."
+            log_and_print(self.finalize_msg)
+            log_and_print("Example structure:")
+            log_and_print(json.dumps(example_config, indent=2))
+            self.state = State.FINALIZE
+            return
+        section = entry.get(section_key)
+        if not isinstance(section, dict) or not section:
+            self.finalize_msg = f"Invalid config: '{model}' must contain a non-empty '{section_key}' object."
+            log_and_print(self.finalize_msg)
+            log_and_print("Example structure:")
+            log_and_print(json.dumps(example_config, indent=2))
+            self.state = State.FINALIZE
+            return
+        self._section = section
+        log_and_print(f"Model section '{model}' ('{section_key}') successfully validated (object).")
+        self.state = State.JSON_REQUIRED_SCALARS_CHECK
+
+
+    def validate_required_scalar_fields(self, validation_config: Dict, section_key: str = RDP_KEY) -> None:
+        """Check required *scalar* (string) fields are present and non-empty."""
+        model = self.model
+        example = validation_config["example_config"]
+        section = (self._cfg.get(model, {}) or {}).get(section_key, {})
+
+        for field in validation_config["required_scalar_fields"]:
+            val = section.get(field, None)
+            if not isinstance(val, str) or not val:
+                self.finalize_msg = (
+                    f"Invalid config: field '{model}/{section_key}/{field}' must be a non-empty string."
+                )
+                log_and_print(self.finalize_msg)
+                log_and_print("Example structure:")
+                log_and_print(json.dumps(example, indent=2))
+                self.state = State.FINALIZE
+                return
+
+        log_and_print("Scalar fields validated successfully.")
+        self.state = State.JSON_REQUIRED_LISTS_CHECK
+
+
+    def validate_required_list_fields(self, validation_config: Dict, section_key: str = RDP_KEY) -> None:
+        """Check required *list* fields with element-type and emptiness constraints."""
+        model = self.model
+        example = validation_config["example_config"]
+        section = (self._cfg.get(model, {}) or {}).get(section_key, {})
+
+        for list_field, spec in validation_config["required_list_fields"].items():
+            ok = validate_required_list(
+                data_for_model=section,
+                list_key=list_field,
+                elem_type=spec.get("elem_type", str),
+                allow_empty=spec.get("allow_empty", False),
+            )
+            if not ok:
+                elem_t = spec.get("elem_type", str)
+                elem_name = elem_t.__name__ if isinstance(elem_t, type) else str(elem_t)
+                self.finalize_msg = (
+                    f"Invalid config: field '{model}/{section_key}/{list_field}' must be a "
+                    f"list of {elem_name}"
+                    + ("" if spec.get("allow_empty", False) else " (non-empty)")
+                    + "."
+                )
+                log_and_print(self.finalize_msg)
+                log_and_print("Example structure:")
+                log_and_print(json.dumps(example, indent=2))
+                self.state = State.FINALIZE
+                return
+
+        # Optional: summary log like before
+        type_summ = [f"{f} (str)" for f in validation_config["required_scalar_fields"]]
+        for lf, spec in validation_config["required_list_fields"].items():
+            elem_t = spec.get("elem_type", str)
+            elem_name = elem_t.__name__ if isinstance(elem_t, type) else str(elem_t)
+            type_summ.append(f"{lf} (list[{elem_name}])")
+
+        log_and_print(f"Config for model '{model}' successfully validated.")
+        log_and_print("All RDP fields present and of correct type:\n " + "\n ".join(type_summ) + ".")
+        self.state = State.CONFIG_LOADING
+
 
 
     def build_status_map(self, key_service: str, key_deps: str, summary_label: str, installed_label: str, not_installed_label: str) -> None:
@@ -251,7 +374,6 @@ class RDPInstaller:
         )
         log_and_print(summary)
         self.state = State.MENU_SELECTION
-
 
     def select_action(self, actions: Dict[str, Dict]) -> None:
         title = "Select an option"
@@ -352,6 +474,14 @@ class RDPInstaller:
         handlers: Dict[State, Callable[[], None]] = {
             State.INITIAL:         lambda: self.setup(REQUIRED_USER, LOG_FILE_PREFIX),
             State.MODEL_DETECTION: lambda: self.detect_model(DETECTION_CONFIG),
+
+            State.JSON_TOPLEVEL_CHECK:       lambda: self.validate_json_toplevel(VALIDATION_CONFIG["example_config"]),
+            State.JSON_MODEL_SECTION_CHECK:  lambda: self.validate_json_model_section(VALIDATION_CONFIG["example_config"], RDP_KEY),
+
+            # NEW split:
+            State.JSON_REQUIRED_SCALARS_CHECK: lambda: self.validate_required_scalar_fields(VALIDATION_CONFIG, RDP_KEY),
+            State.JSON_REQUIRED_LISTS_CHECK:   lambda: self.validate_required_list_fields(VALIDATION_CONFIG, RDP_KEY),
+
             State.CONFIG_LOADING:  lambda: self.load_rdp_block(RDP_KEY),
             State.PACKAGE_STATUS:  lambda: self.build_status_map(KEY_SERVICE_NAME, KEY_DEPENDENCIES, SUMMARY_LABEL, INSTALLED_LABEL, NOT_INSTALLED),
             State.MENU_SELECTION:  lambda: self.select_action(ACTIONS),
@@ -362,6 +492,7 @@ class RDPInstaller:
             State.UNINSTALL_STATE: lambda: self.uninstall_state(KEY_SERVICE_NAME, KEY_DEPENDENCIES, KEY_XSESSION, KEY_HOME_BASE, KEY_SKEL_DIR),
             State.RENEW_STATE:     lambda: self.renew_state(KEY_SERVICE_NAME, KEY_SSL_CERT_DIR, KEY_SSL_KEY_DIR, KEY_XRDP_DIR),
         }
+
 
         while self.state != State.FINALIZE:
             fn = handlers.get(self.state)

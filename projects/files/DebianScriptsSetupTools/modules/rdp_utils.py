@@ -163,31 +163,29 @@ def uninstall_rdp(
         return False
 
 
-def regenerate_xrdp_keys(service_name: str = "xrdp") -> tuple[bool, str]:
+def regenerate_xrdp_keys(service_name: str, ssl_cert_dir: Path, ssl_key_dir: Path, xrdp_dir: Path) -> bool:
     """
     Regenerate XRDP TLS and RSA keys/certs and restart the service.
 
     Steps:
       1) Stop service (best-effort).
-      2) Regenerate default snakeoil TLS cert/key:
-         `make-ssl-cert generate-default-snakeoil --force-overwrite`
-      3) Ensure /etc/xrdp/cert.pem and /etc/xrdp/key.pem link or copy from snakeoil.
-      4) Set key perms to root:ssl-cert, 640.
-      5) Regenerate XRDP RSA keys: `xrdp-keygen xrdp`
-      6) daemon-reload + enable + start service.
+      2) Regenerate default snakeoil TLS cert/key.
+      3) Ensure cert.pem and key.pem are linked/copied into xrdp_dir.
+      4) Fix key permissions.
+      5) Regenerate XRDP RSA keys.
+      6) Reload + enable + start service.
 
     Args:
-        service_name (str): systemd service name, default "xrdp".
+        service_name (str): systemd service name, e.g. "xrdp".
+        ssl_cert_dir (Path): Directory containing snakeoil cert.
+        ssl_key_dir (Path): Directory containing snakeoil key.
+        xrdp_dir (Path): Directory to place XRDP cert/key.
 
     Returns:
-        tuple[bool, str]: (success flag, message)
-
-    Example:
-        >>> regenerate_xrdp_keys("xrdp")
-        (True, "Regenerated.")
+        bool: True if all steps succeed, False otherwise.
     """
     try:
-        # Stop service if present (non-fatal)
+        # Stop service (ignore failure)
         subprocess.run(["sudo", "systemctl", "stop", service_name], check=False)
 
         # 1) Regenerate snakeoil TLS material
@@ -196,45 +194,41 @@ def regenerate_xrdp_keys(service_name: str = "xrdp") -> tuple[bool, str]:
             check=True,
         )
 
-        # Define logical paths for the certificate and key
-        snakeoil_cert = Path("/etc/ssl/certs/ssl-cert-snakeoil.pem")
-        snakeoil_key  = Path("/etc/ssl/private/ssl-cert-snakeoil.key")
-        xrdp_cert = Path("/etc/xrdp/cert.pem")
-        xrdp_key  = Path("/etc/xrdp/key.pem")
+        # 2) Paths
+        snakeoil_cert = ssl_cert_dir / "ssl-cert-snakeoil.pem"
+        snakeoil_key  = ssl_key_dir / "ssl-cert-snakeoil.key"
+        xrdp_cert = xrdp_dir / "cert.pem"
+        xrdp_key  = xrdp_dir / "key.pem"
 
-        # Ensure /etc/xrdp exists
-        subprocess.run(["sudo", "mkdir", "-p", "/etc/xrdp"], check=True)
+        # Ensure XRDP dir exists
+        subprocess.run(["sudo", "mkdir", "-p", str(xrdp_dir)], check=True)
 
-        # 2) Link or copy (prefer symlink)
+        # 3) Link or copy
         for src, dst in [(snakeoil_cert, xrdp_cert), (snakeoil_key, xrdp_key)]:
-            # Remove existing (file or symlink)
             subprocess.run(
-                ["sudo", "bash", "-lc", f"if [ -e '{dst}' ] || [ -L '{dst}' ]; then rm -f '{dst}'; fi"],
+                ["sudo", "bash", "-lc", f"if [ -e '{dst}' ] || [ -L '{dst}'; then rm -f '{dst}'; fi"],
                 check=False
             )
-            # Try symlink first
             try:
                 subprocess.run(["sudo", "ln", "-s", str(src), str(dst)], check=True)
             except subprocess.CalledProcessError:
-                # Fallback to copy
                 subprocess.run(["sudo", "cp", str(src), str(dst)], check=True)
 
-        # 3) Permissions on key: root:ssl-cert, 640
+        # 4) Permissions on private key
         subprocess.run(["sudo", "chown", "root:ssl-cert", str(xrdp_key)], check=True)
         subprocess.run(["sudo", "chmod", "640", str(xrdp_key)], check=True)
 
-        # 4) Regenerate XRDP RSA keys (rsakeys.ini) in the correct directory
-        rsakey_path = Path("/etc/xrdp/rsakeys.ini")
+        # 5) Regenerate XRDP RSA keys
+        rsakey_path = xrdp_dir / "rsakeys.ini"
         subprocess.run(["sudo", "xrdp-keygen", "xrdp", "-f", str(rsakey_path)], check=True)
 
-        # 5) Reload + enable + start
+        # 6) Reload + enable + start service
         subprocess.run(["sudo", "systemctl", "daemon-reload"], check=True)
         subprocess.run(["sudo", "systemctl", "enable", service_name], check=False)
         subprocess.run(["sudo", "systemctl", "start", service_name], check=True)
 
-        return True, "Regenerated."
-    except subprocess.CalledProcessError as e:
-        return False, str(e)
-    except Exception as e:
-        return False, f"Unexpected error: {e}"
+        return True
+    except Exception:
+        return False
+
 

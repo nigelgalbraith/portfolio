@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import datetime
 import os
+import json
 from enum import Enum, auto
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
@@ -39,7 +40,7 @@ from modules.system_utils import (
     check_account, get_model, ensure_dependencies_installed, secure_logs_for_user,
     reload_systemd,
 )
-from modules.json_utils import load_json, resolve_value
+from modules.json_utils import load_json, resolve_value, validate_required_items
 from modules.display_utils import format_status_summary, select_from_list, confirm, print_list_section
 from modules.service_utils import (
     check_service_status,
@@ -53,11 +54,11 @@ from modules.service_utils import (
 from modules.package_utils import filter_by_status
 
 # === CONFIG PATHS & KEYS ===
-PRIMARY_CONFIG   = "config/AppConfigSettings.json"
+PRIMARY_CONFIG   = "Config/AppConfigSettings.json"
 FEATURE_KEY      = "Services"
 CONFIG_TYPE      = "services"
-EXAMPLE_CONFIG   = "config/desktop/DesktopServices.json"
-DEFAULT_MODEL    = "default"
+EXAMPLE_CONFIG   = "Config/desktop/DesktopServices.json"
+DEFAULT_MODEL    = "Default"
 
 # === DETECTION CONFIG ===
 DETECTION_CONFIG = {
@@ -140,11 +141,41 @@ KEY_CONFIG_SRC   = "ConfigSrc"
 KEY_CONFIG_DEST  = "ConfigDest"
 KEY_ORDER        = "Order"
 
+# === VALIDATION CONFIG ===
+VALIDATION_CONFIG = {
+    "required_package_fields": {
+        "ServiceName": str,
+        "ScriptSrc": str,
+        "ScriptDest": str,
+        "ServiceSrc": str,
+        "ServiceDest": str,
+        "LogPath": str,
+    },
+    "example_config": {
+        "default": {
+            "Services": {
+                "MySvc": {
+                    "ServiceName": "my-svc.service",
+                    "ScriptSrc": "templates/mysvc.sh",
+                    "ScriptDest": "/usr/local/bin/mysvc.sh",
+                    "ServiceSrc": "templates/mysvc.service",
+                    "ServiceDest": "/etc/systemd/system/mysvc.service",
+                    "LogPath": "/var/log/mysvc/mysvc.log"
+                }
+            }
+        }
+    },
+}
+
+
 # === STATE ENUM ===
 class State(Enum):
     INITIAL = auto()
     DEP_CHECK = auto()
     MODEL_DETECTION = auto()
+    JSON_TOPLEVEL_CHECK = auto()
+    JSON_MODEL_SECTION_CHECK = auto()
+    JSON_REQUIRED_KEYS_CHECK = auto()
     CONFIG_LOADING = auto()
     PACKAGE_STATUS = auto()
     MENU_SELECTION = auto()
@@ -215,15 +246,18 @@ class ServicesCLI:
         model = get_model()
         log_and_print(f"Detected model: {model}")
         primary_cfg = load_json(detection_config["primary_config"])
-        config_path, used_default = resolve_value(
-            primary_cfg, model, detection_config["packages_key"], detection_config["default_config"], check_file=True
-        )
+        pk = detection_config["packages_key"]
+        dk = detection_config["default_config"]
+        primary_entry = (primary_cfg.get(model, {}) or {}).get(pk)
+        config_path = resolve_value(primary_cfg, model, pk, default_key=dk, check_file=True)
         if not config_path:
             self.finalize_msg = (
                 f"Invalid {detection_config['config_type'].upper()} config path for model '{model}' or fallback."
             )
             self.state = State.FINALIZE
             return
+
+        used_default = (primary_entry != config_path)
         log_and_print(f"Using {detection_config['config_type']} config file: {config_path}")
         if used_default:
             log_and_print(
@@ -234,14 +268,69 @@ class ServicesCLI:
                     primary=detection_config["primary_config"],
                 )
             )
-        self.model = model
+        self.model = dk if used_default else model
         self.config_path = config_path
+        self._cfg = load_json(config_path)
+        self.state = State.JSON_TOPLEVEL_CHECK
+
+
+    def validate_json_toplevel(self, example_config: Dict) -> None:
+        data = self._cfg
+        if not isinstance(data, dict):
+            self.finalize_msg = "Invalid config: top-level must be a JSON object."
+            log_and_print(self.finalize_msg)
+            log_and_print("Example structure:")
+            log_and_print(json.dumps(example_config, indent=2))
+            self.state = State.FINALIZE
+            return
+        log_and_print("Top-level JSON structure successfully validated (object).")
+        self.state = State.JSON_MODEL_SECTION_CHECK
+
+
+    def validate_json_model_section(self, example_config: Dict, section_key: str) -> None:
+        entry = self._cfg.get(self.model)
+        if not isinstance(entry, dict):
+            self.finalize_msg = f"Invalid config: section for '{self.model}' must be an object."
+            log_and_print(self.finalize_msg)
+            log_and_print("Example structure:")
+            log_and_print(json.dumps(example_config, indent=2))
+            self.state = State.FINALIZE
+            return
+
+        section = entry.get(section_key)
+        if not isinstance(section, dict) or not section:
+            self.finalize_msg = f"Invalid config: '{self.model}' must contain a non-empty '{section_key}' object."
+            log_and_print(self.finalize_msg)
+            log_and_print("Example structure:")
+            log_and_print(json.dumps(example_config, indent=2))
+            self.state = State.FINALIZE
+            return
+
+        self._feature_block = section 
+        log_and_print(f"Model section '{self.model}' ('{section_key}') successfully validated (object).")
+        self.state = State.JSON_REQUIRED_KEYS_CHECK
+
+
+    def validate_json_required_keys(self, validation_config: Dict, section_key: str) -> None:
+        entry = self._cfg.get(self.model, {})
+        ok = validate_required_items(entry, section_key, validation_config["required_package_fields"])
+        if not ok:
+            self.finalize_msg = f"Invalid config: '{self.model}/{section_key}' failed validation."
+            log_and_print(self.finalize_msg)
+            log_and_print("Example structure:")
+            log_and_print(json.dumps(validation_config["example_config"], indent=2))
+            self.state = State.FINALIZE
+            return
+        type_summ = "\n ".join(
+            f"{k} ({' or '.join(t.__name__ for t in v) if isinstance(v, tuple) else v.__name__})"
+            for k, v in validation_config["required_package_fields"].items()
+        )
+        log_and_print(f"Config for model '{self.model}' successfully validated.")
+        log_and_print(f"All service fields present and of correct type:\n {type_summ}.")
         self.state = State.CONFIG_LOADING
 
-
     def load_model_block(self, section_key: str, summary_label_for_msg: str) -> None:
-        cfg = load_json(self.config_path)
-        block = (cfg.get(self.model, {}) or {}).get(section_key, {})
+        block = self._feature_block  
         keys = sorted(block.keys())
         if not keys:
             self.finalize_msg = f"No {summary_label_for_msg.lower()} found for model '{self.model}'."
@@ -250,7 +339,7 @@ class ServicesCLI:
         self.model_block = block
         self.service_keys = keys
         self.state = State.PACKAGE_STATUS
-
+    
 
     def build_status_map(self, summary_label: str, enabled_label: str, disabled_label: str, key_service: str) -> None:
         status: Dict[str, bool] = {}
@@ -573,6 +662,9 @@ class ServicesCLI:
             State.INITIAL:              lambda: self.setup(LOG_SUBDIR, REQUIRED_USER),
             State.DEP_CHECK:            lambda: self.ensure_deps(DEPENDENCIES),
             State.MODEL_DETECTION:      lambda: self.detect_model(DETECTION_CONFIG),
+            State.JSON_TOPLEVEL_CHECK:      lambda: self.validate_json_toplevel(VALIDATION_CONFIG["example_config"]),
+            State.JSON_MODEL_SECTION_CHECK: lambda: self.validate_json_model_section(VALIDATION_CONFIG["example_config"], FEATURE_KEY),
+            State.JSON_REQUIRED_KEYS_CHECK: lambda: self.validate_json_required_keys(VALIDATION_CONFIG, FEATURE_KEY),
             State.CONFIG_LOADING:       lambda: self.load_model_block(FEATURE_KEY, SERVICE_LABEL),
             State.PACKAGE_STATUS:       lambda: self.build_status_map(SUMMARY_LABEL, ENABLED_LABEL, DISABLED_LABEL, KEY_SERVICE_NAME),
             State.MENU_SELECTION:       lambda: self.select_action(ACTIONS),

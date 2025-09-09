@@ -22,7 +22,8 @@ Key Features:
   customization and consistency.
 
 Workflow:
-    INITIAL → MODEL_DETECTION → PACKAGE_LOADING → PACKAGE_STATUS
+    INITIAL → MODEL_DETECTION → JSON_TOPLEVEL_CHECK → JSON_MODEL_SECTION_CHECK
+    → JSON_REQUIRED_KEYS_CHECK → PACKAGE_LOADING → PACKAGE_STATUS
     → MENU_SELECTION → PREPARE → CONFIRM
     → (INSTALL_STATE | UNINSTALL_STATE) → PACKAGE_STATUS → ... → FINALIZE
 
@@ -38,14 +39,16 @@ Intended Usage:
 Run this script directly. The program will:
     1. Verify the user account.
     2. Detect the system model and locate its package config.
-    3. Display current package status.
-    4. Let the user choose install/uninstall/cancel.
-    5. Execute the requested action with logging and safeguards.
+    3. Validate the package config structure.
+    4. Display current package status.
+    5. Let the user choose install/uninstall/cancel.
+    6. Execute the requested action with logging and safeguards.
 """
 
 from __future__ import annotations
 
 import datetime
+import json
 from enum import Enum, auto
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
@@ -54,29 +57,40 @@ from modules.logger_utils import setup_logging, log_and_print, rotate_logs
 from modules.system_utils import check_account, get_model
 from modules.package_utils import check_package, filter_by_status, install_packages, uninstall_packages
 from modules.display_utils import format_status_summary, select_from_list, confirm
-from modules.json_utils import load_json, resolve_value
+from modules.json_utils import load_json, resolve_value, validate_required_list
 
 
 # === CONFIG PATHS & KEYS ===
-PRIMARY_CONFIG   = "config/AppConfigSettings.json"
+PRIMARY_CONFIG   = "Config/AppConfigSettings.json"
 PACKAGES_KEY     = "Packages"
 CONFIG_TYPE      = "package"
-CONFIG_EXAMPLE   = "config/desktop/DesktopPackages.json"
-DEFAULT_CONFIG   = "default"
-DEFAULT_CONFIG_NOTE = (
-    "No model-specific {config_type} config found for '{model}'. "
-    "Falling back to the '{config_type}' setting in '{primary}'. "
-    "See example at '{example}' for structure."
-)
+DEFAULT_CONFIG   = "Default"
+
+# Example JSON structure to show users
+CONFIG_EXAMPLE = {
+    "Default": {
+        "Packages": [
+            "vlc",
+            "audacity"
+        ]
+    }
+}
 
 # === DETECTION CONFIG ===
 DETECTION_CONFIG = {
     "primary_config": PRIMARY_CONFIG,
     "config_type": CONFIG_TYPE,
     "packages_key": PACKAGES_KEY,
-    "default_config_note": DEFAULT_CONFIG_NOTE,
     "default_config": DEFAULT_CONFIG,
-    "config_example": CONFIG_EXAMPLE,
+    "config_example": CONFIG_EXAMPLE,   
+}
+
+# === VALIDATION CONFIG ===
+VALIDATION_CONFIG = {
+    "required_package_fields": {  
+        "Packages": list,  
+    },
+    "example_config": CONFIG_EXAMPLE,
 }
 
 # === LOGGING  ===
@@ -123,6 +137,9 @@ ACTIONS: Dict[str, Dict] = {
 class State(Enum):
     INITIAL = auto()
     MODEL_DETECTION = auto()
+    JSON_TOPLEVEL_CHECK = auto()
+    JSON_MODEL_SECTION_CHECK = auto()
+    JSON_REQUIRED_KEYS_CHECK = auto()
     PACKAGE_LOADING = auto()
     PACKAGE_STATUS = auto()
     MENU_SELECTION = auto()
@@ -146,6 +163,7 @@ class PackageInstaller:
         # Model/config
         self.model: Optional[str] = None
         self.package_file: Optional[str] = None
+        self.package_data: Optional[dict] = None
 
         # Data & choices
         self.packages_list: List[str] = []
@@ -158,6 +176,7 @@ class PackageInstaller:
         """Initialize logging and verify user; advance to MODEL_DETECTION or FINALIZE."""
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         self.log_dir = log_dir
+        self.log_dir.mkdir(parents=True, exist_ok=True)
         self.log_file = log_dir / f"{log_prefix}_{timestamp}.log"
         setup_logging(self.log_file, log_dir)
 
@@ -169,46 +188,82 @@ class PackageInstaller:
 
 
     def detect_model(self, detection_config: Dict) -> None:
-        """Detect model and resolve config; advance to PACKAGE_LOADING or FINALIZE."""
         model = get_model()
         log_and_print(f"Detected model: {model}")
-        primary_data = load_json(detection_config["primary_config"])
-        package_file, used_default = resolve_value(
-            primary_data,
-            model,
-            detection_config["packages_key"],
-            detection_config["default_config"],
-            check_file=True,
-        )
+        data = load_json(detection_config["primary_config"])
+        pk = detection_config["packages_key"]
+        dk = detection_config["default_config"]
+        primary_entry = (data.get(model, {}) or {}).get(pk)
+        package_file = resolve_value(data, model, pk, default_key=dk, check_file=True)
         if not package_file:
-            self.finalize_msg = (
-                f"No valid {detection_config['config_type']} config file found for model '{model}'"
-            )
+            self.finalize_msg = f"No valid {detection_config['config_type']} config file found for model '{model}'"
             self.state = State.FINALIZE
             return
+        used_default = (primary_entry != package_file)
         log_and_print(f"Using {detection_config['config_type']} config file '{package_file}'")
         if used_default:
-            log_and_print(
-                detection_config["default_config_note"].format(
-                    config_type=detection_config["config_type"],
-                    model=model,
-                    example=detection_config["config_example"],
-                    primary=detection_config["primary_config"],
-                )
-            )
-        self.model = model
+            log_and_print(f"No model-specific {detection_config['config_type']} config found for '{model}'.")
+            log_and_print(f"Falling back to the '{dk}' setting in '{detection_config['primary_config']}'.")
+            log_and_print("Example structure:")
+            log_and_print("==================")
+            log_and_print(json.dumps(detection_config['config_example'], indent=2))
+            log_and_print("==================")
+            self.model = dk
+        else:
+            self.model = model
         self.package_file = package_file
-        self.state = State.PACKAGE_LOADING
+        self.package_data = load_json(package_file)
+        self.state = State.JSON_TOPLEVEL_CHECK
+        
 
+    def validate_json_toplevel(self, example_config: Dict) -> None:
+        data = self.package_data
+        if not isinstance(data, dict):
+            self.finalize_msg = "Invalid config: top-level must be a JSON object."
+            log_and_print(self.finalize_msg)
+            log_and_print("Example structure:")
+            log_and_print(json.dumps(example_config, indent=2))
+            self.state = State.FINALIZE
+            return
+        log_and_print("Top-level JSON structure successfully validated (object).")
+        self.state = State.JSON_MODEL_SECTION_CHECK
+
+
+    def validate_json_model_section(self, example_config: Dict) -> None:
+        data = self.package_data
+        model = self.model
+        entry = data.get(model)
+        if not isinstance(entry, dict):
+            self.finalize_msg = (
+                f"Invalid config: expected a JSON object for model '{model}', "
+                f"but found {type(entry).__name__ if entry is not None else 'nothing'}."
+            )
+            log_and_print(self.finalize_msg)
+            log_and_print("Example structure (showing correct model section):")
+            log_and_print(json.dumps(example_config, indent=2))
+            self.state = State.FINALIZE
+            return
+        log_and_print(f"Model section '{model}' successfully validated (object).")
+        self.state = State.JSON_REQUIRED_KEYS_CHECK
+
+
+    def validate_json_required_keys(self, validation_config: Dict, section_key: str) -> None:
+        model = self.model
+        entry = self.package_data.get(model, {})
+        ok = validate_required_list(entry, section_key, str, allow_empty=False)
+        if not ok:
+            self.finalize_msg = f"Invalid config: '{model}/{section_key}' must be a non-empty list of strings."
+            log_and_print(self.finalize_msg)
+            log_and_print("Example structure:")
+            log_and_print(json.dumps(validation_config["example_config"], indent=2))
+            self.state = State.FINALIZE
+            return
+        log_and_print(f"Config for model '{model}' successfully validated.")
+        self.state = State.PACKAGE_LOADING
 
     def load_packages(self, packages_key: str) -> None:
         """Load the package list for the model; advance to PACKAGE_STATUS or FINALIZE."""
-        pkg_config = load_json(self.package_file)
-        packages_list = (pkg_config.get(self.model, {}) or {}).get(packages_key)
-        if not packages_list:
-            self.finalize_msg = f"No {packages_key} defined for model '{self.model}'"
-            self.state = State.FINALIZE
-            return
+        packages_list = self.package_data[self.model][packages_key]
         self.packages_list = sorted(list(dict.fromkeys(packages_list)))
         self.jobs = []
         self.state = State.PACKAGE_STATUS
@@ -231,19 +286,16 @@ class PackageInstaller:
         """Prompt for action; set current_action_key or finalize on cancel."""
         menu_title = "Select an option"
         options = [k for k in actions.keys() if k != "_meta"]
-
         choice = None
         while choice not in options:
             choice = select_from_list(menu_title, options)
             if choice not in options:
                 log_and_print("Invalid selection. Please choose a valid option.")
-
         spec = actions[choice]
         if spec["next_state"] is None:
             self.finalize_msg = "Operation was cancelled by the user."
             self.state = State.FINALIZE
             return
-
         self.current_action_key = choice
         self.state = State.PREPARE
 
@@ -304,15 +356,18 @@ class PackageInstaller:
     def main(self) -> None:
         """Run the state machine until FINALIZE via a dispatch table. """
         handlers: Dict[State, Callable[[], None]] = {
-            State.INITIAL:           lambda: self.setup(LOG_DIR, LOG_PREFIX, REQUIRED_USER),
-            State.MODEL_DETECTION:   lambda: self.detect_model(DETECTION_CONFIG),
-            State.PACKAGE_LOADING:   lambda: self.load_packages(PACKAGES_KEY),
-            State.PACKAGE_STATUS:    lambda: self.build_status_map(PACKAGES_KEY, INSTALLED_LABEL, UNINSTALLED_LABEL),
-            State.MENU_SELECTION:    lambda: self.select_action(ACTIONS),
-            State.PREPARE:           lambda: self.prepare_jobs(PACKAGES_KEY, ACTIONS),
-            State.CONFIRM:           lambda: self.confirm_action(ACTIONS),
-            State.INSTALL_STATE:     lambda: self.install_packages_state(INSTALLED_LABEL),
-            State.UNINSTALL_STATE:   lambda: self.uninstall_packages_state(UNINSTALLED_LABEL),
+            State.INITIAL:                 lambda: self.setup(LOG_DIR, LOG_PREFIX, REQUIRED_USER),
+            State.MODEL_DETECTION:         lambda: self.detect_model(DETECTION_CONFIG),
+            State.JSON_TOPLEVEL_CHECK:     lambda: self.validate_json_toplevel(VALIDATION_CONFIG["example_config"]),
+            State.JSON_MODEL_SECTION_CHECK:lambda: self.validate_json_model_section(VALIDATION_CONFIG["example_config"]),
+            State.JSON_REQUIRED_KEYS_CHECK:lambda: self.validate_json_required_keys(VALIDATION_CONFIG, PACKAGES_KEY),
+            State.PACKAGE_LOADING:         lambda: self.load_packages(PACKAGES_KEY),
+            State.PACKAGE_STATUS:          lambda: self.build_status_map(PACKAGES_KEY, INSTALLED_LABEL, UNINSTALLED_LABEL),
+            State.MENU_SELECTION:          lambda: self.select_action(ACTIONS),
+            State.PREPARE:                 lambda: self.prepare_jobs(PACKAGES_KEY, ACTIONS),
+            State.CONFIRM:                 lambda: self.confirm_action(ACTIONS),
+            State.INSTALL_STATE:           lambda: self.install_packages_state(INSTALLED_LABEL),
+            State.UNINSTALL_STATE:         lambda: self.uninstall_packages_state(UNINSTALLED_LABEL),
         }
 
         while self.state != State.FINALIZE:

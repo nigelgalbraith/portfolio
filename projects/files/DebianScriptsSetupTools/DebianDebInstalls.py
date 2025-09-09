@@ -25,36 +25,16 @@ Key Features:
   customization and consistency.
 
 Workflow:
-    INITIAL → DEP_CHECK → MODEL_DETECTION → CONFIG_LOADING → PACKAGE_STATUS
-    → MENU_SELECTION → PREPARE_PLAN → CONFIRM
+    INITIAL → DEP_CHECK → MODEL_DETECTION → JSON_TOPLEVEL_CHECK
+    → JSON_MODEL_SECTION_CHECK → JSON_REQUIRED_KEYS_CHECK
+    → CONFIG_LOADING → PACKAGE_STATUS → MENU_SELECTION → PREPARE_PLAN → CONFIRM
     → (INSTALL_STATE | UNINSTALL_STATE) → PACKAGE_STATUS → ... → FINALIZE
-
-Dependencies:
-- Python 3.8+ standard library
-- Custom `modules` package (provided with this project):
-    - logger_utils: logging setup, printing, log rotation
-    - system_utils: account verification, model detection, dependency checks
-    - json_utils: config loading and resolution
-    - package_utils: check/download/install/uninstall `.deb` packages
-    - display_utils: menu display, table printing, confirmation prompts
-    - archive_utils: cleanup after install failures
-    - service_utils: start system services after installation
-
-Intended Usage:
-Run this script directly. The program will:
-    1. Verify the user account.
-    2. Ensure dependencies are present.
-    3. Detect the system model and resolve its package configuration.
-    4. Display the current package status.
-    5. Let the user choose install/uninstall/cancel.
-    6. Build a plan, confirm, and execute the chosen action.
-    7. Log the results and rotate old logs.
 """
-
 
 from __future__ import annotations
 
 import datetime
+import json
 from enum import Enum, auto
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
@@ -62,7 +42,7 @@ from typing import Callable, Dict, List, Optional
 from modules.archive_utils import handle_cleanup
 from modules.logger_utils import setup_logging, log_and_print, rotate_logs
 from modules.system_utils import check_account, get_model, ensure_dependencies_installed
-from modules.json_utils import load_json, resolve_value
+from modules.json_utils import load_json, resolve_value, validate_required_items
 from modules.package_utils import (
     check_package,
     filter_by_status,
@@ -80,35 +60,48 @@ from modules.service_utils import start_service_standard
 
 
 # === CONFIG PATHS & KEYS ===
-PRIMARY_CONFIG   = "config/AppConfigSettings.json"
+PRIMARY_CONFIG   = "Config/AppConfigSettings.json"
 DEB_KEY          = "DEB"
 CONFIG_TYPE      = "deb"
-CONFIG_EXAMPLE   = "config/desktop/DesktopDeb.json"
-DEFAULT_CONFIG   = "default"
-DEFAULT_CONFIG_NOTE = (
-    "NOTE: The default {config_type} configuration is being used.\n"
-    "To customize {config_type} for model '{model}', create a model-specific config file.\n"
-    "e.g. - '{example}' and add an entry for '{model}' in '{primary}'."
-)
+DEFAULT_CONFIG   = "Default"
+
+# Example JSON structure
+CONFIG_EXAMPLE = {
+    "Default": {
+        "DEB": {
+            "vlc": {
+                "DownloadURL": "http://example.com/vlc.deb",
+                "EnableService": False,
+                "download_dir": "/tmp/deb_downloads"
+            }
+        }
+    }
+}
 
 # === DETECTION CONFIG ===
 DETECTION_CONFIG = {
     "primary_config": PRIMARY_CONFIG,
     "config_type": CONFIG_TYPE,
     "packages_key": DEB_KEY,
-    "default_config_note": DEFAULT_CONFIG_NOTE,
     "default_config": DEFAULT_CONFIG,
     "config_example": CONFIG_EXAMPLE,
 }
 
-# === DIRECTORIES ===
-DOWNLOAD_DIR = Path("/tmp/deb_downloads")
+# === VALIDATION CONFIG ===
+VALIDATION_CONFIG = {
+    "required_package_fields": {
+        "DownloadURL": str,
+        "EnableService": (bool, type(None)),
+        "download_dir": str,
+    },
+    "example_config": CONFIG_EXAMPLE,
+}
 
 # === LOGGING ===
 LOG_PREFIX      = "deb_install"
 LOG_DIR         = Path.home() / "logs" / "deb"
 LOGS_TO_KEEP    = 10
-ROTATE_LOG_NAME = "deb_install_*.log"
+ROTATE_LOG_NAME = f"{LOG_PREFIX}*.log"
 
 # === DEPENDENCIES ===
 DEPENDENCIES = ["wget"]
@@ -146,11 +139,6 @@ ACTIONS: Dict[str, Dict] = {
     },
 }
 
-# === PLAN TABLE FIELD LABELS (for nicer table headers) ===
-PACKAGE_NAME_FIELD   = "Package Name"
-DOWNLOAD_URL_FIELD   = "Download URL"
-ENABLE_SERVICE_FIELD = "Enable Service"
-
 # === JSON KEYS ===
 KEY_DOWNLOAD_URL = "DownloadURL"
 KEY_ENABLE_SERVICE = "EnableService"
@@ -162,6 +150,9 @@ class State(Enum):
     INITIAL = auto()
     DEP_CHECK = auto()
     MODEL_DETECTION = auto()
+    JSON_TOPLEVEL_CHECK = auto()
+    JSON_MODEL_SECTION_CHECK = auto()
+    JSON_REQUIRED_KEYS_CHECK = auto()
     CONFIG_LOADING = auto()
     PACKAGE_STATUS = auto()
     MENU_SELECTION = auto()
@@ -177,24 +168,16 @@ class DebInstaller:
         """Initialize machine state and fields."""
         self.state: State = State.INITIAL
         self.finalize_msg: Optional[str] = None
-
-        # Computed in setup
         self.log_dir: Optional[Path] = None
         self.log_file: Optional[Path] = None
-
-        # Model/config
         self.model: Optional[str] = None
         self.deb_file: Optional[str] = None
-
-        # Data
+        self.deb_data: Dict[str, Dict] = {}
         self.deb_block: Dict[str, Dict] = {}
         self.deb_keys: List[str] = []
         self.package_status: Dict[str, bool] = {}
-
-        # Interaction
         self.current_action_key: Optional[str] = None
         self.selected_packages: List[str] = []
-
 
     def setup(self, log_dir: Path, log_prefix: str, required_user: str) -> None:
         """Setup logging and verify user; advance to DEP_CHECK or FINALIZE."""
@@ -208,7 +191,6 @@ class DebInstaller:
             return
         self.state = State.DEP_CHECK
 
-
     def ensure_deps(self, deps: List[str]) -> None:
         """Ensure required dependencies; advance to MODEL_DETECTION or FINALIZE."""
         if ensure_dependencies_installed(deps):
@@ -217,54 +199,99 @@ class DebInstaller:
             self.finalize_msg = "Some required dependencies failed to install."
             self.state = State.FINALIZE
 
-
     def detect_model(self, detection_config: Dict) -> None:
-        """Detect system model and resolve config; advance to CONFIG_LOADING or FINALIZE."""
+        """Detect model and resolve config; advance to validation or FINALIZE."""
         model = get_model()
         log_and_print(f"Detected model: {model}")
         primary_cfg = load_json(detection_config["primary_config"])
-        deb_file, used_default = resolve_value(
-            primary_cfg,
-            model,
-            detection_config["packages_key"],
-            detection_config["default_config"],
-            check_file=True,
-        )
-        if not deb_file:
+        pk = detection_config["packages_key"]
+        dk = detection_config["default_config"]
+        primary_entry = (primary_cfg.get(model, {}) or {}).get(pk)
+        cfg_path = resolve_value(primary_cfg, model, pk, default_key=dk, check_file=True)
+        if not cfg_path:
             self.finalize_msg = (
-                f"Invalid {detection_config['config_type'].upper()} config path "
-                f"for model '{model}' or fallback."
+                f"Invalid {detection_config['config_type'].upper()} config path for model '{model}' or fallback."
             )
             self.state = State.FINALIZE
             return
-        log_and_print(f"Using {detection_config['config_type'].upper()} config file: {deb_file}")
+        used_default = (primary_entry != cfg_path)
+        log_and_print(f"Using {detection_config['config_type'].upper()} config file: {cfg_path}")
         if used_default:
-            log_and_print(
-                detection_config["default_config_note"].format(
-                    config_type=detection_config["config_type"],
-                    model=model,
-                    example=detection_config["config_example"],
-                    primary=detection_config["primary_config"],
-                )
-            )
-        self.model = model
-        self.deb_file = deb_file
-        self.state = State.CONFIG_LOADING
+            log_and_print(f"No model-specific {detection_config['config_type']} config found for '{model}'.")
+            log_and_print(f"Falling back to the '{dk}' setting in '{detection_config['primary_config']}'.")
+            self.model = dk
+        else:
+            self.model = model
+        self.config_path = cfg_path
+        self.deb_data = load_json(cfg_path)
+        self.state = State.JSON_TOPLEVEL_CHECK
 
 
-    def load_model_block(self, section_key: str, next_state: State, cancel_state: State) -> None:
-        """Load model section; set deb_block/deb_keys; advance accordingly."""
-        deb_cfg = load_json(self.deb_file)
-        block = (deb_cfg.get(self.model, {}) or {}).get(section_key, {})
-        keys = sorted(block.keys())
-        if not keys:
-            self.finalize_msg = f"No {section_key} found for model '{self.model}'."
-            self.state = cancel_state
+    def validate_json_toplevel(self, example_config: Dict) -> None:
+        data = self.deb_data
+        if not isinstance(data, dict):
+            self.finalize_msg = "Invalid config: top-level must be a JSON object."
+            log_and_print(self.finalize_msg)
+            log_and_print("Example structure:")
+            log_and_print(json.dumps(example_config, indent=2))
+            self.state = State.FINALIZE
             return
-        self.deb_block = block
-        self.deb_keys = keys
-        self.state = next_state
+        log_and_print("Top-level JSON structure successfully validated (object).")
+        self.state = State.JSON_MODEL_SECTION_CHECK
 
+    def validate_json_model_section(self, example_config: Dict, section_key: str) -> None:
+        data = self.deb_data
+        model = self.model
+        entry = data.get(model)
+        if not isinstance(entry, dict):
+            found = type(entry).__name__ if entry is not None else "nothing"
+            self.finalize_msg = (
+                f"Invalid config: expected a JSON object for model '{model}', but found {found}."
+            )
+            log_and_print(self.finalize_msg)
+            log_and_print("Example structure:")
+            log_and_print(json.dumps(example_config, indent=2))
+            self.state = State.FINALIZE
+            return
+        section = entry.get(section_key)
+        if not isinstance(section, dict) or not section:
+            self.finalize_msg = (
+                f"Invalid config: '{model}' must contain a non-empty '{section_key}' object."
+            )
+            log_and_print(self.finalize_msg)
+            log_and_print("Example structure:")
+            log_and_print(json.dumps(example_config, indent=2))
+            self.state = State.FINALIZE
+            return
+        log_and_print(f"Model section '{model}' successfully validated (object).")
+        self.state = State.JSON_REQUIRED_KEYS_CHECK
+
+    def validate_json_required_keys(self, validation_config: Dict, section_key: str) -> None:
+        model = self.model
+        entry = self.deb_data.get(model, {})
+        ok = validate_required_items(entry, section_key, validation_config["required_package_fields"])
+        if not ok:
+            self.finalize_msg = f"Invalid config: '{model}/{section_key}' failed validation."
+            log_and_print(self.finalize_msg)
+            log_and_print("Example structure:")
+            log_and_print(json.dumps(validation_config["example_config"], indent=2))
+            self.state = State.FINALIZE
+            return
+        type_summ = "\n ".join(
+            f"{k} ({' or '.join(t.__name__ for t in v) if isinstance(v, tuple) else v.__name__})"
+            for k, v in validation_config["required_package_fields"].items()
+        )
+        log_and_print(f"Config for model '{model}' successfully validated.")
+        log_and_print(f"All package fields present and of correct type:\n {type_summ}.")
+        self.state = State.CONFIG_LOADING
+        
+
+    def load_model_block(self, section_key: str, next_state: State) -> None:
+        """Load model section; set deb_block/deb_keys; advance accordingly."""
+        block = self.deb_data[self.model][section_key]
+        self.deb_block = block
+        self.deb_keys = sorted(block.keys())
+        self.state = next_state
 
     def build_status_map(self, summary_label: str, installed_label: str, uninstalled_label: str) -> None:
         """Compute package status; advance to MENU_SELECTION."""
@@ -277,7 +304,6 @@ class DebInstaller:
         )
         log_and_print(summary)
         self.state = State.MENU_SELECTION
-
 
     def select_action(self, actions: Dict[str, Dict]) -> None:
         """Prompt for action; set current_action_key or finalize on cancel."""
@@ -295,7 +321,6 @@ class DebInstaller:
             return
         self.current_action_key = choice
         self.state = State.PREPARE_PLAN
-
 
     def prepare_plan(self, label: str, actions: Dict[str, Dict]) -> None:
         """Build and print plan; populate selected_packages; advance to CONFIRM or bounce to MENU_SELECTION."""
@@ -328,7 +353,6 @@ class DebInstaller:
         self.selected_packages = pkg_names
         self.state = State.CONFIRM
 
-
     def confirm_action(self, actions: Dict[str, Dict]) -> None:
         """Confirm the chosen action; advance to install/uninstall or bounce to PACKAGE_STATUS."""
         spec = actions[self.current_action_key]
@@ -338,7 +362,6 @@ class DebInstaller:
             self.state = State.PACKAGE_STATUS
             return
         self.state = State[spec["next_state"]]
-
 
     def install_packages_state(self, key_url: str, key_enable: str, key_dir: str) -> None:
         """Install selected packages; clear selection; advance to PACKAGE_STATUS."""
@@ -364,8 +387,6 @@ class DebInstaller:
         self.selected_packages = []
         self.state = State.PACKAGE_STATUS
 
-
-
     def uninstall_packages_state(self) -> None:
         """Uninstall selected packages; clear selection; advance to PACKAGE_STATUS."""
         success = 0
@@ -381,21 +402,22 @@ class DebInstaller:
         self.selected_packages = []
         self.state = State.PACKAGE_STATUS
 
-
-    # ====== MAIN ======
     def main(self) -> None:
         """Run the state machine with a dispatch table until FINALIZE."""
         handlers: Dict[State, Callable[[], None]] = {
-            State.INITIAL:           lambda: self.setup(LOG_DIR, LOG_PREFIX, REQUIRED_USER),
-            State.DEP_CHECK:         lambda: self.ensure_deps(DEPENDENCIES),
-            State.MODEL_DETECTION:   lambda: self.detect_model(DETECTION_CONFIG),
-            State.CONFIG_LOADING:    lambda: self.load_model_block(DEB_KEY, State.PACKAGE_STATUS, State.FINALIZE),
-            State.PACKAGE_STATUS:    lambda: self.build_status_map(DEB_LABEL, INSTALLED_LABEL, UNINSTALLED_LABEL),
-            State.MENU_SELECTION:    lambda: self.select_action(ACTIONS),
-            State.PREPARE_PLAN:      lambda: self.prepare_plan(DEB_LABEL, ACTIONS),
-            State.CONFIRM:           lambda: self.confirm_action(ACTIONS),
-            State.INSTALL_STATE:     lambda: self.install_packages_state(KEY_DOWNLOAD_URL, KEY_ENABLE_SERVICE, KEY_DOWNLOAD_DIR),
-            State.UNINSTALL_STATE:   lambda: self.uninstall_packages_state(),
+            State.INITIAL:                 lambda: self.setup(LOG_DIR, LOG_PREFIX, REQUIRED_USER),
+            State.DEP_CHECK:               lambda: self.ensure_deps(DEPENDENCIES),
+            State.MODEL_DETECTION:         lambda: self.detect_model(DETECTION_CONFIG),
+            State.JSON_TOPLEVEL_CHECK:     lambda: self.validate_json_toplevel(VALIDATION_CONFIG["example_config"]),
+            State.JSON_MODEL_SECTION_CHECK: lambda: self.validate_json_model_section(VALIDATION_CONFIG["example_config"], DEB_KEY),
+            State.JSON_REQUIRED_KEYS_CHECK:lambda: self.validate_json_required_keys(VALIDATION_CONFIG, DEB_KEY),
+            State.CONFIG_LOADING:          lambda: self.load_model_block(DEB_KEY, State.PACKAGE_STATUS),
+            State.PACKAGE_STATUS:          lambda: self.build_status_map(DEB_LABEL, INSTALLED_LABEL, UNINSTALLED_LABEL),
+            State.MENU_SELECTION:          lambda: self.select_action(ACTIONS),
+            State.PREPARE_PLAN:            lambda: self.prepare_plan(DEB_LABEL, ACTIONS),
+            State.CONFIRM:                 lambda: self.confirm_action(ACTIONS),
+            State.INSTALL_STATE:           lambda: self.install_packages_state(KEY_DOWNLOAD_URL, KEY_ENABLE_SERVICE, KEY_DOWNLOAD_DIR),
+            State.UNINSTALL_STATE:         lambda: self.uninstall_packages_state(),
         }
 
         while self.state != State.FINALIZE:

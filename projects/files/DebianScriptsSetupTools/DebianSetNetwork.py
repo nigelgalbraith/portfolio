@@ -11,20 +11,10 @@ options are centralized for consistency, and logs are timestamped and rotated
 automatically.
 
 Workflow:
-  INITIAL → DEP_CHECK → MODEL_DETECTION → CONFIG_LOADING → MENU_SELECTION
-  → SSID_SELECTION → PREPARE_PLAN → CONFIRM → (APPLY_STATIC | APPLY_DHCP)
-  → FINALIZE
-
-Key Features:
-- Validates that the program runs as root and checks required dependencies.
-- Detects the system model, loads a model-specific "Networks" block from JSON,
-  and falls back to a default config if needed.
-- Allows choosing Static or DHCP configuration from a centralized ACTIONS menu.
-- Supports cancelling at the SSID or confirm step, which returns the user to
-  the main menu instead of exiting.
-- Summarizes chosen settings in a table before applying changes.
-- Applies settings via `nmcli` by creating or modifying connections.
-- Logs all operations per user with automatic rotation for old logs.
+  INITIAL → DEP_CHECK → MODEL_DETECTION
+  → JSON_TOPLEVEL_CHECK → JSON_MODEL_SECTION_CHECK → JSON_REQUIRED_KEYS_CHECK
+  → CONFIG_LOADING → MENU_SELECTION → SSID_SELECTION → PREPARE_PLAN → CONFIRM
+  → (APPLY_STATIC | APPLY_DHCP) → FINALIZE
 """
 
 from __future__ import annotations
@@ -40,7 +30,7 @@ from modules.system_utils import (
 )
 from modules.logger_utils import log_and_print, setup_logging, rotate_logs
 from modules.display_utils import print_dict_table, confirm, select_from_list
-from modules.json_utils import load_json, resolve_value
+from modules.json_utils import load_json, resolve_value, validate_required_items
 from modules.network_utils import (
     nmcli_ok, connection_exists, bring_up_connection,
     create_static_connection, modify_static_connection,
@@ -49,11 +39,11 @@ from modules.network_utils import (
 )
 
 # === CONFIG PATHS & KEYS ===
-PRIMARY_CONFIG   = "config/AppConfigSettings.json"
+PRIMARY_CONFIG   = "Config/AppConfigSettings.json"
 FEATURE_KEY      = "Networks"
 CONFIG_TYPE      = "network"
-EXAMPLE_CONFIG   = "config/desktop/DesktopNetwork.json"
-DEFAULT_MODEL    = "default"
+EXAMPLE_CONFIG   = "Config/desktop/DesktopNetwork.json"
+DEFAULT_MODEL    = "Default"
 
 # === DETECTION CONFIG (passed into detect_model) ===
 DETECTION_CONFIG = {
@@ -67,6 +57,20 @@ DETECTION_CONFIG = {
     ),
     "default_config": DEFAULT_MODEL,
     "config_example": EXAMPLE_CONFIG,
+}
+
+# === VALIDATION CONFIG (Networks) ===
+# For each SSID object under "Networks", require these fields as strings.
+# Empty strings are allowed for Address/Gateway/DNS (type check only).
+NET_VALIDATION_CONFIG = {
+    "required_ssid_fields": {
+        "ConnectionName": str,
+        "Interface": str,
+        "Address": str,  # may be ""
+        "Gateway": str,  # may be ""
+        "DNS": str,      # may be ""
+    },
+    "example_config": EXAMPLE_CONFIG,
 }
 
 # === LOGGING ===
@@ -94,13 +98,12 @@ SUMMARY_LABEL = "Network presets"
 LABEL_FIELD   = "Field"
 LABEL_VALUE   = "Value"
 
-
 # === ACTIONS (single source of truth) ===
 ACTIONS: Dict[str, Dict] = {
     "Static": {
-        "install": True,                 
+        "install": True,
         "verb": "apply static",
-        "filter_status": None,           
+        "filter_status": None,
         "prompt": "\nApply these settings now? [y/n]: ",
         "next_state": "APPLY_STATIC",
         "action_key": "Static",
@@ -127,13 +130,16 @@ class State(Enum):
     INITIAL = auto()
     DEP_CHECK = auto()
     MODEL_DETECTION = auto()
+    JSON_TOPLEVEL_CHECK = auto()
+    JSON_MODEL_SECTION_CHECK = auto()
+    JSON_REQUIRED_KEYS_CHECK = auto()
     CONFIG_LOADING = auto()
     MENU_SELECTION = auto()
     SSID_SELECTION = auto()
     PREPARE_PLAN = auto()
     CONFIRM = auto()
-    APPLY_STATIC = auto()   
-    APPLY_DHCP = auto()   
+    APPLY_STATIC = auto()
+    APPLY_DHCP = auto()
     FINALIZE = auto()
 
 
@@ -150,19 +156,19 @@ class NetworkPresetCLI:
         # model/config
         self.model: Optional[str] = None
         self.config_path: Optional[str] = None
+        self._cfg: Optional[Dict] = None  # for validation path
 
         # data
-        self.networks_block: Dict[str, Dict] = {}  
+        self.networks_block: Dict[str, Dict] = {}  # SSID → preset dict
         self.ssids: List[str] = []
 
         # choices
-        self.current_action_key: Optional[str] = None 
+        self.current_action_key: Optional[str] = None
         self.selected_ssid: Optional[str] = None
         self.preset: Optional[Dict] = None
 
-
+    # === Setup & deps ===
     def setup(self, log_subdir: str, file_prefix: str, required_user: str) -> None:
-        """Compute log path in the invoking user's home; init logging; verify user; → DEP_CHECK or FINALIZE."""
         if not check_account(required_user):
             self.finalize_msg = "User account verification failed."
             self.state = State.FINALIZE
@@ -175,9 +181,7 @@ class NetworkPresetCLI:
         setup_logging(self.log_file, self.log_dir)
         self.state = State.DEP_CHECK
 
-
     def ensure_deps(self, deps: List[str]) -> None:
-        """Ensure dependencies and nmcli; → MODEL_DETECTION or FINALIZE."""
         ensure_dependencies_installed(deps)
         if not nmcli_ok():
             log_and_print("ERROR: 'nmcli' not available.")
@@ -185,43 +189,87 @@ class NetworkPresetCLI:
             return
         self.state = State.MODEL_DETECTION
 
-
     def detect_model(self, detection_config: Dict) -> None:
-        """Detect model and resolve config path; → CONFIG_LOADING or FINALIZE."""
+        """Detect model and resolve config; advance to validation or FINALIZE."""
         model = get_model()
         log_and_print(f"Detected model: {model}")
-        primary = load_json(detection_config["primary_config"])
-        config_path, used_default = resolve_value(
-            primary,
-            model,
-            detection_config["packages_key"],
-            detection_config["default_config"],
-            check_file=True,
-        )
-        if not config_path:
+        primary_cfg = load_json(detection_config["primary_config"])
+        pk = detection_config["packages_key"]
+        dk = detection_config["default_config"]
+        primary_entry = (primary_cfg.get(model, {}) or {}).get(pk)
+        cfg_path = resolve_value(primary_cfg, model, pk, default_key=dk, check_file=True)
+        if not cfg_path:
             self.finalize_msg = (
                 f"Invalid {detection_config['config_type'].upper()} config path for model '{model}' or fallback."
             )
             self.state = State.FINALIZE
             return
-        log_and_print(f"Using {detection_config['config_type']} config file: {config_path}")
+        used_default = (primary_entry != cfg_path)
+        log_and_print(f"Using {detection_config['config_type'].upper()} config file: {cfg_path}")
         if used_default:
-            log_and_print(
-                detection_config["default_config_note"].format(
-                    config_type=detection_config["config_type"],
-                    model=model,
-                    example=detection_config["config_example"],
-                    primary=detection_config["primary_config"],
-                )
-            )
-        self.model = model
-        self.config_path = config_path
+            log_and_print(f"No model-specific {detection_config['config_type']} config found for '{model}'.")
+            log_and_print(f"Falling back to the '{dk}' setting in '{detection_config['primary_config']}'.")
+            self.model = dk
+        else:
+            self.model = model
+        self.config_path = cfg_path
+        self._cfg = load_json(cfg_path)
+        self.state = State.JSON_TOPLEVEL_CHECK
+
+    def validate_json_toplevel(self, example_config_path: str) -> None:
+        if not isinstance(self._cfg, dict):
+            self.finalize_msg = "Invalid config: top-level must be a JSON object."
+            log_and_print(self.finalize_msg)
+            log_and_print("Example structure:")
+            log_and_print(str(example_config_path))
+            self.state = State.FINALIZE
+            return
+        log_and_print("Top-level JSON structure successfully validated (object).")
+        self.state = State.JSON_MODEL_SECTION_CHECK
+
+    def validate_json_model_section(self, example_config_path: str, section_key: str) -> None:
+        entry = self._cfg.get(self.model)
+        if not isinstance(entry, dict):
+            self.finalize_msg = f"Invalid config: section for '{self.model}' must be an object."
+            log_and_print(self.finalize_msg)
+            log_and_print("Example structure:")
+            log_and_print(str(example_config_path))
+            self.state = State.FINALIZE
+            return
+        section = entry.get(section_key)
+        if not isinstance(section, dict) or not section:
+            self.finalize_msg = f"Invalid config: '{self.model}' must contain a non-empty '{section_key}' object."
+            log_and_print(self.finalize_msg)
+            log_and_print("Example structure:")
+            log_and_print(str(example_config_path))
+            self.state = State.FINALIZE
+            return
+        log_and_print(f"Model section '{self.model}' ('{section_key}') successfully validated (object).")
+        self.state = State.JSON_REQUIRED_KEYS_CHECK
+
+    def validate_network_required_keys(self, validation_config: Dict, section_key: str = FEATURE_KEY) -> None:
+        """
+        For each SSID under Networks, ensure required fields exist and are str.
+        Empty strings are allowed (type-only check).
+        """
+        entry = self._cfg.get(self.model, {}) if isinstance(self._cfg, dict) else {}
+        ok = validate_required_items(entry, section_key, validation_config["required_ssid_fields"])
+        if not ok:
+            self.finalize_msg = f"Invalid config: '{self.model}/{section_key}' failed validation."
+            log_and_print(self.finalize_msg)
+            log_and_print("Example structure:")
+            log_and_print(str(validation_config["example_config"]))
+            self.state = State.FINALIZE
+            return
+        type_summ = "\n ".join(
+            f"{k} ({v.__name__})" for k, v in validation_config["required_ssid_fields"].items()
+        )
+        log_and_print(f"Config for model '{self.model}' successfully validated (Networks).")
+        log_and_print(f"All SSID fields present and of correct type:\n {type_summ}.")
         self.state = State.CONFIG_LOADING
 
-
     def load_config(self, feature_key: str) -> None:
-        """Load SSID block from <model> → Networks; → MENU_SELECTION or FINALIZE."""
-        cfg = load_json(self.config_path)
+        cfg = self._cfg or load_json(self.config_path)
         networks_block = (cfg.get(self.model, {}) or {}).get(feature_key, {})
         if not isinstance(networks_block, dict) or not networks_block:
             log_and_print(f"No SSIDs found in network presets for model '{self.model}'.")
@@ -231,9 +279,7 @@ class NetworkPresetCLI:
         self.ssids = sorted(networks_block.keys())
         self.state = State.MENU_SELECTION
 
-
     def select_action(self, actions: Dict[str, Dict]) -> None:
-        """Choose action Static/DHCP; → SSID_SELECTION or FINALIZE."""
         title = "Select an option"
         options = list(actions.keys())
         choice = None
@@ -249,9 +295,7 @@ class NetworkPresetCLI:
         self.current_action_key = choice
         self.state = State.SSID_SELECTION
 
-
     def select_ssid(self) -> None:
-        """Pick SSID from config; → PREPARE_PLAN or MENU_SELECTION."""
         options = self.ssids + ["Cancel"]
         ssid = None
         while ssid not in options:
@@ -267,12 +311,10 @@ class NetworkPresetCLI:
         log_and_print(f"Selected SSID: {ssid}")
         self.state = State.PREPARE_PLAN
 
-
     def prepare_plan(self, summary_label: str, label_field: str,
                      label_value: str, key_model: str, key_ssid: str, key_action: str,
                      key_conn_name: str, key_interface: str, key_address: str,
                      key_gateway: str, key_dns: str) -> None:
-        """Build preset and print summary; → CONFIRM."""
         if not self.current_action_key:
             log_and_print("Invalid selection. Please choose a valid option.")
             self.state = State.MENU_SELECTION
@@ -290,23 +332,19 @@ class NetworkPresetCLI:
             {label_field: key_dns,       label_value: preset.get(key_dns, "-") if is_static else "-"},
         ]
         print_dict_table(rows, [label_field, label_value], summary_label)
-        validate_preset(preset, self.current_action_key)
+        validate_preset(preset, self.current_action_key)  
         self.preset = preset
         self.state = State.CONFIRM
 
-
     def confirm_action(self, actions: Dict[str, Dict]) -> None:
-        """Confirm; → APPLY_STATE or FINALIZE/PACKAGE_STATUS (not used in this flow)."""
         spec = actions[self.current_action_key]
         if not confirm(spec["prompt"]):
             log_and_print("User cancelled.")
             self.state = State.MENU_SELECTION
             return
         self.state = State[spec["next_state"]]
-        
 
     def apply_static(self, key_conn_name: str) -> None:
-        """Create/modify connection for Static; bring up; → FINALIZE."""
         assert self.preset is not None
         name = self.preset.get(key_conn_name, self.selected_ssid)
         exists = connection_exists(name)
@@ -321,9 +359,7 @@ class NetworkPresetCLI:
         log_and_print("Configuration completed successfully.")
         self.state = State.FINALIZE
 
-
     def apply_dhcp(self, key_conn_name: str) -> None:
-        """Create/modify connection for DHCP; bring up; → FINALIZE."""
         assert self.preset is not None
         name = self.preset.get(key_conn_name, self.selected_ssid)
         exists = connection_exists(name)
@@ -338,22 +374,27 @@ class NetworkPresetCLI:
         log_and_print("Configuration completed successfully.")
         self.state = State.FINALIZE
 
-
-    # === MAIN === 
     def main(self) -> None:
         handlers: Dict[State, Callable[[], None]] = {
-            State.INITIAL:         lambda: self.setup(LOG_SUBDIR, LOG_FILE_PREFIX, REQUIRED_USER),
-            State.DEP_CHECK:       lambda: self.ensure_deps(DEPENDENCIES),
-            State.MODEL_DETECTION: lambda: self.detect_model(DETECTION_CONFIG),
-            State.CONFIG_LOADING:  lambda: self.load_config(FEATURE_KEY),
-            State.MENU_SELECTION:  lambda: self.select_action(ACTIONS),
-            State.SSID_SELECTION:  lambda: self.select_ssid(),
-            State.PREPARE_PLAN:    lambda: self.prepare_plan(SUMMARY_LABEL, LABEL_FIELD, LABEL_VALUE,
-                                                          KEY_MODEL, KEY_SSID, KEY_ACTION, KEY_CONN_NAME,
-                                                          KEY_INTERFACE, KEY_ADDRESS, KEY_GATEWAY, KEY_DNS),
-            State.CONFIRM:         lambda: self.confirm_action(ACTIONS),
-            State.APPLY_STATIC:    lambda: self.apply_static(KEY_CONN_NAME),
-            State.APPLY_DHCP:      lambda: self.apply_dhcp(KEY_CONN_NAME),
+            State.INITIAL:              lambda: self.setup(LOG_SUBDIR, LOG_FILE_PREFIX, REQUIRED_USER),
+            State.DEP_CHECK:            lambda: self.ensure_deps(DEPENDENCIES),
+            State.MODEL_DETECTION:      lambda: self.detect_model(DETECTION_CONFIG),
+            State.JSON_TOPLEVEL_CHECK:  lambda: self.validate_json_toplevel(NET_VALIDATION_CONFIG["example_config"]),
+            State.JSON_MODEL_SECTION_CHECK:
+                lambda: self.validate_json_model_section(NET_VALIDATION_CONFIG["example_config"], FEATURE_KEY),
+            State.JSON_REQUIRED_KEYS_CHECK:
+                lambda: self.validate_network_required_keys(NET_VALIDATION_CONFIG, FEATURE_KEY),
+            State.CONFIG_LOADING:       lambda: self.load_config(FEATURE_KEY),
+            State.MENU_SELECTION:       lambda: self.select_action(ACTIONS),
+            State.SSID_SELECTION:       lambda: self.select_ssid(),
+            State.PREPARE_PLAN:         lambda: self.prepare_plan(
+                SUMMARY_LABEL, LABEL_FIELD, LABEL_VALUE,
+                KEY_MODEL, KEY_SSID, KEY_ACTION, KEY_CONN_NAME,
+                KEY_INTERFACE, KEY_ADDRESS, KEY_GATEWAY, KEY_DNS
+            ),
+            State.CONFIRM:              lambda: self.confirm_action(ACTIONS),
+            State.APPLY_STATIC:         lambda: self.apply_static(KEY_CONN_NAME),
+            State.APPLY_DHCP:           lambda: self.apply_dhcp(KEY_CONN_NAME),
         }
 
         while self.state != State.FINALIZE:

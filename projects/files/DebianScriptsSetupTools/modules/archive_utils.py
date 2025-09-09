@@ -287,61 +287,51 @@ def run_post_install_commands(post_install_cmds):
     return all_ok
 
 
-
 def build_archive_install_status(
-    items: dict,
+    item_cfg: dict,
     key_check: str = "CheckPath",
     key_extract: str = "ExtractTo",
     path_expander=None,
-    checker=check_archive_installed
-) -> dict:
+    checker=check_archive_installed,
+) -> bool:
     """
-    Build a mapping of {item_name: installed_bool} from a block of config items.
+    Return True/False for a *single* package config.
 
     Args:
-        items (dict):
-            A dictionary where keys are item names (e.g., "Firefox", "NodeJS")
-            and values are dictionaries of metadata fields.
-            Example:
-            {
-                "Firefox": {"CheckPath": "~/apps/firefox/firefox"},
-                "NodeJS": {"ExtractTo": "~/apps/node"}
-            }
-        key_check (str, default="CheckPath"):
-            The metadata field name used to directly check installation.
-        key_extract (str, default="ExtractTo"):
-            The fallback metadata field if `key_check` is not present.
-        path_expander (callable, optional):
-            A function to expand paths before checking.
-            Defaults to `os.path.expanduser`. You can pass your own (e.g. `expand_path`).
-        checker (callable, default=check_archive_installed):
-            A function that accepts a path string and returns True/False
-            depending on whether the item is installed.
+        item_cfg (dict): Metadata for one package (e.g., {"CheckPath": "..."}).
+        key_check (str): Field to probe first (can be str or list/tuple of paths).
+        key_extract (str): Fallback field if key_check is missing/empty.
+        path_expander (callable): Expands a path string; defaults to os.path.expanduser.
+        checker (callable): Function(path:str) -> bool indicating installed status.
 
     Returns:
-        dict: A mapping {item_name: bool}, True if installed, False otherwise.
-
-    Example:
-        >>> items = {
-        ...     "Firefox": {"CheckPath": "~/apps/firefox/firefox"},
-        ...     "NodeJS": {"ExtractTo": "~/apps/node"},
-        ... }
-        >>> status = build_install_status(items, path_expander=os.path.expanduser)
-        >>> print(status)
-        {"Firefox": True, "NodeJS": False}
+        bool: True if any probe path indicates installed, else False.
     """
+    import os
+
     if path_expander is None:
         path_expander = os.path.expanduser
 
-    status: dict[str, bool] = {}
-    for name, cfg in (items or {}).items():
-        if not isinstance(cfg, dict):
-            status[name] = False
-            continue
-        probe = cfg.get(key_check) or cfg.get(key_extract) or ""
-        probe_path = path_expander(probe)
-        status[name] = check_archive_installed(probe_path)
-    return status
+    def _as_list(v):
+        if v is None:
+            return []
+        if isinstance(v, (list, tuple)):
+            return [s for s in v if isinstance(s, str) and s.strip()]
+        return [v] if isinstance(v, str) and v.strip() else []
+
+    if not isinstance(item_cfg, dict):
+        return False
+
+    probes = _as_list(item_cfg.get(key_check))
+    if not probes:
+        probes = _as_list(item_cfg.get(key_extract))
+
+    for probe in probes:
+        expanded = path_expander(probe)
+        if checker(expanded):
+            return True
+    return False
+
 
 
 def handle_cleanup(archive_path, ok, pkg, fail_msg):
