@@ -18,6 +18,7 @@ import subprocess
 import shutil
 from pathlib import Path
 from typing import Dict, List
+from shutil import which
 
 
 import subprocess
@@ -44,6 +45,28 @@ def check_package(pkg: str) -> bool:
     except subprocess.CalledProcessError:
         return False
 
+def ensure_dependencies_installed(dependencies):
+    """
+    Ensure required system dependencies are installed via APT.
+
+    Args:
+        dependencies (list): List of executable names to check and install.
+
+    Returns:
+        bool: True if all dependencies are installed, False otherwise.
+
+    Example:
+        ensure_dependencies_installed(["wget", "dmidecode"])
+    """
+    success = True
+    for dep in dependencies:
+        if which(dep) is None:
+            try:
+                subprocess.run(["sudo", "apt", "update", "-y"], check=True)
+                subprocess.run(["sudo", "apt", "install", "-y", dep], check=True)
+            except subprocess.CalledProcessError:
+                success = False 
+    return success
 
 def filter_by_status(package_status: Dict[str, bool], wanted: bool) -> List[str]:
     """

@@ -20,7 +20,6 @@ from modules.logger_utils import setup_logging, log_and_print, rotate_logs
 from modules.system_utils import (
     check_account,
     get_model,
-    ensure_dependencies_installed,
     expand_path,
     move_to_trash,
     sudo_remove_path,
@@ -32,7 +31,7 @@ from modules.display_utils import (
     confirm,
     print_dict_table,
 )
-from modules.package_utils import filter_by_status
+from modules.package_utils import filter_by_status, check_package, ensure_dependencies_installed
 from modules.service_utils import start_service_standard
 from modules.archive_utils import (
     check_archive_installed,
@@ -80,18 +79,12 @@ DETECTION_CONFIG = {
 }
 
 # === VALIDATION CONFIG ===
-# Require these core scalars. Lists below are optional but must be list[str] when present.
 VALIDATION_CONFIG = {
     "required_package_fields": {
         "DownloadURL": str,
         "DownloadPath": str,
         "ExtractTo": str,
         "StripTopLevel": bool,
-    },
-    "optional_list_fields": {
-        "PostInstall":   {"elem_type": str, "allow_empty": True},
-        "PostUninstall": {"elem_type": str, "allow_empty": True},
-        "TrashPaths":    {"elem_type": str, "allow_empty": True},
     },
     "example_config": CONFIG_EXAMPLE,
 }
@@ -107,7 +100,7 @@ DEPENDENCIES = ["wget", "tar", "unzip"]
 
 # === USER / LABELS ===
 REQUIRED_USER     = "Standard"
-ARCHIVE_LABEL     = "archive packages"
+ARCHIVE_LABEL     = "Archive packages"
 INSTALLED_LABEL   = "INSTALLED"
 UNINSTALLED_LABEL = "UNINSTALLED"
 SUMMARY_LABEL     = "Archive applications"
@@ -152,11 +145,11 @@ ACTIONS: Dict[str, Dict] = {
 class State(Enum):
     INITIAL = auto()
     DEP_CHECK = auto()
+    DEP_INSTALL = auto()
     MODEL_DETECTION = auto()
     JSON_TOPLEVEL_CHECK = auto()
     JSON_MODEL_SECTION_CHECK = auto()
-    JSON_OBJECT_KEYS_CHECK = auto()   # <- NEW
-    JSON_LIST_KEYS_CHECK = auto()     # <- NEW
+    JSON_REQUIRED_KEYS_CHECK = auto()
     CONFIG_LOADING = auto()
     PACKAGE_STATUS = auto()
     MENU_SELECTION = auto()
@@ -171,24 +164,41 @@ class State(Enum):
 
 class ArchiveInstaller:
     def __init__(self) -> None:
+        # --- Core state ---
         self.state: State = State.INITIAL
         self.finalize_msg: Optional[str] = None
+
+        # --- Logging ---
         self.log_dir: Optional[Path] = None
         self.log_file: Optional[Path] = None
+
+        # --- Model/config ---
         self.model: Optional[str] = None
+        self.detected_model: Optional[str] = None
         self.config_path: Optional[str] = None
-        self.archive_data: Dict[str, Dict] = {}
-        self.model_block: Dict[str, Dict] = {}
-        self.pkg_keys: List[str] = []
-        self.status_map: Dict[str, bool] = {}
-        self.current_action_key: Optional[str] = None
+        self.package_data: Dict[str, Dict] = {}
+
+        # --- Packages ---
+        self.package_block: Dict[str, Dict] = {}
+        self.packages_list: List[str] = []
+        self.package_status: Dict[str, bool] = {}
         self.selected_packages: List[str] = []
+
+        # --- Actions ---
+        self.current_action_key: Optional[str] = None
+
+        # --- Archive-specific ---
         self.post_install_pkgs: List[str] = []
         self.post_uninstall_pkgs: List[str] = []
+
+        # --- Dependencies (two-stage) ---
+        self.deps_install_list: List[str] = []
+
 
     def setup(self, log_dir: Path, log_prefix: str, required_user: str) -> None:
         ts = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         self.log_dir = log_dir
+        self.log_dir.mkdir(parents=True, exist_ok=True)
         self.log_file = log_dir / f"{log_prefix}_{ts}.log"
         setup_logging(self.log_file, log_dir)
         if not check_account(expected_user=required_user):
@@ -197,18 +207,48 @@ class ArchiveInstaller:
             return
         self.state = State.DEP_CHECK
 
-    def ensure_deps(self, deps: List[str]) -> None:
-        if ensure_dependencies_installed(deps):
-            self.state = State.MODEL_DETECTION
+
+    def dep_check(self, deps: List[str]) -> None:
+        """Check dependencies and collect missing ones."""
+        self.deps_install_list = []
+        for dep in deps:
+            if check_package(dep):
+                log_and_print(f"[OK]    {dep} is installed.")
+            else:
+                log_and_print(f"[MISS]  {dep} is missing.")
+                self.deps_install_list.append(dep)
+        if self.deps_install_list:
+            log_and_print("Missing deps: " + ", ".join(self.deps_install_list))
+            self.state = State.DEP_INSTALL
         else:
-            self.finalize_msg = "Some required dependencies failed to install."
-            self.state = State.FINALIZE
+            self.state = State.MODEL_DETECTION
+
+    def dep_install(self) -> None:
+        """Install each missing dependency; fail fast on error."""
+        for dep in self.deps_install_list:
+            log_and_print(f"[INSTALL] Attempting: {dep}")
+            if not ensure_dependencies_installed([dep]):
+                log_and_print(f"[FAIL]   Install failed: {dep}")
+                self.finalize_msg = f"Failed to install dependency: {dep}"
+                self.state = State.FINALIZE
+                return
+            if check_package(dep):
+                log_and_print(f"[DONE]   Installed: {dep}")
+            else:
+                log_and_print(f"[FAIL]   Still missing after install: {dep}")
+                self.finalize_msg = f"{dep} still missing after install."
+                self.state = State.FINALIZE
+                return
+        self.deps_install_list = []
+        self.state = State.MODEL_DETECTION
 
     def detect_model(self, detection_config: Dict) -> None:
         """Detect model and resolve config; advance to validation or FINALIZE."""
         model = get_model()
+        self.detected_model = model
         log_and_print(f"Detected model: {model}")
         primary_cfg = load_json(detection_config["primary_config"])
+        log_and_print(f"Primary config path: {detection_config['primary_config']}")
         pk = detection_config["packages_key"]
         dk = detection_config["default_config"]
         primary_entry = (primary_cfg.get(model, {}) or {}).get(pk)
@@ -223,16 +263,17 @@ class ArchiveInstaller:
         log_and_print(f"Using {detection_config['config_type'].upper()} config file: {cfg_path}")
         if used_default:
             log_and_print(f"No model-specific {detection_config['config_type']} config found for '{model}'.")
-            log_and_print(f"Falling back to the '{dk}' setting in '{detection_config['primary_config']}'.")
+            log_and_print(f"Falling back from detected model '{self.detected_model}' to '{dk}'.")
             self.model = dk
         else:
             self.model = model
+
         self.config_path = cfg_path
-        self.archive_data = load_json(cfg_path)
+        self.package_data = load_json(cfg_path)
         self.state = State.JSON_TOPLEVEL_CHECK
 
     def validate_json_toplevel(self, example_config: Dict) -> None:
-        data = self.archive_data
+        data = self.package_data
         if not isinstance(data, dict):
             self.finalize_msg = "Invalid config: top-level must be a JSON object."
             log_and_print(self.finalize_msg)
@@ -244,7 +285,7 @@ class ArchiveInstaller:
         self.state = State.JSON_MODEL_SECTION_CHECK
 
     def validate_json_model_section(self, example_config: Dict, section_key: str) -> None:
-        data = self.archive_data
+        data = self.package_data
         model = self.model
         entry = data.get(model)
         if not isinstance(entry, dict):
@@ -263,105 +304,72 @@ class ArchiveInstaller:
             self.state = State.FINALIZE
             return
         log_and_print(f"Model section '{model}' successfully validated (object).")
-        # proceed to object/scalar checks
-        self.state = State.JSON_OBJECT_KEYS_CHECK
+        self.state = State.JSON_REQUIRED_KEYS_CHECK
 
-    # ---------- NEW: object (scalar) validation ----------
-    def validate_json_object_keys(self, validation_config: Dict, section_key: str) -> None:
-        """
-        Validate required scalar/object fields for each package:
-        DownloadURL (str), DownloadPath (str), ExtractTo (str), StripTopLevel (bool)
-        """
+    def validate_json_required_keys(self, validation_config: Dict, section_key: str, object_type: type = dict) -> None:
+        """Validate required sections and enforce non-empty for object_type."""
         model = self.model
-        entry = self.archive_data.get(model, {})
-        ok = validate_required_items(entry, section_key, validation_config["required_package_fields"])
-        if not ok:
-            self.finalize_msg = f"Invalid config: '{model}/{section_key}' failed required-field validation."
-            log_and_print(self.finalize_msg)
-            log_and_print("Example structure:")
-            log_and_print(json.dumps(validation_config["example_config"], indent=2))
-            self.state = State.FINALIZE
-            return
-
-        type_summ_required = "\n ".join(
-            f"{k} ({' or '.join(t.__name__ for t in v) if isinstance(v, tuple) else v.__name__})"
-            for k, v in validation_config["required_package_fields"].items()
-        )
-        log_and_print(f"Object keys validated for model '{model}'.")
-        log_and_print("Required fields:\n " + type_summ_required + ".")
-        self.state = State.JSON_LIST_KEYS_CHECK
-
-    def validate_json_list_keys(self, validation_config: Dict, section_key: str) -> None:
-        """
-        Validate optional list fields per package when present:
-        PostInstall, PostUninstall, TrashPaths -> list[str] (empty allowed)
-        """
-        model = self.model
-        entry = self.archive_data.get(model, {})
-        section = entry.get(section_key, {})
-        if not isinstance(section, dict):
-            self.finalize_msg = f"Invalid config: '{model}/{section_key}' must be an object."
-            log_and_print(self.finalize_msg)
-            self.state = State.FINALIZE
-            return
-
-        for pkg_name, meta in section.items():
-            if not isinstance(meta, dict):
-                self.finalize_msg = f"Invalid config: '{model}/{section_key}/{pkg_name}' must be an object."
+        entry = self.package_data.get(model, {})
+        if object_type is list:
+            ok = validate_required_list(entry, section_key, str, allow_empty=False)
+            if not ok:
+                self.finalize_msg = f"Invalid config: '{model}/{section_key}' must be a non-empty list of strings."
                 log_and_print(self.finalize_msg)
+                log_and_print("Example structure:")
+                log_and_print(json.dumps(validation_config["example_config"], indent=2))
                 self.state = State.FINALIZE
                 return
-            for list_key, spec in validation_config.get("optional_list_fields", {}).items():
-                if list_key in meta:
-                    if not validate_required_list(
-                        data_for_model=meta,
-                        list_key=list_key,
-                        elem_type=spec.get("elem_type", str),
-                        allow_empty=spec.get("allow_empty", True),
-                    ):
-                        self.finalize_msg = (
-                            f"Invalid config: '{model}/{section_key}/{pkg_name}/{list_key}' must be "
-                            f"a list of {spec.get('elem_type', str).__name__}"
-                            + ("" if spec.get("allow_empty", True) else " (non-empty)")
-                            + "."
-                        )
-                        log_and_print(self.finalize_msg)
-                        self.state = State.FINALIZE
-                        return
-
-        type_summ_optional = "\n ".join(
-            f"{k} (list[{spec.get('elem_type', str).__name__}])"
-            for k, spec in validation_config.get("optional_list_fields", {}).items()
-        )
-        if type_summ_optional:
-            log_and_print("List keys validated (when present):\n " + type_summ_optional + ".")
+        elif object_type is dict:
+            ok = validate_required_items(entry, section_key, validation_config["required_package_fields"])
+            if not ok:
+                self.finalize_msg = f"Invalid config: '{model}/{section_key}' failed validation."
+                log_and_print(self.finalize_msg)
+                log_and_print("Example structure:")
+                log_and_print(json.dumps(validation_config["example_config"], indent=2))
+                self.state = State.FINALIZE
+                return
+        else:
+            self.finalize_msg = f"Invalid validator expectation for '{model}/{section_key}'."
+            self.state = State.FINALIZE
+            return
+        log_and_print(f"Config for model '{model}' successfully validated.")
+        log_and_print("\n  Keys Validated")
+        log_and_print("  ---------------")
+        for key, expected_type in validation_config["required_package_fields"].items():
+            expected_types = expected_type if isinstance(expected_type, tuple) else (expected_type,)
+            tname = " or ".join(tt.__name__ for tt in expected_types)
+            log_and_print(f"  - {key} ({tname})")
         self.state = State.CONFIG_LOADING
 
+
     def load_model_block(self, section_key: str) -> None:
-        block = self.archive_data[self.model][section_key]
-        self.model_block = block
-        self.pkg_keys = sorted(block.keys())
+        block = self.package_data[self.model][section_key]
+        self.package_block = block
+        self.packages_list = sorted(block.keys())
         self.state = State.PACKAGE_STATUS
 
+
     def build_status_map(self, check_key: str, extract_key: str, summary_label: str, installed_label: str, uninstalled_label: str) -> None:
-        self.status_map = {
+        """Compute package status and print summary; advance to MENU_SELECTION."""
+        self.package_status = {
             pkg: build_archive_install_status(
-                self.model_block.get(pkg, {}) or {},
+                self.package_block.get(pkg, {}) or {},
                 key_check=check_key,
                 key_extract=extract_key,
                 path_expander=expand_path,
                 checker=check_archive_installed,
             )
-            for pkg in self.pkg_keys
+            for pkg in self.packages_list
         }
         summary = format_status_summary(
-            self.status_map,
+            self.package_status,
             label=summary_label,
             count_keys=[installed_label, uninstalled_label],
             labels={True: installed_label, False: uninstalled_label},
         )
         log_and_print(summary)
         self.state = State.MENU_SELECTION
+
 
     def select_action(self, actions: Dict[str, Dict]) -> None:
         menu_title = "Select an option"
@@ -383,7 +391,7 @@ class ArchiveInstaller:
         spec = actions[self.current_action_key]
         verb = spec["verb"]
         filter_status = spec["filter_status"]
-        pkg_names = sorted(filter_by_status(self.status_map, filter_status))
+        pkg_names = sorted(filter_by_status(self.package_status, filter_status))
         if not pkg_names:
             log_and_print(f"No {key_label} to process for {verb}.")
             self.state = State.MENU_SELECTION
@@ -392,7 +400,7 @@ class ArchiveInstaller:
         seen_keys = {key_label}
         ordered_other: List[str] = []
         for pkg in pkg_names:
-            meta = self.model_block.get(pkg, {}) or {}
+            meta = self.package_block.get(pkg, {}) or {}
             row = {key_label: pkg}
             for k, v in meta.items():
                 row[k] = v
@@ -416,21 +424,22 @@ class ArchiveInstaller:
             return
         self.state = State[spec["next_state"]]
 
-    def install_archives_state(self, download_url_key: str, extract_to_key: str, strip_top_key: str, download_path_key: str) -> None:
+
+    def install_archives(self, key_download_url: str, key_extract_to: str, key_strip_top: str, key_download_path: str, installed_label: str) -> None:
         ok_names: List[str] = []
         total = len(self.selected_packages)
         for pkg in self.selected_packages:
-            meta = self.model_block.get(pkg, {}) or {}
-            download_url    = meta.get(download_url_key, "")
-            extract_to      = expand_path(meta.get(extract_to_key, ""))
-            strip_top_level = bool(meta.get(strip_top_key, False))
-            dl_path         = expand_path(meta.get(download_path_key, ""))
+            meta = self.package_block.get(pkg, {}) or {}
+            download_url    = meta.get(key_download_url, "")
+            extract_to      = expand_path(meta.get(key_extract_to, ""))
+            strip_top_level = bool(meta.get(key_strip_top, False))
+            dl_path         = expand_path(meta.get(key_download_path, ""))
             missing = []
-            if not download_url: missing.append(download_url_key)
-            if not extract_to:   missing.append(extract_to_key)
-            if not dl_path:      missing.append(download_path_key)
+            if not download_url: missing.append(key_download_url)
+            if not extract_to:   missing.append(key_extract_to)
+            if not dl_path:      missing.append(key_download_path)
             if missing:
-                log_and_print("ARCHIVE INSTALL FAILED: " + f"{pkg} (missing {', '.join(missing)})")
+                log_and_print(f"ARCHIVE INSTALL FAILED: {pkg} (missing {', '.join(missing)})")
                 continue
             Path(dl_path).mkdir(parents=True, exist_ok=True)
             archive_path = download_archive_file(pkg, download_url, dl_path)
@@ -440,59 +449,63 @@ class ArchiveInstaller:
             ok = install_archive_file(archive_path, extract_to, strip_top_level)
             handle_cleanup(archive_path, ok, pkg, "INSTALL FAILED")
             if ok:
-                log_and_print(f"ARCHIVE {INSTALLED_LABEL}: {pkg}")
+                log_and_print(f"ARCHIVE {installed_label}: {pkg}")
                 ok_names.append(pkg)
             else:
-                log_and_print("ARCHIVE INSTALL FAILED: " + f"{pkg}")
+                log_and_print(f"ARCHIVE INSTALL FAILED: {pkg}")
         self.post_install_pkgs = ok_names
         self.selected_packages = []
         self.finalize_msg = f"Installed successfully: {len(ok_names)}/{total}"
         self.state = State.POST_INSTALL
 
-    def post_install_steps_state(self, post_install_key: str, enable_service_key: str) -> None:
+
+    def post_install_steps(self, key_post_install: str, key_enable_service: str) -> None:
         if not getattr(self, "post_install_pkgs", None):
             log_and_print("No packages to post-install.")
             self.state = State.PACKAGE_STATUS
             return
         for pkg in self.post_install_pkgs:
-            meta = self.model_block.get(pkg, {}) or {}
-            cmds = meta.get(post_install_key) or []
+            meta = self.package_block.get(pkg, {}) or {}
+            cmds = meta.get(key_post_install) or []
             if isinstance(cmds, str):
                 cmds = [cmds]
             if cmds:
                 run_post_install_commands(cmds)
                 log_and_print(f"POST-INSTALL OK for {pkg}")
-            svc = meta.get(enable_service_key, "")
+            svc = meta.get(key_enable_service, "")
             if svc:
                 start_service_standard(svc)
                 log_and_print(f"SERVICE STARTED for {pkg} ({svc})")
         self.state = State.PACKAGE_STATUS
 
-    def uninstall_archives_state(self, check_path_key: str, extract_to_key: str) -> None:
+
+    def uninstall_archives(self, key_check: str, key_extract: str, uninstalled_label: str) -> None:
+        """Uninstall selected archives; record post-uninstall set; advance to POST_UNINSTALL."""
         ok_names: List[str] = []
         total = len(self.selected_packages)
         for pkg in self.selected_packages:
-            meta = self.model_block.get(pkg, {}) or {}
-            check_path = meta.get(check_path_key) or meta.get(extract_to_key, "")
+            meta = self.package_block.get(pkg, {}) or {}
+            check_path = meta.get(key_check) or meta.get(key_extract, "")
             check_path = expand_path(check_path)
             if not uninstall_archive_install(check_path):
                 log_and_print(f"UNINSTALL FAILED: {pkg}")
                 continue
-            log_and_print(f"ARCHIVE {UNINSTALLED_LABEL}: {pkg}")
+            log_and_print(f"ARCHIVE {uninstalled_label}: {pkg}")
             ok_names.append(pkg)
         self.post_uninstall_pkgs = ok_names
         self.selected_packages = []
         self.finalize_msg = f"Uninstalled successfully: {len(ok_names)}/{total}"
         self.state = State.POST_UNINSTALL
 
-    def post_uninstall_steps_state(self, post_uninstall_key: str, trash_paths_key: str) -> None:
+
+    def post_uninstall_steps(self, key_post_uninstall: str, key_trash_paths: str) -> None:
         if not getattr(self, "post_uninstall_pkgs", None):
             log_and_print("No packages to post-uninstall.")
             self.state = State.PACKAGE_STATUS
             return
         for pkg in self.post_uninstall_pkgs:
-            meta = self.model_block.get(pkg, {}) or {}
-            pu_cmds = meta.get(post_uninstall_key) or []
+            meta = self.package_block.get(pkg, {}) or {}
+            pu_cmds = meta.get(key_post_uninstall) or []
             if isinstance(pu_cmds, str):
                 pu_cmds = [pu_cmds]
             if pu_cmds:
@@ -500,32 +513,34 @@ class ArchiveInstaller:
                     log_and_print(f"POST-UNINSTALL OK for {pkg}")
                 else:
                     log_and_print(f"POST-UNINSTALL FAILED for {pkg}")
-            for p in meta.get(trash_paths_key, []):
+            for p in meta.get(key_trash_paths, []) or []:
                 expanded = expand_path(p)
                 removed = move_to_trash(expanded) or sudo_remove_path(expanded)
                 if removed:
                     log_and_print(f"REMOVED extra path for {pkg}: {expanded}")
         self.state = State.PACKAGE_STATUS
 
+    # ---- MAIN ----
     def main(self) -> None:
         handlers: Dict[State, Callable[[], None]] = {
             State.INITIAL:                 lambda: self.setup(LOG_DIR, LOG_PREFIX, REQUIRED_USER),
-            State.DEP_CHECK:               lambda: self.ensure_deps(DEPENDENCIES),
+            State.DEP_CHECK:               lambda: self.dep_check(DEPENDENCIES),
+            State.DEP_INSTALL:             lambda: self.dep_install(),
             State.MODEL_DETECTION:         lambda: self.detect_model(DETECTION_CONFIG),
             State.JSON_TOPLEVEL_CHECK:     lambda: self.validate_json_toplevel(VALIDATION_CONFIG["example_config"]),
             State.JSON_MODEL_SECTION_CHECK:lambda: self.validate_json_model_section(VALIDATION_CONFIG["example_config"], ARCHIVE_KEY),
-            State.JSON_OBJECT_KEYS_CHECK:  lambda: self.validate_json_object_keys(VALIDATION_CONFIG, ARCHIVE_KEY),
-            State.JSON_LIST_KEYS_CHECK:    lambda: self.validate_json_list_keys(VALIDATION_CONFIG, ARCHIVE_KEY),
+            State.JSON_REQUIRED_KEYS_CHECK:lambda: self.validate_json_required_keys(VALIDATION_CONFIG, ARCHIVE_KEY, dict),
             State.CONFIG_LOADING:          lambda: self.load_model_block(ARCHIVE_KEY),
             State.PACKAGE_STATUS:          lambda: self.build_status_map(CHECK_PATH_KEY, EXTRACT_TO_KEY, SUMMARY_LABEL, INSTALLED_LABEL, UNINSTALLED_LABEL),
             State.MENU_SELECTION:          lambda: self.select_action(ACTIONS),
             State.PREPARE_PLAN:            lambda: self.prepare_plan(ARCHIVE_LABEL, ACTIONS),
             State.CONFIRM:                 lambda: self.confirm_action(ACTIONS),
-            State.INSTALL_STATE:           lambda: self.install_archives_state(DOWNLOAD_URL_KEY, EXTRACT_TO_KEY, STRIP_TOP_LEVEL_KEY, DOWNLOAD_PATH_KEY),
-            State.POST_INSTALL:            lambda: self.post_install_steps_state(POST_INSTALL_KEY, ENABLE_SERVICE_KEY),
-            State.UNINSTALL_STATE:         lambda: self.uninstall_archives_state(CHECK_PATH_KEY, EXTRACT_TO_KEY),
-            State.POST_UNINSTALL:          lambda: self.post_uninstall_steps_state(POST_UNINSTALL_KEY, TRASH_PATHS_KEY),
+            State.INSTALL_STATE:           lambda: self.install_archives(DOWNLOAD_URL_KEY, EXTRACT_TO_KEY, STRIP_TOP_LEVEL_KEY, DOWNLOAD_PATH_KEY, INSTALLED_LABEL),
+            State.POST_INSTALL:            lambda: self.post_install_steps(POST_INSTALL_KEY, ENABLE_SERVICE_KEY),
+            State.UNINSTALL_STATE:         lambda: self.uninstall_archives(CHECK_PATH_KEY, EXTRACT_TO_KEY, UNINSTALLED_LABEL),
+            State.POST_UNINSTALL:          lambda: self.post_uninstall_steps(POST_UNINSTALL_KEY, TRASH_PATHS_KEY),
         }
+
 
         while self.state != State.FINALIZE:
             handler = handlers.get(self.state)

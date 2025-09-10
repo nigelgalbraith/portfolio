@@ -4,38 +4,26 @@
 """
 Network Presets State Machine
 
-Automates applying model-specific NetworkManager presets (Static/DHCP) using a
-deterministic state machine with a dispatch table. Each step is represented as
-an explicit state with predictable transitions. All user-facing strings and menu
-options are centralized for consistency, and logs are timestamped and rotated
-automatically.
-
-Workflow:
-  INITIAL → DEP_CHECK → MODEL_DETECTION
-  → JSON_TOPLEVEL_CHECK → JSON_MODEL_SECTION_CHECK → JSON_REQUIRED_KEYS_CHECK
-  → CONFIG_LOADING → MENU_SELECTION → SSID_SELECTION → PREPARE_PLAN → CONFIRM
-  → (APPLY_STATIC | APPLY_DHCP) → FINALIZE
+Applies model-specific NetworkManager presets (Static/DHCP) using a deterministic
+Enum-driven state machine. Shared functions are reused from the DEB installer,
+leaving only network-specific states customized.
 """
 
 from __future__ import annotations
-
-import datetime
-import os
+import datetime, os, json
 from enum import Enum, auto
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
-
-from modules.system_utils import (
-    check_account, ensure_dependencies_installed, secure_logs_for_user, get_model
-)
+from modules.package_utils import ensure_dependencies_installed, check_package
+from modules.system_utils import check_account, secure_logs_for_user, get_model
 from modules.logger_utils import log_and_print, setup_logging, rotate_logs
-from modules.display_utils import print_dict_table, confirm, select_from_list
-from modules.json_utils import load_json, resolve_value, validate_required_items
+from modules.display_utils import print_dict_table, confirm, select_from_list, format_status_summary
+from modules.json_utils import load_json, resolve_value, validate_required_items, validate_required_list
 from modules.network_utils import (
-    nmcli_ok, connection_exists, bring_up_connection,
-    create_static_connection, modify_static_connection,
-    create_dhcp_connection, modify_dhcp_connection,
-    build_preset, validate_preset,
+                                    connection_exists, bring_up_connection, create_static_connection,
+                                    modify_static_connection, create_dhcp_connection,
+                                    modify_dhcp_connection,
+                                    is_connected,
 )
 
 # === CONFIG PATHS & KEYS ===
@@ -45,30 +33,23 @@ CONFIG_TYPE      = "network"
 EXAMPLE_CONFIG   = "Config/desktop/DesktopNetwork.json"
 DEFAULT_MODEL    = "Default"
 
-# === DETECTION CONFIG (passed into detect_model) ===
+# === DETECTION CONFIG ===
 DETECTION_CONFIG = {
     "primary_config": PRIMARY_CONFIG,
     "config_type": CONFIG_TYPE,
     "packages_key": FEATURE_KEY,
-    "default_config_note": (
-        "NOTE: The default {config_type} configuration is being used.\n"
-        "To customize {config_type} for model '{model}', create a model-specific config file.\n"
-        "e.g. - '{example}' and add an entry for '{model}' in '{primary}'."
-    ),
     "default_config": DEFAULT_MODEL,
     "config_example": EXAMPLE_CONFIG,
 }
 
-# === VALIDATION CONFIG (Networks) ===
-# For each SSID object under "Networks", require these fields as strings.
-# Empty strings are allowed for Address/Gateway/DNS (type check only).
+# === VALIDATION CONFIG ===
 NET_VALIDATION_CONFIG = {
-    "required_ssid_fields": {
+    "required_package_fields": {
         "ConnectionName": str,
         "Interface": str,
-        "Address": str,  # may be ""
-        "Gateway": str,  # may be ""
-        "DNS": str,      # may be ""
+        "Address": str,
+        "Gateway": str,
+        "DNS": str,
     },
     "example_config": EXAMPLE_CONFIG,
 }
@@ -81,7 +62,7 @@ ROTATE_LOG_NAME = f"{LOG_FILE_PREFIX}_settings_*.log"
 
 # === RUNTIME ===
 REQUIRED_USER = "root"
-DEPENDENCIES  = ["nmcli"]
+DEPENDENCIES  = ["network-manager"]
 
 # === FIELD KEYS ===
 KEY_MODEL      = "Model"
@@ -94,11 +75,11 @@ KEY_GATEWAY    = "Gateway"
 KEY_DNS        = "DNS"
 
 # === LABELS ===
-SUMMARY_LABEL = "Network presets"
-LABEL_FIELD   = "Field"
-LABEL_VALUE   = "Value"
+SUMMARY_LABEL     = "Network presets"
+INSTALLED_LABEL   = "APPLIED"
+UNINSTALLED_LABEL = "NOT_APPLIED"
 
-# === ACTIONS (single source of truth) ===
+# === ACTIONS ===
 ACTIONS: Dict[str, Dict] = {
     "Static": {
         "install": True,
@@ -106,7 +87,7 @@ ACTIONS: Dict[str, Dict] = {
         "filter_status": None,
         "prompt": "\nApply these settings now? [y/n]: ",
         "next_state": "APPLY_STATIC",
-        "action_key": "Static",
+        "show_fields": [KEY_CONN_NAME, KEY_INTERFACE, KEY_ADDRESS, KEY_GATEWAY, KEY_DNS],
     },
     "DHCP": {
         "install": False,
@@ -114,7 +95,7 @@ ACTIONS: Dict[str, Dict] = {
         "filter_status": None,
         "prompt": "\nApply these settings now? [y/n]: ",
         "next_state": "APPLY_DHCP",
-        "action_key": "DHCP",
+        "show_fields": [KEY_CONN_NAME, KEY_INTERFACE],
     },
     "Cancel": {
         "install": None,
@@ -129,11 +110,13 @@ ACTIONS: Dict[str, Dict] = {
 class State(Enum):
     INITIAL = auto()
     DEP_CHECK = auto()
+    DEP_INSTALL = auto()
     MODEL_DETECTION = auto()
     JSON_TOPLEVEL_CHECK = auto()
     JSON_MODEL_SECTION_CHECK = auto()
     JSON_REQUIRED_KEYS_CHECK = auto()
     CONFIG_LOADING = auto()
+    BUILD_STATUS = auto()
     MENU_SELECTION = auto()
     SSID_SELECTION = auto()
     PREPARE_PLAN = auto()
@@ -141,34 +124,35 @@ class State(Enum):
     APPLY_STATIC = auto()
     APPLY_DHCP = auto()
     FINALIZE = auto()
+    BUILD_PRESET = auto()
+    VALIDATE_PRESET = auto()
+    APPLY_CONN_UP = auto()
 
 
 class NetworkPresetCLI:
     def __init__(self) -> None:
+        """Init fields."""
         self.state: State = State.INITIAL
         self.finalize_msg: Optional[str] = None
-
-        # setup-computed
         self.sudo_user: Optional[str] = None
         self.log_dir: Optional[Path] = None
         self.log_file: Optional[Path] = None
-
-        # model/config
         self.model: Optional[str] = None
+        self.detected_model: Optional[str] = None
         self.config_path: Optional[str] = None
-        self._cfg: Optional[Dict] = None  # for validation path
-
-        # data
-        self.networks_block: Dict[str, Dict] = {}  # SSID → preset dict
-        self.ssids: List[str] = []
-
-        # choices
+        self.package_data: Dict[str, Dict] = {}
+        self.package_block: Dict[str, Dict] = {}
+        self.packages_list: List[str] = []
+        self.package_status: Dict[str, bool] = {}
         self.current_action_key: Optional[str] = None
         self.selected_ssid: Optional[str] = None
         self.preset: Optional[Dict] = None
+        self.deps_install_list: List[str] = []
+        self._conn_name: Optional[str] = None
 
-    # === Setup & deps ===
+
     def setup(self, log_subdir: str, file_prefix: str, required_user: str) -> None:
+        """Initialize logging and verify root user; advance to DEP_CHECK or FINALIZE."""
         if not check_account(required_user):
             self.finalize_msg = "User account verification failed."
             self.state = State.FINALIZE
@@ -181,232 +165,342 @@ class NetworkPresetCLI:
         setup_logging(self.log_file, self.log_dir)
         self.state = State.DEP_CHECK
 
-    def ensure_deps(self, deps: List[str]) -> None:
-        ensure_dependencies_installed(deps)
-        if not nmcli_ok():
-            log_and_print("ERROR: 'nmcli' not available.")
-            self.state = State.FINALIZE
-            return
+
+    def dep_check(self, deps: List[str]) -> None:
+        """Check dependencies and collect missing ones."""
+        self.deps_install_list = []
+        for dep in deps:
+            if check_package(dep):
+                log_and_print(f"[OK]    {dep} is installed.")
+            else:
+                log_and_print(f"[MISS]  {dep} is missing.")
+                self.deps_install_list.append(dep)
+        if self.deps_install_list:
+            log_and_print("Missing deps: " + ", ".join(self.deps_install_list))
+            self.state = State.DEP_INSTALL
+        else:
+            self.state = State.MODEL_DETECTION
+
+
+    def dep_install(self) -> None:
+        """Install each missing dependency; fail fast on error."""
+        for dep in self.deps_install_list:
+            log_and_print(f"[INSTALL] Attempting: {dep}")
+            if not ensure_dependencies_installed([dep]):
+                log_and_print(f"[FAIL]   Install failed: {dep}")
+                self.finalize_msg = f"Failed to install dependency: {dep}"
+                self.state = State.FINALIZE
+                return
+            if check_package(dep):
+                log_and_print(f"[DONE]   Installed: {dep}")
+            else:
+                log_and_print(f"[FAIL]   Still missing after install: {dep}")
+                self.finalize_msg = f"{dep} still missing after install."
+                self.state = State.FINALIZE
+                return
+        self.deps_install_list = []
         self.state = State.MODEL_DETECTION
 
+
     def detect_model(self, detection_config: Dict) -> None:
-        """Detect model and resolve config; advance to validation or FINALIZE."""
+        """Detect the system model, load its config, and advance state."""
         model = get_model()
+        self.detected_model = model
         log_and_print(f"Detected model: {model}")
         primary_cfg = load_json(detection_config["primary_config"])
         pk = detection_config["packages_key"]
         dk = detection_config["default_config"]
         primary_entry = (primary_cfg.get(model, {}) or {}).get(pk)
-        cfg_path = resolve_value(primary_cfg, model, pk, default_key=dk, check_file=True)
-        if not cfg_path:
-            self.finalize_msg = (
-                f"Invalid {detection_config['config_type'].upper()} config path for model '{model}' or fallback."
-            )
+        log_and_print(f"Primary config path: {detection_config['primary_config']}")
+        resolved_path = resolve_value(primary_cfg, model, pk, default_key=dk, check_file=True)
+        if not resolved_path:
+            self.finalize_msg = f"Invalid {detection_config['config_type'].upper()} config path for model '{model}' or fallback."
             self.state = State.FINALIZE
             return
-        used_default = (primary_entry != cfg_path)
-        log_and_print(f"Using {detection_config['config_type'].upper()} config file: {cfg_path}")
+        log_and_print(f"Using {detection_config['config_type'].upper()} config file: {resolved_path}")
+        used_default = not (model in primary_cfg and pk in (primary_cfg.get(model) or {}))
         if used_default:
-            log_and_print(f"No model-specific {detection_config['config_type']} config found for '{model}'.")
-            log_and_print(f"Falling back to the '{dk}' setting in '{detection_config['primary_config']}'.")
             self.model = dk
+            log_and_print(f"Falling back from detected model '{self.detected_model}' to '{dk}'.")
         else:
             self.model = model
-        self.config_path = cfg_path
-        self._cfg = load_json(cfg_path)
+        loaded = load_json(resolved_path)
+        if not isinstance(loaded, dict):
+            self.finalize_msg = f"Loaded {detection_config['config_type']} config is not a JSON object: {resolved_path}"
+            log_and_print(self.finalize_msg)
+            log_and_print("Example structure:")
+            log_and_print(json.dumps(detection_config["config_example"], indent=2))
+            self.state = State.FINALIZE
+            return
+        self.package_file = Path(resolved_path)
+        self.package_data = loaded
         self.state = State.JSON_TOPLEVEL_CHECK
 
-    def validate_json_toplevel(self, example_config_path: str) -> None:
-        if not isinstance(self._cfg, dict):
+
+    def validate_json_toplevel(self, example_config: Dict) -> None:
+        """Validate that top-level config is a JSON object."""
+        data = self.package_data
+        if not isinstance(data, dict):
             self.finalize_msg = "Invalid config: top-level must be a JSON object."
             log_and_print(self.finalize_msg)
             log_and_print("Example structure:")
-            log_and_print(str(example_config_path))
+            log_and_print(json.dumps(example_config, indent=2))
             self.state = State.FINALIZE
             return
         log_and_print("Top-level JSON structure successfully validated (object).")
         self.state = State.JSON_MODEL_SECTION_CHECK
 
-    def validate_json_model_section(self, example_config_path: str, section_key: str) -> None:
-        entry = self._cfg.get(self.model)
+
+    def validate_json_model_section(self, example_config: Dict) -> None:
+        """Validate that the model section is a JSON object."""
+        data = self.package_data
+        model = self.model
+        entry = data.get(model)
         if not isinstance(entry, dict):
-            self.finalize_msg = f"Invalid config: section for '{self.model}' must be an object."
+            self.finalize_msg = f"Invalid config: expected a JSON object for model '{model}', but found {type(entry).__name__ if entry is not None else 'nothing'}."
             log_and_print(self.finalize_msg)
-            log_and_print("Example structure:")
-            log_and_print(str(example_config_path))
+            log_and_print("Example structure (showing correct model section):")
+            log_and_print(json.dumps(example_config, indent=2))
             self.state = State.FINALIZE
             return
-        section = entry.get(section_key)
-        if not isinstance(section, dict) or not section:
-            self.finalize_msg = f"Invalid config: '{self.model}' must contain a non-empty '{section_key}' object."
-            log_and_print(self.finalize_msg)
-            log_and_print("Example structure:")
-            log_and_print(str(example_config_path))
-            self.state = State.FINALIZE
-            return
-        log_and_print(f"Model section '{self.model}' ('{section_key}') successfully validated (object).")
+        log_and_print(f"Model section '{model}' successfully validated (object).")
         self.state = State.JSON_REQUIRED_KEYS_CHECK
 
-    def validate_network_required_keys(self, validation_config: Dict, section_key: str = FEATURE_KEY) -> None:
-        """
-        For each SSID under Networks, ensure required fields exist and are str.
-        Empty strings are allowed (type-only check).
-        """
-        entry = self._cfg.get(self.model, {}) if isinstance(self._cfg, dict) else {}
-        ok = validate_required_items(entry, section_key, validation_config["required_ssid_fields"])
-        if not ok:
-            self.finalize_msg = f"Invalid config: '{self.model}/{section_key}' failed validation."
-            log_and_print(self.finalize_msg)
-            log_and_print("Example structure:")
-            log_and_print(str(validation_config["example_config"]))
+
+    def validate_json_required_keys(self, validation_config: Dict, section_key: str, object_type: type = dict) -> None:
+        """Validate required sections and enforce non-empty for object_type."""
+        model = self.model
+        entry = self.package_data.get(model, {})
+        if object_type is list:
+            ok = validate_required_list(entry, section_key, str, allow_empty=False)
+            if not ok:
+                self.finalize_msg = f"Invalid config: '{model}/{section_key}' must be a non-empty list of strings."
+                log_and_print(self.finalize_msg)
+                log_and_print("Example structure:")
+                log_and_print(json.dumps(validation_config["example_config"], indent=2))
+                self.state = State.FINALIZE
+                return
+        elif object_type is dict:
+            ok = validate_required_items(entry, section_key, validation_config["required_package_fields"])
+            if not ok:
+                self.finalize_msg = f"Invalid config: '{model}/{section_key}' failed validation."
+                log_and_print(self.finalize_msg)
+                log_and_print("Example structure:")
+                log_and_print(json.dumps(validation_config["example_config"], indent=2))
+                self.state = State.FINALIZE
+                return
+        else:
+            self.finalize_msg = f"Invalid validator expectation for '{model}/{section_key}'."
             self.state = State.FINALIZE
             return
-        type_summ = "\n ".join(
-            f"{k} ({v.__name__})" for k, v in validation_config["required_ssid_fields"].items()
-        )
-        log_and_print(f"Config for model '{self.model}' successfully validated (Networks).")
-        log_and_print(f"All SSID fields present and of correct type:\n {type_summ}.")
+        log_and_print(f"Config for model '{model}' successfully validated.")
+        log_and_print("\n  Keys Validated")
+        log_and_print("  ---------------")
+        for key, expected_type in validation_config["required_package_fields"].items():
+            expected_types = expected_type if isinstance(expected_type, tuple) else (expected_type,)
+            tname = " or ".join(tt.__name__ for tt in expected_types)
+            log_and_print(f"  - {key} ({tname})")
         self.state = State.CONFIG_LOADING
 
-    def load_config(self, feature_key: str) -> None:
-        cfg = self._cfg or load_json(self.config_path)
-        networks_block = (cfg.get(self.model, {}) or {}).get(feature_key, {})
-        if not isinstance(networks_block, dict) or not networks_block:
-            log_and_print(f"No SSIDs found in network presets for model '{self.model}'.")
-            self.state = State.FINALIZE
-            return
-        self.networks_block = networks_block
-        self.ssids = sorted(networks_block.keys())
+
+    def load_config(self, packages_key: str) -> None:
+        """Load the package list (SSIDs) for the model; advance to BUILD_STATUS."""
+        block = self.package_data[self.model][packages_key]
+        self.package_block = block
+        self.packages_list = sorted(block.keys())
+        self.state = State.BUILD_STATUS
+
+
+    def build_status_map(self, summary_label: str, installed_label: str, uninstalled_label: str) -> None:
+        """Compute preset status and print summary; advance to MENU_SELECTION."""
+        self.package_status = {ssid: is_connected(ssid) for ssid in self.packages_list}
+        summary = format_status_summary(
+            self.package_status,
+            label=summary_label,
+            count_keys=[installed_label, uninstalled_label],
+            labels={True: installed_label, False: uninstalled_label},
+        )
+        log_and_print(summary)
         self.state = State.MENU_SELECTION
 
+
     def select_action(self, actions: Dict[str, Dict]) -> None:
-        title = "Select an option"
-        options = list(actions.keys())
+        """Prompt for action; set current_action_key or finalize on cancel."""
+        menu_title = "Select an option"
+        options = [k for k in actions.keys() if k != "_meta"]
         choice = None
         while choice not in options:
-            choice = select_from_list(title, options)
+            choice = select_from_list(menu_title, options)
             if choice not in options:
                 log_and_print("Invalid selection. Please choose a valid option.")
         spec = actions[choice]
         if spec["next_state"] is None:
-            self.finalize_msg = "Operation was cancelled by the user."
+            self.finalize_msg = "Cancelled by user."
             self.state = State.FINALIZE
             return
         self.current_action_key = choice
         self.state = State.SSID_SELECTION
 
+
     def select_ssid(self) -> None:
-        options = self.ssids + ["Cancel"]
+        """Select SSID or cancel."""
+        options = self.packages_list + ["Cancel"]
         ssid = None
         while ssid not in options:
-            ssid = select_from_list("Select a Wi-Fi SSID from config", options)
+            ssid = select_from_list("Select SSID", options)
             if ssid not in options:
                 log_and_print("Invalid selection. Please choose a valid option.")
-
         if ssid == "Cancel":
-            log_and_print("SSID selection cancelled. Returning to main menu.")
             self.state = State.MENU_SELECTION
             return
         self.selected_ssid = ssid
-        log_and_print(f"Selected SSID: {ssid}")
         self.state = State.PREPARE_PLAN
 
-    def prepare_plan(self, summary_label: str, label_field: str,
-                     label_value: str, key_model: str, key_ssid: str, key_action: str,
-                     key_conn_name: str, key_interface: str, key_address: str,
-                     key_gateway: str, key_dns: str) -> None:
-        if not self.current_action_key:
-            log_and_print("Invalid selection. Please choose a valid option.")
-            self.state = State.MENU_SELECTION
+
+    def prepare_plan(self, key_label: str, actions: Dict[str, Dict]) -> None:
+        """Build plan for selected SSID."""
+        spec = actions[self.current_action_key]
+        verb = spec["verb"]
+        show_fields = spec.get("show_fields", [])
+        rows = []
+        meta = self.package_block.get(self.selected_ssid, {}) or {}
+        row = {key_label: self.selected_ssid}
+        for f in show_fields:
+            row[f] = meta.get(f, "-")
+        rows.append(row)
+        print_dict_table(rows, field_names=[key_label] + show_fields, label=f"Planned {verb.title()} ({key_label})")
+        self.state = State.BUILD_PRESET
+
+
+    def build_preset_state(self) -> None:
+        """State: construct a connection preset for the chosen SSID (adds default ConnectionName)."""
+        ssid = self.selected_ssid
+        if ssid not in self.package_block:
+            self.finalize_msg = f"SSID '{ssid}' not found in Networks block."
+            self.state = State.FINALIZE
             return
-        preset = build_preset(self.networks_block, self.selected_ssid)
-        is_static = (self.current_action_key == "Static")
-        rows = [
-            {label_field: key_model,     label_value: self.model},
-            {label_field: key_ssid,      label_value: self.selected_ssid},
-            {label_field: key_action,    label_value: self.current_action_key},
-            {label_field: key_conn_name, label_value: preset.get(key_conn_name, self.selected_ssid)},
-            {label_field: key_interface, label_value: preset.get(key_interface, "")},
-            {label_field: key_address,   label_value: preset.get(key_address, "-") if is_static else "-"},
-            {label_field: key_gateway,   label_value: preset.get(key_gateway, "-") if is_static else "-"},
-            {label_field: key_dns,       label_value: preset.get(key_dns, "-") if is_static else "-"},
-        ]
-        print_dict_table(rows, [label_field, label_value], summary_label)
-        validate_preset(preset, self.current_action_key)  
+        preset = dict(self.package_block[ssid])
+        preset.setdefault("ConnectionName", ssid)
         self.preset = preset
+        self.state = State.VALIDATE_PRESET
+
+
+    def validate_preset_state(self) -> None:
+        """State: validate required fields for the selected mode."""
+        preset = self.preset
+        mode = "static" if self.current_action_key == "Static" else "dhcp"
+        required = ["Interface", "ConnectionName"]
+        if mode == "static":
+            required += ["Address", "Gateway", "DNS"]
+        missing = [k for k in required if not preset.get(k)]
+        if missing:
+            log_and_print(f"[FAIL] Preset is missing required fields for {mode}: {', '.join(missing)}")
+            self.finalize_msg = "Preset validation failed."
+            self.state = State.FINALIZE
+            return
+        log_and_print("[OK] Preset validated.")
         self.state = State.CONFIRM
 
+
     def confirm_action(self, actions: Dict[str, Dict]) -> None:
+        """Confirm the chosen action; advance to next_state or bounce to MENU_SELECTION."""
         spec = actions[self.current_action_key]
-        if not confirm(spec["prompt"]):
+        proceed = confirm(spec["prompt"])
+        if not proceed:
             log_and_print("User cancelled.")
             self.state = State.MENU_SELECTION
             return
         self.state = State[spec["next_state"]]
 
+
     def apply_static(self, key_conn_name: str) -> None:
-        assert self.preset is not None
+        """Apply static preset."""
         name = self.preset.get(key_conn_name, self.selected_ssid)
-        exists = connection_exists(name)
-        log_and_print(f"Connection '{name}' exists: {exists}")
-        if exists:
-            log_and_print(f"Modifying to Static: {name}")
-            modify_static_connection(self.preset, self.selected_ssid)
+        if connection_exists(name):
+            if modify_static_connection(self.preset, self.selected_ssid):
+                log_and_print(f"[OK] Static connection '{self.selected_ssid}' modified.")
+            else:
+                log_and_print(f"[FAIL] Could not modify static connection '{self.selected_ssid}'.")
+                self.finalize_msg = "Static connection modification failed."
+                self.state = State.FINALIZE
+                return
         else:
-            log_and_print(f"Creating Static: {name}")
-            create_static_connection(self.preset, self.selected_ssid)
-        bring_up_connection(name)
-        log_and_print("Configuration completed successfully.")
-        self.state = State.FINALIZE
+            if create_static_connection(self.preset, self.selected_ssid):
+                log_and_print(f"[OK] Static connection '{self.selected_ssid}' created.")
+            else:
+                log_and_print(f"[FAIL] Could not create static connection '{self.selected_ssid}'.")
+                self.finalize_msg = "Static connection creation failed."
+                self.state = State.FINALIZE
+                return
+        self._conn_name = name
+        self.state = State.APPLY_CONN_UP
+
 
     def apply_dhcp(self, key_conn_name: str) -> None:
-        assert self.preset is not None
+        """Apply DHCP preset."""
         name = self.preset.get(key_conn_name, self.selected_ssid)
-        exists = connection_exists(name)
-        log_and_print(f"Connection '{name}' exists: {exists}")
-        if exists:
-            log_and_print(f"Modifying to DHCP: {name}")
-            modify_dhcp_connection(self.preset, self.selected_ssid)
+        if connection_exists(name):
+            if modify_dhcp_connection(self.preset, self.selected_ssid):
+                log_and_print(f"[OK] DHCP connection '{self.selected_ssid}' modified.")
+            else:
+                log_and_print(f"[FAIL] Could not modify DHCP connection '{self.selected_ssid}'.")
+                self.finalize_msg = "DHCP connection modification failed."
+                self.state = State.FINALIZE
+                return
         else:
-            log_and_print(f"Creating DHCP: {name}")
-            create_dhcp_connection(self.preset, self.selected_ssid)
-        bring_up_connection(name)
-        log_and_print("Configuration completed successfully.")
-        self.state = State.FINALIZE
+            log_and_print(f"[INFO] Connection '{name}' does not exist, creating new one...")
+            if create_dhcp_connection(self.preset, self.selected_ssid):
+                log_and_print(f"[OK] DHCP connection '{self.selected_ssid}' created.")
+            else:
+                log_and_print(f"[FAIL] Could not create DHCP connection '{self.selected_ssid}'.")
+                self.finalize_msg = "DHCP connection creation failed."
+                self.state = State.FINALIZE
+                return
+        self._conn_name = name
+        self.state = State.APPLY_CONN_UP
+
+
+    def apply_conn_up(self) -> None:
+        """Bring up the connection (shared for static and DHCP)."""
+        name = self._conn_name
+        if bring_up_connection(name):
+            log_and_print(f"[OK] Connection '{name}' brought up successfully.")
+            self.state = State.BUILD_STATUS
+        else:
+            log_and_print(f"[FAIL] Could not bring up connection '{name}'.")
+            self.finalize_msg = "Connection activation failed."
+            self.state = State.FINALIZE
+
 
     def main(self) -> None:
+        """Run state machine."""
         handlers: Dict[State, Callable[[], None]] = {
-            State.INITIAL:              lambda: self.setup(LOG_SUBDIR, LOG_FILE_PREFIX, REQUIRED_USER),
-            State.DEP_CHECK:            lambda: self.ensure_deps(DEPENDENCIES),
-            State.MODEL_DETECTION:      lambda: self.detect_model(DETECTION_CONFIG),
-            State.JSON_TOPLEVEL_CHECK:  lambda: self.validate_json_toplevel(NET_VALIDATION_CONFIG["example_config"]),
-            State.JSON_MODEL_SECTION_CHECK:
-                lambda: self.validate_json_model_section(NET_VALIDATION_CONFIG["example_config"], FEATURE_KEY),
-            State.JSON_REQUIRED_KEYS_CHECK:
-                lambda: self.validate_network_required_keys(NET_VALIDATION_CONFIG, FEATURE_KEY),
-            State.CONFIG_LOADING:       lambda: self.load_config(FEATURE_KEY),
-            State.MENU_SELECTION:       lambda: self.select_action(ACTIONS),
-            State.SSID_SELECTION:       lambda: self.select_ssid(),
-            State.PREPARE_PLAN:         lambda: self.prepare_plan(
-                SUMMARY_LABEL, LABEL_FIELD, LABEL_VALUE,
-                KEY_MODEL, KEY_SSID, KEY_ACTION, KEY_CONN_NAME,
-                KEY_INTERFACE, KEY_ADDRESS, KEY_GATEWAY, KEY_DNS
-            ),
-            State.CONFIRM:              lambda: self.confirm_action(ACTIONS),
-            State.APPLY_STATIC:         lambda: self.apply_static(KEY_CONN_NAME),
-            State.APPLY_DHCP:           lambda: self.apply_dhcp(KEY_CONN_NAME),
+            State.INITIAL:                 lambda: self.setup(LOG_SUBDIR, LOG_FILE_PREFIX, REQUIRED_USER),
+            State.DEP_CHECK:               lambda: self.dep_check(DEPENDENCIES),
+            State.DEP_INSTALL:             lambda: self.dep_install(),
+            State.MODEL_DETECTION:         lambda: self.detect_model(DETECTION_CONFIG),
+            State.JSON_TOPLEVEL_CHECK:     lambda: self.validate_json_toplevel(NET_VALIDATION_CONFIG["example_config"]),
+            State.JSON_MODEL_SECTION_CHECK:lambda: self.validate_json_model_section(NET_VALIDATION_CONFIG["example_config"]),
+            State.JSON_REQUIRED_KEYS_CHECK:lambda: self.validate_json_required_keys(NET_VALIDATION_CONFIG, FEATURE_KEY, dict),
+            State.CONFIG_LOADING:          lambda: self.load_config(FEATURE_KEY),
+            State.BUILD_STATUS:            lambda: self.build_status_map(SUMMARY_LABEL, INSTALLED_LABEL, UNINSTALLED_LABEL),
+            State.MENU_SELECTION:          lambda: self.select_action(ACTIONS),
+            State.SSID_SELECTION:          lambda: self.select_ssid(),
+            State.PREPARE_PLAN:            lambda: self.prepare_plan(SUMMARY_LABEL, ACTIONS),
+            State.BUILD_PRESET:            lambda: self.build_preset_state(),
+            State.VALIDATE_PRESET:         lambda: self.validate_preset_state(),
+            State.CONFIRM:                 lambda: self.confirm_action(ACTIONS),
+            State.APPLY_STATIC:            lambda: self.apply_static(KEY_CONN_NAME),
+            State.APPLY_DHCP:              lambda: self.apply_dhcp(KEY_CONN_NAME),
+            State.APPLY_CONN_UP:           lambda: self.apply_conn_up(),
         }
-
         while self.state != State.FINALIZE:
             fn = handlers.get(self.state)
             if fn:
                 fn()
             else:
-                log_and_print(f"Unknown state '{getattr(self.state, 'name', str(self.state))}', finalizing.")
-                self.finalize_msg = self.finalize_msg or "Unknown state encountered."
+                self.finalize_msg = "Unknown state."
                 self.state = State.FINALIZE
-
-        # Finalization: secure & rotate logs, print path
         if self.log_dir:
             secure_logs_for_user(self.log_dir, self.sudo_user)
             rotate_logs(self.log_dir, LOGS_TO_KEEP, ROTATE_LOG_NAME)
