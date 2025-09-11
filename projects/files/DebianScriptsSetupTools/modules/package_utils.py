@@ -17,11 +17,8 @@ Requires:
 import subprocess
 import shutil
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Union
 from shutil import which
-
-
-import subprocess
 
 def check_package(pkg: str) -> bool:
     """
@@ -82,37 +79,49 @@ def filter_by_status(package_status: Dict[str, bool], wanted: bool) -> List[str]
     return [name for name, is_installed in package_status.items() if is_installed is wanted]
 
 
-
-def install_packages(packages):
+def install_packages(packages: Union[str, List[str]]) -> bool:
     """
-    Install a list of APT packages.
+    Install one or more APT packages.
 
     Args:
-        packages (list): List of package names to install.
+        packages (str or list): Package name or list of package names.
 
-    Example:
-        install_packages(["curl", "git"])
+    Returns:
+        bool: True if install succeeded, False otherwise.
     """
     if not packages:
-        return
-    subprocess.run(["sudo", "apt", "update", "-y"], check=True)
-    subprocess.run(["sudo", "apt", "install", "-y"] + packages, check=True)
+        return False
+    if isinstance(packages, str):
+        packages = [packages]
+    try:
+        subprocess.run(["sudo", "apt", "update", "-y"], check=True)
+        subprocess.run(["sudo", "apt", "install", "-y"] + packages, check=True)
+        return True
+    except subprocess.CalledProcessError:
+        return False
 
 
-def uninstall_packages(packages):
+def uninstall_packages(packages: Union[str, List[str]]) -> bool:
     """
-    Uninstall a list of APT packages and auto-remove dependencies.
+    Uninstall one or more APT packages and auto-remove dependencies.
 
     Args:
-        packages (list): List of package names to uninstall.
+        packages (str or list): Package name or list of package names.
 
-    Example:
-        uninstall_packages(["vlc"])
+    Returns:
+        bool: True if uninstall succeeded, False otherwise.
     """
     if not packages:
-        return
-    subprocess.run(["sudo", "apt", "remove", "-y"] + packages, check=True)
-    subprocess.run(["sudo", "apt", "autoremove", "-y"], check=True)
+        return False
+    if isinstance(packages, str):
+        packages = [packages]
+    try:
+        subprocess.run(["sudo", "apt", "remove", "-y"] + packages, check=True)
+        subprocess.run(["sudo", "apt", "autoremove", "-y"], check=True)
+        return True
+    except subprocess.CalledProcessError:
+        return False
+
 
 
 def download_deb_file(pkg, url, download_dir):
@@ -151,7 +160,6 @@ def install_deb_file(deb_file, name):
     Example:
         install_deb_file(Path("/tmp/debs/myapp.deb"), "My App")
     """
-    print(f"Installing {name} from {deb_file}")
     if subprocess.run(["sudo", "dpkg", "-i", str(deb_file)]).returncode != 0:
         subprocess.run(["sudo", "apt-get", "install", "-f", "-y"], check=True)
         if subprocess.run(["sudo", "dpkg", "-i", str(deb_file)]).returncode != 0:
@@ -159,26 +167,6 @@ def install_deb_file(deb_file, name):
             return False
     return True
 
-
-def uninstall_deb_package(name):
-    """
-    Uninstall a .deb package and purge its configuration.
-
-    Args:
-        name (str): Name of the installed DEB package.
-
-    Returns:
-        bool: True if successfully removed, False otherwise.
-
-    Example:
-        uninstall_deb_package("myapp")
-    """
-    print(f"Uninstalling {name}")
-    result = subprocess.run(["sudo", "apt-get", "remove", "--purge", "-y", name])
-    if result.returncode == 0:
-        subprocess.run(["sudo", "apt-get", "autoremove", "-y"], check=True)
-        return True
-    return False
 
 def check_binary_installed(binary_name: str, symlink_path: Path | None = None) -> str:
     """

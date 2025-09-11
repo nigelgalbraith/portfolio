@@ -333,26 +333,22 @@ def build_archive_install_status(
     return False
 
 
-
-def handle_cleanup(archive_path, ok, pkg, fail_msg):
+def handle_cleanup(archive_path: Path) -> bool:
     """
-    Cleans up the temporary archive file and logs a failure message if the installation fails.
+    Clean up the temporary archive file.
 
     Args:
-        archive_path (Path): The path to the temporary archive file to clean up.
-        ok (bool): The result of the installation process; False means failure.
-        pkg (str): The name of the package being processed.
-        log_fn (function): A logging function to use for logging output.
-        fail_msg (str): The failure message to log if installation fails.
+        archive_path (Path): Path to the temporary archive file to clean up.
+
+    Returns:
+        bool: True if cleanup succeeded, False otherwise.
     """
     try:
-        # Clean up the archive file
         archive_path.unlink(missing_ok=True)
-    except Exception as e:
-        print(f"Cleanup warning (unlink failed): {archive_path} ({e})")
-    
-    if not ok:
-        print(f"{fail_msg}: {pkg}")
+        return True
+    except Exception:
+        return False
+
 
 
 

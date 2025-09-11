@@ -24,8 +24,8 @@ Key Features:
 Workflow:
     INITIAL → MODEL_DETECTION → JSON_TOPLEVEL_CHECK → JSON_MODEL_SECTION_CHECK
     → JSON_REQUIRED_KEYS_CHECK → PACKAGE_LOADING → PACKAGE_STATUS
-    → MENU_SELECTION → PREPARE → CONFIRM
-    → (INSTALL_STATE | UNINSTALL_STATE) → PACKAGE_STATUS → ... → FINALIZE
+    → MENU_SELECTION → PREPARE_PLAN → CONFIRM
+    → (INSTALL | UNINSTALL) → PACKAGE_STATUS → ... → FINALIZE
 
 Dependencies:
 - Standard Python (>=3.8) and the custom `modules` package included in this project:
@@ -62,7 +62,7 @@ from modules.json_utils import load_json, resolve_value, validate_required_list
 
 # === CONFIG PATHS & KEYS ===
 PRIMARY_CONFIG   = "Config/AppConfigSettings.json"
-PACKAGES_KEY     = "Packages"
+JOBS_KEY         = "Packages"
 CONFIG_TYPE      = "package"
 DEFAULT_CONFIG   = "Default"
 
@@ -78,8 +78,8 @@ CONFIG_EXAMPLE = {
 
 # === VALIDATION CONFIG ===
 VALIDATION_CONFIG = {
-    "required_package_fields": {
-        "Packages": list,
+    "required_job_fields": {
+        JOBS_KEY: list,
     },
     "example_config": CONFIG_EXAMPLE,
 }
@@ -88,12 +88,12 @@ VALIDATION_CONFIG = {
 DETECTION_CONFIG = {
     "primary_config": PRIMARY_CONFIG,
     "config_type": CONFIG_TYPE,
-    "packages_key": PACKAGES_KEY,
+    "jobs_key": JOBS_KEY,
     "default_config": DEFAULT_CONFIG,
     "config_example": CONFIG_EXAMPLE,
     "default_config_note": (
         "No model-specific config was found. "
-        "Using the 'Default' section instead. Example structure:\n"
+        "Using the 'Default' section instead. "
     ),
 }
 
@@ -108,23 +108,29 @@ REQUIRED_USER     = "Standard"
 INSTALLED_LABEL   = "INSTALLED"
 UNINSTALLED_LABEL = "UNINSTALLED"
 
+# === Status Check Function ===
+STATUS_FN = check_package
+
 # === (menu label → action spec) ===
 ACTIONS: Dict[str, Dict] = {
-    f"Install required {PACKAGES_KEY}": {
+    "_meta": {
+        "title": "Select an option"
+    },
+    f"Install required {JOBS_KEY}": {
         "install": True,
         "verb": "installation",
         "filter_status": False,
         "label": INSTALLED_LABEL,
         "prompt": "Proceed with installation? [y/n]: ",
-        "next_state": "INSTALL_STATE",
+        "next_state": "INSTALL",
     },
-    f"Uninstall all listed {PACKAGES_KEY}": {
+    f"Uninstall all listed {JOBS_KEY}": {
         "install": False,
         "verb": "uninstallation",
         "filter_status": True,
         "label": UNINSTALLED_LABEL,
         "prompt": "Proceed with uninstallation? [y/n]: ",
-        "next_state": "UNINSTALL_STATE",
+        "next_state": "UNINSTALL",
     },
     "Cancel": {
         "install": None,
@@ -147,10 +153,10 @@ class State(Enum):
     PACKAGE_LOADING = auto()
     PACKAGE_STATUS = auto()
     MENU_SELECTION = auto()
-    PREPARE = auto()
+    PREPARE_PLAN = auto()
     CONFIRM = auto()
-    INSTALL_STATE = auto()
-    UNINSTALL_STATE = auto()
+    INSTALL = auto()
+    UNINSTALL = auto()
     FINALIZE = auto()
 
 
@@ -167,13 +173,13 @@ class PackageInstaller:
         # Model/config
         self.model: Optional[str] = None
         self.detected_model: Optional[str]=None
-        self.package_file: Optional[Path] = None
-        self.package_data: Dict[str, Dict] = {}
+        self.job_file: Optional[Path] = None
+        self.job_data: Dict[str, Dict] = {}
 
         # Data & choices
-        self.packages_list: List[str] = []
-        self.package_status: Dict[str, bool] = {}
-        self.jobs: List[str] = []
+        self.jobs_list: List[str] = []
+        self.job_status: Dict[str, bool] = {}
+        self.active_jobs: List[str] = []
         self.current_action_key: Optional[str] = None
 
 
@@ -184,7 +190,6 @@ class PackageInstaller:
         self.log_dir.mkdir(parents=True, exist_ok=True)
         self.log_file = log_dir / f"{log_prefix}_{timestamp}.log"
         setup_logging(self.log_file, log_dir)
-
         if not check_account(expected_user=required_user):
             self.finalize_msg = "User account verification failed."
             self.state = State.FINALIZE
@@ -193,43 +198,50 @@ class PackageInstaller:
 
 
     def detect_model(self, detection_config: Dict) -> None:
-        """Detect the system model, load its package config, and advance state."""
-        model=get_model()
-        self.detected_model=model
+        model = get_model()
+        self.detected_model = model
         log_and_print(f"Detected model: {model}")
-        primary_cfg=load_json(detection_config["primary_config"])
-        pk=detection_config["packages_key"]
-        dk=detection_config["default_config"]
-        primary_entry=(primary_cfg.get(model,{}) or {}).get(pk)
+        primary_cfg = load_json(detection_config["primary_config"])
+        pk = detection_config["jobs_key"]
+        dk = detection_config["default_config"]
         log_and_print(f"Primary config path: {detection_config['primary_config']}")
-        resolved_path=resolve_value(primary_cfg,model,pk,default_key=dk,check_file=True)
+        resolved_path = resolve_value(primary_cfg, model, pk, default_key=None, check_file=True)
+        used_default = False
         if not resolved_path:
-            self.finalize_msg=f"Invalid {detection_config['config_type'].upper()} config path for model '{model}' or fallback."
-            self.state=State.FINALIZE
+            resolved_path = resolve_value(primary_cfg, dk, pk, default_key=None, check_file=True)
+            used_default = True
+        if not resolved_path:
+            self.finalize_msg = (
+                f"Invalid {detection_config['config_type'].upper()} config path for "
+                f"model '{model}' or fallback."
+            )
+            self.state = State.FINALIZE
             return
         log_and_print(f"Using {detection_config['config_type'].upper()} config file: {resolved_path}")
-        used_default=(primary_entry!=resolved_path)
+        self.model = dk if used_default else model
         if used_default:
-            self.model=dk
-            log_and_print(f"Falling back from detected model '{self.detected_model}' to '{dk}'.")
-        else:
-            self.model=model
-        loaded=load_json(resolved_path)
-        if not isinstance(loaded,dict):
-            self.finalize_msg=f"Loaded {detection_config['config_type']} config is not a JSON object: {resolved_path}"
+            log_and_print(
+                f"Falling back from detected model '{self.detected_model}' to '{dk}'.\n"
+                + detection_config["default_config_note"]
+            )
+        loaded = load_json(resolved_path)
+        if not isinstance(loaded, dict):
+            self.finalize_msg = (
+                f"Loaded {detection_config['config_type']} config is not a JSON object: {resolved_path}"
+            )
             log_and_print(self.finalize_msg)
             log_and_print("Example structure:")
-            log_and_print(json.dumps(detection_config["config_example"],indent=2))
-            self.state=State.FINALIZE
+            log_and_print(json.dumps(detection_config["config_example"], indent=2))
+            self.state = State.FINALIZE
             return
-        self.package_file=resolved_path
-        self.package_data=loaded
-        self.state=State.JSON_TOPLEVEL_CHECK
-        
+        self.job_file = Path(resolved_path)
+        self.job_data = loaded
+        self.state = State.JSON_TOPLEVEL_CHECK
+       
         
     def validate_json_toplevel(self, example_config: Dict) -> None:
         """Validate that top-level config is a JSON object."""
-        data=self.package_data
+        data=self.job_data
         if not isinstance(data,dict):
             self.finalize_msg="Invalid config: top-level must be a JSON object."
             log_and_print(self.finalize_msg)
@@ -243,7 +255,7 @@ class PackageInstaller:
 
     def validate_json_model_section(self, example_config: Dict) -> None:
         """Validate that the model section is a JSON object."""
-        data=self.package_data
+        data=self.job_data
         model=self.model
         entry=data.get(model)
         if not isinstance(entry,dict):
@@ -257,54 +269,45 @@ class PackageInstaller:
         self.state=State.JSON_REQUIRED_KEYS_CHECK
 
 
-    def validate_json_required_keys(self, validation_config: Dict, section_key: str, object_type: type = list) -> None:
-        """Validate that all required sections match expected types and enforce non-empty for object_type."""
+    def validate_json_required_list_keys(self, validation_config: Dict, section_key: str) -> None:
+        """Validate that the required section is a non-empty list of strings."""
         model = self.model
-        entry = self.package_data.get(model, {})
-        ok = validate_required_list(entry, section_key, str, allow_empty=False)
-        if not ok:
-            self.finalize_msg = f"Invalid config: '{model}/{section_key}' must be a non-empty list of strings."
+        entry = self.job_data.get(model, {})
+        value = entry.get(section_key, None)
+        if not isinstance(value, list) or not value:
+            self.finalize_msg = f"Invalid config: '{model}/{section_key}' must be a non-empty list."
             log_and_print(self.finalize_msg)
             log_and_print("Example structure:")
             log_and_print(json.dumps(validation_config["example_config"], indent=2))
             self.state = State.FINALIZE
             return
-        for k, t in validation_config["required_package_fields"].items():
-            if k == section_key:
-                continue
-            v = entry.get(k, None)
-            expected_types = t if isinstance(t, tuple) else (t,)
-            if not isinstance(v, expected_types) or (object_type in expected_types and not v):
-                tname = " or ".join(tt.__name__ for tt in expected_types)
-                self.finalize_msg = f"Invalid config: '{model}/{k}' must be a non-empty {tname}."
-                log_and_print(self.finalize_msg)
-                log_and_print("Example structure:")
-                log_and_print(json.dumps(validation_config["example_config"], indent=2))
-                self.state = State.FINALIZE
-                return
+        if not all(isinstance(x, str) for x in value):
+            self.finalize_msg = f"Invalid config: every item in '{model}/{section_key}' must be a string."
+            log_and_print(self.finalize_msg)
+            log_and_print("Example structure:")
+            log_and_print(json.dumps(validation_config["example_config"], indent=2))
+            self.state = State.FINALIZE
+            return
         log_and_print(f"Config for model '{model}' successfully validated.")
         log_and_print("\n  Keys Validated")
         log_and_print("  ---------------")
-        for key, expected_type in validation_config["required_package_fields"].items():
-            expected_types = expected_type if isinstance(expected_type, tuple) else (expected_type,)
-            tname = " or ".join(tt.__name__ for tt in expected_types)
-            log_and_print(f"  - {key} ({tname})")
+        log_and_print(f"  - {section_key} (list[str])")
         self.state = State.PACKAGE_LOADING
        
 
-    def load_packages(self, packages_key: str) -> None:
+    def load_jobs(self, jobs_key: str) -> None:
         """Load the package list for the model; advance to PACKAGE_STATUS or FINALIZE."""
-        packages_list = self.package_data[self.model][packages_key]
-        self.packages_list = sorted(list(dict.fromkeys(packages_list)))
-        self.jobs = []
-        self.state = State.PACKAGE_STATUS
+        jobs_list = self.job_data[self.model][jobs_key]
+        self.jobs_list = sorted(dict.fromkeys(jobs_list))
+        self.active_jobs = []
+        self.state = State.PACKAGE_STATUS if self.jobs_list else State.MENU_SELECTION
 
 
-    def build_status_map(self, summary_label: str, installed_label: str, uninstalled_label: str) -> None:
+    def build_status_map(self, summary_label: str, installed_label: str, uninstalled_label: str, status_fn: Callable[[str], bool]) -> None:
         """Compute package status and print summary; advance to MENU_SELECTION."""
-        self.package_status = {pkg: check_package(pkg) for pkg in self.packages_list}
+        self.job_status = {job: status_fn(job) for job in self.jobs_list}
         summary = format_status_summary(
-            self.package_status,
+            self.job_status,
             label=summary_label,
             count_keys=[installed_label, uninstalled_label],
             labels={True: installed_label, False: uninstalled_label},
@@ -315,7 +318,7 @@ class PackageInstaller:
 
     def select_action(self, actions: Dict[str, Dict]) -> None:
         """Prompt for action; set current_action_key or finalize on cancel."""
-        menu_title = "Select an option"
+        menu_title = actions.get("_meta", {}).get("title", "Select an option")
         options = [k for k in actions.keys() if k != "_meta"]
         choice = None
         while choice not in options:
@@ -328,22 +331,22 @@ class PackageInstaller:
             self.state = State.FINALIZE
             return
         self.current_action_key = choice
-        self.state = State.PREPARE
+        self.state = State.PREPARE_PLAN
 
 
-    def prepare_jobs(self, key_label: str, actions: Dict[str, Dict]) -> None:
+    def prepare_jobs_list(self, key_label: str, actions: Dict[str, Dict]) -> None:
         """Build job list for the chosen action; advance to CONFIRM or bounce to MENU_SELECTION."""
         spec = actions[self.current_action_key]
         verb = spec["verb"]
         filter_status = spec["filter_status"]
-        jobs = sorted(filter_by_status(self.package_status, filter_status))
-        if not jobs:
+        active_jobs = sorted(filter_by_status(self.job_status, filter_status))
+        if not active_jobs:
             log_and_print(f"No {key_label} to process for {verb}.")
             self.state = State.MENU_SELECTION
             return
         log_and_print(f"The following {key_label} will be processed for {verb}:")
-        log_and_print("  " + "\n  ".join(jobs))
-        self.jobs = jobs
+        log_and_print("  " + "\n  ".join(active_jobs))
+        self.active_jobs = active_jobs
         self.state = State.CONFIRM
         
 
@@ -354,31 +357,46 @@ class PackageInstaller:
         proceed = confirm(prompt)
         if not proceed:
             log_and_print("User cancelled.")
-            self.jobs = []
+            self.active_jobs = []
             self.state = State.PACKAGE_STATUS
             return
         next_state_name = spec["next_state"]
         self.state = State[next_state_name]
 
 
-    def install_packages_state(self, installed_label: str) -> None:
-        """Run installer for collected jobs; return to PACKAGE_STATUS."""
-        if self.jobs:
-            install_packages(self.jobs)
-            msg=f"{installed_label}: {' '.join(self.jobs)}"
-            log_and_print(msg)
-        self.jobs=[]
-        self.state=State.PACKAGE_STATUS
+    def install_packages(self, installed_label: str) -> None:
+        """Run installer for collected active_jobs; return to PACKAGE_STATUS."""
+        success = 0
+        jobs = self.active_jobs
+        total = len(jobs)
+        for job in jobs:
+            ok = install_packages(job)
+            if ok:
+                log_and_print(f"{installed_label}: {job}")
+                success += 1
+            else:
+                log_and_print(f"Processing {job}: FAILED")
+        log_and_print(f"{installed_label} successfully: {success}/{total}")
+        self.active_jobs = []
+        self.state = State.PACKAGE_STATUS
 
 
-    def uninstall_packages_state(self, uninstalled_label: str) -> None:
-        """Run uninstaller for collected jobs; return to PACKAGE_STATUS."""
-        if self.jobs:
-            uninstall_packages(self.jobs)
-            msg=f"{uninstalled_label}: {' '.join(self.jobs)}"
-            log_and_print(msg)
-        self.jobs=[]
-        self.state=State.PACKAGE_STATUS
+    def uninstall_packages(self, uninstalled_label: str) -> None:
+        """Run uninstaller for collected active_jobs; return to PACKAGE_STATUS."""
+        success = 0
+        jobs = self.active_jobs
+        total = len(jobs)
+        for job in jobs:
+            ok = uninstall_packages(job)
+            if ok:
+                log_and_print(f"{uninstalled_label}: {job}")
+                success += 1
+            else:
+                log_and_print(f"Processing {job}: FAILED")
+        log_and_print(f"{uninstalled_label} successfully: {success}/{total}")
+        self.active_jobs = []
+        self.state = State.PACKAGE_STATUS
+
 
     # ====== MAIN ======
     def main(self) -> None:
@@ -388,14 +406,14 @@ class PackageInstaller:
             State.MODEL_DETECTION:              lambda: self.detect_model(DETECTION_CONFIG),
             State.JSON_TOPLEVEL_CHECK:          lambda: self.validate_json_toplevel(VALIDATION_CONFIG["example_config"]),
             State.JSON_MODEL_SECTION_CHECK:     lambda: self.validate_json_model_section(VALIDATION_CONFIG["example_config"]),
-            State.JSON_REQUIRED_KEYS_CHECK:     lambda: self.validate_json_required_keys(VALIDATION_CONFIG, PACKAGES_KEY, list),
-            State.PACKAGE_LOADING:              lambda: self.load_packages(PACKAGES_KEY),
-            State.PACKAGE_STATUS:               lambda: self.build_status_map(PACKAGES_KEY, INSTALLED_LABEL, UNINSTALLED_LABEL),
+            State.JSON_REQUIRED_KEYS_CHECK:     lambda: self.validate_json_required_list_keys(VALIDATION_CONFIG, JOBS_KEY),
+            State.PACKAGE_LOADING:              lambda: self.load_jobs(JOBS_KEY),
+            State.PACKAGE_STATUS:               lambda: self.build_status_map(JOBS_KEY, INSTALLED_LABEL, UNINSTALLED_LABEL, STATUS_FN),
             State.MENU_SELECTION:               lambda: self.select_action(ACTIONS),
-            State.PREPARE:                      lambda: self.prepare_jobs(PACKAGES_KEY, ACTIONS),
+            State.PREPARE_PLAN:                      lambda: self.prepare_jobs_list(JOBS_KEY, ACTIONS),
             State.CONFIRM:                      lambda: self.confirm_action(ACTIONS),
-            State.INSTALL_STATE:                lambda: self.install_packages_state(INSTALLED_LABEL),
-            State.UNINSTALL_STATE:              lambda: self.uninstall_packages_state(UNINSTALLED_LABEL),
+            State.INSTALL:                lambda: self.install_packages(INSTALLED_LABEL),
+            State.UNINSTALL:              lambda: self.uninstall_packages(UNINSTALLED_LABEL),
         }
 
         while self.state != State.FINALIZE:
@@ -409,7 +427,8 @@ class PackageInstaller:
                 self.state = State.FINALIZE
 
         # === Finalization ===
-        rotate_logs(self.log_dir, LOGS_TO_KEEP, ROTATE_LOG_NAME)
+        if self.log_dir:
+            rotate_logs(self.log_dir, LOGS_TO_KEEP, ROTATE_LOG_NAME)
         if self.finalize_msg:
             log_and_print(self.finalize_msg)
         if self.log_file:

@@ -35,37 +35,35 @@ from modules.apt_repo_utils import (
 
 # === CONFIG PATHS & KEYS ===
 PRIMARY_CONFIG   = "Config/AppConfigSettings.json"
+JOBS_KEY         = "ThirdParty"
 CONFIG_TYPE      = "third-party"
-TP_KEY           = "ThirdParty"
 DEFAULT_CONFIG   = "Default"
+
+# === JSON KEYS ===
+KEY_REPO_URL   = "url"
+KEY_REPO_KEY   = "key"
+KEY_CODENAME   = "codename"
+KEY_COMPONENT  = "component"
+KEY_KEYRING    = "keyring_dir"
 
 # Example config (for error/help output)
 CONFIG_EXAMPLE = {
     "Default": {
         "ThirdParty": {
             "brave-browser": {
-                "url": "https://brave-browser-apt-release.s3.brave.com/",
-                "key": "https://brave-browser-apt-release.s3.brave.com/brave-core.asc",
-                "codename": "jammy",
-                "component": "main",
-                "keyring_dir": "/usr/share/keyrings"
+                KEY_REPO_URL: "https://brave-browser-apt-release.s3.brave.com/",
+                KEY_REPO_KEY: "https://brave-browser-apt-release.s3.brave.com/brave-core.asc",
+                KEY_CODENAME: "jammy",
+                KEY_COMPONENT: "main",
+                KEY_KEYRING: "/usr/share/keyrings"
             }
         }
     }
 }
 
-# === DETECTION CONFIG ===
-DETECTION_CONFIG = {
-    "primary_config": PRIMARY_CONFIG,
-    "config_type": CONFIG_TYPE,
-    "packages_key": TP_KEY,
-    "default_config": DEFAULT_CONFIG,
-    "config_example": CONFIG_EXAMPLE,
-}
-
 # === VALIDATION CONFIG ===
 VALIDATION_CONFIG = {
-    "required_package_fields": {
+    "required_job_fields": {
         "url": str,
         "key": str,
         "codename": str,
@@ -73,6 +71,19 @@ VALIDATION_CONFIG = {
         "keyring_dir": str,
     },
     "example_config": CONFIG_EXAMPLE,
+}
+
+# === DETECTION CONFIG ===
+DETECTION_CONFIG = {
+    "primary_config": PRIMARY_CONFIG,
+    "config_type": CONFIG_TYPE,
+    "jobs_key": JOBS_KEY,
+    "default_config": DEFAULT_CONFIG,
+    "config_example": CONFIG_EXAMPLE,
+    "default_config_note": (
+        "No model-specific config was found. "
+        "Using the 'Default' section instead. "
+    ),
 }
 
 # === LOGGING ===
@@ -83,30 +94,32 @@ ROTATE_LOG_NAME = f"{LOG_PREFIX}_*.log"
 
 # === USER / LABELS ===
 REQUIRED_USER     = "Standard"
-SUMMARY_LABEL     = "Third-party packages"
 INSTALLED_LABEL   = "INSTALLED"
 UNINSTALLED_LABEL = "UNINSTALLED"
 
-# === DEPENDENCIES ===
-DEPENDENCIES = ["curl", "gpg"]
+# === Status Check Function ===
+STATUS_FN = check_package
 
 # === ACTIONS (menu label → action spec) ===
 ACTIONS: Dict[str, Dict] = {
-    f"Install required {SUMMARY_LABEL}": {
+    "_meta": {
+        "title": "Select an option"
+    },
+    f"Install required {JOBS_KEY}": {
         "install": True,
         "verb": "installation",
         "filter_status": False,
         "label": INSTALLED_LABEL,
         "prompt": "Proceed with installation? [y/n]: ",
-        "next_state": "INSTALL_STATE",
+        "next_state": "INSTALL",
     },
-    f"Uninstall all listed {SUMMARY_LABEL}": {
+    f"Uninstall all listed {JOBS_KEY}": {
         "install": False,
         "verb": "uninstallation",
         "filter_status": True,
         "label": UNINSTALLED_LABEL,
         "prompt": "Proceed with uninstallation? [y/n]: ",
-        "next_state": "UNINSTALL_STATE",
+        "next_state": "UNINSTALL",
     },
     "Cancel": {
         "install": None,
@@ -118,13 +131,8 @@ ACTIONS: Dict[str, Dict] = {
     },
 }
 
-# === META KEYS ===
-KEY_REPO_URL   = "url"
-KEY_REPO_KEY   = "key"
-KEY_CODENAME   = "codename"
-KEY_COMPONENT  = "component"
-KEY_KEYRING    = "keyring_dir"
-
+# === DEPENDENCIES ===
+DEPENDENCIES = ["curl", "gpg"]
 
 # === STATE ENUM ===
 class State(Enum):
@@ -140,54 +148,52 @@ class State(Enum):
     MENU_SELECTION = auto()
     PREPARE_PLAN = auto()
     CONFIRM = auto()
-    INSTALL_STATE = auto()
-    UNINSTALL_STATE = auto()
+    INSTALL = auto()
+    UNINSTALL = auto()
     FINALIZE = auto()
 
 
 class ThirdPartyInstaller:
     def __init__(self) -> None:
-        # Machine state
+        """Initialize machine state and fields."""
         self.state: State = State.INITIAL
         self.finalize_msg: Optional[str] = None
-
-        # Logging
         self.log_dir: Optional[Path] = None
         self.log_file: Optional[Path] = None
 
         # Model/config
         self.model: Optional[str] = None
         self.detected_model: Optional[str] = None
-        self.config_path: Optional[str] = None
-        self.package_data: Dict[str, Dict] = {} 
+        self.package_file: Optional[Path] = None  
 
-        # Data & choices
-        self.package_block: Dict[str, Dict] = {}
-        self.packages_list: List[str] = []
-        self.package_status: Dict[str, bool] = {}
-        self.jobs: List[str] = []
-        self.current_action_key: Optional[str] = None
-
-        # Dependencies (two-stage flow)
+        # packages
+        self.job_data: Dict[str, Dict] = {}  
+        self.jobs_list: List[str] = []
         self.deps_install_list: List[str] = []
 
+        # Other runtime fields
+        self.job_block: Dict[str, Dict] = {}
+        self.job_status: Dict[str, bool] = {}
+        self.current_action_key: Optional[str] = None
+        self.active_jobs: List[str] = []
 
     def setup(self, log_dir: Path, log_prefix: str, required_user: str) -> None:
-        ts = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        """Initialize logging and verify user; advance to MODEL_DETECTION or FINALIZE."""
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         self.log_dir = log_dir
         self.log_dir.mkdir(parents=True, exist_ok=True)
-        self.log_file = log_dir / f"{log_prefix}_{ts}.log"
+        self.log_file = log_dir / f"{log_prefix}_{timestamp}.log"
         setup_logging(self.log_file, log_dir)
         if not check_account(expected_user=required_user):
             self.finalize_msg = "User account verification failed."
             self.state = State.FINALIZE
             return
         self.state = State.DEP_CHECK
-
+    
 
     def dep_check(self, deps: List[str]) -> None:
         """Check dependencies and collect missing ones."""
-        self.deps_install_list = []
+        self.deps_install_list = [] 
         for dep in deps:
             if check_package(dep):
                 log_and_print(f"[OK]    {dep} is installed.")
@@ -199,6 +205,7 @@ class ThirdPartyInstaller:
             self.state = State.DEP_INSTALL
         else:
             self.state = State.MODEL_DETECTION
+
 
     def dep_install(self) -> None:
         """Install each missing dependency; fail fast on error."""
@@ -219,73 +226,85 @@ class ThirdPartyInstaller:
         self.deps_install_list = []
         self.state = State.MODEL_DETECTION
 
+
     def detect_model(self, detection_config: Dict) -> None:
+        """Detect system model, resolve config path, and load JSON data."""
         model = get_model()
         self.detected_model = model
         log_and_print(f"Detected model: {model}")
         primary_cfg = load_json(detection_config["primary_config"])
-        log_and_print(f"Primary config path: {detection_config['primary_config']}")
-        pk = detection_config["packages_key"]
+        pk = detection_config["jobs_key"]
         dk = detection_config["default_config"]
-        cfg_path = resolve_value(primary_cfg, model, pk, default_key=dk, check_file=True)
-        if not cfg_path:
+        log_and_print(f"Primary config path: {detection_config['primary_config']}")
+        resolved_path = resolve_value(primary_cfg, model, pk, default_key=None, check_file=True)
+        used_default = False
+        if not resolved_path:
+            resolved_path = resolve_value(primary_cfg, dk, pk, default_key=None, check_file=True)
+            used_default = True
+        if not resolved_path:
             self.finalize_msg = (
-                f"Invalid {detection_config['config_type'].upper()} config path for model '{model}' or fallback."
+                f"Invalid {detection_config['config_type'].upper()} config path for "
+                f"model '{model}' or fallback."
             )
             self.state = State.FINALIZE
             return
-        has_model_block = isinstance(primary_cfg.get(model), dict)
-        used_default = not (has_model_block and pk in (primary_cfg.get(model) or {}))
-        log_and_print(f"Using {detection_config['config_type'].upper()} config file: {cfg_path}")
+        log_and_print(f"Using {detection_config['config_type'].upper()} config file: {resolved_path}")
+        self.model = dk if used_default else model
         if used_default:
-            log_and_print(f"No model-specific {detection_config['config_type']} config found for '{model}'.")
-            log_and_print(f"Falling back to the '{dk}' setting in '{detection_config['primary_config']}'.")
-            self.model = dk
-        else:
-            self.model = model
-        self.config_path = cfg_path
-        self.package_data = load_json(cfg_path)
-        self.state = State.JSON_TOPLEVEL_CHECK
-
-    def validate_json_toplevel(self, example_config: Dict) -> None:
-        data = self.package_data
-        if not isinstance(data, dict):
-            self.finalize_msg = "Invalid config: top-level must be a JSON object."
+            log_and_print(
+                f"Falling back from detected model '{self.detected_model}' to '{dk}'.\n"
+                + detection_config["default_config_note"]
+            )
+        loaded = load_json(resolved_path)
+        if not isinstance(loaded, dict):
+            self.finalize_msg = (
+                f"Loaded {detection_config['config_type']} config is not a JSON object: {resolved_path}"
+            )
             log_and_print(self.finalize_msg)
             log_and_print("Example structure:")
-            log_and_print(json.dumps(example_config, indent=2))
+            log_and_print(json.dumps(detection_config["config_example"], indent=2))
             self.state = State.FINALIZE
+            return
+        self.job_file = Path(resolved_path)
+        self.job_data = loaded
+        self.state = State.JSON_TOPLEVEL_CHECK
+       
+        
+    def validate_json_toplevel(self, example_config: Dict) -> None:
+        """Validate that top-level config is a JSON object."""
+        data=self.job_data
+        if not isinstance(data,dict):
+            self.finalize_msg="Invalid config: top-level must be a JSON object."
+            log_and_print(self.finalize_msg)
+            log_and_print("Example structure:")
+            log_and_print(json.dumps(example_config,indent=2))
+            self.state=State.FINALIZE
             return
         log_and_print("Top-level JSON structure successfully validated (object).")
-        self.state = State.JSON_MODEL_SECTION_CHECK
+        self.state=State.JSON_MODEL_SECTION_CHECK
 
-    def validate_json_model_section(self, example_config: Dict, section_key: str) -> None:
-        data = self.package_data
-        model = self.model
-        entry = data.get(model)
-        if not isinstance(entry, dict):
-            self.finalize_msg = f"Invalid config: section for '{model}' must be an object."
+
+    def validate_json_model_section(self, example_config: Dict) -> None:
+        """Validate that the model section is a JSON object."""
+        data=self.job_data
+        model=self.model
+        entry=data.get(model)
+        if not isinstance(entry,dict):
+            self.finalize_msg=f"Invalid config: expected a JSON object for model '{model}', but found {type(entry).__name__ if entry is not None else 'nothing'}."
             log_and_print(self.finalize_msg)
-            log_and_print("Example structure:")
-            log_and_print(json.dumps(example_config, indent=2))
-            self.state = State.FINALIZE
-            return
-        section = entry.get(section_key)
-        if not isinstance(section, dict) or not section:
-            self.finalize_msg = f"Invalid config: '{model}' must contain a non-empty '{section_key}' object."
-            log_and_print(self.finalize_msg)
-            log_and_print("Example structure:")
-            log_and_print(json.dumps(example_config, indent=2))
-            self.state = State.FINALIZE
+            log_and_print("Example structure (showing correct model section):")
+            log_and_print(json.dumps(example_config,indent=2))
+            self.state=State.FINALIZE
             return
         log_and_print(f"Model section '{model}' successfully validated (object).")
-        self.state = State.JSON_REQUIRED_KEYS_CHECK
+        self.state=State.JSON_REQUIRED_KEYS_CHECK
+
 
     def validate_json_required_keys(self, validation_config: Dict, section_key: str, object_type: type = dict) -> None:
         """Validate required sections and enforce non-empty for object_type."""
         model = self.model
-        entry = self.package_data.get(model, {})
-        ok = validate_required_items(entry, section_key, validation_config["required_package_fields"])
+        entry = self.job_data.get(model, {})
+        ok = validate_required_items(entry, section_key, validation_config["required_job_fields"])
         if not ok:
             self.finalize_msg = f"Invalid config: '{model}/{section_key}' failed validation."
             log_and_print(self.finalize_msg)
@@ -296,24 +315,27 @@ class ThirdPartyInstaller:
         log_and_print(f"Config for model '{model}' successfully validated.")
         log_and_print("\n  Keys Validated")
         log_and_print("  ---------------")
-        for key, expected_type in validation_config["required_package_fields"].items():
+        for key, expected_type in validation_config["required_job_fields"].items():
             types = expected_type if isinstance(expected_type, tuple) else (expected_type,)
             tname = " or ".join(t.__name__ for t in types)
             log_and_print(f"  - {key} ({tname})")
         self.state = State.CONFIG_LOADING
 
-    def load_packages(self, packages_key: str) -> None:
-        """Load model block; advance to PACKAGE_STATUS."""
-        block = self.package_data[self.model][packages_key]
-        self.package_block = block
-        self.packages_list = sorted(block.keys())
-        self.jobs = []
-        self.state = State.PACKAGE_STATUS
 
-    def build_status_map(self, summary_label: str, installed_label: str, uninstalled_label: str) -> None:
-        self.package_status = {pkg: check_package(pkg) for pkg in self.packages_list}
+    def load_job_block(self, jobs_key: str) -> None:
+        """Load the package list (DEB keys) for the model; advance to PACKAGE_STATUS."""
+        block = self.job_data[self.model][jobs_key]  
+        self.job_block = block
+        self.jobs_list = sorted(block.keys())
+        self.active_jobs = []
+        self.state = State.PACKAGE_STATUS if self.jobs_list else State.MENU_SELECTION
+
+
+    def build_status_map(self, summary_label: str, installed_label: str, uninstalled_label: str, status_fn: Callable[[str], bool]) -> None:
+        """Compute package status and print summary; advance to MENU_SELECTION."""
+        self.job_status = {job: status_fn(job) for job in self.jobs_list}
         summary = format_status_summary(
-            self.package_status,
+            self.job_status,
             label=summary_label,
             count_keys=[installed_label, uninstalled_label],
             labels={True: installed_label, False: uninstalled_label},
@@ -321,12 +343,14 @@ class ThirdPartyInstaller:
         log_and_print(summary)
         self.state = State.MENU_SELECTION
 
+
     def select_action(self, actions: Dict[str, Dict]) -> None:
-        title = "Select an option"
+        """Prompt for action; set current_action_key or finalize on cancel."""
+        menu_title = actions.get("_meta", {}).get("title", "Select an option")
         options = [k for k in actions.keys() if k != "_meta"]
         choice = None
         while choice not in options:
-            choice = select_from_list(title, options)
+            choice = select_from_list(menu_title, options)
             if choice not in options:
                 log_and_print("Invalid selection. Please choose a valid option.")
         spec = actions[choice]
@@ -337,78 +361,86 @@ class ThirdPartyInstaller:
         self.current_action_key = choice
         self.state = State.PREPARE_PLAN
 
-    def prepare_plan(self, key_label: str, actions: Dict[str, Dict]) -> None:
+
+    def prepare_jobs_dict(self, key_label: str, actions: Dict[str, Dict]) -> None:
+        """Build and print plan; populate active_jobs; advance to CONFIRM or bounce to MENU_SELECTION."""
         spec = actions[self.current_action_key]
         verb = spec["verb"]
-        jobs = sorted(filter_by_status(self.package_status, spec["filter_status"]))
+        job_status = self.job_status
+        job_block = self.job_block
+        jobs = sorted(filter_by_status(job_status, spec["filter_status"]))
         if not jobs:
             log_and_print(f"No {key_label} to process for {verb}.")
             self.state = State.MENU_SELECTION
             return
         rows, seen, other = [], {key_label}, []
-        for pkg in jobs:
-            meta = self.package_block.get(pkg, {}) or {}
-            row = {key_label: pkg}
+        for job in jobs:
+            meta = job_block.get(job, {}) or {}
+            row = {key_label: job}
             for k, v in meta.items():
                 row[k] = v
                 if k not in seen:
                     seen.add(k); other.append(k)
             rows.append(row)
         print_dict_table(rows, field_names=[key_label] + other, label=f"Planned {verb.title()} ({key_label})")
-        self.jobs = jobs
+        self.active_jobs = jobs
         self.state = State.CONFIRM
+        
 
     def confirm_action(self, actions: Dict[str, Dict]) -> None:
+        """Confirm the chosen action; advance to next_state or bounce to STATUS."""
         spec = actions[self.current_action_key]
-        if not confirm(spec["prompt"]):
+        prompt = spec["prompt"]
+        proceed = confirm(prompt)
+        if not proceed:
             log_and_print("User cancelled.")
-            self.jobs = []
+            self.active_jobs = []
             self.state = State.PACKAGE_STATUS
             return
-        self.state = State[spec["next_state"]]
+        next_state_name = spec["next_state"]
+        self.state = State[next_state_name]
 
-    def install_thirdparty(
-        self,
-        installed_label: str,
-        k_url: str,
-        k_key: str,
-        k_codename: str,
-        k_component: str,
-        k_keyring_dir: str,
-    ) -> None:
+
+    def install_thirdparty(self, k_url: str, k_key: str, k_codename: str, k_component: str, k_keyring_dir: str, installed_label: str) -> None:
         """Add repo/key if needed, then apt install; → PACKAGE_STATUS."""
-        success, total = 0, len(self.jobs)
-        for pkg in self.jobs:
-            meta        = self.package_block.get(pkg, {}) or {}
+        success = 0
+        jobs = self.active_jobs
+        job_block = self.job_block
+        total = len(jobs)
+        for job in jobs:
+            meta        = job_block.get(job, {}) or {}
             url         = meta.get(k_url)
             key         = meta.get(k_key)
             codename    = meta.get(k_codename)
             component   = meta.get(k_component)
             keyring_dir = meta.get(k_keyring_dir)
-            keyring_path = f"{keyring_dir}/{pkg}.gpg"
-
+            keyring_path = f"{keyring_dir}/{job}.gpg"
             if not conflicting_repo_entry_exists(url, keyring_path):
-                add_apt_repository(pkg, url, key, codename, component)
-
-            install_packages([pkg])
-            log_and_print(f"APT {installed_label}: {pkg}")
-            success += 1
-
-        self.finalize_msg = f"Installed successfully: {success}/{total}"
-        self.jobs = []
-        self.state = State.PACKAGE_STATUS
-
-    def uninstall_thirdparty(self, uninstalled_label: str) -> None:
-        success, total = 0, len(self.jobs)
-        for pkg in self.jobs:
-            if uninstall_packages([pkg]):
-                remove_apt_repo_and_keyring(pkg)
-                log_and_print(f"APT {uninstalled_label}: {pkg}")
+                add_apt_repository(job, url, key, codename, component)
+            ok = install_packages(job)
+            if ok:
+                log_and_print(f"{installed_label}: {job}")
                 success += 1
             else:
-                log_and_print(f"UNINSTALL FAILED: {pkg}")
-        self.finalize_msg = f"Uninstalled successfully: {success}/{total}"
-        self.jobs = []
+                log_and_print(f"Processing {job}: FAILED")
+        log_and_print(f"{installed_label} successfully: {success}/{total}")
+        self.active_jobs = []
+        self.state = State.PACKAGE_STATUS
+
+    def uninstall_packages(self, uninstalled_label: str) -> None:
+        """Run uninstaller for collected active_jobs; return to PACKAGE_STATUS."""
+        success = 0
+        jobs = self.active_jobs
+        total = len(jobs)
+        for job in jobs:
+            ok = uninstall_packages(job)
+            if ok:
+                log_and_print(f"{uninstalled_label}: {job}")
+                success += 1
+            else:
+                log_and_print(f"Processing {job}: FAILED")
+        log_and_print(f"{uninstalled_label} successfully: {success}/{total}")
+        self.active_jobs = []
         self.state = State.PACKAGE_STATUS
 
     # --- MAIN ---
@@ -419,15 +451,15 @@ class ThirdPartyInstaller:
             State.DEP_INSTALL:             lambda: self.dep_install(),
             State.MODEL_DETECTION:         lambda: self.detect_model(DETECTION_CONFIG),
             State.JSON_TOPLEVEL_CHECK:     lambda: self.validate_json_toplevel(VALIDATION_CONFIG["example_config"]),
-            State.JSON_MODEL_SECTION_CHECK:lambda: self.validate_json_model_section(VALIDATION_CONFIG["example_config"], TP_KEY),
-            State.JSON_REQUIRED_KEYS_CHECK:lambda: self.validate_json_required_keys(VALIDATION_CONFIG, TP_KEY, dict),
-            State.CONFIG_LOADING:          lambda: self.load_packages(TP_KEY),
-            State.PACKAGE_STATUS:          lambda: self.build_status_map(SUMMARY_LABEL, INSTALLED_LABEL, UNINSTALLED_LABEL),
+            State.JSON_MODEL_SECTION_CHECK:lambda: self.validate_json_model_section(VALIDATION_CONFIG["example_config"]),
+            State.JSON_REQUIRED_KEYS_CHECK:lambda: self.validate_json_required_keys(VALIDATION_CONFIG, JOBS_KEY, dict),
+            State.CONFIG_LOADING:          lambda: self.load_job_block(JOBS_KEY),
+            State.PACKAGE_STATUS:          lambda: self.build_status_map(JOBS_KEY, INSTALLED_LABEL, UNINSTALLED_LABEL, STATUS_FN),
             State.MENU_SELECTION:          lambda: self.select_action(ACTIONS),
-            State.PREPARE_PLAN:            lambda: self.prepare_plan(SUMMARY_LABEL, ACTIONS),
+            State.PREPARE_PLAN:            lambda: self.prepare_jobs_dict(JOBS_KEY, ACTIONS),
             State.CONFIRM:                 lambda: self.confirm_action(ACTIONS),
-            State.INSTALL_STATE:           lambda: self.install_thirdparty(INSTALLED_LABEL, KEY_REPO_URL, KEY_REPO_KEY, KEY_CODENAME, KEY_COMPONENT, KEY_KEYRING),
-            State.UNINSTALL_STATE:         lambda: self.uninstall_thirdparty(UNINSTALLED_LABEL),
+            State.INSTALL:                 lambda: self.install_thirdparty(KEY_REPO_URL, KEY_REPO_KEY, KEY_CODENAME, KEY_COMPONENT, KEY_KEYRING, INSTALLED_LABEL),
+            State.UNINSTALL:               lambda: self.uninstall_packages(UNINSTALLED_LABEL),
         }
 
         while self.state != State.FINALIZE:

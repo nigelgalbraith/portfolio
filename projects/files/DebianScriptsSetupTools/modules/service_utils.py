@@ -170,29 +170,24 @@ def restart_service(service_name: str) -> bool:
         return False
 
 
-def start_service_standard(enable_flag: str, service: str) -> bool:
+def start_service_standard(service: str) -> bool:
     """
-    Enable and start a service IF the flag equals "true" (case-sensitive).
+    Enable and start a service unconditionally.
 
     Args:
-        enable_flag (str): Must be "true" to perform actions; anything else is a no-op success.
         service (str): The systemd service name.
 
     Returns:
-        bool: True if (a) no-op due to flag != "true" OR (b) operations succeeded; False on failure.
-
-    Example:
-        start_service_standard("true", "plexmediaserver.service")
+        bool: True if operations succeeded; False on failure.
     """
-    if enable_flag != "true" or not service:
-        return True  # no-op success
+    if not service:
+        return True
     try:
         subprocess.run(["systemctl", "enable", service], check=True)
         subprocess.run(["systemctl", "start", service], check=True)
         return True
     except subprocess.CalledProcessError:
         return False
-
 
 def ensure_service_installed(service_name: str, template_path: Path) -> bool:
     """
