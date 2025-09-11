@@ -422,14 +422,17 @@ class DebInstaller:
             cleanup_ok = handle_cleanup(deb_path)
             if ok:
                 log_and_print(f"Installed: {job}")
-                if start_service_standard(job):
-                    log_and_print(f"Service started: {job}")
+                if bool(enable_service):
+                    svc_name = job
+                    if start_service_standard(svc_name):
+                        log_and_print(f"Service started: {svc_name}")
+                    else:
+                        log_and_print(f"Service start FAILED: {svc_name}")
                 else:
-                    log_and_print(f"Service start FAILED: {job}")
+                    log_and_print(f"Service start skipped (EnableService={enable_service}).")
                 success += 1
             else:
                 log_and_print(f"Install failed: {job}")
-
             if not cleanup_ok:
                 log_and_print(f"Processing {job}: FAILED")
         log_and_print(f"{installed_label} successfully: {success}/{total}")

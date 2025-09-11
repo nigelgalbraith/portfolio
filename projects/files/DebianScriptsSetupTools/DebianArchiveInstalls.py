@@ -351,14 +351,14 @@ class ArchiveInstaller:
         self.state = State.PACKAGE_STATUS if self.jobs_list else State.MENU_SELECTION
 
 
-    def build_status_map_archive(self, summary_label: str, installed_label: str, uninstalled_label: str) -> None:
+    def build_status_map_archive(self, summary_label: str, installed_label: str, uninstalled_label: str, extract_key: str, check_key: str) -> None:
         """Compute package status and print summary; advance to MENU_SELECTION."""
         self.job_status = {
-        job: check_archive_status(
-            self.job_block.get(job, {}).get(KEY_EXTRACT_TO),
-            self.job_block.get(job, {}).get(KEY_CHECK_PATH)
-        )
-        for job in self.jobs_list
+            job: check_archive_status(
+                (self.job_block.get(job, {}) or {}).get(extract_key),
+                (self.job_block.get(job, {}) or {}).get(check_key),
+            )
+            for job in self.jobs_list
         }
         summary = format_status_summary(
             self.job_status,
@@ -541,7 +541,7 @@ class ArchiveInstaller:
             State.JSON_MODEL_SECTION_CHECK:lambda: self.validate_json_model_section(VALIDATION_CONFIG["example_config"]),
             State.JSON_REQUIRED_KEYS_CHECK:lambda: self.validate_json_required_keys(VALIDATION_CONFIG, JOBS_KEY, dict),
             State.CONFIG_LOADING:          lambda: self.load_job_block(JOBS_KEY),
-            State.PACKAGE_STATUS:          lambda: self.build_status_map_archive(JOBS_KEY, INSTALLED_LABEL, UNINSTALLED_LABEL),
+            State.PACKAGE_STATUS:          lambda: self.build_status_map_archive(JOBS_KEY, INSTALLED_LABEL, UNINSTALLED_LABEL, KEY_EXTRACT_TO, KEY_CHECK_PATH),
             State.MENU_SELECTION:          lambda: self.select_action(ACTIONS),
             State.PREPARE_PLAN:            lambda: self.prepare_jobs_dict(JOBS_KEY, ACTIONS),
             State.CONFIRM:                 lambda: self.confirm_action(ACTIONS),
