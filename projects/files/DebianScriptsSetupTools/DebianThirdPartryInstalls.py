@@ -64,11 +64,11 @@ CONFIG_EXAMPLE = {
 # === VALIDATION CONFIG ===
 VALIDATION_CONFIG = {
     "required_job_fields": {
-        "url": str,
-        "key": str,
-        "codename": str,
-        "component": str,
-        "keyring_dir": str,
+        KEY_REPO_URL: str,
+        KEY_REPO_KEY: str,
+        KEY_CODENAME: str,
+        KEY_COMPONENT: str,
+        KEY_KEYRING: str,
     },
     "example_config": CONFIG_EXAMPLE,
 }

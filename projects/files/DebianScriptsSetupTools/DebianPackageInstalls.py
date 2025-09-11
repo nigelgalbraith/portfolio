@@ -69,7 +69,7 @@ DEFAULT_CONFIG   = "Default"
 # Example JSON structure to show users
 CONFIG_EXAMPLE = {
     "YOUR MODEL NUMBER": {
-        "Packages": [
+        JOBS_KEY: [
             "vlc",
             "audacity"
         ]

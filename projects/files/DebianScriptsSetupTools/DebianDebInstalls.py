@@ -53,7 +53,7 @@ KEY_DOWNLOAD_DIR    = "download_dir"
 # Example JSON structure
 CONFIG_EXAMPLE = {
     "YOUR MODEL HERE": {
-        "DEB": {
+        JOBS_KEY: {
             "vlc": {
                 KEY_DOWNLOAD_URL: "http://example.com/vlc.deb",
                 KEY_ENABLE_SERVICE: False,

@@ -35,11 +35,10 @@ from modules.display_utils import (
 from modules.package_utils import filter_by_status, check_package, ensure_dependencies_installed
 from modules.service_utils import start_service_standard
 from modules.archive_utils import (
-    check_archive_installed,
     download_archive_file,
     install_archive_file,
     uninstall_archive_install,
-    build_archive_install_status,
+    check_archive_status,
     run_post_install_commands,
     handle_cleanup,
 )
@@ -61,7 +60,7 @@ KEY_POST_UNINSTALL   = "PostUninstall"
 KEY_TRASH_PATHS      = "TrashPaths"
 KEY_DOWNLOAD_PATH    = "DownloadPath"
 
-# Example embedded JSON structure (shown on fallback or validation errors)
+# Example embedded JSON structure 
 CONFIG_EXAMPLE = {
     "Default": {
         "Archive": {
@@ -83,10 +82,10 @@ CONFIG_EXAMPLE = {
 # === VALIDATION CONFIG ===
 VALIDATION_CONFIG = {
     "required_job_fields": {
-        "DownloadURL": str,
-        "DownloadPath": str,
-        "ExtractTo": str,
-        "StripTopLevel": bool,
+        KEY_DOWNLOAD_URL: str,
+        KEY_EXTRACT_TO: str,
+        KEY_STRIP_TOP_LEVEL: bool,
+        KEY_DOWNLOAD_PATH: str,
     },
     "example_config": CONFIG_EXAMPLE,
 }
@@ -115,15 +114,6 @@ ROTATE_LOG_NAME = "archive_install_*.log"
 REQUIRED_USER     = "Standard"
 INSTALLED_LABEL   = "INSTALLED"
 UNINSTALLED_LABEL = "UNINSTALLED"
-
-# === Status Check Function ===
-STATUS_FN = partial(
-    build_archive_install_status,
-    path_expander=expand_path,
-    key_check=KEY_CHECK_PATH,
-    key_extract=KEY_EXTRACT_TO,
-    checker=check_archive_installed,
-)
 
 # === MENU / ACTIONS ===
 ACTIONS: Dict[str, Dict] = {
@@ -361,9 +351,15 @@ class ArchiveInstaller:
         self.state = State.PACKAGE_STATUS if self.jobs_list else State.MENU_SELECTION
 
 
-    def build_status_map_archive(self, summary_label: str, installed_label: str, uninstalled_label: str, status_fn: Callable[..., bool]) -> None:
+    def build_status_map_archive(self, summary_label: str, installed_label: str, uninstalled_label: str) -> None:
         """Compute package status and print summary; advance to MENU_SELECTION."""
-        self.job_status = {job: status_fn(self.job_block.get(job, {})) for job in self.jobs_list}
+        self.job_status = {
+        job: check_archive_status(
+            self.job_block.get(job, {}).get(KEY_EXTRACT_TO),
+            self.job_block.get(job, {}).get(KEY_CHECK_PATH)
+        )
+        for job in self.jobs_list
+        }
         summary = format_status_summary(
             self.job_status,
             label=summary_label,
@@ -545,7 +541,7 @@ class ArchiveInstaller:
             State.JSON_MODEL_SECTION_CHECK:lambda: self.validate_json_model_section(VALIDATION_CONFIG["example_config"]),
             State.JSON_REQUIRED_KEYS_CHECK:lambda: self.validate_json_required_keys(VALIDATION_CONFIG, JOBS_KEY, dict),
             State.CONFIG_LOADING:          lambda: self.load_job_block(JOBS_KEY),
-            State.PACKAGE_STATUS:          lambda: self.build_status_map_archive(JOBS_KEY, INSTALLED_LABEL, UNINSTALLED_LABEL, STATUS_FN),
+            State.PACKAGE_STATUS:          lambda: self.build_status_map_archive(JOBS_KEY, INSTALLED_LABEL, UNINSTALLED_LABEL),
             State.MENU_SELECTION:          lambda: self.select_action(ACTIONS),
             State.PREPARE_PLAN:            lambda: self.prepare_jobs_dict(JOBS_KEY, ACTIONS),
             State.CONFIRM:                 lambda: self.confirm_action(ACTIONS),

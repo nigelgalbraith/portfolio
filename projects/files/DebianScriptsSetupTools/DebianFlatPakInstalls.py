@@ -52,7 +52,7 @@ KEY_REMOTE       = "remote"
 # Example JSON structure
 CONFIG_EXAMPLE = {
     "Default": {
-        "Flatpak": {
+        JOBS_KEY: {
             "org.videolan.VLC":
                 {KEY_REMOTE: "flathub"
             }
