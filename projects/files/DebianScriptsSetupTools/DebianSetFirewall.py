@@ -38,7 +38,7 @@ from modules.display_utils import print_dict_table, print_list_section, confirm,
 from modules.system_utils import (
     check_account, secure_logs_for_user, get_model
 )
-from modules.json_utils import load_json, resolve_value, validate_required_list, validate_list_of_objects_with_fields
+from modules.json_utils import load_json, resolve_value, validate_required_items, validate_items
 from modules.logger_utils import log_and_print, setup_logging, rotate_logs
 from modules.firewall_utils import (
     allow_application, allow_port_for_ip, allow_port_range_for_ip,
@@ -78,32 +78,29 @@ CONFIG_EXAMPLE = {
 }
 
 # === VALIDATION CONFIG ===
-VALIDATION_CONFIG = {
-    "applications": {                      
-        "key": KEY_APPLICATIONS,
-        "elem_type": str,
+SUB_VALIDATION_CONFIG = {
+    KEY_APPLICATIONS: {
+        "required_job_fields": {},  
         "allow_empty": True,
     },
-    "single_ports": {                      
-        "key": KEY_SINGLE_PORTS,
-        "required_fields": {
+    KEY_SINGLE_PORTS: {
+        "required_job_fields": {
             KEY_PORT: int,
             KEY_PROTOCOL: str,
-            KEY_IPS: (list, str),
+            KEY_IPS: list,
         },
         "allow_empty": True,
     },
-    "port_ranges": {                       
-        "key": KEY_PORT_RANGES,
-        "required_fields": {
+    KEY_PORT_RANGES: {
+        "required_job_fields": {
             KEY_START_PORT: int,
             KEY_END_PORT: int,
             KEY_PROTOCOL: str,
-            KEY_IPS: (list, str),
+            KEY_IPS: list,
         },
         "allow_empty": True,
     },
-    "example_config": CONFIG_EXAMPLE,
+    "config_example": CONFIG_EXAMPLE,
 }
 
 # === DETECTION CONFIG ===
@@ -137,6 +134,9 @@ SUMMARY_LABELS = {
 
 # === MENU / ACTIONS  ===
 ACTIONS: Dict[str, Dict] = {
+    "meta": {
+        "title": "Select a firewall action",
+    },
     "Apply firewall rules": {
         "install": True,
         "verb": "apply",
@@ -161,7 +161,12 @@ ACTIONS: Dict[str, Dict] = {
         "prompt": "Reset UFW (flush rules)? [y/n]: ",
         "next_state": "RESET_ONLY",
     },
-    "Cancel": {"install": None, "verb": None, "prompt": None, "next_state": None},
+    "Cancel": {
+        "install": None,
+        "verb": None,
+        "prompt": None,
+        "next_state": None,
+    },
 }
 
 # === DEPENDENCIES ===
@@ -176,7 +181,7 @@ class State(Enum):
     JSON_TOPLEVEL_CHECK = auto()
     JSON_MODEL_SECTION_CHECK = auto()
     LOAD_JOB_BLOCK = auto()
-    JSON_REQUIRED_KEYS_CHECK = auto()
+    JSON_REQUIRED_SUB_KEYS_CHECK = auto()
     CONFIG_LOADING = auto()
     MENU_SELECTION = auto()
     PREPARE_PLAN = auto()
@@ -221,6 +226,7 @@ class FirewallCLI:
         self.ranges_applied = 0
 
     def setup(self, log_dir_name: str, file_prefix: str, required_user: str) -> None:
+        """Initialize logging and verify required user account."""
         if not check_account(required_user):
             self.finalize_msg = "User account verification failed."
             self.state = State.FINALIZE
@@ -342,59 +348,54 @@ class FirewallCLI:
         log_and_print(f"Model section '{model}' successfully validated (object).")
         self.state=State.LOAD_JOB_BLOCK
 
+
     def load_job_block(self, feature_key: str) -> None:
         """Load the package list (DEB keys) for the model; advance to PACKAGE_STATUS."""
         model = self.model
         block = self.job_data[model][feature_key]
         self.job_block = block
-        self.state = State.JSON_REQUIRED_KEYS_CHECK
+        self.state = State.JSON_REQUIRED_SUB_KEYS_CHECK
 
-    def validate_json_required_keys(self, validation_config: Dict, feature_key: str) -> None:
+
+    def validate_json_required_sub_keys(self, validation_config: Dict, section_key: str) -> None:
+        """Validate object-list sections declared in SUB_VALIDATION_CONFIG."""
         section = self.job_block
-        example = validation_config["example_config"]
-        apps_key = validation_config["applications"]["key"]
-        if apps_key in section:
-            if not validate_required_list(section, apps_key, str, validation_config["applications"]["allow_empty"]):
-                self.finalize_msg = f"Invalid config: '{self.model}/{feature_key}/{apps_key}' must be a list of strings."
+        example = validation_config.get("config_example")
+        model = self.model
+        for sec_name, spec in validation_config.items():
+            if sec_name == "config_example":
+                continue
+            value = section.get(sec_name, [])
+            allow_empty = spec.get("allow_empty", True)
+            required_fields = spec.get("required_job_fields", {})
+            if value in (None, []) and allow_empty:
+                continue
+            if not validate_items(value, required_fields):
+                self.finalize_msg = (
+                    f"Invalid config: '{self.model}/{section_key}/{sec_name}' has invalid items."
+                )
                 log_and_print(self.finalize_msg)
-                log_and_print("Example structure:")
-                log_and_print(json.dumps(example, indent=2))
+                if example:
+                    log_and_print("Example structure:")
+                    log_and_print(json.dumps(example, indent=2))
                 self.state = State.FINALIZE
                 return
-
-        sp_conf = validation_config["single_ports"]
-        sp_key = sp_conf["key"]
-        if sp_key in section:
-            if not validate_list_of_objects_with_fields(section[sp_key], sp_conf["required_fields"]):
-                self.finalize_msg = f"Invalid config: '{self.model}/{feature_key}/{sp_key}' has invalid items."
-                log_and_print(self.finalize_msg)
-                log_and_print("Example structure:")
-                log_and_print(json.dumps(example, indent=2))
-                self.state = State.FINALIZE
-                return
-
-        pr_conf = validation_config["port_ranges"]
-        pr_key = pr_conf["key"]
-        if pr_key in section:
-            if not validate_list_of_objects_with_fields(section[pr_key], pr_conf["required_fields"]):
-                self.finalize_msg = f"Invalid config: '{self.model}/{feature_key}/{pr_key}' has invalid items."
-                log_and_print(self.finalize_msg)
-                log_and_print("Example structure:")
-                log_and_print(json.dumps(example, indent=2))
-                self.state = State.FINALIZE
-                return
-
-        log_and_print(f"Config for model '{self.model}' successfully validated.")
-        summary_lines = []
-        summary_lines.append(f" {apps_key} (list[str])")
-        summary_lines.append(f" {sp_key} (list[dict] with fields: {', '.join(f'{k} ({v.__name__ if isinstance(v,type) else v})' for k,v in sp_conf['required_fields'].items())})")
-        summary_lines.append(f" {pr_key} (list[dict] with fields: {', '.join(f'{k} ({v.__name__ if isinstance(v,type) else v})' for k,v in pr_conf['required_fields'].items())})")
-
-        log_and_print("All firewall fields present and of correct type:\n" + "\n".join(summary_lines))
+        log_and_print(f"Config for model '{model}' successfully validated.")
+        log_and_print("\n  Fields Validated")
+        log_and_print("  ----------------")
+        for sec_name, spec in validation_config.items():
+            fields = spec.get("required_job_fields", {})
+            if not fields:
+                log_and_print(f"  - {sec_name}")
+            for key, expected_type in spec.get("required_job_fields", {}).items():
+                types = expected_type if isinstance(expected_type, tuple) else (expected_type,)
+                tname = " or ".join(t.__name__ for t in types)
+                log_and_print(f"  - {sec_name}.{key} ({tname})")
         self.state = State.CONFIG_LOADING
 
 
     def load_config(self, feature_key: str, apps_key: str, single_key: str, ranges_key: str) -> None:
+        """Load firewall rule sections from the job block into instance attributes."""
         block = self.job_block
         self.applications = (block.get(apps_key) or [])[:]
         self.single_ports = (block.get(single_key) or [])[:]
@@ -403,8 +404,9 @@ class FirewallCLI:
 
 
     def select_action(self, actions: Dict[str, Dict]) -> None:
-        title = "Select an option"
-        options = list(actions.keys())
+        """Prompt user to select an action and update the next state accordingly."""
+        title = actions.get("meta", {}).get("title", "Select an option")
+        options = [k for k in actions.keys() if k != "meta"]
         choice = None
         while choice not in options:
             choice = select_from_list(title, options)
@@ -419,21 +421,35 @@ class FirewallCLI:
         self.state = State.PREPARE_PLAN if choice == "Apply firewall rules" else State.CONFIRM
 
     def prepare_plan(self, summary_labels: Dict[str, Dict]) -> None:
-        log_and_print("\n=== Firewall rules ===\n")
-        print_list_section(self.applications, summary_labels["applications"]["label"])
-        print_dict_table(self.single_ports, summary_labels["single_ports"]["columns"], summary_labels["single_ports"]["label"])
-        print_dict_table(self.port_ranges, summary_labels["port_ranges"]["columns"], summary_labels["port_ranges"]["label"])
+        """Display firewall rules summary using labels and columns metadata."""
+        for attr_name, meta in summary_labels.items():
+            label = meta.get("label", attr_name)
+            columns = meta.get("columns")
+            data = getattr(self, attr_name, [])
+            if columns: 
+                print_dict_table(data, columns, label)
+            else:       
+                print_list_section(data, label)
         self.state = State.CONFIRM
 
+
     def confirm_action(self, actions: Dict[str, Dict]) -> None:
-        spec = actions[self.current_action_key]
-        if not confirm(spec["prompt"]):
+        """Confirm the chosen action; advance to next_state or bounce to STATUS."""
+        current_action_key = self.current_action_key
+        spec = actions[current_action_key]
+        prompt = spec["prompt"]
+        proceed = confirm(prompt)
+        if not proceed:
             log_and_print("User cancelled.")
+            self.active_jobs = []
             self.state = State.MENU_SELECTION
             return
-        self.state = State[spec["next_state"]]
+        next_state_name = spec["next_state"]
+        self.state = State[next_state_name]
 
-    def ufw_reset_state(self) -> None:
+
+    def ufw_reset(self) -> None:
+        """Reset UFW, re-enable it with logging, and transition to applying app rules."""
         self.apps_applied = self.singles_applied = self.ranges_applied = 0
         out = reset_ufw()
         if out: [log_and_print(line) for line in out.strip().splitlines()]
@@ -444,16 +460,22 @@ class FirewallCLI:
         log_and_print("UFW reset and enabled.")
         self.state = State.APPLY_APPS
 
-    def apply_app_rules_state(self) -> None:
-        for app in self.applications:
+    def apply_app_rules(self) -> None:
+        """Apply and count UFW rules for application profiles."""
+        applications = self.applications
+        self.apps_applied = 0
+        for app in applications:
             log_and_print(f"Allowing application profile: {app}")
             result = allow_application(app)
             log_and_print(result)
             self.apps_applied += 1
         self.state = State.APPLY_SINGLE_PORTS
 
-    def apply_single_port_rules_state(self, key_port: str, key_proto: str, key_ips: str) -> None:
-        for rule in self.single_ports:
+    def apply_single_port_rules(self, key_port: str, key_proto: str, key_ips: str) -> None:
+        """Apply UFW rules for all application profiles in the config."""
+        single_ports = self.single_ports
+        self.single_ports = 0
+        for rule in single_ports:
             port = rule[key_port]
             proto = rule[key_proto]
             ips   = rule.get(key_ips, [])
@@ -466,8 +488,11 @@ class FirewallCLI:
                 self.singles_applied += 1
         self.state = State.APPLY_PORT_RANGES
 
-    def apply_port_range_rules_state(self, key_start: str, key_end: str, key_proto: str, key_ips: str) -> None:
-        for rule in self.port_ranges:
+    def apply_port_range_rules(self, key_start: str, key_end: str, key_proto: str, key_ips: str) -> None:
+        """Apply UFW port-range rules from the config."""
+        port_ranges = self.port_ranges
+        self.ranges_applied = 0
+        for rule in port_ranges:
             start_port = rule[key_start]
             end_port   = rule[key_end]
             proto      = rule[key_proto]
@@ -481,17 +506,22 @@ class FirewallCLI:
                 self.ranges_applied += 1
         self.state = State.UFW_RELOAD_STATUS
 
-    def ufw_reload_and_status_state(self) -> None:
+    def ufw_reload_and_status(self) -> None:
+        """Reload UFW, display status summary, and finalize with applied rule counts."""
         out = reload_ufw()
+        apps_applied = self.apps_applied
+        singles_applied = self.singles_applied
+        ranges_applied = self.ranges_applied
         if out: [log_and_print(line) for line in out.strip().splitlines()]
         log_and_print("Firewall rules applied successfully.")
         log_and_print("=== UFW Status Summary ===")
         for line in status_ufw().splitlines():
             log_and_print(line)
-        log_and_print(f"\nApplied rules — Apps: {self.apps_applied}, Single-ports: {self.singles_applied}, Port-ranges: {self.ranges_applied}")
+        log_and_print(f"\nApplied rules — Apps: {apps_applied}, Single-ports: {singles_applied}, Port-ranges: {ranges_applied}")
         self.state = State.FINALIZE
 
-    def enable_ufw_state(self) -> None:
+    def enable_ufw(self) -> None:
+        """Enable UFW with logging and return to the menu."""
         out = enable_ufw()
         if out: [log_and_print(line) for line in out.strip().splitlines()]
         out = enable_logging_ufw()
@@ -499,13 +529,15 @@ class FirewallCLI:
         log_and_print("UFW enabled (logging on).")
         self.state = State.MENU_SELECTION
 
-    def disable_ufw_state(self) -> None:
+    def disable_ufw(self) -> None:
+        """Disable UFW and return to the menu."""
         out = disable_ufw()
         if out: [log_and_print(line) for line in out.strip().splitlines()]
         log_and_print("UFW disabled.")
         self.state = State.MENU_SELECTION
 
-    def reset_only_state(self) -> None:
+    def reset_only(self) -> None:
+        """Reset UFW rules without enabling and return to the menu."""
         out = reset_ufw()
         if out: [log_and_print(line) for line in out.strip().splitlines()]
         log_and_print("UFW reset completed.")
@@ -518,22 +550,22 @@ class FirewallCLI:
             State.DEP_CHECK:                    lambda: self.dep_check(DEPENDENCIES),
             State.DEP_INSTALL:                  lambda: self.dep_install(),
             State.MODEL_DETECTION:              lambda: self.detect_model(DETECTION_CONFIG),
-            State.JSON_TOPLEVEL_CHECK:          lambda: self.validate_json_toplevel(VALIDATION_CONFIG["example_config"]),
-            State.JSON_MODEL_SECTION_CHECK:     lambda: self.validate_json_model_section(VALIDATION_CONFIG["example_config"]),
+            State.JSON_TOPLEVEL_CHECK:          lambda: self.validate_json_toplevel(DETECTION_CONFIG["config_example"]),
+            State.JSON_MODEL_SECTION_CHECK:     lambda: self.validate_json_model_section(DETECTION_CONFIG["config_example"]),
             State.LOAD_JOB_BLOCK:               lambda: self.load_job_block(JOBS_KEY),
-            State.JSON_REQUIRED_KEYS_CHECK:     lambda: self.validate_json_required_keys(VALIDATION_CONFIG, JOBS_KEY),
+            State.JSON_REQUIRED_SUB_KEYS_CHECK: lambda: self.validate_json_required_sub_keys(SUB_VALIDATION_CONFIG, JOBS_KEY),
             State.CONFIG_LOADING:               lambda: self.load_config(JOBS_KEY, KEY_APPLICATIONS, KEY_SINGLE_PORTS, KEY_PORT_RANGES),
             State.MENU_SELECTION:               lambda: self.select_action(ACTIONS),
             State.PREPARE_PLAN:                 lambda: self.prepare_plan(SUMMARY_LABELS),
             State.CONFIRM:                      lambda: self.confirm_action(ACTIONS),
-            State.UFW_RESET:                    lambda: self.ufw_reset_state(),
-            State.APPLY_APPS:                   lambda: self.apply_app_rules_state(),
-            State.APPLY_SINGLE_PORTS:           lambda: self.apply_single_port_rules_state(KEY_PORT, KEY_PROTOCOL, KEY_IPS),
-            State.APPLY_PORT_RANGES:            lambda: self.apply_port_range_rules_state(KEY_START_PORT, KEY_END_PORT, KEY_PROTOCOL, KEY_IPS),
-            State.UFW_RELOAD_STATUS:            lambda: self.ufw_reload_and_status_state(),
-            State.ENABLE_UFW:                   lambda: self.enable_ufw_state(),
-            State.DISABLE_UFW:                  lambda: self.disable_ufw_state(),
-            State.RESET_ONLY:                   lambda: self.reset_only_state(),
+            State.UFW_RESET:                    lambda: self.ufw_reset(),
+            State.APPLY_APPS:                   lambda: self.apply_app_rules(),
+            State.APPLY_SINGLE_PORTS:           lambda: self.apply_single_port_rules(KEY_PORT, KEY_PROTOCOL, KEY_IPS),
+            State.APPLY_PORT_RANGES:            lambda: self.apply_port_range_rules(KEY_START_PORT, KEY_END_PORT, KEY_PROTOCOL, KEY_IPS),
+            State.UFW_RELOAD_STATUS:            lambda: self.ufw_reload_and_status(),
+            State.ENABLE_UFW:                   lambda: self.enable_ufw(),
+            State.DISABLE_UFW:                  lambda: self.disable_ufw(),
+            State.RESET_ONLY:                   lambda: self.reset_only(),
         }
 
         while self.state != State.FINALIZE:
