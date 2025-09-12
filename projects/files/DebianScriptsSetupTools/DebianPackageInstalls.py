@@ -173,7 +173,6 @@ class PackageInstaller:
         # Model/config
         self.model: Optional[str] = None
         self.detected_model: Optional[str]=None
-        self.job_file: Optional[Path] = None
         self.job_data: Dict[str, Dict] = {}
 
         # Data & choices
@@ -234,7 +233,6 @@ class PackageInstaller:
             log_and_print(json.dumps(detection_config["config_example"], indent=2))
             self.state = State.FINALIZE
             return
-        self.job_file = Path(resolved_path)
         self.job_data = loaded
         self.state = State.JSON_TOPLEVEL_CHECK
        
@@ -297,7 +295,9 @@ class PackageInstaller:
 
     def load_jobs(self, jobs_key: str) -> None:
         """Load the package list for the model; advance to PACKAGE_STATUS or FINALIZE."""
-        jobs_list = self.job_data[self.model][jobs_key]
+        job_data = self.job_data
+        model = self.model
+        jobs_list = job_data[model][jobs_key]
         self.jobs_list = sorted(dict.fromkeys(jobs_list))
         self.active_jobs = []
         self.state = State.PACKAGE_STATUS if self.jobs_list else State.MENU_SELECTION
@@ -305,14 +305,18 @@ class PackageInstaller:
 
     def build_status_map(self, summary_label: str, installed_label: str, uninstalled_label: str, status_fn: Callable[[str], bool]) -> None:
         """Compute package status and print summary; advance to MENU_SELECTION."""
-        self.job_status = {job: status_fn(job) for job in self.jobs_list}
+        job_status = self.job_status
+        jobs_list = self.jobs_list
+        job_status = {job: status_fn(job) for job in jobs_list}
         summary = format_status_summary(
-            self.job_status,
+            job_status,
             label=summary_label,
             count_keys=[installed_label, uninstalled_label],
             labels={True: installed_label, False: uninstalled_label},
         )
         log_and_print(summary)
+        self.job_status = job_status
+        self.jobs_list = jobs_list
         self.state = State.MENU_SELECTION
 
 
@@ -336,10 +340,12 @@ class PackageInstaller:
 
     def prepare_jobs_list(self, key_label: str, actions: Dict[str, Dict]) -> None:
         """Build job list for the chosen action; advance to CONFIRM or bounce to MENU_SELECTION."""
-        spec = actions[self.current_action_key]
+        current_action_key = self.current_action_key
+        job_status = self.job_status
+        spec = actions[current_action_key]
         verb = spec["verb"]
         filter_status = spec["filter_status"]
-        active_jobs = sorted(filter_by_status(self.job_status, filter_status))
+        active_jobs = sorted(filter_by_status(job_status, filter_status))
         if not active_jobs:
             log_and_print(f"No {key_label} to process for {verb}.")
             self.state = State.MENU_SELECTION
@@ -352,7 +358,8 @@ class PackageInstaller:
 
     def confirm_action(self, actions: Dict[str, Dict]) -> None:
         """Confirm the chosen action; advance to next_state or bounce to STATUS."""
-        spec = actions[self.current_action_key]
+        current_action_key = self.current_action_key
+        spec = actions[current_action_key]
         prompt = spec["prompt"]
         proceed = confirm(prompt)
         if not proceed:

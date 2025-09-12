@@ -33,10 +33,10 @@ import os
 from enum import Enum, auto
 from pathlib import Path
 from typing import Callable, Dict, List, Optional
-
+from modules.package_utils import ensure_dependencies_installed, check_package
 from modules.display_utils import print_dict_table, print_list_section, confirm, select_from_list
 from modules.system_utils import (
-    check_account, ensure_dependencies_installed, secure_logs_for_user, get_model
+    check_account, secure_logs_for_user, get_model
 )
 from modules.json_utils import load_json, resolve_value, validate_required_list, validate_list_of_objects_with_fields
 from modules.logger_utils import log_and_print, setup_logging, rotate_logs
@@ -48,13 +48,23 @@ from modules.firewall_utils import (
 
 # === CONFIG PATHS & KEYS ===
 PRIMARY_CONFIG   = "Config/AppConfigSettings.json"
-FEATURE_KEY      = "Firewall"
+JOBS_KEY          = "Firewall"
 CONFIG_TYPE      = "firewall"
-DEFAULT_MODEL    = "Default"
+DEFAULT_CONFIG    = "Default"
+
+# === JSON FIELD NAMES ===
+KEY_APPLICATIONS = "Applications"
+KEY_SINGLE_PORTS = "SinglePorts"
+KEY_PORT_RANGES  = "PortRanges"
+KEY_PORT         = "Port"
+KEY_PROTOCOL     = "Protocol"
+KEY_IPS          = "IPs"
+KEY_START_PORT   = "StartPort"
+KEY_END_PORT     = "EndPort"
 
 # Embedded example used on fallback or validation errors
 CONFIG_EXAMPLE = {
-    "default": {
+    "Default": {
         "Firewall": {
             "Applications": ["OpenSSH", "CUPS"],
             "SinglePorts": [
@@ -67,68 +77,57 @@ CONFIG_EXAMPLE = {
     }
 }
 
-# === DETECTION CONFIG (passed to detect_model) ===
-DETECTION_CONFIG = {
-    "primary_config": PRIMARY_CONFIG,
-    "config_type": CONFIG_TYPE,
-    "packages_key": FEATURE_KEY,
-    "default_config_note": (
-        "NOTE: The default {config_type} configuration is being used.\n"
-        "To customize {config_type} for model '{model}', create a model-specific config file.\n"
-        "e.g. - '{example}' and add an entry for '{model}' in '{primary}'."
-    ),
-    "default_config": DEFAULT_MODEL,
-    "config_example": CONFIG_EXAMPLE,  
-}
-
-# === LOGGING ===
-LOG_DIR_NAME    = "logs"
-LOG_FILE_PREFIX = "fw"
-LOGS_TO_KEEP    = 10
-ROTATE_LOG_NAME = "fw_settings_*.log"
-
-# === RUNTIME ===
-REQUIRED_USER = "root"
-DEPENDENCIES  = ["ufw", "iptables"]
-
-# === JSON FIELD NAMES ===
-KEY_APPLICATIONS = "Applications"
-KEY_SINGLE_PORTS = "SinglePorts"
-KEY_PORT_RANGES  = "PortRanges"
-KEY_PORT         = "Port"
-KEY_PROTOCOL     = "Protocol"
-KEY_IPS          = "IPs"
-KEY_START_PORT   = "StartPort"
-KEY_END_PORT     = "EndPort"
-
 # === VALIDATION CONFIG ===
 VALIDATION_CONFIG = {
-    "applications": {  
-        "key": "Applications",
+    "applications": {                      
+        "key": KEY_APPLICATIONS,
         "elem_type": str,
-        "allow_empty": True,  
+        "allow_empty": True,
     },
-    "single_ports": {  
-        "key": "SinglePorts",
+    "single_ports": {                      
+        "key": KEY_SINGLE_PORTS,
         "required_fields": {
-            "Port": int,
-            "Protocol": str,
-            "IPs": (list, str), 
+            KEY_PORT: int,
+            KEY_PROTOCOL: str,
+            KEY_IPS: (list, str),
         },
         "allow_empty": True,
     },
-    "port_ranges": {  
-        "key": "PortRanges",
+    "port_ranges": {                       
+        "key": KEY_PORT_RANGES,
         "required_fields": {
-            "StartPort": int,
-            "EndPort": int,
-            "Protocol": str,
-            "IPs": (list, str),
+            KEY_START_PORT: int,
+            KEY_END_PORT: int,
+            KEY_PROTOCOL: str,
+            KEY_IPS: (list, str),
         },
         "allow_empty": True,
     },
     "example_config": CONFIG_EXAMPLE,
 }
+
+# === DETECTION CONFIG ===
+DETECTION_CONFIG = {
+    "primary_config": PRIMARY_CONFIG,
+    "config_type": CONFIG_TYPE,
+    "jobs_key": JOBS_KEY,
+    "default_config": DEFAULT_CONFIG,
+    "config_example": CONFIG_EXAMPLE,
+    "default_config_note": (
+        "No model-specific config was found. "
+        "Using the 'Default' section instead. "
+    ),
+}
+
+# === LOGGING ===
+LOG_DIR_NAME    = "logs"
+LOG_PREFIX = "fw"
+LOGS_TO_KEEP    = 10
+ROTATE_LOG_NAME = "fw_settings_*.log"
+
+# === USER ===
+REQUIRED_USER = "root"
+
 # === LABELS ===
 SUMMARY_LABELS = {
     "applications": {"label": "Firewall Applications", "columns": None},
@@ -165,13 +164,18 @@ ACTIONS: Dict[str, Dict] = {
     "Cancel": {"install": None, "verb": None, "prompt": None, "next_state": None},
 }
 
+# === DEPENDENCIES ===
+DEPENDENCIES  = ["ufw", "iptables"]
+
 # === STATE ENUM ===
 class State(Enum):
     INITIAL = auto()
     DEP_CHECK = auto()
+    DEP_INSTALL = auto()
     MODEL_DETECTION = auto()
     JSON_TOPLEVEL_CHECK = auto()
     JSON_MODEL_SECTION_CHECK = auto()
+    LOAD_JOB_BLOCK = auto()
     JSON_REQUIRED_KEYS_CHECK = auto()
     CONFIG_LOADING = auto()
     MENU_SELECTION = auto()
@@ -196,19 +200,22 @@ class FirewallCLI:
         self.log_dir: Optional[Path] = None
         self.log_file: Optional[Path] = None
 
+        # Model/config
         self.model: Optional[str] = None
-        self.config_path: Optional[str] = None
+        self.detected_model: Optional[str] = None
 
-        # raw data for model
-        self.fw_data: Dict[str, Dict] = {}
+        # Jobs
+        self.job_data: Dict[str, Dict] = {}
+        self.deps_install_list: List[str] = []
 
-        # validated blocks
-        self.firewall_block: Dict[str, Dict] = {}
+        # Other runtime fields
+        self.job_block: Dict[str, Dict] = {}
+        self.current_action_key: Optional[str] = None
+
+        # ufw specific feilds
         self.applications: List[str] = []
         self.single_ports: List[Dict] = []
         self.port_ranges: List[Dict] = []
-
-        self.current_action_key: Optional[str] = None
         self.apps_applied = 0
         self.singles_applied = 0
         self.ranges_applied = 0
@@ -226,86 +233,129 @@ class FirewallCLI:
         setup_logging(self.log_file, self.log_dir)
         self.state = State.DEP_CHECK
 
-    def ensure_deps(self, deps: List[str]) -> None:
-        ensure_dependencies_installed(deps)
+
+    def dep_check(self, deps: List[str]) -> None:
+        """Check dependencies and collect missing ones."""
+        self.deps_install_list = [] 
+        for dep in deps:
+            if check_package(dep):
+                log_and_print(f"[OK]    {dep} is installed.")
+            else:
+                log_and_print(f"[MISS]  {dep} is missing.")
+                self.deps_install_list.append(dep)
+        if self.deps_install_list:
+            log_and_print("Missing deps: " + ", ".join(self.deps_install_list))
+            self.state = State.DEP_INSTALL
+        else:
+            self.state = State.MODEL_DETECTION
+
+
+    def dep_install(self) -> None:
+        """Install each missing dependency; fail fast on error."""
+        deps_install_list = self.deps_install_list
+        for dep in deps_install_list:
+            log_and_print(f"[INSTALL] Attempting: {dep}")
+            if not ensure_dependencies_installed([dep]):
+                log_and_print(f"[FAIL]   Install failed: {dep}")
+                self.finalize_msg = f"Failed to install dependency: {dep}"
+                self.state = State.FINALIZE
+                return
+            if check_package(dep):
+                log_and_print(f"[DONE]   Installed: {dep}")
+            else:
+                log_and_print(f"[FAIL]   Still missing after install: {dep}")
+                self.finalize_msg = f"{dep} still missing after install."
+                self.state = State.FINALIZE
+                return
+        self.deps_install_list = []
         self.state = State.MODEL_DETECTION
 
+
     def detect_model(self, detection_config: Dict) -> None:
+        """Detect system model, resolve config path, and load JSON data."""
         model = get_model()
+        self.detected_model = model
         log_and_print(f"Detected model: {model}")
         primary_cfg = load_json(detection_config["primary_config"])
-        pk = detection_config["packages_key"]
+        pk = detection_config["jobs_key"]
         dk = detection_config["default_config"]
-        primary_entry = (primary_cfg.get(model, {}) or {}).get(pk)
-        cfg_path = resolve_value(primary_cfg, model, pk, default_key=dk, check_file=True)
-        if not cfg_path:
+        log_and_print(f"Primary config path: {detection_config['primary_config']}")
+        resolved_path = resolve_value(primary_cfg, model, pk, default_key=None, check_file=True)
+        used_default = False
+        if not resolved_path:
+            resolved_path = resolve_value(primary_cfg, dk, pk, default_key=None, check_file=True)
+            used_default = True
+        if not resolved_path:
             self.finalize_msg = (
-                f"Invalid {detection_config['config_type'].upper()} config path "
-                f"for model '{model}' or fallback."
+                f"Invalid {detection_config['config_type'].upper()} config path for "
+                f"model '{model}' or fallback."
             )
             self.state = State.FINALIZE
             return
-        used_default = (primary_entry != cfg_path)
-        log_and_print(f"Using {detection_config['config_type'].upper()} config file: {cfg_path}")
+        log_and_print(f"Using {detection_config['config_type'].upper()} config file: {resolved_path}")
+        self.model = dk if used_default else model
         if used_default:
-            log_and_print(f"No model-specific {detection_config['config_type']} config found for '{model}'.")
-            log_and_print(f"Falling back to the '{dk}' setting in '{detection_config['primary_config']}'.")
+            log_and_print(
+                f"Falling back from detected model '{self.detected_model}' to '{dk}'.\n"
+                + detection_config["default_config_note"]
+            )
+        loaded = load_json(resolved_path)
+        if not isinstance(loaded, dict):
+            self.finalize_msg = (
+                f"Loaded {detection_config['config_type']} config is not a JSON object: {resolved_path}"
+            )
+            log_and_print(self.finalize_msg)
             log_and_print("Example structure:")
-            log_and_print("==================")
             log_and_print(json.dumps(detection_config["config_example"], indent=2))
-            log_and_print("==================")
-            self.model = dk
-        else:
-            self.model = model
-        self.config_path = cfg_path
-        self.fw_data = load_json(cfg_path)
+            self.state = State.FINALIZE
+            return
+        self.job_data = loaded
         self.state = State.JSON_TOPLEVEL_CHECK
 
+
     def validate_json_toplevel(self, example_config: Dict) -> None:
-        data = load_json(self.config_path)
-        if not isinstance(data, dict):
-            self.finalize_msg = "Invalid config: top-level must be a JSON object."
+        """Validate that top-level config is a JSON object."""
+        data=self.job_data
+        if not isinstance(data,dict):
+            self.finalize_msg="Invalid config: top-level must be a JSON object."
             log_and_print(self.finalize_msg)
             log_and_print("Example structure:")
-            log_and_print(json.dumps(example_config, indent=2))
-            self.state = State.FINALIZE
+            log_and_print(json.dumps(example_config,indent=2))
+            self.state=State.FINALIZE
             return
-        self._cfg = data  
         log_and_print("Top-level JSON structure successfully validated (object).")
-        self.state = State.JSON_MODEL_SECTION_CHECK
+        self.state=State.JSON_MODEL_SECTION_CHECK
 
 
-    def validate_json_model_section(self, example_config: Dict, feature_key: str) -> None:
+    def validate_json_model_section(self, example_config: Dict) -> None:
+        """Validate that the model section is a JSON object."""
+        data=self.job_data
+        model=self.model
+        entry=data.get(model)
+        if not isinstance(entry,dict):
+            self.finalize_msg=f"Invalid config: expected a JSON object for model '{model}', but found {type(entry).__name__ if entry is not None else 'nothing'}."
+            log_and_print(self.finalize_msg)
+            log_and_print("Example structure (showing correct model section):")
+            log_and_print(json.dumps(example_config,indent=2))
+            self.state=State.FINALIZE
+            return
+        log_and_print(f"Model section '{model}' successfully validated (object).")
+        self.state=State.LOAD_JOB_BLOCK
+
+    def load_job_block(self, feature_key: str) -> None:
+        """Load the package list (DEB keys) for the model; advance to PACKAGE_STATUS."""
         model = self.model
-        entry = self._cfg.get(model)
-        if not isinstance(entry, dict):
-            self.finalize_msg = f"Invalid config: section for '{model}' must be an object."
-            log_and_print(self.finalize_msg)
-            log_and_print("Example structure:")
-            log_and_print(json.dumps(example_config, indent=2))
-            self.state = State.FINALIZE
-            return
-        section = entry.get(feature_key)
-        if not isinstance(section, dict):
-            self.finalize_msg = f"Invalid config: '{model}' must contain a '{feature_key}' object."
-            log_and_print(self.finalize_msg)
-            log_and_print("Example structure:")
-            log_and_print(json.dumps(example_config, indent=2))
-            self.state = State.FINALIZE
-            return
-        self._feature_block = section
-        log_and_print(f"Model section '{model}' ('{feature_key}') successfully validated (object).")
+        block = self.job_data[model][feature_key]
+        self.job_block = block
         self.state = State.JSON_REQUIRED_KEYS_CHECK
 
-
-    def validate_json_required_keys(self, validation_config: Dict) -> None:
-        section = self._feature_block
+    def validate_json_required_keys(self, validation_config: Dict, feature_key: str) -> None:
+        section = self.job_block
         example = validation_config["example_config"]
-
         apps_key = validation_config["applications"]["key"]
         if apps_key in section:
             if not validate_required_list(section, apps_key, str, validation_config["applications"]["allow_empty"]):
-                self.finalize_msg = f"Invalid config: '{self.model}/Firewall/{apps_key}' must be a list of strings."
+                self.finalize_msg = f"Invalid config: '{self.model}/{feature_key}/{apps_key}' must be a list of strings."
                 log_and_print(self.finalize_msg)
                 log_and_print("Example structure:")
                 log_and_print(json.dumps(example, indent=2))
@@ -316,7 +366,7 @@ class FirewallCLI:
         sp_key = sp_conf["key"]
         if sp_key in section:
             if not validate_list_of_objects_with_fields(section[sp_key], sp_conf["required_fields"]):
-                self.finalize_msg = f"Invalid config: '{self.model}/Firewall/{sp_key}' has invalid items."
+                self.finalize_msg = f"Invalid config: '{self.model}/{feature_key}/{sp_key}' has invalid items."
                 log_and_print(self.finalize_msg)
                 log_and_print("Example structure:")
                 log_and_print(json.dumps(example, indent=2))
@@ -327,7 +377,7 @@ class FirewallCLI:
         pr_key = pr_conf["key"]
         if pr_key in section:
             if not validate_list_of_objects_with_fields(section[pr_key], pr_conf["required_fields"]):
-                self.finalize_msg = f"Invalid config: '{self.model}/Firewall/{pr_key}' has invalid items."
+                self.finalize_msg = f"Invalid config: '{self.model}/{feature_key}/{pr_key}' has invalid items."
                 log_and_print(self.finalize_msg)
                 log_and_print("Example structure:")
                 log_and_print(json.dumps(example, indent=2))
@@ -344,11 +394,8 @@ class FirewallCLI:
         self.state = State.CONFIG_LOADING
 
 
-
-
     def load_config(self, feature_key: str, apps_key: str, single_key: str, ranges_key: str) -> None:
-        block = self._feature_block  
-        self.firewall_block = block
+        block = self.job_block
         self.applications = (block.get(apps_key) or [])[:]
         self.single_ports = (block.get(single_key) or [])[:]
         self.port_ranges  = (block.get(ranges_key) or [])[:]
@@ -467,13 +514,15 @@ class FirewallCLI:
     # ===== MAIN =====
     def main(self) -> None:
         handlers: Dict[State, Callable[[], None]] = {
-            State.INITIAL:                      lambda: self.setup(LOG_DIR_NAME, LOG_FILE_PREFIX, REQUIRED_USER),
-            State.DEP_CHECK:                    lambda: self.ensure_deps(DEPENDENCIES),
+            State.INITIAL:                      lambda: self.setup(LOG_DIR_NAME, LOG_PREFIX, REQUIRED_USER),
+            State.DEP_CHECK:                    lambda: self.dep_check(DEPENDENCIES),
+            State.DEP_INSTALL:                  lambda: self.dep_install(),
             State.MODEL_DETECTION:              lambda: self.detect_model(DETECTION_CONFIG),
-            State.JSON_TOPLEVEL_CHECK:          lambda: self.validate_json_toplevel(CONFIG_EXAMPLE),
-            State.JSON_MODEL_SECTION_CHECK:     lambda: self.validate_json_model_section(CONFIG_EXAMPLE, FEATURE_KEY),
-            State.JSON_REQUIRED_KEYS_CHECK:     lambda: self.validate_json_required_keys(VALIDATION_CONFIG),
-            State.CONFIG_LOADING:               lambda: self.load_config(FEATURE_KEY, KEY_APPLICATIONS, KEY_SINGLE_PORTS, KEY_PORT_RANGES),
+            State.JSON_TOPLEVEL_CHECK:          lambda: self.validate_json_toplevel(VALIDATION_CONFIG["example_config"]),
+            State.JSON_MODEL_SECTION_CHECK:     lambda: self.validate_json_model_section(VALIDATION_CONFIG["example_config"]),
+            State.LOAD_JOB_BLOCK:               lambda: self.load_job_block(JOBS_KEY),
+            State.JSON_REQUIRED_KEYS_CHECK:     lambda: self.validate_json_required_keys(VALIDATION_CONFIG, JOBS_KEY),
+            State.CONFIG_LOADING:               lambda: self.load_config(JOBS_KEY, KEY_APPLICATIONS, KEY_SINGLE_PORTS, KEY_PORT_RANGES),
             State.MENU_SELECTION:               lambda: self.select_action(ACTIONS),
             State.PREPARE_PLAN:                 lambda: self.prepare_plan(SUMMARY_LABELS),
             State.CONFIRM:                      lambda: self.confirm_action(ACTIONS),

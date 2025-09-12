@@ -160,7 +160,6 @@ class FlatpakInstaller:
         # Model/config
         self.model: Optional[str] = None
         self.detected_model: Optional[str] = None
-        self.package_file: Optional[Path] = None  
 
         # packages
         self.job_data: Dict[str, Dict] = {}  
@@ -205,7 +204,8 @@ class FlatpakInstaller:
 
     def dep_install(self) -> None:
         """Install each missing dependency; fail fast on error."""
-        for dep in self.deps_install_list:
+        dep_install_list = self.deps_install_list
+        for dep in deps_install_list:
             log_and_print(f"[INSTALL] Attempting: {dep}")
             if not ensure_dependencies_installed([dep]):
                 log_and_print(f"[FAIL]   Install failed: {dep}")
@@ -267,7 +267,6 @@ class FlatpakInstaller:
             log_and_print(json.dumps(detection_config["config_example"], indent=2))
             self.state = State.FINALIZE
             return
-        self.job_file = Path(resolved_path)
         self.job_data = loaded
         self.state = State.JSON_TOPLEVEL_CHECK
        
@@ -326,7 +325,8 @@ class FlatpakInstaller:
 
     def load_job_block(self, jobs_key: str) -> None:
         """Load the package list (DEB keys) for the model; advance to PACKAGE_STATUS."""
-        block = self.job_data[self.model][jobs_key]  
+        model = self.model
+        block = self.job_data[model][jobs_key]
         self.job_block = block
         self.jobs_list = sorted(block.keys())
         self.active_jobs = []
@@ -335,14 +335,18 @@ class FlatpakInstaller:
 
     def build_status_map(self, summary_label: str, installed_label: str, uninstalled_label: str, status_fn: Callable[[str], bool]) -> None:
         """Compute package status and print summary; advance to MENU_SELECTION."""
-        self.job_status = {job: status_fn(job) for job in self.jobs_list}
+        job_status = self.job_status
+        jobs_list = self.jobs_list
+        job_status = {job: status_fn(job) for job in jobs_list}
         summary = format_status_summary(
-            self.job_status,
+            job_status,
             label=summary_label,
             count_keys=[installed_label, uninstalled_label],
             labels={True: installed_label, False: uninstalled_label},
         )
         log_and_print(summary)
+        self.job_status = job_status
+        self.jobs_list = jobs_list
         self.state = State.MENU_SELECTION
 
 
@@ -366,6 +370,7 @@ class FlatpakInstaller:
 
     def prepare_jobs_dict(self, key_label: str, actions: Dict[str, Dict]) -> None:
         """Build and print plan; populate active_jobs; advance to CONFIRM or bounce to MENU_SELECTION."""
+        current_action_key = self.current_action_key
         spec = actions[self.current_action_key]
         verb = spec["verb"]
         job_status = self.job_status
@@ -391,7 +396,8 @@ class FlatpakInstaller:
 
     def confirm_action(self, actions: Dict[str, Dict]) -> None:
         """Confirm the chosen action; advance to next_state or bounce to STATUS."""
-        spec = actions[self.current_action_key]
+        current_action_key = self.current_action_key
+        spec = actions[current_action_key]
         prompt = spec["prompt"]
         proceed = confirm(prompt)
         if not proceed:
