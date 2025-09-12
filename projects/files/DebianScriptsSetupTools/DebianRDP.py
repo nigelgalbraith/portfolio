@@ -191,6 +191,15 @@ ACTIONS: Dict[str, Dict] = {
     },
 }
 
+SUB_MENU: Dict[str, str] = {
+    "title": "Select RDP",
+    "all_label": "All",
+    "cancel_label": "Cancel",
+    "cancel_state": "MENU_SELECTION",
+    "next_state": "PREPARE_PLAN",
+}
+
+
 # === DEPENDENCIES ===
 DEPENDENCIES = ["xfce4", "xfce4-goodies"]
 
@@ -206,6 +215,7 @@ class State(Enum):
     CONFIG_LOADING = auto()
     PACKAGE_STATUS = auto()
     MENU_SELECTION = auto()
+    RDP_SELECTION = auto()
     PREPARE_PLAN = auto()              
     CONFIRM = auto()
     INSTALL = auto()
@@ -236,6 +246,9 @@ class RDPInstaller:
         self.job_status: Dict[str, bool] = {}
         self.current_action_key: Optional[str] = None
         self.active_jobs: List[str] = []
+
+        # RDP Specific
+        self.selected_rdp: Optional[str] = None
 
 
     def setup(self, log_dir: Path, log_prefix: str, required_user: str) -> None:
@@ -286,7 +299,7 @@ class RDPInstaller:
                 self.state = State.FINALIZE
                 return
         self.deps_install_list = []
-        self.state = State.MODEL_DETECTION
+        self.state = State.REMOTE_SETUP
 
 
     def detect_model(self, detection_config: Dict) -> None:
@@ -386,7 +399,7 @@ class RDPInstaller:
     def load_job_block(self, jobs_key: str) -> None:
         """Load the package list (DEB keys) for the model; advance to PACKAGE_STATUS."""
         model = self.model
-        block = self.job_data[model][jobs_key]  
+        block = self.job_data[model][jobs_key]
         self.job_block = block
         self.jobs_list = sorted(block.keys())
         self.active_jobs = []
@@ -425,8 +438,30 @@ class RDPInstaller:
             self.state = State.FINALIZE
             return
         self.current_action_key = choice
-        self.state = State.PREPARE_PLAN
+        self.state = State.RDP_SELECTION
 
+
+    def sub_select_action(self, menu: Dict[str, str]) -> None:
+        """Select one RDP, all RDPs, or cancel, using menu definition."""
+        if len(self.jobs_list) == 1:
+            self.selected_rdp = [self.jobs_list[0]]
+            self.state = State.PREPARE_PLAN
+            return
+        options = self.jobs_list + ["All", menu["cancel_label"]]
+        rdp = None
+        while rdp not in options:
+            rdp = select_from_list(menu["title"], options)
+            if rdp not in options:
+                log_and_print("Invalid selection. Please choose a valid option.")
+        if rdp == menu["cancel_label"]:
+            self.state = State[menu["cancel_state"]]
+            return
+        if rdp == "All":
+            self.selected_rdp = self.jobs_list[:]   
+        else:
+            self.selected_rdp = [rdp]
+        self.state = State[menu["next_state"]]
+        
 
     def prepare_jobs_dict(self, key_label: str, actions: Dict[str, Dict]) -> None:
         """Build and print plan; populate active_jobs; advance to CONFIRM or bounce to MENU_SELECTION."""
@@ -452,7 +487,7 @@ class RDPInstaller:
         print_dict_table(rows, field_names=[key_label] + other, label=f"Planned {verb.title()} ({key_label})")
         self.active_jobs = jobs
         self.state = State.CONFIRM
-        
+
 
     def confirm_action(self, actions: Dict[str, Dict]) -> None:
         """Confirm the chosen action; advance to next_state or bounce to STATUS."""
@@ -468,11 +503,12 @@ class RDPInstaller:
         next_state_name = spec["next_state"]
         self.state = State[next_state_name]
 
+
     def install(self, key_user: str, key_service: str,
                 key_session: str, key_xsession: str,
                 key_skel: str, key_home: str, key_groups: str) -> None:
         """Install RDP (xrdp) packages for each active job."""
-        jobs = self.active_jobs
+        jobs = self.selected_rdp
         total = len(jobs)
         success = 0
         for job in jobs:
@@ -505,7 +541,7 @@ class RDPInstaller:
     def uninstall(self, key_service: str, key_xsession: str,
                 key_home: str, key_skel: str) -> None:
         """Uninstall RDP (xrdp) packages for each active job."""
-        jobs = self.active_jobs
+        jobs = self.selected_rdp
         total = len(jobs)
         success = 0
         for job in jobs:
@@ -530,7 +566,7 @@ class RDPInstaller:
     def renew(self, key_service: str, key_ssl_cert_dir: str,
             key_ssl_key_dir: str, key_xrdp_dir: str) -> None:
         """Regenerate XRDP keys/certs for each active job."""
-        jobs = self.active_jobs
+        jobs = self.selected_rdp
         total = len(jobs)
         success = 0
         for job in jobs:
@@ -565,6 +601,7 @@ class RDPInstaller:
             State.CONFIG_LOADING:          lambda: self.load_job_block(JOBS_KEY),
             State.PACKAGE_STATUS:          lambda: self.build_status_map(JOBS_KEY, INSTALLED_LABEL, UNINSTALLED_LABEL, STATUS_FN),
             State.MENU_SELECTION:          lambda: self.select_action(ACTIONS),
+            State.RDP_SELECTION:           lambda: self.sub_select_action(SUB_MENU),
             State.PREPARE_PLAN:            lambda: self.prepare_jobs_dict(JOBS_KEY, ACTIONS),
             State.CONFIRM:                 lambda: self.confirm_action(ACTIONS),
             State.INSTALL:                 lambda: self.install(KEY_USER_NAME, KEY_SERVICE_NAME, KEY_SESSION_CMD, KEY_XSESSION,

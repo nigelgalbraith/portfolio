@@ -204,7 +204,7 @@ class FlatpakInstaller:
 
     def dep_install(self) -> None:
         """Install each missing dependency; fail fast on error."""
-        dep_install_list = self.deps_install_list
+        deps_install_list = self.deps_install_list
         for dep in deps_install_list:
             log_and_print(f"[INSTALL] Attempting: {dep}")
             if not ensure_dependencies_installed([dep]):
