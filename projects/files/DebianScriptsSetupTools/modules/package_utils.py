@@ -17,7 +17,7 @@ Requires:
 import subprocess
 import shutil
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Dict, List, Any, Optional, Union
 from shutil import which
 
 def check_package(pkg: str) -> bool:
@@ -123,22 +123,16 @@ def uninstall_packages(packages: Union[str, List[str]]) -> bool:
         return False
 
 
-def download_deb_file(pkg: str, url: str, download_dir: str | Path) -> bool:
+def download_deb_file(pkg: str, url: str, download_dir: str | Path, filename: Optional[str] = None) -> bool:
     """
     Download a .deb file from a URL into the given directory.
-
-    Args:
-        pkg (str): Package name (used for filename).
-        url (str): URL to download the .deb file from.
-        download_dir (str | Path): Directory to store the downloaded file.
-
-    Returns:
-        bool: True if the download succeeded, False otherwise.
+    If filename is not given, defaults to {pkg}.deb
     """
     dl_dir = Path(download_dir)
     dl_dir.mkdir(parents=True, exist_ok=True)
-    dest = dl_dir / f"{pkg}.deb"
-    print(f"Downloading {pkg} from {url}")
+    dest = dl_dir / (filename if filename else f"{pkg}.deb")
+
+    print(f"Downloading {pkg} from {url} → {dest.name}")
     result = subprocess.run(["wget", "-q", "--show-progress", "-O", str(dest), url])
     return result.returncode == 0
 
