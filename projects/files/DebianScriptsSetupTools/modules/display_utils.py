@@ -64,34 +64,24 @@ def format_status_summary(
 
 def print_dict_table(items, field_names, label):
     """
-    Print a table for a list of dictionaries with dynamically sized columns based on the longest value in each column.
-    Each column will be at least as wide as the length of its title. Supports multi-line cells if a value is a list.
-
-    Args:
-        items (list of dict): List of dictionaries containing the same fields.
-        field_names (list): List of keys to display as columns.
-        label (str): Label for the table section.
-
-    Example:
-        jobs = [
-            {"name": "The Secret of Monkey Island", "status": "INSTALLED"},
-            {"name": "Doom", "status": "MISSING"}
-        ]
-        print_dict_table(jobs, ["name", "status"], "DOSBox Games")
+    Print a table for a list of dicts with dynamic column widths.
+    If a cell value is a list, the column width is based on the longest element
+    (i.e., the longest line you'll print), not the entire list representation.
     """
     if not items:
         print(f"\n{label.upper()}: (None)")
         return
 
-    # Dynamically calculate column widths based on the longest value in each column,
-    # and ensure each column is at least as wide as the column title
+    def value_display_len(v):
+        if isinstance(v, list):
+            return max((len(str(x)) for x in v), default=0)
+        return len(str(v))
+
+    # Column widths based on header vs longest display value (list-aware)
     col_widths = []
-    for i, field in enumerate(field_names):
-        # Get the max length for each field in the data
-        max_length = max(len(str(item.get(field, ""))) for item in items)
-        # Ensure the width is at least as wide as the column title
-        col_width = max(len(field), max_length) + 2  # Add some padding
-        col_widths.append(col_width)
+    for field in field_names:
+        max_len = max(value_display_len(item.get(field, "")) for item in items)
+        col_widths.append(max(len(field), max_len) + 2)  # padding
 
     print(f"\n{label.upper()}:")
     # Header
@@ -100,7 +90,7 @@ def print_dict_table(items, field_names, label):
 
     # Rows (support multi-line for lists)
     for item in items:
-        # Build column values; each is a list of one or more lines
+        # Build per-column lines
         columns = []
         for i, field in enumerate(field_names):
             val = item.get(field, "")
@@ -109,7 +99,7 @@ def print_dict_table(items, field_names, label):
             else:
                 lines = [str(val)]
 
-            # Truncate each line if too long
+            # Truncate each line to column width (if needed)
             wrapped = []
             for line in lines:
                 if len(line) > col_widths[i]:
@@ -117,18 +107,19 @@ def print_dict_table(items, field_names, label):
                 wrapped.append(f"{line:<{col_widths[i]}}")
             columns.append(wrapped)
 
-        # Find how many lines we need for this row
+        # Max number of lines in this row
         max_lines = max(len(col) for col in columns)
 
-        # Print each line of the row
+        # Print the row line-by-line
         for j in range(max_lines):
             row_parts = []
-            for col in columns:
+            for i, col in enumerate(columns):
                 if j < len(col):
                     row_parts.append(col[j])
                 else:
-                    row_parts.append(" " * col_widths[columns.index(col)])
+                    row_parts.append(" " * col_widths[i])
             print("  " + "  ".join(row_parts))
+
 
 
 def print_list_section(items, label):

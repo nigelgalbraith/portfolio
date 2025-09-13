@@ -184,37 +184,30 @@ def validate_required_list(
 
     return True
 
-def validate_list_of_objects_with_fields(value, required_fields: dict) -> bool:
+def validate_items(value, required_fields: dict) -> bool:
     """
-    Validate a list of dict items where each item must contain required_fields
-    with the specified types.
+    Validate either a dict OR a list of dicts against required_fields.
 
     required_fields: Dict[str, type | tuple[type, ...]]
       e.g. {"Port": int, "Protocol": str, "IPs": (list, str)}
-    Special case: if the field is 'IPs' and is a list, all list items must be str.
 
     Returns:
         bool: True if valid, False otherwise.
     """
-    if not isinstance(value, list):
-        return False
-    for item in value:
-        if not isinstance(item, dict):
-            return False
+    if isinstance(value, dict):
         for field, expected in required_fields.items():
-            if field not in item:
+            if field not in value:
                 return False
-            v = item[field]
+            v = value[field]
             types = expected if isinstance(expected, tuple) else (expected,)
             if not isinstance(v, types):
-                # allow IPs to be list[str] specifically
-                if field == "IPs" and isinstance(v, list) and all(isinstance(i, str) for i in v):
-                    continue
                 return False
-            if field == "IPs" and isinstance(v, list):
-                if not all(isinstance(i, str) for i in v):
-                    return False
-    return True
+        return True
+    if isinstance(value, list):
+        return all(validate_items(item, required_fields) for item in value if isinstance(item, dict))
+
+    return False
+
 
 
 

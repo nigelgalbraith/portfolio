@@ -123,27 +123,25 @@ def uninstall_packages(packages: Union[str, List[str]]) -> bool:
         return False
 
 
-
-def download_deb_file(pkg, url, download_dir):
+def download_deb_file(pkg: str, url: str, download_dir: str | Path) -> bool:
     """
     Download a .deb file from a URL into the given directory.
 
     Args:
         pkg (str): Package name (used for filename).
         url (str): URL to download the .deb file from.
-        download_dir (Path): Directory to store the downloaded file.
+        download_dir (str | Path): Directory to store the downloaded file.
 
     Returns:
-        Path or None: Path to the downloaded .deb file or None on failure.
-
-    Example:
-        download_deb_file("mypkg", "https://example.com/mypkg.deb", Path("/tmp/debs"))
+        bool: True if the download succeeded, False otherwise.
     """
-    download_dir.mkdir(parents=True, exist_ok=True)
-    dest = download_dir / f"{pkg}.deb"
+    dl_dir = Path(download_dir)
+    dl_dir.mkdir(parents=True, exist_ok=True)
+    dest = dl_dir / f"{pkg}.deb"
     print(f"Downloading {pkg} from {url}")
     result = subprocess.run(["wget", "-q", "--show-progress", "-O", str(dest), url])
-    return dest if result.returncode == 0 else None
+    return result.returncode == 0
+
 
 
 def install_deb_file(deb_file, name):
