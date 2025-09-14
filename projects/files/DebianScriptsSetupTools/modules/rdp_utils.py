@@ -168,7 +168,15 @@ def uninstall_rdp(
         return False
 
 
-def regenerate_xrdp_keys(service_name: str, ssl_cert_dir: Path, ssl_key_dir: Path, xrdp_dir: Path) -> bool:
+def regenerate_xrdp_keys(
+    service_name: str,
+    ssl_cert_dir: Union[str, Path],
+    ssl_key_dir: Union[str, Path],
+    xrdp_dir: Union[str, Path],
+) -> bool:
+    ssl_cert_dir = Path(ssl_cert_dir)
+    ssl_key_dir  = Path(ssl_key_dir)
+    xrdp_dir     = Path(xrdp_dir)
     """
     Regenerate XRDP TLS and RSA keys/certs and restart the service.
 
@@ -211,7 +219,7 @@ def regenerate_xrdp_keys(service_name: str, ssl_cert_dir: Path, ssl_key_dir: Pat
         # 3) Link or copy
         for src, dst in [(snakeoil_cert, xrdp_cert), (snakeoil_key, xrdp_key)]:
             subprocess.run(
-                ["sudo", "bash", "-lc", f"if [ -e '{dst}' ] || [ -L '{dst}'; then rm -f '{dst}'; fi"],
+                ["sudo","bash","-lc", f"if [ -e '{dst}' ] || [ -L '{dst}' ]; then rm -f '{dst}'; fi"],
                 check=False
             )
             try:
@@ -225,15 +233,15 @@ def regenerate_xrdp_keys(service_name: str, ssl_cert_dir: Path, ssl_key_dir: Pat
 
         # 5) Regenerate XRDP RSA keys
         rsakey_path = xrdp_dir / "rsakeys.ini"
-        subprocess.run(["sudo", "xrdp-keygen", "xrdp", "-f", str(rsakey_path)], check=True)
-
+        subprocess.run(["sudo","xrdp-keygen","xrdp", str(rsakey_path)], check=True)
         # 6) Reload + enable + start service
         subprocess.run(["sudo", "systemctl", "daemon-reload"], check=True)
         subprocess.run(["sudo", "systemctl", "enable", service_name], check=False)
         subprocess.run(["sudo", "systemctl", "start", service_name], check=True)
 
         return True
-    except Exception:
+    except Exception as e:
+        print(f"[rdp] regenerate_xrdp_keys failed: {e}")
         return False
 
 

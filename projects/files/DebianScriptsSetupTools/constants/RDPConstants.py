@@ -135,7 +135,7 @@ SUB_MENU = {
 }
 
 # Dependencies you want pre-checked (xrdp itself is installed via the job)
-DEPENDENCIES = ["xfce4", "xfce4-goodies"]
+DEPENDENCIES = ["xfce4", "xfce4-goodies", "ssl-cert"]
 
 # Columns to show first in the “Planned …” table
 PLAN_COLUMN_ORDER = [

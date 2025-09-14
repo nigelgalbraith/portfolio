@@ -547,7 +547,6 @@ class StateMachine:
         self.state = State.CONFIRM
 
 
-
     def confirm_action(self) -> None:
         """Confirm the chosen action; advance to next_state or bounce to STATUS."""
         spec = self.actions[self.current_action_key]
