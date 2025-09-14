@@ -1,14 +1,12 @@
 # constants/RDPConstants.py
 
 from pathlib import Path
-
-# --- functions used by status/pipelines ---
 from modules.package_utils import check_package, install_packages
 from modules.system_utils import ensure_user_exists
 from modules.service_utils import enable_and_start_service
 from modules.rdp_utils import (
     configure_xsession,
-    configure_group_access,  # add user to groups
+    configure_group_access, 
     uninstall_rdp,
     regenerate_xrdp_keys,
 )
@@ -31,7 +29,7 @@ KEY_SSL_CERT_DIR = "SslCertDir"
 KEY_SSL_KEY_DIR  = "SslKeyDir"
 KEY_XRDP_DIR     = "XrdpDir"
 
-# Example JSON structure (model -> RDP -> {package-name: {meta...}})
+# === Example JSON ===
 CONFIG_EXAMPLE = {
     "YOUR MODEL NUMBER": {
         JOBS_KEY: {
@@ -101,41 +99,33 @@ STATUS_FN_CONFIG = {
 # === MENU / ACTIONS ===
 ACTIONS = {
     "_meta": {"title": "Select an option"},
-
-    # Install path
     f"Install required {JOBS_KEY}": {
         "verb": "installation",
-        "filter_status": False,                 # operate on UNINSTALLED
+        "filter_status": False,                
         "label": INSTALLED_LABEL,
         "prompt": "Proceed with installation? [y/n]: ",
-        "execute_state": "INSTALL",             # key into PIPELINE_STATES
+        "execute_state": "INSTALL",             
         "post_state": "CONFIG_LOADING",
     },
-
-    # Uninstall path
     f"Uninstall all listed {JOBS_KEY}": {
         "verb": "uninstallation",
-        "filter_status": True,                  # operate on INSTALLED
+        "filter_status": True,                  
         "label": UNINSTALLED_LABEL,
         "prompt": "Proceed with uninstallation? [y/n]: ",
-        "execute_state": "UNINSTALL",           # key into PIPELINE_STATES
+        "execute_state": "UNINSTALL",           
         "post_state": "CONFIG_LOADING",
     },
-
-    # Former optional action → first-class pipeline
     "Regenerate XRDP keys/certs": {
         "verb": "renewal",
-        "filter_status": True,                  # generally useful when installed
+        "filter_status": True,                  
         "label": "RENEWED",
         "prompt": "Proceed with regenerating XRDP keys/certs? [y/n]: ",
-        "execute_state": "REGENERATE_KEYS",     # key into PIPELINE_STATES
+        "execute_state": "REGENERATE_KEYS",     
         "post_state": "CONFIG_LOADING",
         "skip_sub_select": False,
         "skip_prepare_plan": False,
         "filter_jobs": None,
     },
-
-    # Exit
     "Cancel": {
         "verb": None,
         "filter_status": None,
@@ -153,10 +143,10 @@ SUB_MENU = {
     "cancel_state": "MENU_SELECTION",
 }
 
-# Dependencies you want pre-checked (xrdp itself is installed via the job)
+# === DEPENDENCIES ===
 DEPENDENCIES = ["xfce4", "xfce4-goodies", "ssl-cert"]
 
-# Columns to show first in the “Planned …” table
+# === PLAN TABLE COLUMNS
 PLAN_COLUMN_ORDER = [
     KEY_SERVICE_NAME, KEY_USER_NAME, KEY_SESSION_CMD, KEY_XSESSION,
     KEY_SKEL_DIR, KEY_HOME_BASE, KEY_GROUPS
@@ -164,9 +154,8 @@ PLAN_COLUMN_ORDER = [
 
 OPTIONAL_PLAN_COLUMNS = {}
 
-# === PIPELINES (state → spec) ===
+# === PIPELINES ===
 PIPELINE_STATES = {
-    # INSTALL: apt install, ensure user, write xsession, add groups, enable+start service
     "INSTALL": {
         "pipeline": {
             install_packages: {
@@ -194,16 +183,14 @@ PIPELINE_STATES = {
             },
         },
         "label": INSTALLED_LABEL,
-        "success_key": "enabled",              # final success condition
+        "success_key": "enabled",              
         "post_state": "CONFIG_LOADING",
     },
-
-    # UNINSTALL uses the dedicated helper (stops service, removes xsession, etc.)
     "UNINSTALL": {
         "pipeline": {
             uninstall_rdp: {
                 "args": [
-                    "job",                   # package name (e.g., xrdp)
+                    "job",                   
                     KEY_SERVICE_NAME,
                     KEY_XSESSION,
                     KEY_HOME_BASE,
@@ -216,8 +203,6 @@ PIPELINE_STATES = {
         "success_key": "uninstalled",
         "post_state": "CONFIG_LOADING",
     },
-
-    # Regenerate XRDP keys/certs only (no install/uninstall)
     "REGENERATE_KEYS": {
         "pipeline": {
             regenerate_xrdp_keys: {

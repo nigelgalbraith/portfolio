@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-DOSLoaderConstants.py
-
-Constants configuration for the DOSLoader utility.
-Follows the same declarative, constants-only style as ArchiveConstants.
-"""
 
 from pathlib import Path
 from modules.archive_utils import (
@@ -133,7 +127,7 @@ ACTIONS = {
     },
 }
 
-# Sub-select menu text
+# === SUB MENU ===
 SUB_MENU = {
     "title": "Select DOS Game",
     "all_label": "All",
@@ -141,10 +135,10 @@ SUB_MENU = {
     "cancel_state": "MENU_SELECTION",
 }
 
-# Dependencies
+# === DEPENDENCIES ===
 DEPENDENCIES = ["dosbox", "wget", "unzip", "tar"]
 
-# Plan table columns
+# === PLAN TABLE COLUMNS
 PLAN_COLUMN_ORDER = [
     KEY_NAME,
     KEY_DOWNLOAD_URL,
@@ -157,63 +151,51 @@ PLAN_COLUMN_ORDER = [
 OPTIONAL_PLAN_COLUMNS = {}
 
 # === PIPELINES ===
-# INSTALL
-INSTALL_PIPELINE = {
-    "pipeline": {
-        download_archive_file: {
-            "args": ["job", KEY_DOWNLOAD_URL, KEY_DOWNLOAD_PATH],
-            "result": "archive_path",
-        },
-        install_archive_file: {
-            "args": ["archive_path", KEY_EXTRACT_TO, KEY_STRIP_TOP],
-            "result": "installed",
-        },
-        handle_cleanup: {
-            "args": ["archive_path"],
-        },
-        run_post_install_commands: {
-            "args": [KEY_POST_INSTALL],
-        },
-    },
-    "label": INSTALLED_LABEL,
-    "success_key": "installed",
-    "post_state": "CONFIG_LOADING",
-}
-
-# UNINSTALL
-UNINSTALL_PIPELINE = {
-    "pipeline": {
-        uninstall_archive_install: {
-            "args": [KEY_CHECK_PATH],
-            "result": "uninstalled",
-        },
-        remove_paths: {
-            "args": [KEY_EXTRACT_TO],
-        },
-    },
-    "label": UNINSTALLED_LABEL,
-    "success_key": "uninstalled",
-    "post_state": "CONFIG_LOADING",
-}
-
-# RUN
-RUN_PIPELINE = {
-    "pipeline": {
-        run_post_install_commands: {
-            "args": [KEY_LAUNCH_CMD],
-            "result": "ran",
-        },
-    },
-    "label": INSTALLED_LABEL,
-    "success_key": "ran",
-    "post_state": "MENU_SELECTION",
-}
-
 PIPELINE_STATES = {
-    "INSTALL": INSTALL_PIPELINE,
-    "UNINSTALL": UNINSTALL_PIPELINE,
-    "RUN": RUN_PIPELINE,
+    "INSTALL": {
+        "pipeline": {
+            download_archive_file: {
+                "args": ["job", KEY_DOWNLOAD_URL, KEY_DOWNLOAD_PATH],
+                "result": "archive_path",
+            },
+            install_archive_file: {
+                "args": ["archive_path", KEY_EXTRACT_TO, KEY_STRIP_TOP],
+                "result": "installed",
+            },
+            handle_cleanup: {
+                "args": ["archive_path"],
+            },
+            run_post_install_commands: {
+                "args": [KEY_POST_INSTALL],
+            },
+        },
+        "label": INSTALLED_LABEL,
+        "success_key": "installed",
+        "post_state": "CONFIG_LOADING",
+        },
+    "UNINSTALL": {
+        "pipeline": {
+            uninstall_archive_install: {
+                "args": [KEY_CHECK_PATH],
+                "result": "uninstalled",
+            },
+            remove_paths: {
+                "args": [KEY_EXTRACT_TO],
+            },
+        },
+        "label": UNINSTALLED_LABEL,
+        "success_key": "uninstalled",
+        "post_state": "CONFIG_LOADING",
+        },
+    "RUN": {
+        "pipeline": {
+            run_post_install_commands: {
+                "args": [KEY_LAUNCH_CMD],
+                "result": "ran",
+            },
+        },
+        "label": INSTALLED_LABEL,
+        "success_key": "ran",
+        "post_state": "MENU_SELECTION",
+    }
 }
-
-# OPTIONAL
-OPTIONAL_STATES = {}

@@ -121,7 +121,7 @@ ACTIONS = {
     },
 }
 
-# Sub-select menu text (generic StateMachine expects this)
+# Sub-select menu text 
 SUB_MENU = {
     "title": "Select Archive",
     "all_label": "All",
@@ -132,7 +132,7 @@ SUB_MENU = {
 # Dependencies needed to fetch & extract archives
 DEPENDENCIES = ["wget", "tar", "unzip"]
 
-# Columns to prioritize in the “Planned …” table
+# Columns to prioritize in the Planned table
 PLAN_COLUMN_ORDER = [
     KEY_DOWNLOAD_URL,
     KEY_DOWNLOAD_PATH,
@@ -144,49 +144,46 @@ PLAN_COLUMN_ORDER = [
 OPTIONAL_PLAN_COLUMNS = {}
 
 # === PIPELINES ===
-# INSTALL:
-INSTALL_PIPELINE = {
-    "pipeline": {
-        download_archive_file: {
-            "args": ["job", KEY_DOWNLOAD_URL, KEY_DOWNLOAD_PATH],
-            "result": "archive_path",
+PIPELINE_STATES = {
+    "INSTALL": {
+        "pipeline": {
+            download_archive_file: {
+                "args": ["job", KEY_DOWNLOAD_URL, KEY_DOWNLOAD_PATH],
+                "result": "archive_path",
+            },
+            install_archive_file: {
+                "args": ["archive_path", KEY_EXTRACT_TO, KEY_STRIP_TOP_LEVEL],
+                "result": "installed",
+            },
+            handle_cleanup: {
+                "args": [KEY_DOWNLOAD_PATH],
+            },
+            run_post_install_commands: {
+                "args": [KEY_POST_INSTALL],
+
+            },
         },
-        install_archive_file: {
-            "args": ["archive_path", KEY_EXTRACT_TO, KEY_STRIP_TOP_LEVEL],
-            "result": "installed",
-        },
-        handle_cleanup: {
-            "args": [KEY_DOWNLOAD_PATH],
-        },
-        run_post_install_commands: {
-            "args": [KEY_POST_INSTALL],
+        "label": INSTALLED_LABEL,
+        "success_key": "installed",
+        "post_state": "CONFIG_LOADING",
+    },
+    "UNINSTALL": {
+        "pipeline": {
+            uninstall_archive_install: {
+                "args": [lambda j, m, c: (m.get(KEY_CHECK_PATH) or m.get(KEY_EXTRACT_TO))],
+                "result": "uninstalled",
+            },
+            remove_paths: {
+                "args": [lambda j, m, c: [m.get(KEY_EXTRACT_TO)] + (m.get(KEY_TRASH_PATHS) or [])]        
+            },
+            run_post_install_commands: {
+                "args": [KEY_POST_UNINSTALL],
+            },
 
         },
-    },
-    "label": INSTALLED_LABEL,
-    "success_key": "installed",
-    "post_state": "CONFIG_LOADING",
+        "label": UNINSTALLED_LABEL,
+        "success_key": "uninstalled",
+        "post_state": "CONFIG_LOADING",
+    }
 }
 
-# UNINSTALL:
-UNINSTALL_PIPELINE = {
-    "pipeline": {
-        uninstall_archive_install: {
-            "args": [lambda j, m, c: (m.get(KEY_CHECK_PATH) or m.get(KEY_EXTRACT_TO))],
-            "result": "uninstalled",
-        },
-        remove_paths: {
-            "args": [lambda j, m, c: [m.get(KEY_EXTRACT_TO)] + (m.get(KEY_TRASH_PATHS) or [])]        
-        },
-        run_post_install_commands: {
-            "args": [KEY_POST_UNINSTALL],
-        },
-
-    },
-    "label": UNINSTALLED_LABEL,
-    "success_key": "uninstalled",
-    "post_state": "CONFIG_LOADING",
-}
-
-# OPTIONAL
-OPTIONAL_STATES = {}

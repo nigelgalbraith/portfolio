@@ -2,35 +2,13 @@
 # -*- coding: utf-8 -*-
 """
 service_utils.py
-
-Utility functions for managing systemd services and related scripts/configuration files.
-
-Design:
-- Pure helpers that return True/False for success/failure.
-- No printing or logging here (callers handle messaging).
-- Safe, minimal wrappers around subprocess and filesystem ops.
-
-Note:
-Requires sudo/root access to manage systemd or copy files into system directories.
 """
 
 from pathlib import Path
 import subprocess
 
-
 def check_service_status(service_name: str) -> bool:
-    """
-    Check if a systemd service is enabled.
-
-    Args:
-        service_name (str): Name of the systemd service.
-
-    Returns:
-        bool: True if enabled, False otherwise.
-
-    Example:
-        check_service_status("nginx")  # → True if enabled
-    """
+    """Return True if a systemd service is enabled."""
     try:
         result = subprocess.run(
             ["systemctl", "is-enabled", service_name],
@@ -45,19 +23,7 @@ def check_service_status(service_name: str) -> bool:
 
 
 def copy_template(src: str | Path, dest: str | Path) -> bool:
-    """
-    Copy a script (or file) to the destination and make it executable.
-
-    Args:
-        src (str | Path): Path to the source script/file.
-        dest (str | Path): Path to the destination location.
-
-    Returns:
-        bool: True on success, False on failure.
-
-    Example:
-        copy_template("scripts/start.sh", "/usr/local/bin/start.sh")
-    """
+    """Copy a file to dest and make it executable."""
     try:
         subprocess.run(["cp", str(src), str(dest)], check=True)
         subprocess.run(["chmod", "+x", str(dest)], check=True)
@@ -67,19 +33,7 @@ def copy_template(src: str | Path, dest: str | Path) -> bool:
 
 
 def create_service(src: str | Path, dest: str | Path) -> bool:
-    """
-    Copy and register a systemd service unit file (includes daemon-reload).
-
-    Args:
-        src (str | Path): Path to the source .service file.
-        dest (str | Path): Full target path (e.g., /etc/systemd/system/myapp.service).
-
-    Returns:
-        bool: True on success, False on failure.
-
-    Example:
-        create_service("templates/myapp.service", "/etc/systemd/system/myapp.service")
-    """
+    """Copy and register a systemd service unit file."""
     try:
         subprocess.run(["cp", str(src), str(dest)], check=True)
         subprocess.run(["systemctl", "daemon-reload"], check=True)
@@ -89,18 +43,7 @@ def create_service(src: str | Path, dest: str | Path) -> bool:
 
 
 def enable_and_start_service(service_name: str) -> bool:
-    """
-    Enable and start a systemd service.
-
-    Args:
-        service_name (str): Name of the service to enable and start.
-
-    Returns:
-        bool: True on success, False on failure.
-
-    Example:
-        enable_and_start_service("myapp.service")
-    """
+    """Enable and start a systemd service."""
     try:
         subprocess.run(["systemctl", "enable", service_name], check=True)
         subprocess.run(["systemctl", "start", service_name], check=True)
@@ -110,18 +53,7 @@ def enable_and_start_service(service_name: str) -> bool:
 
 
 def stop_and_disable_service(service_name: str) -> bool:
-    """
-    Stop and disable a systemd service.
-
-    Args:
-        service_name (str): Name of the service to stop and disable.
-
-    Returns:
-        bool: True on success, False on failure.
-
-    Example:
-        stop_and_disable_service("myapp.service")
-    """
+    """Stop and disable a systemd service."""
     try:
         subprocess.run(["systemctl", "stop", service_name], check=True)
         subprocess.run(["systemctl", "disable", service_name], check=True)
@@ -131,18 +63,7 @@ def stop_and_disable_service(service_name: str) -> bool:
 
 
 def remove_path(path: str | Path) -> bool:
-    """
-    Delete a file or symbolic link at the given path (no error if missing).
-
-    Args:
-        path (str | Path): The file or symlink path to remove.
-
-    Returns:
-        bool: True on success, False on failure.
-
-    Example:
-        remove_path("/etc/systemd/system/myapp.service")
-    """
+    """Delete a file or symlink at the given path."""
     try:
         Path(path).unlink(missing_ok=True)
         return True
@@ -151,18 +72,7 @@ def remove_path(path: str | Path) -> bool:
 
 
 def restart_service(service_name: str) -> bool:
-    """
-    Restart a systemd service.
-
-    Args:
-        service_name (str): Name of the service to restart.
-
-    Returns:
-        bool: True on success, False on failure.
-
-    Example:
-        restart_service("myapp.service")
-    """
+    """Restart a systemd service."""
     try:
         subprocess.run(["systemctl", "restart", service_name], check=True)
         return True
@@ -171,15 +81,7 @@ def restart_service(service_name: str) -> bool:
 
 
 def start_service_standard(service: str) -> bool:
-    """
-    Enable and start a service unconditionally.
-
-    Args:
-        service (str): The systemd service name.
-
-    Returns:
-        bool: True if operations succeeded; False on failure.
-    """
+    """Enable and start a systemd service unconditionally."""
     if not service:
         return True
     try:
@@ -189,29 +91,15 @@ def start_service_standard(service: str) -> bool:
     except subprocess.CalledProcessError:
         return False
 
+
 def ensure_service_installed(service_name: str, template_path: Path) -> bool:
-    """
-    Ensure a systemd unit exists. If missing, copy template, daemon-reload, enable & start.
-
-    Args:
-        service_name (str): Name of the systemd service (without or with .service).
-        template_path (Path): Path to the template .service file to copy.
-
-    Returns:
-        bool: True if the service is present/started at the end; False on failure.
-
-    Example:
-        ensure_service_installed("xteve.service", Path("services/IPCam/xteve-template.service"))
-    """
+    """Ensure a systemd unit exists, else copy template and enable it."""
     unit_name = service_name if service_name.endswith(".service") else f"{service_name}.service"
     unit_path = Path("/etc/systemd/system") / unit_name
-
     if unit_path.exists():
         return True
-
     if not template_path.exists():
         return False
-
     try:
         subprocess.run(["cp", str(template_path), str(unit_path)], check=True)
         subprocess.run(["systemctl", "daemon-reload"], check=True)

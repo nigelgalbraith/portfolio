@@ -1,8 +1,6 @@
 # constants/ThirdPartyConstants.py
 
 from pathlib import Path
-
-# --- functions used by status/pipelines ---
 from modules.package_utils import check_package, install_packages, uninstall_packages
 from modules.apt_repo_utils import add_apt_repository, remove_apt_repo_and_keyring
 
@@ -14,14 +12,14 @@ DEFAULT_CONFIG   = "Default"
 
 # === JSON KEYS ===
 KEY_REPO_URL        = "url"
-KEY_REPO_KEY        = "key"           # may be a single URL or JSON array string of URLs
+KEY_REPO_KEY        = "key"           
 KEY_REPO_NAME       = "repo_name"
 KEY_CODENAME        = "codename"
 KEY_COMPONENT       = "component"
 KEY_KEYRING_DIR     = "keyring_dir"
-KEY_KEYRING_NAME    = "keyring_name"  # optional shared keyring name
+KEY_KEYRING_NAME    = "keyring_name"  
 
-# Example JSON structure (model -> ThirdParty -> {pkg: {...meta...}})
+# === EXAMPLE JSON ===
 CONFIG_EXAMPLE = {
     "Default": {
         JOBS_KEY: {
@@ -39,6 +37,7 @@ CONFIG_EXAMPLE = {
 # === VALIDATION CONFIG ===
 VALIDATION_CONFIG = {
     "required_job_fields": {
+        KEY_REPO_NAME : str,
         KEY_REPO_URL: str,
         KEY_REPO_KEY: str,
         KEY_CODENAME: str,
@@ -73,7 +72,7 @@ UNINSTALLED_LABEL = "UNINSTALLED"
 
 # === STATUS CHECK CONFIG ===
 STATUS_FN_CONFIG = {
-    "fn": check_package,                 # evaluates by package name (job)
+    "fn": check_package,                 
     "args": ["job"],
     "labels": {True: INSTALLED_LABEL, False: UNINSTALLED_LABEL},
 }
@@ -83,18 +82,18 @@ ACTIONS = {
     "_meta": {"title": "Select an option"},
     f"Install required {JOBS_KEY}": {
         "verb": "installation",
-        "filter_status": False,                 # operate on UNINSTALLED
+        "filter_status": False,                 
         "label": INSTALLED_LABEL,
         "prompt": "Proceed with installation? [y/n]: ",
-        "execute_state": "INSTALL",             # key into PIPELINE_STATES
+        "execute_state": "INSTALL",            
         "post_state": "CONFIG_LOADING",
     },
     f"Uninstall all listed {JOBS_KEY}": {
         "verb": "uninstallation",
-        "filter_status": True,                  # operate on INSTALLED
+        "filter_status": True,                  
         "label": UNINSTALLED_LABEL,
         "prompt": "Proceed with uninstallation? [y/n]: ",
-        "execute_state": "UNINSTALL",           # key into PIPELINE_STATES
+        "execute_state": "UNINSTALL",           
         "post_state": "CONFIG_LOADING",
     },
     "Remove repo & keyring only": {
@@ -102,7 +101,7 @@ ACTIONS = {
         "filter_status": None,
         "label": "REMOVED",
         "prompt": "Remove repo & keyring for the selected entries? [y/n]: ",
-        "execute_state": "REMOVE_REPO_KEYRING", # key into PIPELINE_STATES
+        "execute_state": "REMOVE_REPO_KEYRING", 
         "post_state": "CONFIG_LOADING",
         "skip_sub_select": False,
         "skip_prepare_plan": False,
@@ -125,10 +124,10 @@ SUB_MENU = {
     "cancel_state": "MENU_SELECTION",
 }
 
-# Dependencies needed before we can add repos / install
+# === DEPENDENCIES ===
 DEPENDENCIES = ["curl", "gpg"]
 
-# Columns to show first in the “Planned …” table
+# === TABLE COLUMNS ===
 PLAN_COLUMN_ORDER = [
     KEY_REPO_NAME,
     KEY_REPO_URL,
@@ -141,9 +140,8 @@ PLAN_COLUMN_ORDER = [
 
 OPTIONAL_PLAN_COLUMNS = {}
 
-# === PIPELINES (data-driven) ===
+# === PIPELINES ===
 PIPELINE_STATES = {
-    # Install path: add repo/keyring, then install package
     "INSTALL": {
         "pipeline": {
             add_apt_repository: {
@@ -166,8 +164,6 @@ PIPELINE_STATES = {
         "success_key": "installed",
         "post_state": "CONFIG_LOADING",
     },
-
-    # Uninstall path: apt remove the package
     "UNINSTALL": {
         "pipeline": {
             uninstall_packages: {
@@ -179,8 +175,6 @@ PIPELINE_STATES = {
         "success_key": "uninstalled",
         "post_state": "CONFIG_LOADING",
     },
-
-    # Remove just the repo & keyring (no package action)
     "REMOVE_REPO_KEYRING": {
         "pipeline": {
             remove_apt_repo_and_keyring: {

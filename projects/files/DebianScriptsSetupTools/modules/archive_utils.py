@@ -1,10 +1,6 @@
-# modules/archive_utils.py
+#!/usr/bin/env python3
 """
-Archive utilities for downloading, installing (extracting), and removing
-tar/zip-based packages.
-
-This module intentionally does not manage package repositories. It’s used
-by scripts that install apps distributed as archives (e.g., .tar.gz, .zip).
+archive_utils.py
 """
 
 from __future__ import annotations
@@ -14,13 +10,11 @@ import subprocess
 from pathlib import Path
 from typing import Optional, Iterable, List
 
-# === CONSTANTS ===
-# Recognized archive extensions (lowercased)
 ARCHIVE_EXTENSIONS = (".tar.gz", ".tgz", ".tar.xz", ".tar.bz2", ".zip")
 
 
-# === STATUS CHECK ===
 def check_archive_status(check_path: str | None, extract_to: str | None) -> bool:
+    """Return True if a file exists at check_path or a non-empty dir exists at extract_to."""
     for path in (check_path, extract_to):
         if not path:
             continue
@@ -32,12 +26,8 @@ def check_archive_status(check_path: str | None, extract_to: str | None) -> bool
     return False
 
 
-
-# === DOWNLOAD HELPERS ===
 def guess_ext_from_url(url: str) -> str:
-    """
-    Guess the archive extension from a URL.
-    """
+    """Guess the archive extension from a URL."""
     lower = url.lower()
     for ext in ARCHIVE_EXTENSIONS:
         if lower.endswith(ext):
@@ -46,6 +36,7 @@ def guess_ext_from_url(url: str) -> str:
 
 
 def download_archive_file(name: str, url: str, download_dir: Path) -> Optional[Path]:
+    """Download an archive with wget to download_dir and return the resulting Path or None."""
     try:
         download_dir = Path(download_dir).expanduser()
         download_dir.mkdir(parents=True, exist_ok=True)
@@ -58,16 +49,12 @@ def download_archive_file(name: str, url: str, download_dir: Path) -> Optional[P
 
 
 def download_archive_file(name: str, url: str, download_dir: str | Path) -> Optional[Path]:
-    """
-    Download an archive to `download_dir` using wget.
-    """
+    """Download an archive to download_dir using wget."""
     try:
         download_dir = Path(download_dir).expanduser().resolve()
         download_dir.mkdir(parents=True, exist_ok=True)
-
         ext = guess_ext_from_url(url) or ".zip"
         target = download_dir / f"{name}{ext}"
-
         subprocess.run(["wget", "-O", str(target), url], check=True)
         return target if target.exists() else None
     except Exception as e:
@@ -75,26 +62,17 @@ def download_archive_file(name: str, url: str, download_dir: str | Path) -> Opti
         return None
 
 
-
-# === INSTALL HELPERS ===
-def install_archive_file(archive_path: Path | str,
-                         extract_to: Path | str,
-                         strip_top_level: bool = False) -> bool:
-    """
-    Extract an archive into `extract_to`. Supports .tar.gz/.tgz/.tar.xz/.tar.bz2/.zip.
-    """
+def install_archive_file(archive_path: Path | str, extract_to: Path | str, strip_top_level: bool = False) -> bool:
+    """Extract an archive into extract_to; supports .tar.* and .zip; return True on success."""
     try:
         archive_path = Path(archive_path).expanduser()
         extract_to = Path(extract_to).expanduser()
         if not archive_path.exists():
             print(f"Error: Archive file {archive_path} does not exist.")
             return False
-
         extract_to.mkdir(parents=True, exist_ok=True)
-
         suffix = "".join(archive_path.suffixes).lower()
         print(f"Attempting to extract {archive_path} to {extract_to}")
-
         if suffix.endswith((".tar.gz", ".tgz", ".tar.xz", ".tar.bz2")):
             subprocess.run(["tar", "-xf", str(archive_path), "-C", str(extract_to)], check=True)
         elif suffix.endswith(".zip"):
@@ -102,13 +80,10 @@ def install_archive_file(archive_path: Path | str,
         else:
             print(f"Unsupported file type: {suffix}")
             return False
-
         if strip_top_level:
             _strip_top_level_dir(extract_to)
-
         print(f"Archive {archive_path} extracted successfully.")
         return True
-
     except subprocess.CalledProcessError as e:
         print(f"Error during extraction: {e}")
         return False
@@ -118,9 +93,7 @@ def install_archive_file(archive_path: Path | str,
 
 
 def _strip_top_level_dir(extract_to: Path) -> None:
-    """
-    Flatten a single top-level directory after extraction.
-    """
+    """Flatten a single top-level directory after extraction."""
     try:
         items = [p for p in Path(extract_to).iterdir()]
         if len(items) != 1 or not items[0].is_dir():
@@ -133,11 +106,8 @@ def _strip_top_level_dir(extract_to: Path) -> None:
         pass
 
 
-# === UNINSTALL HELPERS ===
 def uninstall_archive_install(target_path: Path | str) -> bool:
-    """
-    Remove the installed archive content (dir or file).
-    """
+    """Remove the installed archive content (file or directory) and return True on success."""
     try:
         p = Path(target_path)
         if p.is_dir():
@@ -151,11 +121,8 @@ def uninstall_archive_install(target_path: Path | str) -> bool:
         return False
 
 
-# === POST-INSTALL UTILITIES ===
 def create_symlink(target: Path | str, link_path: Path | str) -> bool:
-    """
-    Create or update a symlink.
-    """
+    """Create or update a symlink and return True on success."""
     try:
         target = Path(os.path.expanduser(str(target)))
         link_path = Path(os.path.expanduser(str(link_path)))
@@ -169,16 +136,13 @@ def create_symlink(target: Path | str, link_path: Path | str) -> bool:
 
 
 def run_post_install_commands(post_install_cmds) -> bool:
-    """
-    Run post-install commands. Returns True if all succeed.
-    """
+    """Run post-install shell commands and return True only if all succeed."""
     if isinstance(post_install_cmds, str):
         cmds = [os.path.expanduser(post_install_cmds)]
     elif isinstance(post_install_cmds, list):
         cmds = [os.path.expanduser(c) for c in post_install_cmds if isinstance(c, str)]
     else:
         cmds = []
-
     all_ok = True
     for cmd in cmds:
         rc = os.system(cmd)
@@ -188,11 +152,8 @@ def run_post_install_commands(post_install_cmds) -> bool:
     return all_ok
 
 
-# === CLEANUP ===
 def handle_cleanup(archive_path: Path) -> bool:
-    """
-    Delete a temporary archive file.
-    """
+    """Delete a temporary archive file and return True on success."""
     try:
         archive_path.unlink(missing_ok=True)
         return True
@@ -201,7 +162,7 @@ def handle_cleanup(archive_path: Path) -> bool:
 
 
 def remove_paths(paths) -> None:
-    """Move the given file/folder paths to the user's trash directory."""
+    """Move files/folders to the user's trash; returns True on success, False otherwise."""
     if not paths:
         return True
     if isinstance(paths, str):
@@ -224,5 +185,3 @@ def remove_paths(paths) -> None:
         else:
             all_ok = False
     return all_ok
-
-

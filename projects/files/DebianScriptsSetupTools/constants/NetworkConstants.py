@@ -118,6 +118,7 @@ SUB_MENU = {
 # === DEPENDENCIES ===
 DEPENDENCIES = ["network-manager"]
 
+# === PLAN COLUMN DISPLAYS ===
 PLAN_COLUMNS_STATIC = [
     KEY_CONN_NAME,
     KEY_INTERFACE,
@@ -138,7 +139,7 @@ OPTIONAL_PLAN_COLUMNS = {
     "Apply DHCP Networks": PLAN_COLUMNS_DHCP,
 }
 
-# === PIPELINES (state → spec) ===
+# === PIPELINES ===
 PIPELINE_STATES = {
     "INSTALL": {
         "pipeline": {

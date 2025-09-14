@@ -1,18 +1,6 @@
 #!/usr/bin/env python3
 """
 logger_utils.py
-
-Utility functions for managing log output, rotation, and logrotate configuration.
-
-Features:
-- Logging to file with automatic directory creation
-- Combined terminal + file logging via `log_and_print`
-- Log file rotation based on age (by deleting oldest)
-- Showing service logs from a dictionary
-- Installing static logrotate config files
-
-Note:
-Designed for admin scripts or system automation. Requires write access to log directory and `/etc/logrotate.d` for installation.
 """
 
 import os
@@ -20,18 +8,8 @@ import logging
 from pathlib import Path
 from shutil import copyfile
 
-
 def setup_logging(log_file, log_dir):
-    """
-    Configure the logging system with timestamped messages.
-
-    Args:
-        log_file (str or Path): Full path to the log file.
-        log_dir (Path): Directory to create if it doesn't exist.
-
-    Example:
-        setup_logging("/var/log/myscript/app.log", Path("/var/log/myscript"))
-    """
+    """Configure logging with timestamped messages."""
     log_dir.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(
         filename=log_file,
@@ -40,33 +18,13 @@ def setup_logging(log_file, log_dir):
         datefmt='%Y-%m-%d %H:%M:%S'
     )
 
-
 def log_and_print(message):
-    """
-    Log a message and also print it to the terminal.
-
-    Args:
-        message (str): The message to log and print.
-
-    Example:
-        log_and_print("Backup completed successfully.")
-    """
+    """Log a message and also print it to the terminal."""
     print(message)
     logging.info(message)
 
-
 def rotate_logs(log_dir: Path, logs_to_keep: int, pattern: str = "*.log") -> None:
-    """
-    Delete oldest log files in a directory if total exceeds limit.
-
-    Args:
-        log_dir (Path): Directory containing log files.
-        logs_to_keep (int): Number of newest logs to keep.
-        pattern (str): File pattern to match log files (default: '*.log').
-
-    Example:
-        rotate_logs(Path("/var/log/myscript"), logs_to_keep=5)
-    """
+    """Delete oldest log files in a directory if total exceeds limit."""
     try:
         log_dir.mkdir(parents=True, exist_ok=True)
         logs = sorted(
@@ -87,21 +45,8 @@ def rotate_logs(log_dir: Path, logs_to_keep: int, pattern: str = "*.log") -> Non
     except Exception as e:
         print(f"[rotate_logs] WARNING: Rotation failed for {log_dir}: {e}")
 
-
-
 def show_logs(log_paths: dict):
-    """
-    Print the contents of each log file from a dictionary.
-
-    Args:
-        log_paths (dict): A dict of {name: log_path} pairs.
-
-    Example:
-        show_logs({
-            "backup": "/var/log/myscript/backup.log",
-            "errors": "/var/log/myscript/error.log"
-        })
-    """
+    """Print the contents of each log file from a dictionary."""
     for name, path in log_paths.items():
         log_path = Path(path)
         if log_path.exists():
@@ -110,19 +55,8 @@ def show_logs(log_paths: dict):
         else:
             print(f"\n--- Log file for '{name}' not found at: {log_path}")
 
-
 def install_logrotate_config(template_path, target_name, target_dir="/etc/logrotate.d"):
-    """
-    Install a predefined logrotate config file to /etc/logrotate.d/.
-
-    Args:
-        template_path (str or Path): Path to the source logrotate config.
-        target_name (str): Name for the destination config file.
-        target_dir (str or Path): Directory to install to (default: /etc/logrotate.d).
-
-    Example:
-        install_logrotate_config("templates/backup.logrotate", "backup")
-    """
+    """Install a predefined logrotate config file to /etc/logrotate.d/."""
     dest_path = Path(target_dir) / target_name
     copyfile(template_path, dest_path)
     os.chmod(dest_path, 0o644)

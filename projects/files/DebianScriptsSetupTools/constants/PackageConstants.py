@@ -1,8 +1,6 @@
 # constants/PackageConstants.py
 
 from pathlib import Path
-
-# Import the functions used by the pipelines & status
 from modules.package_utils import check_package, install_packages, uninstall_packages
 
 # === CONFIG PATHS & KEYS ===
@@ -11,7 +9,7 @@ JOBS_KEY         = "Packages"
 CONFIG_TYPE      = "package"
 DEFAULT_CONFIG   = "Default"
 
-# Example JSON structure (dict of name → empty meta)
+# === EXAMPLE JSON ===
 CONFIG_EXAMPLE = {
     "YOUR MODEL NUMBER": {
         JOBS_KEY: {
@@ -21,12 +19,14 @@ CONFIG_EXAMPLE = {
     }
 }
 
-# For this installer we don’t require any per-job fields.
+# === VALIDATION ===
 VALIDATION_CONFIG = {
     "required_job_fields": {},
     "example_config": CONFIG_EXAMPLE,
 }
 
+
+# === DETECTION_CONFIG ===
 DETECTION_CONFIG = {
     "primary_config": PRIMARY_CONFIG,
     "config_type": CONFIG_TYPE,
@@ -49,6 +49,10 @@ REQUIRED_USER     = "Standard"
 INSTALLED_LABEL   = "INSTALLED"
 UNINSTALLED_LABEL = "UNINSTALLED"
 
+# COLUMN ORDER
+PLAN_COLUMN_ORDER = []
+OPTIONAL_PLAN_COLUMNS = {}
+
 # === STATUS CHECK CONFIG ===
 STATUS_FN_CONFIG = {
     "fn": check_package,
@@ -61,18 +65,18 @@ ACTIONS = {
     "_meta": {"title": "Select an option"},
     f"Install required {JOBS_KEY}": {
         "verb": "installation",
-        "filter_status": False,                  # show items not installed
+        "filter_status": False,                 
         "label": INSTALLED_LABEL,
         "prompt": "Proceed with installation? [y/n]: ",
-        "execute_state": "INSTALL",              # key into PIPELINE_STATES
+        "execute_state": "INSTALL",             
         "post_state": "CONFIG_LOADING",
     },
     f"Uninstall all listed {JOBS_KEY}": {
         "verb": "uninstallation",
-        "filter_status": True,                   # show items currently installed
+        "filter_status": True,                   
         "label": UNINSTALLED_LABEL,
         "prompt": "Proceed with uninstallation? [y/n]: ",
-        "execute_state": "UNINSTALL",            # key into PIPELINE_STATES
+        "execute_state": "UNINSTALL",          
         "post_state": "CONFIG_LOADING",
     },
     "Cancel": {
@@ -92,11 +96,10 @@ SUB_MENU = {
     "cancel_state": "MENU_SELECTION",
 }
 
-# No extra deps needed; leave empty to skip dep check/install.
+# === DEPENDENCIES ===
 DEPENDENCIES = []
 
-# === PIPELINES (data-driven) ===
-# These run apt-style install/uninstall for each job.
+# === PIPELINES  ===
 PIPELINE_STATES = {
     "INSTALL": {
         "pipeline": {
@@ -121,7 +124,3 @@ PIPELINE_STATES = {
         "post_state": "CONFIG_LOADING",
     },
 }
-
-# COLUMN ORDER
-PLAN_COLUMN_ORDER = []
-OPTIONAL_PLAN_COLUMNS = {}

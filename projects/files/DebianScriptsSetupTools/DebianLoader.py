@@ -199,7 +199,6 @@ class StateMachine:
         self.state = State.DEP_CHECK
 
 
-
     def dep_check(self, deps: List[str]) -> None:
         """Check dependencies and collect missing ones."""
         self.deps_install_list = []
@@ -406,13 +405,10 @@ class StateMachine:
             if exec_key not in self.c.PIPELINE_STATES:
                 log_and_print(f"[WARN] Action '{title}' has unknown execute_state '{exec_key}'; removing from menu.")
                 actions.pop(title, None)
-
         if cancel_spec is not None:
             actions["Cancel"] = cancel_spec
-
         self.actions = actions
         self.state = State.MENU_SELECTION
-
 
 
     # === HELPERS FOR SELECTION ===

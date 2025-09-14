@@ -13,6 +13,7 @@ APT_KEYRINGS_DIR = Path("/usr/share/keyrings")
 
 
 def conflicting_repo_entry_exists(url: str, keyring: str) -> bool:
+    """  Check if any APT source list entry uses the given URL with a mismatched keyring. """
     for list_file in APT_SOURCES_DIR.glob("*.list"):
         try:
             with open(list_file, "r", encoding="utf-8") as f:
@@ -29,24 +30,15 @@ def remove_apt_repo_and_keyring(
     keyring_dir: Optional[str] = None,
     keyring_name: Optional[str] = None,
 ) -> bool:
-    """
-    Remove the APT source list and (if safe) the GPG keyring.
-    If keyring_name is provided, we target <keyring_name>.gpg instead of <name>.gpg.
-    We only delete the keyring if no *.list still references it.
-    """
+    """Remove an APT repo list and its keyring if no longer referenced."""
     key_dir = Path(keyring_dir) if keyring_dir else APT_KEYRINGS_DIR
     kr_name = keyring_name or name
     repo_file = APT_SOURCES_DIR / f"{name}.list"
     keyring_file = key_dir / f"{kr_name}.gpg"
-
     removed = False
-
-    # Remove repo list file
     if repo_file.exists():
         if subprocess.run(["sudo", "rm", str(repo_file)], check=False).returncode == 0:
             removed = True
-
-    # Remove keyring only if no source still references it
     if keyring_file.exists():
         still_referenced = any(
             keyring_file.name in p.read_text(errors="ignore")
@@ -55,7 +47,6 @@ def remove_apt_repo_and_keyring(
         if not still_referenced:
             if subprocess.run(["sudo", "rm", str(keyring_file)], check=False).returncode == 0:
                 removed = True
-
     return removed
 
 
@@ -68,23 +59,17 @@ def add_apt_repository(
     keyring_dir: Optional[str] = None,
     keyring_name: Optional[str] = None,
 ) -> bool:
-    """
-    Add an APT repository and import its GPG key(s), if not already present.
-    Uses <keyring_name>.gpg when provided (to support a shared keyring).
-    """
+    """Add an APT repository and import its GPG key(s) if missing."""
     key_dir = Path(keyring_dir) if keyring_dir else APT_KEYRINGS_DIR
     kr_name = keyring_name or name
     repo_file = APT_SOURCES_DIR / f"{name}.list"
     keyring_file = key_dir / f"{kr_name}.gpg"
-
     try:
         if repo_file.exists():
             return True
-
         if not key_dir.exists():
             if subprocess.run(["sudo", "mkdir", "-p", str(key_dir)], check=False).returncode != 0:
                 return False
-
         if not keyring_file.exists():
             try:
                 keys = json.loads(key_urls) if key_urls.strip().startswith("[") else [key_urls]
@@ -97,9 +82,8 @@ def add_apt_repository(
                 ).returncode
                 if rc != 0:
                     return False
-
         entry = f"deb [arch=amd64 signed-by={keyring_file}] {url} {codename} {component}"
         return subprocess.run(f"echo '{entry}' | sudo tee {repo_file} >/dev/null", shell=True).returncode == 0
-
     except Exception:
         return False
+

@@ -1,16 +1,6 @@
 #!/usr/bin/env python3
 """
 flatpak_utils.py
-
-Utility functions for managing Flatpak applications and the Flathub remote.
-
-Features:
-- Check whether a Flatpak app is installed
-- Ensure Flathub is available as a Flatpak remote
-- Install or uninstall Flatpak applications by ID
-
-Note:
-Requires Flatpak to be installed and configured on the system.
 """
 
 import subprocess
@@ -18,18 +8,7 @@ import subprocess
 FLATHUB_URL = "https://flathub.org/repo/flathub.flatpakrepo"
 
 def check_flatpak_status(flatpak_id: str) -> bool:
-    """
-    Check if a Flatpak application is installed.
-
-    Args:
-        flatpak_id (str): The Flatpak application ID (e.g., "org.gimp.GIMP").
-
-    Returns:
-        bool: True if installed, False otherwise.
-
-    Example:
-        check_flatpak_status("org.mozilla.firefox")  # → True / False
-    """
+    """Return True if the given Flatpak app ID is installed."""
     try:
         result = subprocess.run(
             ["flatpak", "list", "--app", "--columns=application"],
@@ -41,19 +20,12 @@ def check_flatpak_status(flatpak_id: str) -> bool:
         return flatpak_id in result.stdout.splitlines()
     except Exception:
         return False
-    
 
 def ensure_flathub() -> bool:
-    """
-    Ensure the Flathub remote is available in the system Flatpak configuration.
-
-    Returns:
-        bool: True if flathub is present or added successfully, False otherwise.
-    """
+    """Ensure the Flathub remote exists; return True if present or added successfully."""
     result = subprocess.run(["flatpak", "remote-list"], stdout=subprocess.PIPE, text=True)
     if "flathub" in result.stdout:
         return True
-
     print("Adding Flathub remote...")
     try:
         subprocess.run(
@@ -64,35 +36,10 @@ def ensure_flathub() -> bool:
     except subprocess.CalledProcessError:
         return False
 
-
 def install_flatpak_app(app_id, remote="flathub"):
-    """
-    Install a Flatpak application by ID from a specified remote.
-
-    Args:
-        app_id (str): The Flatpak app ID to install.
-        remote (str): The Flatpak remote to install from (default: "flathub").
-
-    Returns:
-        bool: True if installation succeeded, False otherwise.
-
-    Example:
-        install_flatpak_app("org.gnome.Calculator")
-    """
+    """Install a Flatpak app from the given remote and return True on success."""
     return subprocess.run(["flatpak", "install", "-y", remote, app_id]).returncode == 0
 
-
 def uninstall_flatpak_app(app_id):
-    """
-    Uninstall a Flatpak application by ID.
-
-    Args:
-        app_id (str): The Flatpak app ID to uninstall.
-
-    Returns:
-        bool: True if uninstallation succeeded, False otherwise.
-
-    Example:
-        uninstall_flatpak_app("org.gnome.Calculator")
-    """
+    """Uninstall a Flatpak app by ID and return True on success."""
     return subprocess.run(["flatpak", "uninstall", "-y", app_id]).returncode == 0

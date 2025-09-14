@@ -1,8 +1,6 @@
 # constants/FlatpakConstants.py
 
 from pathlib import Path
-
-# --- imports used by status/pipelines ---
 from modules.flatpak_utils import (
     ensure_flathub,
     check_flatpak_status,
@@ -19,7 +17,7 @@ DEFAULT_CONFIG   = "Default"
 # === JSON KEYS ===
 KEY_REMOTE = "remote"
 
-# Example JSON structure (model -> Flatpak -> {app-id: {remote: ...}})
+# === EXAMPLE JSON===
 CONFIG_EXAMPLE = {
     "Default": {
         JOBS_KEY: {
@@ -60,51 +58,43 @@ REQUIRED_USER     = "Standard"
 INSTALLED_LABEL   = "INSTALLED"
 UNINSTALLED_LABEL = "UNINSTALLED"
 
-# === STATUS CHECK CONFIG (used by build_status_map) ===
+# === STATUS CHECK CONFIG ===
 STATUS_FN_CONFIG = {
     "fn": check_flatpak_status,
-    "args": ["job"],  # job = app-id
+    "args": ["job"], 
     "labels": {True: INSTALLED_LABEL, False: UNINSTALLED_LABEL},
 }
 
 # === MENU / ACTIONS ===
 ACTIONS = {
     "_meta": {"title": "Select an option"},
-
-    # Install missing flatpaks (ensures flathub, then installs)
     f"Install required {JOBS_KEY}": {
         "verb": "installation",
-        "filter_status": False,                 # operate on UNINSTALLED
+        "filter_status": False,                 
         "label": INSTALLED_LABEL,
         "prompt": "Proceed with installation? [y/n]: ",
-        "execute_state": "INSTALL",             # key into PIPELINE_STATES
+        "execute_state": "INSTALL",             
         "post_state": "CONFIG_LOADING",
     },
-
-    # Uninstall currently installed flatpaks
     f"Uninstall all listed {JOBS_KEY}": {
         "verb": "uninstallation",
-        "filter_status": True,                  # operate on INSTALLED
+        "filter_status": True,                  
         "label": UNINSTALLED_LABEL,
         "prompt": "Proceed with uninstallation? [y/n]: ",
-        "execute_state": "UNINSTALL",           # key into PIPELINE_STATES
+        "execute_state": "UNINSTALL",           
         "post_state": "CONFIG_LOADING",
     },
-
-    # Standalone one-off action promoted from former OPTIONAL_STATES
     "Ensure Flathub remote": {
         "verb": "ensure",
         "filter_status": None,
         "label": "ENSURED",
         "prompt": "Ensure Flathub remote is configured? [y/n]: ",
-        "filter_jobs": [],                      # not job-specific
-        "skip_sub_select": True,                # run directly without selection
-        "skip_prepare_plan": True,              # skip plan table
-        "execute_state": "ENSURE_FLATHUB",      # key into PIPELINE_STATES
+        "filter_jobs": [],                     
+        "skip_sub_select": True,                
+        "skip_prepare_plan": True,              
+        "execute_state": "ENSURE_FLATHUB",      
         "post_state": "CONFIG_LOADING",
     },
-
-    # Exit
     "Cancel": {
         "verb": None,
         "filter_status": None,
@@ -115,7 +105,7 @@ ACTIONS = {
     },
 }
 
-# Sub-select menu text
+# === SUB MENU ===
 SUB_MENU = {
     "title": "Select Flatpak",
     "all_label": "All",
@@ -123,22 +113,20 @@ SUB_MENU = {
     "cancel_state": "MENU_SELECTION",
 }
 
-# Dependencies for this utility
+# === DEPENDENCIES ===
 DEPENDENCIES = ["flatpak"]
 
-# Columns to show first in the “Planned …” table
+# === PLAN TABLE COLUMNS ===
 PLAN_COLUMN_ORDER = [KEY_REMOTE]
 
 OPTIONAL_PLAN_COLUMNS = {}
 
-# === PIPELINES (data-driven) ===
+# === PIPELINES ===
 PIPELINE_STATES = {
-    # Install: first ensure flathub remote, then install each app.
     "INSTALL": {
         "pipeline": {
             ensure_flathub: {
                 "args": [],
-                # no result needed; it prepares the system
             },
             install_flatpak_app: {
                 "args": ["job", KEY_REMOTE],
@@ -149,8 +137,6 @@ PIPELINE_STATES = {
         "success_key": "installed",
         "post_state": "CONFIG_LOADING",
     },
-
-    # Uninstall each selected app-id
     "UNINSTALL": {
         "pipeline": {
             uninstall_flatpak_app: {
@@ -162,8 +148,6 @@ PIPELINE_STATES = {
         "success_key": "uninstalled",
         "post_state": "CONFIG_LOADING",
     },
-
-    # One-off: ensure the flathub remote exists (no job context needed)
     "ENSURE_FLATHUB": {
         "pipeline": {
             ensure_flathub: {
