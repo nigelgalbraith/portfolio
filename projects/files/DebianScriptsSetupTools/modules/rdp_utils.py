@@ -15,6 +15,7 @@ from __future__ import annotations
 import os
 import subprocess
 from pathlib import Path
+from typing import Iterable, Union, List
 
 
 def configure_xsession(session_cmd: str, xs_file: str, skel_dir: str, home_base: str) -> None:
@@ -37,23 +38,17 @@ def configure_xsession(session_cmd: str, xs_file: str, skel_dir: str, home_base:
         >>> configure_xsession("startxfce4", ".xsession", "/etc/skel", "/home")
     """
     skel_path = Path(skel_dir) / xs_file
-
-    # Write content to a temp file without sudo, then install with sudo (preserves mode)
     tmp = Path("/tmp") / f"xsession_{os.getuid()}_{os.getpid()}.tmp"
     tmp.write_text(session_cmd.strip() + "\n", encoding="utf-8")
 
     try:
-        # Install into /etc/skel with mode 0644
         subprocess.run(["sudo", "install", "-m", "0644", str(tmp), str(skel_path)], check=True)
-
-        # Copy to existing users who don't have it yet, then chown to the user
         home_root = Path(home_base)
         if home_root.exists():
             for user_home in home_root.iterdir():
                 if not user_home.is_dir():
                     continue
                 target = user_home / xs_file
-                # Shell one-liner so copy+chown happen atomically from a sudo perspective
                 subprocess.run(
                     [
                         "sudo", "bash", "-lc",
@@ -64,7 +59,7 @@ def configure_xsession(session_cmd: str, xs_file: str, skel_dir: str, home_base:
                             f"fi"
                         ),
                     ],
-                    check=False,  # best-effort for each home
+                    check=False,  
                 )
     finally:
         try:
@@ -73,33 +68,43 @@ def configure_xsession(session_cmd: str, xs_file: str, skel_dir: str, home_base:
             pass
 
 
-def configure_group_access(user: str, group: str) -> None:
+def configure_group_access(user: str, groups: Union[str, Iterable[str]]) -> bool:
     """
-    Ensure `group` exists and `user` is a member (idempotent).
-
-    Args:
-        user (str): Username to modify.
-        group (str): Group name to add user into.
-
-    Example:
-        >>> configure_group_access("xrdp", "ssl-cert")
+    Ensure each group exists and `user` is a member (idempotent).
+    Accepts a single group name or an iterable of names.
+    Returns True if all operations succeed (or are already satisfied).
     """
-    # Ensure group exists
-    grp_exists = subprocess.run(
-        ["getent", "group", group],
-        stdout=subprocess.DEVNULL
-    ).returncode == 0
-    if not grp_exists:
-        subprocess.run(["sudo", "groupadd", group], check=True)
+    if isinstance(groups, str) or groups is None:
+        group_list: List[str] = [groups] if groups else []
+    else:
+        group_list = list(groups)
 
-    # Already a member?
-    out = subprocess.run(["id", "-nG", user], capture_output=True, text=True, check=True)
-    groups = out.stdout.strip().split()
-    if group in groups:
-        return
+    if not group_list:
+        return True 
+    cur = subprocess.run(["id", "-nG", user], capture_output=True, text=True)
+    if cur.returncode != 0:
+        return False
+    current_groups = set(cur.stdout.strip().split())
+    all_ok = True
+    for group in group_list:
+        if not group:
+            continue
+        exists = subprocess.run(
+            ["getent", "group", group],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        ).returncode == 0
+        if not exists:
+            if subprocess.run(["sudo", "groupadd", group], check=False).returncode != 0:
+                all_ok = False
+                continue 
+        if group not in current_groups:
+            if subprocess.run(["sudo", "usermod", "-aG", group, user], check=False).returncode != 0:
+                all_ok = False
+            else:
+                current_groups.add(group)
 
-    # Add user to group
-    subprocess.run(["sudo", "usermod", "-aG", group, user], check=True)
+    return all_ok
 
 
 def uninstall_rdp(

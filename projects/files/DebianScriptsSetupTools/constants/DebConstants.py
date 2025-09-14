@@ -181,3 +181,7 @@ OPTIONAL_STATES: Dict[str, Dict[str, Any]] = {
         "post_state": "CONFIG_LOADING",
     },
 }
+
+# === COLUMN ORDER ===
+PLAN_COLUMN_ORDER = [KEY_DOWNLOAD_URL, KEY_DOWNLOAD_DIR, KEY_ENABLE_SERVICE, "ServiceName", "systemd_unit"]
+OPTIONAL_PLAN_COLUMNS = {}

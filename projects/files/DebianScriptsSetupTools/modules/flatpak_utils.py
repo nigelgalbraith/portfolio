@@ -41,22 +41,28 @@ def check_flatpak_status(flatpak_id: str) -> bool:
         return flatpak_id in result.stdout.splitlines()
     except Exception:
         return False
+    
 
-
-
-def ensure_flathub():
+def ensure_flathub() -> bool:
     """
     Ensure the Flathub remote is available in the system Flatpak configuration.
 
-    Adds Flathub if it's not already present.
-
-    Example:
-        ensure_flathub()
+    Returns:
+        bool: True if flathub is present or added successfully, False otherwise.
     """
-    result = subprocess.run(["flatpak", "remote-list"], stdout=subprocess.PIPE)
-    if "flathub" not in result.stdout.decode():
-        print("Adding Flathub remote...")
-        subprocess.run(["flatpak", "remote-add", "--if-not-exists", "flathub", FLATHUB_URL], check=True)
+    result = subprocess.run(["flatpak", "remote-list"], stdout=subprocess.PIPE, text=True)
+    if "flathub" in result.stdout:
+        return True
+
+    print("Adding Flathub remote...")
+    try:
+        subprocess.run(
+            ["flatpak", "remote-add", "--if-not-exists", "flathub", FLATHUB_URL],
+            check=True,
+        )
+        return True
+    except subprocess.CalledProcessError:
+        return False
 
 
 def install_flatpak_app(app_id, remote="flathub"):

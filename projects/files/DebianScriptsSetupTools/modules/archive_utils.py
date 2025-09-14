@@ -12,7 +12,7 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Iterable, List
 
 # === CONSTANTS ===
 # Recognized archive extensions (lowercased)
@@ -20,10 +20,7 @@ ARCHIVE_EXTENSIONS = (".tar.gz", ".tgz", ".tar.xz", ".tar.bz2", ".zip")
 
 
 # === STATUS CHECK ===
-def check_archive_status(extract_to: str | None, check_path: str | None) -> bool:
-    """
-    Return True if CheckPath or ExtractTo contains any files, else False.
-    """
+def check_archive_status(check_path: str | None, extract_to: str | None) -> bool:
     for path in (check_path, extract_to):
         if not path:
             continue
@@ -33,6 +30,7 @@ def check_archive_status(extract_to: str | None, check_path: str | None) -> bool
         if p.is_dir() and any(p.iterdir()):
             return True
     return False
+
 
 
 # === DOWNLOAD HELPERS ===
@@ -48,12 +46,10 @@ def guess_ext_from_url(url: str) -> str:
 
 
 def download_archive_file(name: str, url: str, download_dir: Path) -> Optional[Path]:
-    """
-    Download an archive to `download_dir` using wget.
-    """
     try:
+        download_dir = Path(download_dir).expanduser()
         download_dir.mkdir(parents=True, exist_ok=True)
-        ext = guess_ext_from_url(url) or ".zip"   # default to .zip
+        ext = guess_ext_from_url(url) or ".zip"
         target = download_dir / f"{name}{ext}"
         subprocess.run(["wget", "-O", str(target), url], check=True)
         return target if target.exists() else None
@@ -61,17 +57,23 @@ def download_archive_file(name: str, url: str, download_dir: Path) -> Optional[P
         return None
 
 
-def download_file(name: str, url: str, download_dir: Path) -> Optional[Path]:
+def download_archive_file(name: str, url: str, download_dir: str | Path) -> Optional[Path]:
     """
-    Download a non-archive file to `download_dir` using wget.
+    Download an archive to `download_dir` using wget.
     """
     try:
+        download_dir = Path(download_dir).expanduser().resolve()
         download_dir.mkdir(parents=True, exist_ok=True)
-        target = download_dir / name
+
+        ext = guess_ext_from_url(url) or ".zip"
+        target = download_dir / f"{name}{ext}"
+
         subprocess.run(["wget", "-O", str(target), url], check=True)
         return target if target.exists() else None
-    except Exception:
+    except Exception as e:
+        print(f"Unexpected error downloading {url}: {e}")
         return None
+
 
 
 # === INSTALL HELPERS ===
@@ -82,9 +84,8 @@ def install_archive_file(archive_path: Path | str,
     Extract an archive into `extract_to`. Supports .tar.gz/.tgz/.tar.xz/.tar.bz2/.zip.
     """
     try:
-        archive_path = Path(archive_path)
-        extract_to = Path(extract_to)
-
+        archive_path = Path(archive_path).expanduser()
+        extract_to = Path(extract_to).expanduser()
         if not archive_path.exists():
             print(f"Error: Archive file {archive_path} does not exist.")
             return False
@@ -197,3 +198,31 @@ def handle_cleanup(archive_path: Path) -> bool:
         return True
     except Exception:
         return False
+
+
+def remove_paths(paths) -> None:
+    """Move the given file/folder paths to the user's trash directory."""
+    if not paths:
+        return True
+    if isinstance(paths, str):
+        paths = [paths]
+    trash_dir = Path.home() / ".local/share/Trash/files"
+    trash_dir.mkdir(parents=True, exist_ok=True)
+    all_ok = True
+    for p in paths:
+        expanded = Path(os.path.expanduser(p)).resolve()
+        if expanded.exists():
+            try:
+                dest = trash_dir / expanded.name
+                counter = 1
+                while dest.exists():
+                    dest = trash_dir / f"{expanded.stem}_{counter}{expanded.suffix}"
+                    counter += 1
+                shutil.move(str(expanded), str(dest))
+            except Exception:
+                all_ok = False
+        else:
+            all_ok = False
+    return all_ok
+
+
