@@ -8,7 +8,7 @@ from modules.system_utils import ensure_user_exists
 from modules.service_utils import enable_and_start_service
 from modules.rdp_utils import (
     configure_xsession,
-    configure_group_access,  
+    configure_group_access,  # add user to groups
     uninstall_rdp,
     regenerate_xrdp_keys,
 )
@@ -101,22 +101,41 @@ STATUS_FN_CONFIG = {
 # === MENU / ACTIONS ===
 ACTIONS = {
     "_meta": {"title": "Select an option"},
+
+    # Install path
     f"Install required {JOBS_KEY}": {
         "verb": "installation",
-        "filter_status": False,                 
+        "filter_status": False,                 # operate on UNINSTALLED
         "label": INSTALLED_LABEL,
         "prompt": "Proceed with installation? [y/n]: ",
-        "execute_state": "INSTALL",
+        "execute_state": "INSTALL",             # key into PIPELINE_STATES
         "post_state": "CONFIG_LOADING",
     },
+
+    # Uninstall path
     f"Uninstall all listed {JOBS_KEY}": {
         "verb": "uninstallation",
-        "filter_status": True,                  
+        "filter_status": True,                  # operate on INSTALLED
         "label": UNINSTALLED_LABEL,
         "prompt": "Proceed with uninstallation? [y/n]: ",
-        "execute_state": "UNINSTALL",
+        "execute_state": "UNINSTALL",           # key into PIPELINE_STATES
         "post_state": "CONFIG_LOADING",
     },
+
+    # Former optional action → first-class pipeline
+    "Regenerate XRDP keys/certs": {
+        "verb": "renewal",
+        "filter_status": True,                  # generally useful when installed
+        "label": "RENEWED",
+        "prompt": "Proceed with regenerating XRDP keys/certs? [y/n]: ",
+        "execute_state": "REGENERATE_KEYS",     # key into PIPELINE_STATES
+        "post_state": "CONFIG_LOADING",
+        "skip_sub_select": False,
+        "skip_prepare_plan": False,
+        "filter_jobs": None,
+    },
+
+    # Exit
     "Cancel": {
         "verb": None,
         "filter_status": None,
@@ -145,61 +164,61 @@ PLAN_COLUMN_ORDER = [
 
 OPTIONAL_PLAN_COLUMNS = {}
 
-# === PIPELINES ===
-# INSTALL: apt install, ensure user, write xsession, add groups, enable+start service
-INSTALL_PIPELINE = {
-    "pipeline": {
-        install_packages: {
-            "args": ["job"],            
-            "result": "pkg_installed",
+# === PIPELINES (state → spec) ===
+PIPELINE_STATES = {
+    # INSTALL: apt install, ensure user, write xsession, add groups, enable+start service
+    "INSTALL": {
+        "pipeline": {
+            install_packages: {
+                "args": ["job"],
+                "result": "pkg_installed",
+            },
+            ensure_user_exists: {
+                "args": [KEY_USER_NAME],
+                "result": "user_ok",
+                "when":  (lambda j, m, c: bool(c.get("pkg_installed"))),
+            },
+            configure_xsession: {
+                "args": [KEY_SESSION_CMD, KEY_XSESSION, KEY_SKEL_DIR, KEY_HOME_BASE],
+                "result": "xsession_ok",
+                "when":  (lambda j, m, c: bool(c.get("user_ok"))),
+            },
+            configure_group_access: {
+                "args": [KEY_USER_NAME, KEY_GROUPS],
+                "result": "groups_ok",
+            },
+            enable_and_start_service: {
+                "args": [KEY_SERVICE_NAME],
+                "result": "enabled",
+                "when":  (lambda j, m, c: bool(c.get("xsession_ok"))),
+            },
         },
-        ensure_user_exists: {
-            "args": [KEY_USER_NAME],
-            "result": "user_ok",
-            "when": "pkg_installed",    
-        },
-        configure_xsession: {
-            "args": [KEY_SESSION_CMD, KEY_XSESSION, KEY_SKEL_DIR, KEY_HOME_BASE],
-            "result": "xsession_ok",
-            "when": "user_ok",
-        },
-        configure_group_access: {
-            "args": [KEY_USER_NAME, KEY_GROUPS],
-            "result": "groups_ok",
-        },
-        enable_and_start_service: {
-            "args": [KEY_SERVICE_NAME],
-            "result": "enabled",
-            "when": "xsession_ok",
-        },
+        "label": INSTALLED_LABEL,
+        "success_key": "enabled",              # final success condition
+        "post_state": "CONFIG_LOADING",
     },
-    "label": INSTALLED_LABEL,
-    "success_key": "enabled",            
-    "post_state": "CONFIG_LOADING",
-}
 
-# UNINSTALL uses the dedicated helper (stops service, removes xsession, etc.)
-UNINSTALL_PIPELINE = {
-    "pipeline": {
-        uninstall_rdp: {
-            "args": [
-                "job",                   
-                KEY_SERVICE_NAME,
-                KEY_XSESSION,
-                KEY_HOME_BASE,
-                KEY_SKEL_DIR
-            ],
-            "result": "uninstalled",
+    # UNINSTALL uses the dedicated helper (stops service, removes xsession, etc.)
+    "UNINSTALL": {
+        "pipeline": {
+            uninstall_rdp: {
+                "args": [
+                    "job",                   # package name (e.g., xrdp)
+                    KEY_SERVICE_NAME,
+                    KEY_XSESSION,
+                    KEY_HOME_BASE,
+                    KEY_SKEL_DIR,
+                ],
+                "result": "uninstalled",
+            },
         },
+        "label": UNINSTALLED_LABEL,
+        "success_key": "uninstalled",
+        "post_state": "CONFIG_LOADING",
     },
-    "label": UNINSTALLED_LABEL,
-    "success_key": "uninstalled",
-    "post_state": "CONFIG_LOADING",
-}
 
-# Optional single-action entries (menu will auto-merge these)
-OPTIONAL_STATES = {
-    "Regenerate XRDP keys/certs": {
+    # Regenerate XRDP keys/certs only (no install/uninstall)
+    "REGENERATE_KEYS": {
         "pipeline": {
             regenerate_xrdp_keys: {
                 "args": [KEY_SERVICE_NAME, KEY_SSL_CERT_DIR, KEY_SSL_KEY_DIR, KEY_XRDP_DIR],
@@ -208,13 +227,6 @@ OPTIONAL_STATES = {
         },
         "label": "RENEWED",
         "success_key": "renewed",
-        "verb": "renewal",
-        "prompt": "Proceed with regenerating XRDP keys/certs? [y/n]: ",
-        "execute_state": "OPTIONAL",
         "post_state": "CONFIG_LOADING",
-        "filter_status": True,          
-        "skip_sub_select": False,
-        "skip_prepare_plan": False,
-        "filter_jobs": None,
     },
 }

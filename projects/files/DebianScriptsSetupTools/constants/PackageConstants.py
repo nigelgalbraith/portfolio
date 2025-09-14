@@ -7,7 +7,7 @@ from modules.package_utils import check_package, install_packages, uninstall_pac
 
 # === CONFIG PATHS & KEYS ===
 PRIMARY_CONFIG   = "Config/AppConfigSettings.json"
-JOBS_KEY         = "Packages"          
+JOBS_KEY         = "Packages"
 CONFIG_TYPE      = "package"
 DEFAULT_CONFIG   = "Default"
 
@@ -23,7 +23,7 @@ CONFIG_EXAMPLE = {
 
 # For this installer we don’t require any per-job fields.
 VALIDATION_CONFIG = {
-    "required_job_fields": {},          
+    "required_job_fields": {},
     "example_config": CONFIG_EXAMPLE,
 }
 
@@ -61,18 +61,18 @@ ACTIONS = {
     "_meta": {"title": "Select an option"},
     f"Install required {JOBS_KEY}": {
         "verb": "installation",
-        "filter_status": False,                 
+        "filter_status": False,                  # show items not installed
         "label": INSTALLED_LABEL,
         "prompt": "Proceed with installation? [y/n]: ",
-        "execute_state": "INSTALL",
+        "execute_state": "INSTALL",              # key into PIPELINE_STATES
         "post_state": "CONFIG_LOADING",
     },
     f"Uninstall all listed {JOBS_KEY}": {
         "verb": "uninstallation",
-        "filter_status": True,                 
+        "filter_status": True,                   # show items currently installed
         "label": UNINSTALLED_LABEL,
         "prompt": "Proceed with uninstallation? [y/n]: ",
-        "execute_state": "UNINSTALL",
+        "execute_state": "UNINSTALL",            # key into PIPELINE_STATES
         "post_state": "CONFIG_LOADING",
     },
     "Cancel": {
@@ -95,37 +95,33 @@ SUB_MENU = {
 # No extra deps needed; leave empty to skip dep check/install.
 DEPENDENCIES = []
 
-# === PIPELINES ===
+# === PIPELINES (data-driven) ===
 # These run apt-style install/uninstall for each job.
-INSTALL_PIPELINE = {
-    "pipeline": {
-        install_packages: {
-            "args": ["job"],
-            "result": "installed",
+PIPELINE_STATES = {
+    "INSTALL": {
+        "pipeline": {
+            install_packages: {
+                "args": ["job"],
+                "result": "installed",
+            },
         },
+        "label": INSTALLED_LABEL,
+        "success_key": "installed",
+        "post_state": "CONFIG_LOADING",
     },
-    "label": INSTALLED_LABEL,
-    "success_key": "installed",
-    "post_state": "CONFIG_LOADING",
-}
-
-UNINSTALL_PIPELINE = {
-    "pipeline": {
-        uninstall_packages: {
-            "args": ["job"],
-            "result": "uninstalled",
+    "UNINSTALL": {
+        "pipeline": {
+            uninstall_packages: {
+                "args": ["job"],
+                "result": "uninstalled",
+            },
         },
+        "label": UNINSTALLED_LABEL,
+        "success_key": "uninstalled",
+        "post_state": "CONFIG_LOADING",
     },
-    "label": UNINSTALLED_LABEL,
-    "success_key": "uninstalled",
-    "post_state": "CONFIG_LOADING",
 }
-
-# No optional states for this utility.
-OPTIONAL_STATES = {}
 
 # COLUMN ORDER
 PLAN_COLUMN_ORDER = []
 OPTIONAL_PLAN_COLUMNS = {}
-
-

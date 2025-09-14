@@ -14,12 +14,12 @@ DEFAULT_CONFIG   = "Default"
 
 # === JSON KEYS ===
 KEY_REPO_URL        = "url"
-KEY_REPO_KEY        = "key"
+KEY_REPO_KEY        = "key"           # may be a single URL or JSON array string of URLs
 KEY_REPO_NAME       = "repo_name"
 KEY_CODENAME        = "codename"
 KEY_COMPONENT       = "component"
 KEY_KEYRING_DIR     = "keyring_dir"
-KEY_KEYRING_NAME    = "keyring_name"
+KEY_KEYRING_NAME    = "keyring_name"  # optional shared keyring name
 
 # Example JSON structure (model -> ThirdParty -> {pkg: {...meta...}})
 CONFIG_EXAMPLE = {
@@ -73,8 +73,8 @@ UNINSTALLED_LABEL = "UNINSTALLED"
 
 # === STATUS CHECK CONFIG ===
 STATUS_FN_CONFIG = {
-    "fn": check_package,                 
-    "args": ["job"],                     
+    "fn": check_package,                 # evaluates by package name (job)
+    "args": ["job"],
     "labels": {True: INSTALLED_LABEL, False: UNINSTALLED_LABEL},
 }
 
@@ -86,7 +86,7 @@ ACTIONS = {
         "filter_status": False,                 # operate on UNINSTALLED
         "label": INSTALLED_LABEL,
         "prompt": "Proceed with installation? [y/n]: ",
-        "execute_state": "INSTALL",
+        "execute_state": "INSTALL",             # key into PIPELINE_STATES
         "post_state": "CONFIG_LOADING",
     },
     f"Uninstall all listed {JOBS_KEY}": {
@@ -94,8 +94,19 @@ ACTIONS = {
         "filter_status": True,                  # operate on INSTALLED
         "label": UNINSTALLED_LABEL,
         "prompt": "Proceed with uninstallation? [y/n]: ",
-        "execute_state": "UNINSTALL",
+        "execute_state": "UNINSTALL",           # key into PIPELINE_STATES
         "post_state": "CONFIG_LOADING",
+    },
+    "Remove repo & keyring only": {
+        "verb": "remove",
+        "filter_status": None,
+        "label": "REMOVED",
+        "prompt": "Remove repo & keyring for the selected entries? [y/n]: ",
+        "execute_state": "REMOVE_REPO_KEYRING", # key into PIPELINE_STATES
+        "post_state": "CONFIG_LOADING",
+        "skip_sub_select": False,
+        "skip_prepare_plan": False,
+        "filter_jobs": None,
     },
     "Cancel": {
         "verb": None,
@@ -118,45 +129,59 @@ SUB_MENU = {
 DEPENDENCIES = ["curl", "gpg"]
 
 # Columns to show first in the “Planned …” table
-PLAN_COLUMN_ORDER = [KEY_REPO_NAME, KEY_REPO_URL, KEY_REPO_KEY, KEY_CODENAME, KEY_COMPONENT, KEY_KEYRING_DIR, KEY_KEYRING_NAME]
+PLAN_COLUMN_ORDER = [
+    KEY_REPO_NAME,
+    KEY_REPO_URL,
+    KEY_REPO_KEY,
+    KEY_CODENAME,
+    KEY_COMPONENT,
+    KEY_KEYRING_DIR,
+    KEY_KEYRING_NAME,
+]
 
 OPTIONAL_PLAN_COLUMNS = {}
 
-# === PIPELINES ===
-# Install path: add repo/keyring, then apt install the package.
-INSTALL_PIPELINE = {
-    "pipeline": {
-        add_apt_repository: {
-            "args": [KEY_REPO_NAME, KEY_REPO_URL, KEY_REPO_KEY, KEY_CODENAME, KEY_COMPONENT, KEY_KEYRING_DIR, KEY_KEYRING_NAME],
+# === PIPELINES (data-driven) ===
+PIPELINE_STATES = {
+    # Install path: add repo/keyring, then install package
+    "INSTALL": {
+        "pipeline": {
+            add_apt_repository: {
+                "args": [
+                    KEY_REPO_NAME,
+                    KEY_REPO_URL,
+                    KEY_REPO_KEY,
+                    KEY_CODENAME,
+                    KEY_COMPONENT,
+                    KEY_KEYRING_DIR,
+                    KEY_KEYRING_NAME,
+                ],
+            },
+            install_packages: {
+                "args": ["job"],
+                "result": "installed",
+            },
         },
-        install_packages: {
-            "args": ["job"],
-            "result": "installed",
-        },
+        "label": INSTALLED_LABEL,
+        "success_key": "installed",
+        "post_state": "CONFIG_LOADING",
     },
-    "label": INSTALLED_LABEL,
-    "success_key": "installed",
-    "post_state": "CONFIG_LOADING",
-}
 
-UNINSTALL_PIPELINE = {
-    "pipeline": {
-        uninstall_packages: {
-            "args": ["job"],
-            "result": "uninstalled",
+    # Uninstall path: apt remove the package
+    "UNINSTALL": {
+        "pipeline": {
+            uninstall_packages: {
+                "args": ["job"],
+                "result": "uninstalled",
+            },
         },
-        remove_apt_repo_and_keyring: {
-            "args": ["job", KEY_KEYRING_DIR, KEY_KEYRING_NAME],  
-        },
+        "label": UNINSTALLED_LABEL,
+        "success_key": "uninstalled",
+        "post_state": "CONFIG_LOADING",
     },
-    "label": UNINSTALLED_LABEL,
-    "success_key": "uninstalled",
-    "post_state": "CONFIG_LOADING",
-}
 
-# Optional single-action entries (appear in the main menu)
-OPTIONAL_STATES = {
-    "Remove repo & keyring only": {
+    # Remove just the repo & keyring (no package action)
+    "REMOVE_REPO_KEYRING": {
         "pipeline": {
             remove_apt_repo_and_keyring: {
                 "args": ["job", KEY_KEYRING_DIR, KEY_KEYRING_NAME],
@@ -165,13 +190,6 @@ OPTIONAL_STATES = {
         },
         "label": "REMOVED",
         "success_key": "removed",
-        "verb": "remove",
-        "prompt": "Remove repo & keyring for the selected entries? [y/n]: ",
-        "execute_state": "OPTIONAL",
         "post_state": "CONFIG_LOADING",
-        "filter_status": None,            
-        "skip_sub_select": False,         
-        "skip_prepare_plan": False,
-        "filter_jobs": None,             
     },
 }

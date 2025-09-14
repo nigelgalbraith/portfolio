@@ -70,22 +70,41 @@ STATUS_FN_CONFIG = {
 # === MENU / ACTIONS ===
 ACTIONS = {
     "_meta": {"title": "Select an option"},
+
+    # Install missing flatpaks (ensures flathub, then installs)
     f"Install required {JOBS_KEY}": {
         "verb": "installation",
         "filter_status": False,                 # operate on UNINSTALLED
         "label": INSTALLED_LABEL,
         "prompt": "Proceed with installation? [y/n]: ",
-        "execute_state": "INSTALL",
+        "execute_state": "INSTALL",             # key into PIPELINE_STATES
         "post_state": "CONFIG_LOADING",
     },
+
+    # Uninstall currently installed flatpaks
     f"Uninstall all listed {JOBS_KEY}": {
         "verb": "uninstallation",
         "filter_status": True,                  # operate on INSTALLED
         "label": UNINSTALLED_LABEL,
         "prompt": "Proceed with uninstallation? [y/n]: ",
-        "execute_state": "UNINSTALL",
+        "execute_state": "UNINSTALL",           # key into PIPELINE_STATES
         "post_state": "CONFIG_LOADING",
     },
+
+    # Standalone one-off action promoted from former OPTIONAL_STATES
+    "Ensure Flathub remote": {
+        "verb": "ensure",
+        "filter_status": None,
+        "label": "ENSURED",
+        "prompt": "Ensure Flathub remote is configured? [y/n]: ",
+        "filter_jobs": [],                      # not job-specific
+        "skip_sub_select": True,                # run directly without selection
+        "skip_prepare_plan": True,              # skip plan table
+        "execute_state": "ENSURE_FLATHUB",      # key into PIPELINE_STATES
+        "post_state": "CONFIG_LOADING",
+    },
+
+    # Exit
     "Cancel": {
         "verb": None,
         "filter_status": None,
@@ -112,39 +131,40 @@ PLAN_COLUMN_ORDER = [KEY_REMOTE]
 
 OPTIONAL_PLAN_COLUMNS = {}
 
-# === PIPELINES ===
-# Install: first ensure flathub remote, then install each app.
-INSTALL_PIPELINE = {
-    "pipeline": {
-        ensure_flathub: {
-            "args": [],
-            
+# === PIPELINES (data-driven) ===
+PIPELINE_STATES = {
+    # Install: first ensure flathub remote, then install each app.
+    "INSTALL": {
+        "pipeline": {
+            ensure_flathub: {
+                "args": [],
+                # no result needed; it prepares the system
+            },
+            install_flatpak_app: {
+                "args": ["job", KEY_REMOTE],
+                "result": "installed",
+            },
         },
-        install_flatpak_app: {
-            "args": ["job", KEY_REMOTE],
-            "result": "installed",
-        },
+        "label": INSTALLED_LABEL,
+        "success_key": "installed",
+        "post_state": "CONFIG_LOADING",
     },
-    "label": INSTALLED_LABEL,
-    "success_key": "installed",
-    "post_state": "CONFIG_LOADING",
-}
 
-UNINSTALL_PIPELINE = {
-    "pipeline": {
-        uninstall_flatpak_app: {
-            "args": ["job"],
-            "result": "uninstalled",
+    # Uninstall each selected app-id
+    "UNINSTALL": {
+        "pipeline": {
+            uninstall_flatpak_app: {
+                "args": ["job"],
+                "result": "uninstalled",
+            },
         },
+        "label": UNINSTALLED_LABEL,
+        "success_key": "uninstalled",
+        "post_state": "CONFIG_LOADING",
     },
-    "label": UNINSTALLED_LABEL,
-    "success_key": "uninstalled",
-    "post_state": "CONFIG_LOADING",
-}
 
-# Optional single-action entries (shown in main menu if you want extras)
-OPTIONAL_STATES = {
-    "Ensure Flathub remote": {
+    # One-off: ensure the flathub remote exists (no job context needed)
+    "ENSURE_FLATHUB": {
         "pipeline": {
             ensure_flathub: {
                 "args": [],
@@ -153,14 +173,6 @@ OPTIONAL_STATES = {
         },
         "label": "ENSURED",
         "success_key": "ok",
-        "verb": "ensure",
-        "prompt": "Ensure Flathub remote is configured? [y/n]: ",
-        "filter_jobs": [],          
-        "skip_sub_select": True,
-        "skip_prepare_plan": True,
-        "execute_state": "OPTIONAL",
         "post_state": "CONFIG_LOADING",
     },
 }
-
-

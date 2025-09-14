@@ -45,21 +45,19 @@ REQUIRED_CONSTANTS = [
     "REQUIRED_USER",
     "ACTIONS",
     "STATUS_FN_CONFIG",
-    "INSTALL_PIPELINE",
-    "UNINSTALL_PIPELINE",
     "SUB_MENU",
     "DEPENDENCIES",
-    "OPTIONAL_STATES",
     "INSTALLED_LABEL",
     "UNINSTALLED_LABEL",
     "PLAN_COLUMN_ORDER",
     "OPTIONAL_PLAN_COLUMNS",
+    "PIPELINE_STATES",
 ]
 
 # === AVAILABLE CONSTANTS MODULES ===
 AVAILABLE_CONSTANTS = {
-    "Deb Installer utility": ("constants.DebConstants", 1000),
     "Package Installer utility": ("constants.PackageConstants", 1000),
+    "Deb Installer utility": ("constants.DebConstants", 1000),
     "Flatpak Installer utility": ("constants.FlatpakConstants", 1000),
     "ThirdParty Installer utility": ("constants.ThirdPartyConstants", 1000),
     "Archive Installer utility": ("constants.ArchiveConstants", 1000),
@@ -133,11 +131,8 @@ class State(Enum):
     SUB_SELECT = auto()
     PREPARE_PLAN = auto()
     CONFIRM = auto()
-    INSTALL = auto()
-    UNINSTALL = auto()
-    OPTIONAL = auto()
+    EXECUTE = auto() 
     FINALIZE = auto()
-
 
 class StateMachine:
     def __init__(   self, constants, *, auto_yes: bool = False, cli_action: Optional[str] = None,
@@ -174,7 +169,10 @@ class StateMachine:
         self.actions: Dict[str, Dict[str, Any]] = {}
 
         # Constanst
-        self.c = consts
+        self.c = constants
+
+        # Pipeline
+        self._pending_pipeline_spec: Optional[Dict[str, Any]] = None
 
 
     def setup(self, log_dir: Path, log_prefix: str, required_user: str) -> None:
@@ -392,32 +390,24 @@ class StateMachine:
         self.state = State.BUILD_ACTIONS
 
 
-    def build_actions(self, base_actions: Dict[str, Dict[str, Any]], optional_states: Dict[str, Dict[str, Any]]) -> None:
-        """Build the main menu (core + optional) and advance to MENU_SELECTION."""
-        actions = dict(base_actions) 
+    def build_actions(self, base_actions: Dict[str, Dict[str, Any]]) -> None:
+        """Build the main menu from ACTIONS, validating execute_state keys."""
+        actions = dict(base_actions)
         cancel_spec = actions.pop("Cancel", None)
-        for title, spec in optional_states.items():
-            pipeline = spec.get("pipeline", {})
-            allowed_jobs = spec.get("filter_jobs")
-            if not pipeline:
-                continue
-                if allowed_jobs and not spec.get("skip_sub_select", False) \
-                and not any(j in self.all_jobs for j in allowed_jobs):
-                    continue    
-            actions[title] = {
-                "verb": spec.get("verb", title.lower()),
-                "filter_status": (spec["filter_status"] if "filter_status" in spec else None),
-                "label": spec.get("label", title.upper()),
-                "prompt": spec.get("prompt", f"Proceed with {title.lower()}? [y/n]: "),
-                "execute_state": spec.get("execute_state", "OPTIONAL"),
-                "skip_sub_select": spec.get("skip_sub_select", False),
-                "skip_prepare_plan": spec.get("skip_prepare_plan", False),
-                "filter_jobs": spec.get("filter_jobs"),
-            }
+        for title, spec in list(actions.items()):
+            exec_key = spec.get("execute_state")
+            if exec_key in (None, "FINALIZE"):
+                continue 
+            if exec_key not in self.c.PIPELINE_STATES:
+                log_and_print(f"[WARN] Action '{title}' has unknown execute_state '{exec_key}'; removing from menu.")
+                actions.pop(title, None)
+
         if cancel_spec is not None:
             actions["Cancel"] = cancel_spec
+
         self.actions = actions
         self.state = State.MENU_SELECTION
+
 
 
     # === HELPERS FOR SELECTION ===
@@ -557,18 +547,54 @@ class StateMachine:
             self.active_jobs = {}
             self.state = State.CONFIG_LOADING
             return
-        self.state = State[spec["execute_state"]]
+        exec_key = spec.get("execute_state")
+        pipe = self.c.PIPELINE_STATES.get(exec_key) if exec_key else None
+        if not pipe:
+            pipe = getattr(self.c, "OPTIONAL_STATES", {}).get(self.current_action_key)
+        if not pipe:
+            self.finalize_msg = f"Unknown execute_state '{exec_key}'."
+            self.state = State.FINALIZE
+            return
+        self._pending_pipeline_spec = pipe
+        self.state = State.EXECUTE
 
 
     def run_pipeline_action(self, spec: Dict[str, Any]) -> None:
         """Generic runner for a spec-defined pipeline; advances to its post_state."""
-        pipeline = spec["pipeline"]
+        if not spec or "pipeline" not in spec:
+            self.finalize_msg = "No pipeline spec to execute."
+            self.state = State.FINALIZE
+            return
+        pipeline = spec.get("pipeline") or {}
+        if not isinstance(pipeline, dict) or not pipeline:
+            self.finalize_msg = "Pipeline is empty or invalid."
+            self.state = State.FINALIZE
+            return
         label = spec.get("label", "DONE")
         success_key = spec.get("success_key", "ok")
-        post_state = spec.get("post_state", "CONFIG_LOADING")
-        run_pipeline(self.active_jobs, pipeline, label=label, success_key=success_key, log=log_and_print)
-        self.active_jobs = {}
-        self.state = State[post_state]
+        post_state_name = spec.get("post_state", "CONFIG_LOADING")
+        try:
+            run_pipeline(
+                self.active_jobs,
+                pipeline,
+                label=label,
+                success_key=success_key,
+                log=log_and_print,
+            )
+        except Exception as e:
+            log_and_print(f"[FATAL] Pipeline execution error: {e!r}")
+            self.finalize_msg = f"Pipeline error: {e}"
+            self.state = State.FINALIZE
+            return
+        finally:
+            self.active_jobs = {}
+        self._pending_pipeline_spec = None
+        try:
+            self.state = State[post_state_name]
+        except KeyError:
+            log_and_print(f"[WARN] Unknown post_state '{post_state_name}', defaulting to CONFIG_LOADING.")
+            self.state = State.CONFIG_LOADING
+
 
     # === MAIN ===
     def main(self) -> None:
@@ -583,16 +609,13 @@ class StateMachine:
             State.JSON_REQUIRED_KEYS_CHECK: lambda: self.validate_json_required_keys(self.c.VALIDATION_CONFIG, self.c.JOBS_KEY, dict),
             State.CONFIG_LOADING:           lambda: self.load_job_block(self.c.JOBS_KEY),
             State.PACKAGE_STATUS:           lambda: self.build_status_map(self.c.JOBS_KEY, self.c.INSTALLED_LABEL, self.c.UNINSTALLED_LABEL, self.c.STATUS_FN_CONFIG),
-            State.BUILD_ACTIONS:            lambda: self.build_actions(self.c.ACTIONS, self.c.OPTIONAL_STATES),
+            State.BUILD_ACTIONS:            lambda: self.build_actions(self.c.ACTIONS),
             State.MENU_SELECTION:           lambda: self.select_action(),
             State.SUB_SELECT:               lambda: self.sub_select_action(self.c.SUB_MENU),
             State.PREPARE_PLAN:             lambda: self.prepare_jobs_dict(self.c.JOBS_KEY,self.c.OPTIONAL_PLAN_COLUMNS.get(self.current_action_key, self.c.PLAN_COLUMN_ORDER)),
             State.CONFIRM:                  lambda: self.confirm_action(),
-            State.INSTALL:                  lambda: self.run_pipeline_action(self.c.INSTALL_PIPELINE),
-            State.UNINSTALL:                lambda: self.run_pipeline_action(self.c.UNINSTALL_PIPELINE),
-            State.OPTIONAL:                 lambda: self.run_pipeline_action(self.c.OPTIONAL_STATES[self.current_action_key]),
+            State.EXECUTE:  lambda: self.run_pipeline_action(self._pending_pipeline_spec or {}),
         }
-
         try:
             while self.state != State.FINALIZE:
                 handler = handlers.get(self.state)

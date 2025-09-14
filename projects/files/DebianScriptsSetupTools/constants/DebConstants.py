@@ -4,7 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Dict, Any
 
-# External functions used by status/pipelines/optional states
+# External functions used by status/pipelines
 from modules.package_utils import (
     check_package,
     download_deb_file,
@@ -80,33 +80,53 @@ STATUS_FN_CONFIG: Dict[str, Any] = {
 }
 
 # === (menu label → action spec) ===
+# NOTE: Each action's "execute_state" must match a key in PIPELINE_STATES.
 ACTIONS: Dict[str, Dict[str, Any]] = {
     "_meta": {"title": "Select an option"},
+
+    # Standard install path for items not currently installed
     f"Install required {JOBS_KEY}": {
         "verb": "installation",
-        "filter_status": False,
+        "filter_status": False,  # show items not installed
         "label": INSTALLED_LABEL,
         "prompt": "Proceed with installation? [y/n]: ",
         "execute_state": "INSTALL",
         "post_state": "CONFIG_LOADING",
     },
+
+    # Standard uninstall path for items currently installed
     f"Uninstall all listed {JOBS_KEY}": {
         "verb": "uninstallation",
-        "filter_status": True,
+        "filter_status": True,   # show items currently installed
         "label": UNINSTALLED_LABEL,
         "prompt": "Proceed with uninstallation? [y/n]: ",
         "execute_state": "UNINSTALL",
         "post_state": "CONFIG_LOADING",
     },
+
+    # Example of a targeted one-off action expressed as its own pipeline
+    "Start Plex service": {
+        "verb": "start",
+        "filter_status": False,
+        "label": "STARTED",
+        "prompt": "Start Plex Media Server now? [y/n]: ",
+        "filter_jobs": ["plexmediaserver"],   # restricts selection set
+        "skip_sub_select": True,              # run directly without selecting jobs
+        "skip_prepare_plan": True,            # skip plan table
+        "execute_state": "START_PLEX",
+        "post_state": "CONFIG_LOADING",
+    },
+
+    # Exit
     "Cancel": {
         "verb": None,
         "filter_status": None,
         "label": None,
         "prompt": "",
-        "execute_state": "FINALIZE",   
+        "execute_state": "FINALIZE",
         "post_state": "FINALIZE",
-        "skip_sub_select": True,    
-        "skip_prepare_plan": True,     
+        "skip_sub_select": True,
+        "skip_prepare_plan": True,
     },
 }
 
@@ -120,49 +140,53 @@ SUB_MENU: Dict[str, str] = {
 # === DEPENDENCIES ===
 DEPENDENCIES = ["wget", "dpkg"]
 
-# === FUNCTION → REQUIRED FIELDS ===
-INSTALL_PIPELINE: Dict[str, Any] = {
-    "pipeline": {
-        download_deb_file: {
-            "args": ["job", KEY_DOWNLOAD_URL, KEY_DOWNLOAD_DIR],
-            "result": "download_ok",
+# === PIPELINES (data-driven) ===
+# These replicate your prior INSTALL/UNINSTALL behavior, plus a standalone START_PLEX pipeline.
+PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
+    "INSTALL": {
+        "pipeline": {
+            # 1) Download .deb → ctx["download_ok"] = True/False
+            download_deb_file: {
+                "args": ["job", KEY_DOWNLOAD_URL, KEY_DOWNLOAD_DIR],
+                "result": "download_ok",
+            },
+            # 2) Install .deb when download succeeded → ctx["installed"] = True/False
+            install_deb_file: {
+                "args": [lambda j, m, c: Path(m[KEY_DOWNLOAD_DIR]) / f"{j}.deb", "job"],
+                "result": "installed",
+                "when":  lambda j, m, c: bool(c.get("download_ok")),
+            },
+            # 3) Optionally start service if requested
+            start_service_standard: {
+                "args": [lambda j, m, c: m.get("ServiceName", j)],
+                "when":  lambda j, m, c: bool(m.get(KEY_ENABLE_SERVICE)),
+                "result": "service_started",
+            },
+            # 4) Cleanup downloaded file if we downloaded it
+            handle_cleanup: {
+                "args": [lambda j, m, c: Path(m[KEY_DOWNLOAD_DIR]) / f"{j}.deb"],
+                "result": "cleaned",
+                "when":  lambda j, m, c: bool(c.get("download_ok")),
+            },
         },
-        install_deb_file: {
-            "args": [lambda j, m, c: Path(m[KEY_DOWNLOAD_DIR]) / f"{j}.deb", "job"],
-            "result": "installed",
-            "when":  lambda j, m, c: bool(c.get("download_ok")),
-        },
-        start_service_standard: {
-            "args": [lambda j, m, c: m.get("ServiceName", j)],
-            "when":  lambda j, m, c: bool(m.get(KEY_ENABLE_SERVICE)),
-            "result": "service_started",
-        },
-        handle_cleanup: {
-            "args": [lambda j, m, c: Path(m[KEY_DOWNLOAD_DIR]) / f"{j}.deb"],
-            "result": "cleaned",
-            "when":  lambda j, m, c: bool(c.get("download_ok")),
-        },
+        "label": INSTALLED_LABEL,
+        "success_key": "installed",
+        "post_state": "CONFIG_LOADING",
     },
-    "label": INSTALLED_LABEL,
-    "success_key": "installed",
-    "post_state": "CONFIG_LOADING",
-}
 
-UNINSTALL_PIPELINE: Dict[str, Any] = {
-    "pipeline": {
-        uninstall_packages: {
-            "args": ["job"],
-            "result": "uninstalled",
+    "UNINSTALL": {
+        "pipeline": {
+            uninstall_packages: {
+                "args": ["job"],
+                "result": "uninstalled",
+            },
         },
+        "label": UNINSTALLED_LABEL,
+        "success_key": "uninstalled",
+        "post_state": "CONFIG_LOADING",
     },
-    "label": UNINSTALLED_LABEL,
-    "success_key": "uninstalled",
-    "post_state": "CONFIG_LOADING",
-}
 
-# === OPTIONAL STATES ===
-OPTIONAL_STATES: Dict[str, Dict[str, Any]] = {
-    "Start Plex service": {
+    "START_PLEX": {
         "pipeline": {
             start_service_standard: {
                 "args": [lambda j, m, c: "plexmediaserver"],
@@ -171,17 +195,10 @@ OPTIONAL_STATES: Dict[str, Dict[str, Any]] = {
         },
         "label": "STARTED",
         "success_key": "started",
-        "verb": "start",
-        "filter_status": False,
-        "prompt": "Start Plex Media Server now? [y/n]: ",
-        "filter_jobs": ["plexmediaserver"],
-        "skip_sub_select": True,
-        "skip_prepare_plan": True,
-        "execute_state": "OPTIONAL",
         "post_state": "CONFIG_LOADING",
     },
 }
 
 # === COLUMN ORDER ===
 PLAN_COLUMN_ORDER = [KEY_DOWNLOAD_URL, KEY_DOWNLOAD_DIR, KEY_ENABLE_SERVICE, "ServiceName", "systemd_unit"]
-OPTIONAL_PLAN_COLUMNS = {}
+OPTIONAL_PLAN_COLUMNS: Dict[str, Any] = {}

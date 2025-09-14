@@ -1,13 +1,13 @@
 # constants/NetworkConstants.py
 
 from pathlib import Path
+from pathlib import Path
 from modules.network_utils import (
     bring_up_connection,
-    create_static_connection,
-    create_dhcp_connection,
-    is_connected,
+    ensure_static_connection,  
+    ensure_dhcp_connection,     
+    is_connected,               
 )
-
 # === CONFIG PATHS & KEYS ===
 PRIMARY_CONFIG   = "Config/AppConfigSettings.json"
 JOBS_KEY         = "Networks"
@@ -118,7 +118,6 @@ SUB_MENU = {
 # === DEPENDENCIES ===
 DEPENDENCIES = ["network-manager"]
 
-
 PLAN_COLUMNS_STATIC = [
     KEY_CONN_NAME,
     KEY_INTERFACE,
@@ -132,44 +131,43 @@ PLAN_COLUMNS_DHCP = [
     KEY_INTERFACE,
 ]
 
-PLAN_COLUMN_ORDER = PLAN_COLUMNS_STATIC 
+PLAN_COLUMN_ORDER = PLAN_COLUMNS_STATIC
 
 OPTIONAL_PLAN_COLUMNS = {
     "Apply static Networks": PLAN_COLUMNS_STATIC,
     "Apply DHCP Networks": PLAN_COLUMNS_DHCP,
 }
 
-# === PIPELINES ===
-INSTALL_PIPELINE = {
-    "pipeline": {
-        create_static_connection: {
-            "args": [lambda j, m, c: m, "job"],
-            "result": "applied",
+# === PIPELINES (state → spec) ===
+PIPELINE_STATES = {
+    "INSTALL": {
+        "pipeline": {
+            ensure_static_connection: {
+                "args": [lambda j, m, c: m, "job"],
+                "result": "applied",
+            },
+            bring_up_connection: {
+                "args": [KEY_CONN_NAME],
+                "result": "brought_up",
+            },
         },
-        bring_up_connection: {
-            "args": [KEY_CONN_NAME],
-            "result": "brought_up",
-        },
+        "label": INSTALLED_LABEL,
+        "success_key": "applied",
+        "post_state": "CONFIG_LOADING",
     },
-    "label": INSTALLED_LABEL,
-    "success_key": "applied",
-    "post_state": "CONFIG_LOADING",
-}
-
-UNINSTALL_PIPELINE = {
-    "pipeline": {
-        create_dhcp_connection: {
-            "args": [lambda j, m, c: m, "job"],
-            "result": "applied",
+    "UNINSTALL": {
+        "pipeline": {
+            ensure_dhcp_connection: {
+                "args": [lambda j, m, c: m, "job"],
+                "result": "applied",
+            },
+            bring_up_connection: {
+                "args": [KEY_CONN_NAME],
+                "result": "brought_up",
+            },
         },
-        bring_up_connection: {
-            "args": [KEY_CONN_NAME],
-            "result": "brought_up",
-        },
+        "label": UNINSTALLED_LABEL,
+        "success_key": "applied",
+        "post_state": "CONFIG_LOADING",
     },
-    "label": UNINSTALLED_LABEL,
-    "success_key": "applied",
-    "post_state": "CONFIG_LOADING",
 }
-
-OPTIONAL_STATES = {}
