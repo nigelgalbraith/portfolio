@@ -61,6 +61,11 @@ AVAILABLE_CONSTANTS = {
     "Flatpak Installer utility": ("constants.FlatpakConstants", 1000),
     "ThirdParty Installer utility": ("constants.ThirdPartyConstants", 1000),
     "Archive Installer utility": ("constants.ArchiveConstants", 1000),
+    "Docker Manager utility": ("constants.DockerConstants", 1000),
+    "DOSLoader utility": ("constants.DOSLoaderConstants", 1000),
+    "IPCam utility": ("constants.IPCamConstants", 1000),
+    "Services Presets utility": ("constants.ServicesConstants", 0),
+    "Firewall Presets utility": ("constants.FirewallConstants", 0),
     "RDP Installer utility": ("constants.RDPConstants", 0),
     "Network Installer utility": ("constants.NetworkConstants", 0),
 }
