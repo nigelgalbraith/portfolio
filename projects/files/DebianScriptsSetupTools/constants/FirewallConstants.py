@@ -10,8 +10,8 @@ from modules.firewall_utils import (
     status_ufw,
     status_ufw_display,              
     allow_application,        
-    allow_port_for_ip,        
-    allow_port_range_for_ip,  
+    apply_singleports,
+    apply_portranges,
 )
 
 # === CONFIG PATHS & KEYS ===
@@ -210,23 +210,20 @@ PIPELINE_STATES = {
                 "result": "_",
                 "when": f"meta.{KEY_APPLICATIONS}",
             },
-            allow_port_for_ip: {
-                "args": [f"meta.{KEY_SINGLE_PORTS}[0].{KEY_PORT}",
-                         f"meta.{KEY_SINGLE_PORTS}[0].{KEY_PROTOCOL}",
-                         f"meta.{KEY_SINGLE_PORTS}[0].{KEY_IPS}"],
+            apply_singleports: {
+                "args": [f"meta.{KEY_SINGLE_PORTS}"],
                 "result": "_",
-                "when": f"meta.{KEY_SINGLE_PORTS}",
+                "when":  f"meta.{KEY_SINGLE_PORTS}",
             },
-            allow_port_range_for_ip: {
-                "args": [f"meta.{KEY_PORT_RANGES}[0].{KEY_START_PORT}",
-                         f"meta.{KEY_PORT_RANGES}[0].{KEY_END_PORT}",
-                         f"meta.{KEY_PORT_RANGES}[0].{KEY_PROTOCOL}",
-                         f"meta.{KEY_PORT_RANGES}[0].{KEY_IPS}"],
+
+            apply_portranges: {
+                "args": [f"meta.{KEY_PORT_RANGES}"],
                 "result": "_",
-                "when": f"meta.{KEY_PORT_RANGES}",
+                "when":  f"meta.{KEY_PORT_RANGES}",
             },
             reload_ufw:         {"args": [], "result": "_"},
             status_ufw:         {"args": [], "result": "ok"},
+            status_ufw_display: {"args": [], "result": "ok"},
         },
         "label": INSTALLED_LABEL,
         "success_key": "ok",

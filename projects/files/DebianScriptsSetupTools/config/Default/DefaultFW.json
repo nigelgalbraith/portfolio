@@ -1,38 +1,40 @@
 {
   "Default": {
-    "Firewall": {
-      "Applications": [
-        "ExampleApp1",
-        "ExampleApp2"
-      ],
-      "SinglePorts": [
-        {
-          "Port": 22,
-          "Protocol": "tcp",
-          "IPs": [
-            "1.1.1.1",
-            "1.1.1.2"
-          ]
-        },
-        {
-          "Port": 3389,
-          "Protocol": "tcp",
-          "IPs": [
-            "2.2.2.1",
-            "2.2.2.2"
-          ]
-        }
-      ],
-      "PortRanges": [
-        {
-          "FromPort": 8000,
-          "ToPort": 8100,
-          "Protocol": "tcp",
-          "IPs": [
-            "3.3.3.1"
-          ]
-        }
-      ]
+    "ufw":{
+      "Firewall": {
+        "Applications": [
+          "ExampleApp1",
+          "ExampleApp2"
+        ],
+        "SinglePorts": [
+          {
+            "Port": 22,
+            "Protocol": "tcp",
+            "IPs": [
+              "1.1.1.1",
+              "1.1.1.2"
+            ]
+          },
+          {
+            "Port": 3389,
+            "Protocol": "tcp",
+            "IPs": [
+              "2.2.2.1",
+              "2.2.2.2"
+            ]
+          }
+        ],
+        "PortRanges": [
+          {
+            "FromPort": 8000,
+            "ToPort": 8100,
+            "Protocol": "tcp",
+            "IPs": [
+              "3.3.3.1"
+            ]
+          }
+        ]
+      }
     }
   }
 }

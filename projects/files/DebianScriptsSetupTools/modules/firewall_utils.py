@@ -47,15 +47,26 @@ def allow_port_for_ip(ports: Union[int, List[int]], proto: str, ips: Union[str, 
     results: List[bool] = []
     for port in ports:
         for ip in ips:
+            print(f"[APPLY] Allow {proto.upper()} port {port} from {ip}")
             res = subprocess.run(
                 ["ufw", "allow", "proto", proto, "from", ip, "to", "any", "port", str(port)],
                 capture_output=True, text=True
             )
-            print(res.stdout.strip())
-            if res.stderr:
+            if res.stdout.strip():
+                print(res.stdout.strip())
+            if res.stderr.strip():
                 print(res.stderr.strip())
             results.append(res.returncode == 0)
     return results
+
+
+def apply_singleports(singleports):
+    """Apply each SinglePorts rule dict via allow_port_for_ip."""
+    results = []
+    for sp in singleports or []:
+        print(f"\n[GROUP] Applying SinglePort rule: Port={sp['Port']} Protocol={sp['Protocol']} IPs={sp['IPs']}")
+        results.extend(allow_port_for_ip(sp["Port"], sp["Protocol"], sp["IPs"]))
+    return all(results)
 
 
 def allow_port_range_for_ip(start: int, end: int, proto: str, ips: Union[str, List[str]]) -> List[bool]:
@@ -63,15 +74,33 @@ def allow_port_range_for_ip(start: int, end: int, proto: str, ips: Union[str, Li
     ips = ips if isinstance(ips, (list, tuple)) else [ips]
     results: List[bool] = []
     for ip in ips:
+        print(f"[APPLY] Allow {proto.upper()} ports {start}:{end} from {ip}")
         res = subprocess.run(
             ["ufw", "allow", "proto", proto, "from", ip, "to", "any", "port", f"{start}:{end}"],
             capture_output=True, text=True
         )
-        print(res.stdout.strip())
-        if res.stderr:
+        if res.stdout.strip():
+            print(res.stdout.strip())
+        if res.stderr.strip():
             print(res.stderr.strip())
         results.append(res.returncode == 0)
     return results
+
+
+def apply_portranges(portranges):
+    """Apply each PortRanges rule dict via allow_port_range_for_ip."""
+    results = []
+    for pr in portranges or []:
+        print(f"\n[GROUP] Applying PortRange rule: Start={pr['StartPort']} End={pr['EndPort']} Protocol={pr['Protocol']} IPs={pr['IPs']}")
+        results.extend(
+            allow_port_range_for_ip(
+                pr["StartPort"],
+                pr["EndPort"],
+                pr["Protocol"],
+                pr["IPs"],
+            )
+        )
+    return all(results)
 
 
 def reset_ufw() -> bool:
