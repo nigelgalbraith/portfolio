@@ -20,6 +20,7 @@ from modules.display_utils import (
     select_from_list,
     confirm,
     print_dict_table,
+    pick_constants_interactively,
 )
 
 from modules.state_machine_utils import (
@@ -37,6 +38,7 @@ REQUIRED_CONSTANTS = [
     "PRIMARY_CONFIG",
     "JOBS_KEY",
     "VALIDATION_CONFIG",
+    "SECONDARY_VALIDATION",
     "DETECTION_CONFIG",
     "LOG_DIR",
     "LOG_PREFIX",
@@ -70,28 +72,6 @@ AVAILABLE_CONSTANTS = {
     "Network Installer utility": ("constants.NetworkConstants", 0),
 }
 
-# === CONSTANTS MENU ===
-def pick_constants_interactively(choices: dict[str, tuple[str, Optional[int]]]) -> str:
-    """Show a simple menu to choose constants module, filtered by allowed UID. """
-    current_uid = os.geteuid()
-    current_user = getpass.getuser()
-    allowed = {label: mod for label, (mod, uid) in choices.items() if uid is None or uid == current_uid}
-    disallowed = {label: (mod, uid) for label, (mod, uid) in choices.items() if uid is not None and uid != current_uid}
-    if disallowed:
-        print("\n--- Programs not available for this user ---")
-        for label, (_, uid) in disallowed.items():
-            print(f"  [{'root only' if uid == 0 else f'uid {uid} only'}] {label}")
-        print("-------------------------------------------\n")
-
-    if not allowed:
-        raise SystemExit(f"[FATAL] No utilities available for user '{current_user}' (uid {current_uid})")
-    options = list(allowed.keys()) + ["Exit"]
-    selection = select_from_list("Choose a utility", options)
-    if selection == "Exit":
-        raise SystemExit("Exited by user.")
-    return allowed[selection]
-
-
 # === PIPELINE ===
 def run_pipeline(active_jobs: Dict[str, Dict[str, Any]],
                  pipeline: Dict[Callable, Dict[str, Any]],
@@ -117,7 +97,7 @@ def run_pipeline(active_jobs: Dict[str, Dict[str, Any]],
                 log(f"[ERROR] {job}: {fn.__name__} failed → {e!r}")
         if bool(ctx.get(success_key)):
             success += 1
-    log(f"{label} successfully: {success}/{total}")
+    log(f"{label}: {success}/{total} succeeded")
 
 
 # === STATE ENUM ===
@@ -129,6 +109,7 @@ class State(Enum):
     JSON_TOPLEVEL_CHECK = auto()
     JSON_MODEL_SECTION_CHECK = auto()
     JSON_REQUIRED_KEYS_CHECK = auto()
+    SECONDARY_VALIDATION = auto()
     CONFIG_LOADING = auto()
     PACKAGE_STATUS = auto()
     BUILD_ACTIONS = auto()
@@ -173,7 +154,7 @@ class StateMachine:
         self.current_action_key: Optional[str] = None
         self.actions: Dict[str, Dict[str, Any]] = {}
 
-        # Constanst
+        # Constants
         self.c = constants
 
         # Pipeline
@@ -182,6 +163,11 @@ class StateMachine:
 
     def setup(self, log_dir: Path, log_prefix: str, required_user: str) -> None:
         """Initialize logging and verify user; advance to MODEL_DETECTION or FINALIZE."""
+        for k, v in vars(self.c).items():
+            if v is None:
+                self.finalize_msg = f"Constant {k} is None."
+                self.state = State.FINALIZE
+                return
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         if os.geteuid() == 0:
             sudo_user = os.environ.get("SUDO_USER") or os.environ.get("LOGNAME")
@@ -238,6 +224,11 @@ class StateMachine:
 
     def detect_model(self, detection_config: Dict, required_user: str) -> None:
         """Detect system model, resolve config path, and load JSON data."""
+        for k in ("primary_config","jobs_key","default_config","config_type","config_example","default_config_note"):
+            if k not in detection_config:
+                self.finalize_msg = f"Missing DETECTION_CONFIG['{k}']."
+                self.state = State.FINALIZE
+                return
         model = get_model()
         self.detected_model = model
         log_and_print(f"Detected model: {model}")
@@ -350,13 +341,82 @@ class StateMachine:
             log_and_print(json.dumps(validation_config["example_config"], indent=2))
             self.state = State.FINALIZE
             return
-        log_and_print(f"Config for model '{model}' successfully validated.")
+        log_and_print(f"\nJob Keys for model '{model}' successfully validated.")
         log_and_print("\n  Keys Validated")
         log_and_print("  ---------------")
         for key, expected_type in validation_config["required_job_fields"].items():
             types = expected_type if isinstance(expected_type, tuple) else (expected_type,)
             tname = " or ".join(t.__name__ for t in types)
             log_and_print(f"  - {key} ({tname})")
+        self.state = State.SECONDARY_VALIDATION
+
+
+    def validate_secondary_keys(self, secondary_validation: Dict, section_key: str) -> None:
+        """Validate nested arrays/objects inside each job (e.g., SinglePorts / PortRanges)."""
+        if not secondary_validation or not isinstance(secondary_validation, dict):
+            self.state = State.CONFIG_LOADING
+            return
+        model = self.model
+        jobs_block = self.job_data.get(model, {}).get(section_key, {})
+        if not isinstance(jobs_block, dict):
+            self.finalize_msg = f"Invalid config: '{model}/{section_key}' must be a JSON object."
+            self.state = State.FINALIZE
+            return
+        example_cfg = secondary_validation.get("config_example")
+        errors: List[str] = []
+        for subkey, rules in secondary_validation.items():
+            if subkey == "config_example":
+                continue
+            if not isinstance(rules, dict):
+                continue
+            required = rules.get("required_job_fields", {})
+            allow_empty = bool(rules.get("allow_empty", False))
+            for job_name, meta in jobs_block.items():
+                if not isinstance(meta, dict):
+                    errors.append(f"- {job_name}: job meta not an object for secondary validation.")
+                    continue
+                items = meta.get(subkey, [])
+                if not isinstance(items, list):
+                    errors.append(f"- {job_name}.{subkey}: expected a list, got {type(items).__name__}")
+                    continue
+                if not items and not allow_empty:
+                    errors.append(f"- {job_name}.{subkey}: list is empty but allow_empty=False")
+                if not isinstance(required, dict) or not required:
+                    continue
+                for idx, itm in enumerate(items):
+                    if not isinstance(itm, dict):
+                        errors.append(f"- {job_name}.{subkey}[{idx}]: expected object, got {type(itm).__name__}")
+                        continue
+                    for field, expected_type in required.items():
+                        types_tuple = expected_type if isinstance(expected_type, tuple) else (expected_type,)
+                        if field not in itm or not isinstance(itm[field], types_tuple):
+                            got_t = type(itm.get(field)).__name__ if field in itm else "missing"
+                            exp_t = " or ".join(t.__name__ for t in types_tuple)
+                            errors.append(f"- {job_name}.{subkey}[{idx}].{field}: expected {exp_t}, got {got_t}")
+        if errors:
+            self.finalize_msg = (
+                "Secondary validation failed:\n" + "\n".join(errors) +
+                ("\n\nExample structure:\n" + json.dumps(example_cfg, indent=2) if example_cfg else "")
+            )
+            log_and_print(self.finalize_msg)
+            self.state = State.FINALIZE
+            return
+        log_and_print(f"\nJob Sub Keys for model '{model}' successfully validated.")
+        log_and_print("\n  Secondary Keys Validated")
+        log_and_print("  ------------------------")
+        for subkey, rules in secondary_validation.items():
+            if subkey == "config_example" or not isinstance(rules, dict):
+                continue
+            allow_empty = bool(rules.get("allow_empty", False))
+            required = rules.get("required_job_fields", {}) or {}
+            log_and_print(f"  - {subkey} (list, allow_empty={allow_empty})")
+            if required:
+                for field, expected_type in required.items():
+                    types = expected_type if isinstance(expected_type, tuple) else (expected_type,)
+                    tname = " or ".join(t.__name__ for t in types)
+                    log_and_print(f"      • {field} ({tname})")
+            else:
+                log_and_print("      • <no required fields>")
         self.state = State.CONFIG_LOADING
 
 
@@ -371,7 +431,11 @@ class StateMachine:
 
     def build_status_map(self, summary_label: str, installed_label: str, uninstalled_label: str, status_fn_config: Dict[str, Any]) -> None:
         """Compute package status from active_jobs and print summary; advance accordingly."""
-        fn = status_fn_config["fn"]
+        fn = status_fn_config.get("fn")
+        if not callable(fn):
+            self.finalize_msg = "STATUS_FN_CONFIG.fn is missing or not callable."
+            self.state = State.FINALIZE
+            return
         arg_specs = status_fn_config.get("args", ["job"])
         labels = status_fn_config.get("labels", {True: installed_label, False: uninstalled_label})
         self.job_status = {}
@@ -541,8 +605,11 @@ class StateMachine:
     def confirm_action(self) -> None:
         """Confirm the chosen action; advance to next_state or bounce to STATUS."""
         spec = self.actions[self.current_action_key]
-        prompt = spec.get("prompt") or "Proceed? [y/n]: "
-        proceed = True if self.auto_yes else confirm(prompt)
+        if spec.get("skip_confirm", False):
+            proceed = True
+        else:
+            prompt = spec.get("prompt") or "Proceed? [y/n]: "
+            proceed = True if self.auto_yes else confirm(prompt)
         if not proceed:
             log_and_print("User cancelled.")
             self.active_jobs = {}
@@ -608,6 +675,7 @@ class StateMachine:
             State.JSON_TOPLEVEL_CHECK:      lambda: self.validate_json_toplevel(self.c.VALIDATION_CONFIG["example_config"]),
             State.JSON_MODEL_SECTION_CHECK: lambda: self.validate_json_model_section(self.c.VALIDATION_CONFIG["example_config"]),
             State.JSON_REQUIRED_KEYS_CHECK: lambda: self.validate_json_required_keys(self.c.VALIDATION_CONFIG, self.c.JOBS_KEY, dict),
+             State.SECONDARY_VALIDATION:    lambda: self.validate_secondary_keys(self.c.SECONDARY_VALIDATION, self.c.JOBS_KEY),
             State.CONFIG_LOADING:           lambda: self.load_job_block(self.c.JOBS_KEY),
             State.PACKAGE_STATUS:           lambda: self.build_status_map(self.c.JOBS_KEY, self.c.INSTALLED_LABEL, self.c.UNINSTALLED_LABEL, self.c.STATUS_FN_CONFIG),
             State.BUILD_ACTIONS:            lambda: self.build_actions(self.c.ACTIONS),
@@ -630,7 +698,7 @@ class StateMachine:
             self.finalize_msg = "Interrupted by user."
             self.state = State.FINALIZE
         finally:
-            rotate_logs(self.c.LOG_DIR, self.c.LOGS_TO_KEEP, self.c.ROTATE_LOG_NAME)
+            rotate_logs(self.log_dir or self.c.LOG_DIR, self.c.LOGS_TO_KEEP, self.c.ROTATE_LOG_NAME)
             if self.finalize_msg:
                 log_and_print(self.finalize_msg)
             if self.log_file:

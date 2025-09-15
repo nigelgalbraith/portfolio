@@ -48,6 +48,9 @@ VALIDATION_CONFIG = {
     "example_config": CONFIG_EXAMPLE,
 }
 
+# === SECONDARY VALIDATION  ===
+SECONDARY_VALIDATION = {}
+
 # === DETECTION CONFIG ===
 DETECTION_CONFIG = {
     "primary_config": PRIMARY_CONFIG,

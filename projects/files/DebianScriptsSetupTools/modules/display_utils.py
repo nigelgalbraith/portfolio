@@ -4,6 +4,8 @@ display_utils.py
 """
 
 from typing import Dict, Any, Optional
+import os
+import getpass
 
 def format_status_summary(status_dict: Dict[str, Any], label: str = "Item", count_keys: Optional[list] = None, labels: Optional[Dict[Any, str]] = None) -> str:
     """Return a formatted summary of statuses in a dictionary."""
@@ -90,6 +92,32 @@ def select_from_list(title: str, options: list[str]) -> str | None:
     except ValueError:
         return None
     return options[idx - 1] if 1 <= idx <= len(options) else None
+
+
+def pick_constants_interactively(choices: dict[str, tuple[str, Optional[int]]]) -> str:
+    """Show a simple menu to choose constants module, filtered by allowed UID."""
+    current_uid = os.geteuid()
+    current_user = getpass.getuser()
+    allowed = {label: mod for label, (mod, uid) in choices.items() if uid is None or uid == current_uid}
+    disallowed = {label: (mod, uid) for label, (mod, uid) in choices.items() if uid is not None and uid != current_uid}
+    if disallowed:
+        print("\n--- Programs not available for this user ---")
+        for label, (_, uid) in disallowed.items():
+            print(f"  [{'root only' if uid == 0 else f'uid {uid} only'}] {label}")
+        print("-------------------------------------------\n")
+    if not allowed:
+        raise SystemExit(f"[FATAL] No utilities available for user '{current_user}' (uid {current_uid})")
+    options = list(allowed.keys()) + ["Exit"]
+    print("\nChoose a utility")
+    for i, opt in enumerate(options, 1):
+        print(f"{i}) {opt}")
+    choice = input(f"Enter your selection (1-{len(options)}): ").strip()
+    if not choice.isdigit() or not (1 <= int(choice) <= len(options)):
+        raise SystemExit("Invalid selection.")
+    selection = options[int(choice) - 1]
+    if selection == "Exit":
+        raise SystemExit("Exited by user.")
+    return allowed[selection]
 
 
 def confirm(prompt: str = "Proceed? [y/n]: ", *, valid_yes: tuple[str, ...] = ("y", "yes"), valid_no: tuple[str, ...] = ("n", "no")) -> bool:

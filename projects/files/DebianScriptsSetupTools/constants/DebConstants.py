@@ -46,6 +46,9 @@ VALIDATION_CONFIG: Dict[str, Any] = {
     "example_config": CONFIG_EXAMPLE,
 }
 
+# === SECONDARY VALIDATION  ===
+SECONDARY_VALIDATION = {}
+
 # === DETECTION CONFIG ===
 DETECTION_CONFIG: Dict[str, Any] = {
     "primary_config": PRIMARY_CONFIG,

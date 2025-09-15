@@ -32,6 +32,21 @@ def copy_template(src: str | Path, dest: str | Path) -> bool:
         return False
 
 
+def copy_template_optional(src: str | Path | None, dest: str | Path | None) -> bool:
+    """Copy a file to dest and make it executable, but skip if src/dest is missing."""
+    if not src or not dest:
+        print("[SKIP] No config to copy (optional).")
+        return True
+    try:
+        subprocess.run(["cp", str(src), str(dest)], check=True, stderr=subprocess.DEVNULL)
+        subprocess.run(["chmod", "+x", str(dest)], check=True, stderr=subprocess.DEVNULL)
+        print(f"[OK]   Optional config copied → {dest}")
+        return True
+    except subprocess.CalledProcessError:
+        print(f"[SKIPPED] No optional config file present")
+        return False
+
+
 def create_service(src: str | Path, dest: str | Path) -> bool:
     """Copy and register a systemd service unit file."""
     try:
@@ -64,6 +79,18 @@ def stop_and_disable_service(service_name: str) -> bool:
 
 def remove_path(path: str | Path) -> bool:
     """Delete a file or symlink at the given path."""
+    try:
+        Path(path).unlink(missing_ok=True)
+        return True
+    except Exception:
+        return False
+
+
+def remove_path_optional(path: str | Path | None) -> bool:
+    """Delete a file or symlink at the given path, but skip if not provided."""
+    if not path:
+        print("[SKIP] No config to remove (optional).")
+        return True
     try:
         Path(path).unlink(missing_ok=True)
         return True
