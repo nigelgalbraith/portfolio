@@ -675,7 +675,7 @@ class StateMachine:
             State.JSON_TOPLEVEL_CHECK:      lambda: self.validate_json_toplevel(self.c.VALIDATION_CONFIG["example_config"]),
             State.JSON_MODEL_SECTION_CHECK: lambda: self.validate_json_model_section(self.c.VALIDATION_CONFIG["example_config"]),
             State.JSON_REQUIRED_KEYS_CHECK: lambda: self.validate_json_required_keys(self.c.VALIDATION_CONFIG, self.c.JOBS_KEY, dict),
-             State.SECONDARY_VALIDATION:    lambda: self.validate_secondary_keys(self.c.SECONDARY_VALIDATION, self.c.JOBS_KEY),
+            State.SECONDARY_VALIDATION:     lambda: self.validate_secondary_keys(self.c.SECONDARY_VALIDATION, self.c.JOBS_KEY),
             State.CONFIG_LOADING:           lambda: self.load_job_block(self.c.JOBS_KEY),
             State.PACKAGE_STATUS:           lambda: self.build_status_map(self.c.JOBS_KEY, self.c.INSTALLED_LABEL, self.c.UNINSTALLED_LABEL, self.c.STATUS_FN_CONFIG),
             State.BUILD_ACTIONS:            lambda: self.build_actions(self.c.ACTIONS),
@@ -683,7 +683,7 @@ class StateMachine:
             State.SUB_SELECT:               lambda: self.sub_select_action(self.c.SUB_MENU),
             State.PREPARE_PLAN:             lambda: self.prepare_jobs_dict(self.c.JOBS_KEY,self.c.OPTIONAL_PLAN_COLUMNS.get(self.current_action_key, self.c.PLAN_COLUMN_ORDER)),
             State.CONFIRM:                  lambda: self.confirm_action(),
-            State.EXECUTE:  lambda: self.run_pipeline_action(self._pending_pipeline_spec or {}),
+            State.EXECUTE:                  lambda: self.run_pipeline_action(self._pending_pipeline_spec or {}),
         }
         try:
             while self.state != State.FINALIZE:
