@@ -1,0 +1,21 @@
+{
+  "nodes": {
+    "ShowMenu": { "label": "Show menu" },
+    "SelectConstants": { "label": "Select module" },
+    "LoadConstants": { "label": "Load module" },
+    "DetectResolve": { "label": "Detect model & paths" },
+    "ValidateJSON": { "label": "Validate config" },
+    "BuildStatusPlan": { "label": "Build plan" },
+    "ConfirmPlan": { "label": "Confirm plan" },
+    "ExecuteLog": { "label": "Execute & log" }
+  },
+  "connections": [
+    ["ShowMenu", "SelectConstants"],
+    ["SelectConstants", "LoadConstants"],
+    ["LoadConstants", "DetectResolve"],
+    ["DetectResolve", "ValidateJSON"],
+    ["ValidateJSON", "BuildStatusPlan"],
+    ["BuildStatusPlan", "ConfirmPlan"],
+    ["ConfirmPlan", "ExecuteLog"]
+  ]
+}

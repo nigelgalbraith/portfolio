@@ -386,111 +386,108 @@ thematic: [
       text: "After the backup completes, review the on-screen log for results, errors, or skipped files. This feedback confirms that all selected files were processed correctly. A copy of each log is also saved to your home directory under the 'logs' folder, so you can refer back to previous backups even after restarting the program."
     },
   ],
-  // Step-by-step breakdown for the Debian Install
+  // Step-by-step breakdown for the Debian Install (minimal version)
   debianInstallSuite: [
-    // --- Overview & RDP ---
     {
       title: "Debian Setup Suite Structure",
       img: "DebianSuiteStructure.png",
       alt: "Debian Configuration Flow Diagram",
-      text: "This diagram illustrates how the Debian setup process flows from a unified main script and model selector (`AppConfig`) into system-specific configurations. Each script uses a modular, repeatable design for multi-device rollout."
+      text: `
+        <ul>
+          <li>Driven by a single loader and a shared <code>AppConfig</code>.</li>
+          <li>The loader detects your model, resolves config paths, and validates required keys.</li>
+          <li>Actions run through a state machine (plan → confirm → execute).</li>
+          <li>All utilities (<code>Packages</code>, <code>DEB</code>, <code>Flatpak</code>, <code>ThirdParty</code>, <code>Firewall</code>, <code>Services</code>, <code>Archive</code>, etc.) follow the same modular pattern.</li>
+        </ul>
+      `
     },
+
+    // Main state machine
     {
-      title: "Step 1: Link Your Model in AppConfigSettings.json",
+      title: "Main State Machine",
+      img: "DebianStateMachineFlow.png",
+      alt: "Debian Loader State Machine",
+      text: `
+        <ul>
+          <li>Shows a menu of utilities (Packages, DEB, Flatpak, ThirdParty, Firewall, Services, Archive, etc.).</li>
+          <li><b>You select which constants module</b> to run.</li>
+          <li>Loader <b>loads that constants module</b> (actions, validation, pipeline states).</li>
+          <li>Detects the current model and resolves JSON paths from <code>AppConfig</code>.</li>
+          <li>Validates config using the selected module’s rules (incl. secondary checks if defined).</li>
+          <li>Builds the status & plan, prompts for confirmation, then runs the pipeline (status / plan / execute).</li>
+          <li>Writes logs to the utility’s log directory and rotates per policy.</li>
+        </ul>
+      `
+    },
+    // One general constants section
+    {
+      title: "Constants Overview",
+      img: "DebianConstantsFlow.png",
+      alt: "Constants and Pipelines Overview",
+      text:`<br>
+            Each install area uses a constants module that defines how jobs are validated and executed.
+            The loader imports one set at a time based on what you’re running. <br>
+            <b>Common fields include:</b>
+
+            <ul>
+              <li><b>PRIMARY_CONFIG</b> – path to <code>Config/AppConfigSettings.json</code>.</li>
+              <li><b>JOBS_KEY</b> – the JSON section name used for jobs (e.g., <code>Packages</code>, <code>DEB</code>, <code>Flatpak</code>, <code>ThirdParty</code>, <code>Firewall</code>, <code>Services</code>, <code>Archive</code>).</li>
+              <li><b>VALIDATION_CONFIG</b> – required fields for each job and an example structure; enforced before running.</li>
+              <li><b>SECONDARY_VALIDATION</b> – optional nested validation (e.g., port lists, sub-objects).</li>
+              <li><b>STATUS_FN_CONFIG</b> – function + fields to determine if a job is installed/present vs absent.</li>
+              <li><b>ACTIONS / SUB_MENU</b> – menu entries and which pipeline to invoke (e.g., INSTALL/UNINSTALL/STATUS).</li>
+              <li><b>PIPELINE_STATES</b> – ordered steps (functions + args + result keys) for each action.</li>
+              <li><b>LOG_* (LOG_DIR, LOG_PREFIX, ROTATE_LOG_NAME, LOGS_TO_KEEP)</b> – log paths and rotation policy.</li>
+              <li><b>REQUIRED_USER</b> – optional user context guard for safe execution.</li>
+            </ul>
+
+            <b>Example (Archive): jobs can define fields like:</b>
+            <ul>
+              <li><code>DownloadURL</code></li>
+              <li><code>ExtractTo</code></li>
+              <li><code>StripTopLevel</code></li>
+              <li><code>CheckPath</code></li>
+              <li><code>PostInstall</code></li>
+              <li><code>PostUninstall</code></li>
+              <li><code>TrashPaths</code></li>
+              <li><code>DownloadPath</code></li>
+            </ul>
+
+            The same validation → plan → pipeline pattern applies.
+          `
+    },
+
+    // Model linking
+    {
+      title: "Link Your Model in AppConfigSettings.json",
       img: "DebianEditAppConfig.png",
       alt: "Edit AppConfigSettings.json",
-      text: "Each system model (e.g. `ThinkPadX1`) must be defined in `AppConfigSettings.json`. This file tells the install scripts where to find your model-specific config files"
+      text: `
+        <ul>
+          <li>Define your model (e.g., <code>ThinkPadX1</code>) in <code>AppConfigSettings.json</code>.</li>
+          <li>Map the model to the correct per-utility JSON files (Packages, DEB, Flatpak, ThirdParty, Firewall, Services, Archive, etc.).</li>
+          <li>The loader resolves the model at runtime and falls back to <code>Default</code> when a model key or file is missing.</li>
+        </ul>
+      `
     },
+    // General flow
+    {
+      title: "General Flow",
+      img: "DebianGeneralFlow.png",
+      alt: "Unified Execution Flow",
+      text: `
+              <ol>
+                <li><b>Detect & Resolve</b>: Loader reads AppConfig, identifies the model, and resolves JSON paths.</li>
+                <li><b>Validate</b>: Required keys are checked using the constants module; optional secondary checks run if defined.</li>
+                <li><b>Status & Plan</b>: Builds a status table and an execution plan showing what will be installed, removed, or updated.</li>
+                <li><b>Confirm</b>: Presents a summary; proceeds only on confirmation (or runs in plan-only/status-only modes).</li>
+                <li><b>Execute & Log</b>: Executes the pipeline states in order, writes logs to the utility’s log directory, and rotates them per policy.</li>
+              </ol>
 
-    // --- APT Packages ---
-    {
-      title: "Step 2: Define APT Packages",
-      img: "DebianEditPackages.png",
-      alt: "APT Package List in JSON",
-      text: "In your model's config file (e.g., `LaptopApps.json`), list APT packages under the `Packages`key"
-    },
-    {
-      title: "APT Package Installer Flowchart",
-      img: "DebianPackageFlow.png",
-      alt: "APT Install Logic",
-      text: "`DebianPackageInstalls.py` installs standard APT packages defined in the config. It checks which ones are missing, installs them using `apt`, and logs results to `logs/packages/`."
-    },
-
-    // --- DEB Installers ---
-    {
-      title: "Step 3: Add .deb File Installers",
-      img: "DebianEditDeb.png",
-      alt: "DEB Installer JSON Structure",
-      text: "Still in the same config file, define `.deb` packages under the `DEB` key. These are direct downloads"
-    },
-    {
-      title: "DEB Installer Flowchart",
-      img: "DebianDebFlow.png",
-      alt: "DEB File Install Logic",
-      text: "`DebianDebInstalls.py` downloads and installs `.deb` packages. It optionally enables systemd services and cleans up the temp files afterward. Logs go to `logs/deb/`."
-    },
-
-    // --- Flatpak ---
-    {
-      title: "Step 4: Add Flatpak Applications",
-      img: "DebianEditFlatpak.png",
-      alt: "Flatpak App JSON Structure",
-      text: "Add Flatpak apps under the `Flatpak` key, using app IDs and their remote source"
-    },
-    {
-      title: "Flatpak Installer Flowchart",
-      img: "DebianFlatpakFlow.png",
-      alt: "Flatpak Install Logic",
-      text: "`DebianFlatPakInstalls.py` installs or uninstalls Flatpak apps using model-specific config. It ensures Flathub is enabled and skips already-installed apps."
-    },
-
-    // --- Third-Party APT ---
-    {
-      title: "Step 5: Configure Third-Party APT Repos",
-      img: "DebianEditThirdParty.png",
-      alt: "Third-Party APT Repo JSON",
-      text: "Define third-party APT repos under the `ThirdParty` key. This enables external software sources"
-    },
-    {
-      title: "Third-Party APT Installer Flowchart",
-      img: "DebianThirdPartyFlow.png",
-      alt: "Third-Party Install Logic",
-      text: "`DebianThirdPartryInstalls.py` adds external APT repos and installs packages from them. It also removes them cleanly when uninstalled. Logs are saved under `logs/thirdparty/`."
-    },
-
-    // --- Firewall ---
-    {
-      title: "Step 6: Set Firewall Rules",
-      img: "DebianEditFirewall.png",
-      alt: "Firewall JSON Structure",
-      text: "Define firewall settings in a separate file (e.g. `LaptopFW.json`) using `SinglePorts`, `PortRanges`, and `Applications` keys"
-    },
-    {
-      title: "Firewall Rules Flowchart",
-      img: "DebianFirewallFlow.png",
-      alt: "Firewall Configuration Logic",
-      text: "`DebianSetFirewall.py` resets and enables UFW, then applies rules from the model config. It supports IP-based rules, app profiles, and port ranges. Logs go to `logs/fw/`."
-    },
-
-    // --- Services ---
-    {
-      title: "Step 7: Add Systemd Services",
-      img: "DebianEditServices.png",
-      alt: "Service Configuration JSON",
-      text: "Create a `Services` JSON file with systemd unit and script paths. It can also define logrotate configs"
-    },
-    {
-      title: "Service Deployment Flowchart",
-      img: "DebianServicesFlow.png",
-      alt: "Custom Service Setup Logic",
-      text: "`DebianServices.py` installs systemd services, copies scripts, applies optional logrotate configs, and enables the service. Logs go to `logs/services/`."
-    },
-    // --- RDP ---
-    {
-      title: "DebianRDP Bash Installer",
-      img: "DebianRDPFlow.png",
-      alt: "XRDP and XFCE Setup Flow",
-      text: "The Bash script `DebianRDP.bash` installs and configures XRDP with XFCE for remote desktop access. It also lets you create new sudo users or cleanly remove XRDP."
-    }
-  ]
+              This single flow covers <code>Packages</code>, <code>DEB</code>, <code>Flatpak</code>, <code>ThirdParty</code>,
+              <code>Firewall</code>, <code>Services</code>, <code>Archive</code>, and any future utilities you add.
+            `
+          
+      }
+   ]
 };

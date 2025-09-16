@@ -1,34 +1,49 @@
 graph TD
 
-  subgraph Main + Selector [Main Script & Model Selector]
-    MainScripts[Main Scripts]
-    AppConfig[AppConfig]
+  subgraph Loader [Debian Loader]
+    DebianLoader[DebianLoader.py]
   end
 
-  subgraph Device Models [Device Models]
-    Desktop[Desktop]
-    MediaCentre[MediaCentre]
-    Laptop[Laptop]
+  subgraph Constants Files [Constants Modules]
+    PackagesConstants[PackageConstants]
+    DebConstants[DebConstants]
+    FlatpakConstants[FlatpakConstants]
   end
 
-  subgraph Config Files [Configuration Files]
-    DesktopJSON[Desktop.json]
-    MediaCentreJSON[MediaCentre.json]
-    LaptopJSON[Laptop.json]
+  subgraph Model Configs [Per-Model Config Files]
+    PackagesLaptopJSON[LaptopPackages.json]
+    PackagesDesktopJSON[DesktopPackages.json]
+    PackagesMediaCentreJSON[MediaCentrePackages.json]
+    DebLaptopJSON[LaptopDEB.json]
+    DebDesktopJSON[DesktopDEB.json]
+    DebMediaCentreJSON[MediaCentreDEB.json]
+    FlatpakLaptopJSON[LaptopFlatpak.json]
+    FlatpakDesktopJSON[DesktopFlatpak.json]
+    FlatpakMediaCentreJSON[MediaCentreFlatpak.json]
   end
 
-  MainScripts --> AppConfig
-  AppConfig --> Desktop
-  AppConfig --> MediaCentre
-  AppConfig --> Laptop
-  Desktop --> DesktopJSON
-  MediaCentre --> MediaCentreJSON
-  Laptop --> LaptopJSON
-  class MainScripts primary
-  class AppConfig primary
-  class Desktop secondary
-  class MediaCentre secondary
-  class Laptop secondary
-  class DesktopJSON tertiary
-  class MediaCentreJSON tertiary
-  class LaptopJSON tertiary
+  DebianLoader --> PackagesConstants
+  DebianLoader --> DebConstants
+  DebianLoader --> FlatpakConstants
+  PackagesConstants --> PackagesLaptopJSON
+  PackagesConstants --> PackagesDesktopJSON
+  PackagesConstants --> PackagesMediaCentreJSON
+  DebConstants --> DebLaptopJSON
+  DebConstants --> DebDesktopJSON
+  DebConstants --> DebMediaCentreJSON
+  FlatpakConstants --> FlatpakLaptopJSON
+  FlatpakConstants --> FlatpakDesktopJSON
+  FlatpakConstants --> FlatpakMediaCentreJSON
+  class DebianLoader primary
+  class PackagesConstants secondary
+  class DebConstants secondary
+  class FlatpakConstants secondary
+  class PackagesLaptopJSON tertiary
+  class PackagesDesktopJSON tertiary
+  class PackagesMediaCentreJSON tertiary
+  class DebLaptopJSON tertiary
+  class DebDesktopJSON tertiary
+  class DebMediaCentreJSON tertiary
+  class FlatpakLaptopJSON tertiary
+  class FlatpakDesktopJSON tertiary
+  class FlatpakMediaCentreJSON tertiary

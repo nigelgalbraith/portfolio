@@ -1,0 +1,21 @@
+{
+  "nodes": {
+    "ImportConstants": { "label": "Import constants module" },
+    "ReadKeys": { "label": "Read config keys" },
+    "ValidateConfig": { "label": "Validate config" },
+    "DetermineStatus": { "label": "Check status" },
+    "ChooseAction": { "label": "Select action" },
+    "BuildPipeline": { "label": "Build pipeline" },
+    "RunPipeline": { "label": "Run pipeline" },
+    "LoggingPolicy": { "label": "Apply logging" }
+  },
+  "connections": [
+    ["ImportConstants", "ReadKeys"],
+    ["ReadKeys", "ValidateConfig"],
+    ["ValidateConfig", "DetermineStatus"],
+    ["DetermineStatus", "ChooseAction"],
+    ["ChooseAction", "BuildPipeline"],
+    ["BuildPipeline", "RunPipeline"],
+    ["RunPipeline", "LoggingPolicy"]
+  ]
+}

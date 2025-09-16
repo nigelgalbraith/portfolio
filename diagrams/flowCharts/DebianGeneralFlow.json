@@ -1,0 +1,15 @@
+{
+  "nodes": {
+    "DetectResolve": { "label": "Detect model & paths" },
+    "ValidateJSON": { "label": "Validate config" },
+    "BuildStatusPlan": { "label": "Build plan" },
+    "ConfirmPlan": { "label": "Confirm plan" },
+    "ExecuteLog": { "label": "Execute & log" }
+  },
+  "connections": [
+    ["DetectResolve", "ValidateJSON"],
+    ["ValidateJSON", "BuildStatusPlan"],
+    ["BuildStatusPlan", "ConfirmPlan"],
+    ["ConfirmPlan", "ExecuteLog"]
+  ]
+}
