@@ -667,7 +667,8 @@ footer {
  font-size: 0.875rem;
 }
 
-.step-text ul {
+.step-text ul, 
+.step-text ol {
   list-style: none;
   padding-left: 0;
   margin: 0;
