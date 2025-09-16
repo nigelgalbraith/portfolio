@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Use external JSON data
   const projects = PROJECT_LIST_DATA;
 
+  // Sort alphabetically by title
   projects.sort((a, b) => a.title.localeCompare(b.title));
 
   projects.forEach((project) => {
@@ -13,9 +14,9 @@ document.addEventListener("DOMContentLoaded", () => {
       <a class="grouped-list-item-button-link" href="${project.href}">
         <div class="grouped-list-item-button">
           <img alt="${project.alt}" src="${project.img}" />
-          <div class="grouped-list-item-button-text">
+          <div class="grouped-list-item-button-text step-text">
             <h2>${project.title}</h2>
-            <p>${project.description}</p>
+            ${project.description} <!-- keep raw UL/LI HTML -->
           </div>
         </div>
       </a>
@@ -23,3 +24,4 @@ document.addEventListener("DOMContentLoaded", () => {
     projectListContainer.insertAdjacentHTML("beforeend", template);
   });
 });
+

@@ -48,10 +48,15 @@ function loadProjectSteps(containerSelector, steps) {
       contentElement.textContent = text;
     }
 
+    // Wrap the text block inside a step-text container
+    const textWrapper = document.createElement("div");
+    textWrapper.className = "step-text";
+    textWrapper.appendChild(contentElement);
+
     // Assemble all parts and append to the main container
     box.appendChild(h2);
     box.appendChild(wrapper);
-    box.appendChild(contentElement);
+    box.appendChild(textWrapper);
     container.appendChild(box);
 
     // Optional line break between steps for spacing

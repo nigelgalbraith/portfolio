@@ -48,6 +48,7 @@ h1 {
     margin-bottom: 1rem;
 }
 
+
 /* =======================
    Layout & Containers
 ======================= */
@@ -139,6 +140,17 @@ h1 {
   max-width: 90%;
   height: auto;
   padding: 0.5rem;
+}
+
+.grouped-list-item-button-text h2 {
+  text-align: center;
+}
+
+.step-text {
+  margin-left: auto;
+  margin-right: auto;  
+  text-align: left;  
+  max-width: 90%;      
 }
 
 .step-separator {
@@ -653,6 +665,16 @@ nav a {
 
 footer {
  font-size: 0.875rem;
+}
+
+.step-text ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+.step-text li {
+  display: block;
+  margin: 0 0 1rem 0; 
 }
 
 /* containers */
