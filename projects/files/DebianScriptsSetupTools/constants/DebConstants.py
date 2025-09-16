@@ -103,17 +103,6 @@ ACTIONS: Dict[str, Dict[str, Any]] = {
         "execute_state": "UNINSTALL",
         "post_state": "CONFIG_LOADING",
     },
-    "Start Plex service": {
-        "verb": "start",
-        "filter_status": False,
-        "label": "STARTED",
-        "prompt": "Start Plex Media Server now? [y/n]: ",
-        "filter_jobs": ["plexmediaserver"],  
-        "skip_sub_select": True,              
-        "skip_prepare_plan": True,           
-        "execute_state": "START_PLEX",
-        "post_state": "CONFIG_LOADING",
-    },
     "Cancel": {
         "verb": None,
         "filter_status": None,
@@ -174,18 +163,6 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
         },
         "label": UNINSTALLED_LABEL,
         "success_key": "uninstalled",
-        "post_state": "CONFIG_LOADING",
-    },
-
-    "START_PLEX": {
-        "pipeline": {
-            start_service_standard: {
-                "args": [lambda j, m, c: "plexmediaserver"],
-                "result": "started",
-            },
-        },
-        "label": "STARTED",
-        "success_key": "started",
         "post_state": "CONFIG_LOADING",
     },
 }

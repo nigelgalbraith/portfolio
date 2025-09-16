@@ -7,7 +7,16 @@ from typing import Dict, Any, Optional
 import os
 import getpass
 
-def format_status_summary(status_dict: Dict[str, Any], label: str = "Item", count_keys: Optional[list] = None, labels: Optional[Dict[Any, str]] = None) -> str:
+# ===== CONSTANTS =====
+MAX_COL_WIDTH = 20
+
+
+def format_status_summary(
+    status_dict: Dict[str, Any],
+    label: str = "Item",
+    count_keys: Optional[list] = None,
+    labels: Optional[Dict[Any, str]] = None,
+) -> str:
     """Return a formatted summary of statuses in a dictionary."""
     labels = labels or {True: "INSTALLED", False: "NOT INSTALLED"}
     max_item_len = max([len(label)] + [len(str(item)) for item in status_dict.keys()])
@@ -32,44 +41,102 @@ def format_status_summary(status_dict: Dict[str, Any], label: str = "Item", coun
     return "\n".join(lines)
 
 
+def dict_to_lines(d: dict) -> list[str]:
+    """Expand a dict as 'key' then its value(s) on new lines below."""
+    lines: list[str] = []
+    for k, v in d.items():
+        lines.append(str(k))
+        if isinstance(v, dict):
+            for sk, sv in v.items():
+                lines.append(f"  {sk}: {sv}")
+        elif isinstance(v, list):
+            lines.extend(f"  - {x}" for x in v)
+        else:
+            lines.append(f"  {v}")
+    return lines
+
+
+def format_value_lines(val):
+    """Return list of lines for a cell value, handling lists and dicts."""
+    if isinstance(val, dict):
+        return dict_to_lines(val)
+    if isinstance(val, list):
+        out = []
+        for v in val:
+            if isinstance(v, dict):
+                out.extend(dict_to_lines(v))
+            else:
+                out.append(str(v))
+        return out
+    return [str(val)]
+
+
+def value_display_len(v):
+    """Return display length for a value."""
+    if isinstance(v, dict):
+        return max((len(line) for line in dict_to_lines(v)), default=0)
+    if isinstance(v, list):
+        max_len = 0
+        for x in v:
+            if isinstance(x, dict):
+                max_len = max(max_len, *(len(l) for l in dict_to_lines(x)))
+            else:
+                max_len = max(max_len, len(str(x)))
+        return max_len
+    return len(str(v))
+
+
+def compute_col_widths(items, field_names, pad=2):
+    """Compute column widths with padding, capped at MAX_COL_WIDTH."""
+    widths = []
+    for field in field_names:
+        max_len = max(
+            value_display_len(item.get(field, "")) for item in items
+        ) if items else 0
+        width = max(len(field), max_len) + pad
+        widths.append(min(width, MAX_COL_WIDTH))
+    return widths
+
+
+def truncate_to_width(s, width):
+    """Truncate string to width with ellipsis if needed."""
+    s = str(s)
+    if len(s) > width:
+        return s[: max(0, width - 3)] + "..."
+    return s
+
+
+def build_header(label, field_names, col_widths):
+    """Build header and separator lines."""
+    print(f"\n{label.upper()}:")
+    print(
+        "  " + "  ".join(f"{name:<{col_widths[i]}}" for i, name in enumerate(field_names))
+    )
+    print("  " + "  ".join("-" * w for w in col_widths))
+
+
 def print_dict_table(items, field_names, label):
     """Print a table for a list of dicts with dynamic column widths."""
     if not items:
         print(f"\n{label.upper()}: (None)")
         return
-    def value_display_len(v):
-        if isinstance(v, list):
-            return max((len(str(x)) for x in v), default=0)
-        return len(str(v))
-    col_widths = []
-    for field in field_names:
-        max_len = max(value_display_len(item.get(field, "")) for item in items)
-        col_widths.append(max(len(field), max_len) + 2)
-    print(f"\n{label.upper()}:")
-    print("  " + "  ".join(f"{field:<{col_widths[i]}}" for i, field in enumerate(field_names)))
-    print("  " + "  ".join("-" * col_widths[i] for i in range(len(field_names))))
+    col_widths = compute_col_widths(items, field_names)
+    build_header(label, field_names, col_widths)
     for item in items:
-        columns = []
+        blocks = []
         for i, field in enumerate(field_names):
-            val = item.get(field, "")
-            if isinstance(val, list):
-                lines = [str(v) for v in val]
-            else:
-                lines = [str(val)]
-            wrapped = []
-            for line in lines:
-                if len(line) > col_widths[i]:
-                    line = line[: col_widths[i] - 3] + "..."
-                wrapped.append(f"{line:<{col_widths[i]}}")
-            columns.append(wrapped)
-        max_lines = max(len(col) for col in columns)
+            raw_lines = format_value_lines(item.get(field, ""))
+            cell_lines = [
+                f"{truncate_to_width(line, col_widths[i]):<{col_widths[i]}}"
+                for line in raw_lines
+            ]
+            blocks.append(cell_lines)
+        max_lines = max(len(b) for b in blocks)
         for j in range(max_lines):
-            row_parts = []
-            for i, col in enumerate(columns):
-                if j < len(col):
-                    row_parts.append(col[j])
-                else:
-                    row_parts.append(" " * col_widths[i])
+            row_parts = [
+                blocks[i][j] if j < len(blocks[i]) else " " * col_widths[i]
+                for i in range(len(field_names))
+            ]
             print("  " + "  ".join(row_parts))
 
 
@@ -94,19 +161,31 @@ def select_from_list(title: str, options: list[str]) -> str | None:
     return options[idx - 1] if 1 <= idx <= len(options) else None
 
 
-def pick_constants_interactively(choices: dict[str, tuple[str, Optional[int]]]) -> str:
+def pick_constants_interactively(
+    choices: dict[str, tuple[str, Optional[int]]]
+) -> str:
     """Show a simple menu to choose constants module, filtered by allowed UID."""
     current_uid = os.geteuid()
     current_user = getpass.getuser()
-    allowed = {label: mod for label, (mod, uid) in choices.items() if uid is None or uid == current_uid}
-    disallowed = {label: (mod, uid) for label, (mod, uid) in choices.items() if uid is not None and uid != current_uid}
+    allowed = {
+        label: mod
+        for label, (mod, uid) in choices.items()
+        if uid is None or uid == current_uid
+    }
+    disallowed = {
+        label: (mod, uid)
+        for label, (mod, uid) in choices.items()
+        if uid is not None and uid != current_uid
+    }
     if disallowed:
         print("\n--- Programs not available for this user ---")
         for label, (_, uid) in disallowed.items():
             print(f"  [{'root only' if uid == 0 else f'uid {uid} only'}] {label}")
         print("-------------------------------------------\n")
     if not allowed:
-        raise SystemExit(f"[FATAL] No utilities available for user '{current_user}' (uid {current_uid})")
+        raise SystemExit(
+            f"[FATAL] No utilities available for user '{current_user}' (uid {current_uid})"
+        )
     options = list(allowed.keys()) + ["Exit"]
     print("\nChoose a utility")
     for i, opt in enumerate(options, 1):
@@ -120,7 +199,12 @@ def pick_constants_interactively(choices: dict[str, tuple[str, Optional[int]]]) 
     return allowed[selection]
 
 
-def confirm(prompt: str = "Proceed? [y/n]: ", *, valid_yes: tuple[str, ...] = ("y", "yes"), valid_no: tuple[str, ...] = ("n", "no")) -> bool:
+def confirm(
+    prompt: str = "Proceed? [y/n]: ",
+    *,
+    valid_yes: tuple[str, ...] = ("y", "yes"),
+    valid_no: tuple[str, ...] = ("n", "no"),
+) -> bool:
     """Prompt user for a yes/no answer until valid input is provided."""
     yes = tuple(s.lower() for s in valid_yes)
     no = tuple(s.lower() for s in valid_no)
@@ -130,4 +214,6 @@ def confirm(prompt: str = "Proceed? [y/n]: ", *, valid_yes: tuple[str, ...] = ("
             return True
         if resp in no:
             return False
-        print(f"Invalid input. Please enter one of: {', '.join(valid_yes + valid_no)}.")
+        print(
+            f"Invalid input. Please enter one of: {', '.join(valid_yes + valid_no)}."
+        )

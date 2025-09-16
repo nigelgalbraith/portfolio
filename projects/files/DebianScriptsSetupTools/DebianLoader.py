@@ -10,7 +10,7 @@ from typing import Callable, Dict, List, Optional, Any
 
 from modules.logger_utils import setup_logging, log_and_print, rotate_logs
 from modules.system_utils import check_account, get_model
-from modules.json_utils import load_json, resolve_value
+from modules.json_utils import load_json, resolve_value, validate_required_fields, validate_secondary_subkey
 from modules.package_utils import (
     check_package,
     ensure_dependencies_installed,
@@ -224,14 +224,9 @@ class StateMachine:
 
     def detect_model(self, detection_config: Dict, required_user: str) -> None:
         """Detect system model, resolve config path, and load JSON data."""
-        for k in ("primary_config","jobs_key","default_config","config_type","config_example","default_config_note"):
-            if k not in detection_config:
-                self.finalize_msg = f"Missing DETECTION_CONFIG['{k}']."
-                self.state = State.FINALIZE
-                return
         model = get_model()
         self.detected_model = model
-        log_and_print(f"Detected model: {model}")
+        log_and_print(f"\nDetected model: {model}")
         primary_cfg = load_json(detection_config["primary_config"])
         pk = detection_config["jobs_key"]
         dk = detection_config["default_config"]
@@ -266,11 +261,19 @@ class StateMachine:
             log_and_print(json.dumps(detection_config["config_example"], indent=2))
             self.state = State.FINALIZE
             return
-        log_and_print("=== RUN CONTEXT ===")
-        log_and_print(f"User: {required_user}")
-        log_and_print(f"Model (detected→effective): {self.detected_model} → {self.model}")
-        log_and_print(f"Config: {self.resolved_config_path}")
-        log_and_print("===================")
+        ctx = {
+            "User": required_user,
+            "Detected model": self.detected_model,
+            "Effective model": self.model,
+            "Config file": self.resolved_config_path,
+            "Config type": detection_config["config_type"].upper(),
+            "Used default?": used_default,
+        }
+        print_dict_table(
+            [ctx],                  
+            field_names=list(ctx.keys()),
+            label="Run Context"
+        )
         self.job_data = loaded
         self.state = State.JSON_TOPLEVEL_CHECK
 
@@ -278,37 +281,53 @@ class StateMachine:
     def validate_json_toplevel(self, example_config: Dict) -> None:
         """Validate that top-level config is a JSON object."""
         data = self.job_data
-        if not isinstance(data, dict):
+        ok = isinstance(data, dict)
+        results = {"Top-level JSON structure (object)": ok}
+        summary = format_status_summary(
+            results,
+            label="Validation",
+            labels={True: "Correct", False: "Incorrect"}
+        )
+        log_and_print(summary)
+        if not ok:
             self.finalize_msg = "Invalid config: top-level must be a JSON object."
-            log_and_print(self.finalize_msg)
             log_and_print("Example structure:")
             log_and_print(json.dumps(example_config, indent=2))
             self.state = State.FINALIZE
             return
-        log_and_print("Top-level JSON structure successfully validated (object).")
         self.state = State.JSON_MODEL_SECTION_CHECK
 
 
-    def validate_json_model_section(self, example_config: Dict) -> None:
-        """Validate that the model section is a JSON object."""
-        data = self.job_data
+    def validate_json_model_jobkey_section(self, example_config: Dict, jobs_key: str) -> None:
+        """Validate that the model section and its Jobs key are JSON objects."""
         model = self.model
-        entry = data.get(model)
-        if not isinstance(entry, dict):
+        entry = self.job_data.get(model)
+        ok_model = isinstance(entry, dict)
+        jobs = entry.get(jobs_key) if ok_model else None
+        ok_jobs = isinstance(jobs, dict)
+        results = {
+            f"Model section '{model}' (object)": ok_model,
+            f"'{jobs_key}' section (object)": ok_jobs,
+        }
+        summary = format_status_summary(
+            results,
+            label="Validation",
+            labels={True: "Correct", False: "Incorrect"}
+        )
+        log_and_print(summary)
+        if not all(results.values()):
             self.finalize_msg = (
-                f"Invalid config: expected a JSON object for model '{model}', but found "
-                f"{type(entry).__name__ if entry is not None else 'nothing'}."
+                f"Invalid config: expected a JSON object for model '{model}' "
+                f"with a '{jobs_key}' object inside."
             )
-            log_and_print(self.finalize_msg)
             log_and_print("Example structure (showing correct model section):")
             log_and_print(json.dumps(example_config, indent=2))
             self.state = State.FINALIZE
             return
-        log_and_print(f"Model section '{model}' successfully validated (object).")
         self.state = State.JSON_REQUIRED_KEYS_CHECK
 
 
-    def validate_json_required_keys(self, validation_config: Dict, section_key: str, object_type: type = dict) -> None:
+    def validate_json_required_keys(self, example_config: Dict, validation_config: Dict, section_key: str, object_type: type = dict) -> None:
         """Validate required sections and enforce per-job required fields."""
         model = self.model
         entry = self.job_data.get(model, {})
@@ -320,40 +339,30 @@ class StateMachine:
             log_and_print(json.dumps(validation_config["example_config"], indent=2))
             self.state = State.FINALIZE
             return
-        bad: List[tuple] = []
-        for name, meta in jobs.items():
-            if not isinstance(meta, dict):
-                bad.append((name, "<job-meta>", "not an object"))
-                continue
-            for key, expected_type in validation_config["required_job_fields"].items():
-                types = expected_type if isinstance(expected_type, tuple) else (expected_type,)
-                if key not in meta or not isinstance(meta[key], types):
-                    tname = type(meta.get(key)).__name__ if key in meta else "missing"
-                    bad.append((name, key, tname))
-        if bad:
-            self.finalize_msg = f"Invalid config: {len(bad)} job(s) missing/invalid required fields."
-            log_and_print(self.finalize_msg)
-            for j, k, t in bad[:50]:
-                log_and_print(f"  - {j}: {k} invalid (got {t})")
-            if len(bad) > 50:
-                log_and_print(f"  ... and {len(bad) - 50} more")
+        results = validate_required_fields(jobs, validation_config["required_job_fields"])
+        decorated = {}
+        for field, expected in validation_config["required_job_fields"].items():
+            types = expected if isinstance(expected, tuple) else (expected,)
+            expected_str = " or ".join(t.__name__ for t in types)
+            decorated[f"{field} ({expected_str})"] = results.get(field, False)
+        summary = format_status_summary(
+            decorated,
+            label="Job Keys",
+            labels={True: "Correct", False: "Incorrect"}
+        )
+        log_and_print(summary)
+        if not all(results.values()):
+            self.finalize_msg = "Invalid config: some required fields are missing/invalid."
             log_and_print("Example structure:")
-            log_and_print(json.dumps(validation_config["example_config"], indent=2))
+            log_and_print(json.dumps(example_config, indent=2))
             self.state = State.FINALIZE
             return
-        log_and_print(f"\nJob Keys for model '{model}' successfully validated.")
-        log_and_print("\n  Keys Validated")
-        log_and_print("  ---------------")
-        for key, expected_type in validation_config["required_job_fields"].items():
-            types = expected_type if isinstance(expected_type, tuple) else (expected_type,)
-            tname = " or ".join(t.__name__ for t in types)
-            log_and_print(f"  - {key} ({tname})")
         self.state = State.SECONDARY_VALIDATION
 
 
-    def validate_secondary_keys(self, secondary_validation: Dict, section_key: str) -> None:
+    def validate_secondary_keys(self, example_config: Dict, secondary_validation: Dict, section_key: str) -> None:
         """Validate nested arrays/objects inside each job (e.g., SinglePorts / PortRanges)."""
-        if not secondary_validation or not isinstance(secondary_validation, dict):
+        if not isinstance(secondary_validation, dict) or not secondary_validation:
             self.state = State.CONFIG_LOADING
             return
         model = self.model
@@ -362,61 +371,30 @@ class StateMachine:
             self.finalize_msg = f"Invalid config: '{model}/{section_key}' must be a JSON object."
             self.state = State.FINALIZE
             return
-        example_cfg = secondary_validation.get("config_example")
-        errors: List[str] = []
-        for subkey, rules in secondary_validation.items():
-            if subkey == "config_example":
-                continue
-            if not isinstance(rules, dict):
-                continue
-            required = rules.get("required_job_fields", {})
-            allow_empty = bool(rules.get("allow_empty", False))
-            for job_name, meta in jobs_block.items():
-                if not isinstance(meta, dict):
-                    errors.append(f"- {job_name}: job meta not an object for secondary validation.")
-                    continue
-                items = meta.get(subkey, [])
-                if not isinstance(items, list):
-                    errors.append(f"- {job_name}.{subkey}: expected a list, got {type(items).__name__}")
-                    continue
-                if not items and not allow_empty:
-                    errors.append(f"- {job_name}.{subkey}: list is empty but allow_empty=False")
-                if not isinstance(required, dict) or not required:
-                    continue
-                for idx, itm in enumerate(items):
-                    if not isinstance(itm, dict):
-                        errors.append(f"- {job_name}.{subkey}[{idx}]: expected object, got {type(itm).__name__}")
-                        continue
-                    for field, expected_type in required.items():
-                        types_tuple = expected_type if isinstance(expected_type, tuple) else (expected_type,)
-                        if field not in itm or not isinstance(itm[field], types_tuple):
-                            got_t = type(itm.get(field)).__name__ if field in itm else "missing"
-                            exp_t = " or ".join(t.__name__ for t in types_tuple)
-                            errors.append(f"- {job_name}.{subkey}[{idx}].{field}: expected {exp_t}, got {got_t}")
-        if errors:
-            self.finalize_msg = (
-                "Secondary validation failed:\n" + "\n".join(errors) +
-                ("\n\nExample structure:\n" + json.dumps(example_cfg, indent=2) if example_cfg else "")
-            )
-            log_and_print(self.finalize_msg)
-            self.state = State.FINALIZE
-            return
-        log_and_print(f"\nJob Sub Keys for model '{model}' successfully validated.")
-        log_and_print("\n  Secondary Keys Validated")
-        log_and_print("  ------------------------")
+        results_map: Dict[str, bool] = {}
         for subkey, rules in secondary_validation.items():
             if subkey == "config_example" or not isinstance(rules, dict):
                 continue
-            allow_empty = bool(rules.get("allow_empty", False))
             required = rules.get("required_job_fields", {}) or {}
-            log_and_print(f"  - {subkey} (list, allow_empty={allow_empty})")
-            if required:
-                for field, expected_type in required.items():
-                    types = expected_type if isinstance(expected_type, tuple) else (expected_type,)
-                    tname = " or ".join(t.__name__ for t in types)
-                    log_and_print(f"      • {field} ({tname})")
-            else:
-                log_and_print("      • <no required fields>")
+            field_results = validate_secondary_subkey(jobs_block, subkey, rules)
+            for fname, ok in field_results.items():
+                types = required[fname] if isinstance(required[fname], tuple) else (required[fname],)
+                expected_str = " or ".join(t.__name__ for t in types)
+                decorated_name = f"{subkey}.{fname} ({expected_str})"
+                results_map[decorated_name] = ok
+        summary = format_status_summary(
+            results_map,
+            label="Secondary Keys",
+            labels={True: "Correct", False: "Incorrect"}
+        )
+        log_and_print(summary)
+        if not all(results_map.values()):
+            self.finalize_msg = "Secondary validation failed."
+            log_and_print("Example structure:")
+            log_and_print(json.dumps(example_config, indent=2))
+            self.state = State.FINALIZE
+            return
+        log_and_print(f"\nJob Sub Keys for model '{model}' successfully validated.")
         self.state = State.CONFIG_LOADING
 
 
@@ -673,9 +651,9 @@ class StateMachine:
             State.DEP_INSTALL:              lambda: self.dep_install(),
             State.MODEL_DETECTION:          lambda: self.detect_model(self.c.DETECTION_CONFIG, self.c.REQUIRED_USER),
             State.JSON_TOPLEVEL_CHECK:      lambda: self.validate_json_toplevel(self.c.VALIDATION_CONFIG["example_config"]),
-            State.JSON_MODEL_SECTION_CHECK: lambda: self.validate_json_model_section(self.c.VALIDATION_CONFIG["example_config"]),
-            State.JSON_REQUIRED_KEYS_CHECK: lambda: self.validate_json_required_keys(self.c.VALIDATION_CONFIG, self.c.JOBS_KEY, dict),
-            State.SECONDARY_VALIDATION:     lambda: self.validate_secondary_keys(self.c.SECONDARY_VALIDATION, self.c.JOBS_KEY),
+            State.JSON_MODEL_SECTION_CHECK: lambda: self.validate_json_model_jobkey_section(self.c.VALIDATION_CONFIG["example_config"], self.c.JOBS_KEY),
+            State.JSON_REQUIRED_KEYS_CHECK: lambda: self.validate_json_required_keys(self.c.VALIDATION_CONFIG["example_config"],self.c.VALIDATION_CONFIG, self.c.JOBS_KEY, dict),
+            State.SECONDARY_VALIDATION:     lambda: self.validate_secondary_keys(self.c.VALIDATION_CONFIG["example_config"],self.c.SECONDARY_VALIDATION, self.c.JOBS_KEY),
             State.CONFIG_LOADING:           lambda: self.load_job_block(self.c.JOBS_KEY),
             State.PACKAGE_STATUS:           lambda: self.build_status_map(self.c.JOBS_KEY, self.c.INSTALLED_LABEL, self.c.UNINSTALLED_LABEL, self.c.STATUS_FN_CONFIG),
             State.BUILD_ACTIONS:            lambda: self.build_actions(self.c.ACTIONS),
