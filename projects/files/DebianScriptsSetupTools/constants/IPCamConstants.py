@@ -71,8 +71,8 @@ CONFIG_EXAMPLE = {
                     'echo "After setup, add Plex DVR and point it to: http://<server-ip>:34400/m3u/xteve.m3u"'
                 ],
                 KEY_CAMERAS: [
-                    {"Name": "Camera 1", "URL": "rtsp://192.168.1.10:554/h264"},
-                    {"Name": "Camera 2", "URL": "rtsp://192.168.1.11:554/h264"},
+                    {"Name": "Camera 1", "URL": "http://192.168.1.10:554/video"},
+                    {"Name": "Camera 2", "URL": "http://192.168.1.11:554/video"},
                 ],
             }
         }
