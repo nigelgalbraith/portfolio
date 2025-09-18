@@ -3,10 +3,12 @@
 
 from __future__ import annotations
 
-import argparse, datetime, json, getpass, pwd, os
+import argparse, datetime, json, getpass, pwd, os, contextlib
 from enum import Enum, auto
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Any
+from io import StringIO
+from contextlib import redirect_stdout
 
 from modules.logger_utils import setup_logging, log_and_print, rotate_logs
 from modules.system_utils import check_account, get_model
@@ -21,6 +23,7 @@ from modules.display_utils import (
     confirm,
     print_dict_table,
     pick_constants_interactively,
+    wrap_in_box,
 )
 
 from modules.state_machine_utils import (
@@ -188,14 +191,17 @@ class StateMachine:
     def dep_check(self, deps: List[str]) -> None:
         """Check dependencies and collect missing ones."""
         self.deps_install_list = []
+        out = []
         for dep in deps:
             if check_package(dep):
-                log_and_print(f"[OK]    {dep} is installed.")
+                out.append(f"[OK]    {dep} is installed.")
             else:
-                log_and_print(f"[MISS]  {dep} is missing.")
+                out.append(f"[MISS]  {dep} is missing.")
                 self.deps_install_list.append(dep)
+        if self.deps_install_list or out:
+            log_and_print("\n  ==> Running Dependency Check")
+            log_and_print(wrap_in_box(out, title="Dependency Check", indent=2, pad=1))
         if self.deps_install_list:
-            log_and_print("Missing deps: " + ", ".join(self.deps_install_list))
             self.state = State.DEP_INSTALL
         else:
             self.state = State.MODEL_DETECTION
@@ -206,19 +212,24 @@ class StateMachine:
         if not self.deps_install_list:
             self.state = State.MODEL_DETECTION
             return
-        log_and_print(f"[INSTALL] Attempting batch install: {', '.join(self.deps_install_list)}")
+        out = [f"[INSTALL] Attempting batch install: {', '.join(self.deps_install_list)}"]
         ok = ensure_dependencies_installed(self.deps_install_list)
         if not ok:
-            log_and_print("[WARN] Batch installer returned False; verifying individually.")
+            out.append("[WARN] Batch installer returned False; verifying individually.")
         for dep in list(self.deps_install_list):
             if check_package(dep):
-                log_and_print(f"[DONE]   Installed: {dep}")
+                out.append(f"[DONE]   Installed: {dep}")
             else:
-                log_and_print(f"[FAIL]   Still missing after install: {dep}")
+                out.append(f"[FAIL]   Still missing after install: {dep}")
                 self.finalize_msg = f"{dep} still missing after install."
+                out.append(self.finalize_msg)
+                log_and_print("\n  ==> Running Dependency Check")
+                log_and_print(wrap_in_box(out, title="Dependency Install", indent=2, pad=1))
                 self.state = State.FINALIZE
                 return
         self.deps_install_list = []
+        log_and_print("\n  ==> Running Dependency Check")
+        log_and_print(wrap_in_box(out, title="Dependency Install", indent=2, pad=1))
         self.state = State.MODEL_DETECTION
 
 
@@ -226,11 +237,9 @@ class StateMachine:
         """Detect system model, resolve config path, and load JSON data."""
         model = get_model()
         self.detected_model = model
-        log_and_print(f"\nDetected model: {model}")
         primary_cfg = load_json(detection_config["primary_config"])
         pk = detection_config["jobs_key"]
         dk = detection_config["default_config"]
-        log_and_print(f"Primary config path: {detection_config['primary_config']}")
         resolved_path = resolve_value(primary_cfg, model, pk, default_key=None, check_file=True)
         used_default = False
         if not resolved_path:
@@ -244,21 +253,13 @@ class StateMachine:
             self.state = State.FINALIZE
             return
         self.resolved_config_path = resolved_path
-        log_and_print(f"Using {detection_config['config_type'].upper()} config file: {resolved_path}")
         self.model = dk if used_default else model
-        if used_default:
-            log_and_print(
-                f"Falling back from detected model '{self.detected_model}' to '{dk}'.\n"
-                + detection_config["default_config_note"]
-            )
         loaded = load_json(resolved_path)
         if not isinstance(loaded, dict):
             self.finalize_msg = (
                 f"Loaded {detection_config['config_type']} config is not a JSON object: {resolved_path}"
             )
             log_and_print(self.finalize_msg)
-            log_and_print("Example structure:")
-            log_and_print(json.dumps(detection_config["config_example"], indent=2))
             self.state = State.FINALIZE
             return
         ctx = {
@@ -269,11 +270,21 @@ class StateMachine:
             "Config type": detection_config["config_type"].upper(),
             "Used default?": used_default,
         }
-        print_dict_table(
-            [ctx],                  
-            field_names=list(ctx.keys()),
-            label="Run Context"
-        )
+        out_lines = []
+        out_lines.append(f"Detected model: {model}")
+        out_lines.append(f"Primary config path: {detection_config['primary_config']}")
+        out_lines.append(f"Using {detection_config['config_type'].upper()} config file: {resolved_path}")
+        if used_default:
+            out_lines.append(
+                f"Falling back from detected model '{self.detected_model}' to '{dk}'. "
+                + detection_config["default_config_note"]
+            )
+        buf = StringIO()
+        with contextlib.redirect_stdout(buf):
+            print_dict_table([ctx], field_names=list(ctx.keys()), label="Run Context")
+        out_lines.extend(buf.getvalue().splitlines())
+        log_and_print("\n  ==> Detecting Model")
+        log_and_print(wrap_in_box(out_lines, indent=2, pad=1))
         self.job_data = loaded
         self.state = State.JSON_TOPLEVEL_CHECK
 
@@ -288,13 +299,19 @@ class StateMachine:
             label="Validation",
             labels={True: "Correct", False: "Incorrect"}
         )
-        log_and_print(summary)
+        out_lines = []
+        out_lines.extend(summary.splitlines())
         if not ok:
             self.finalize_msg = "Invalid config: top-level must be a JSON object."
-            log_and_print("Example structure:")
-            log_and_print(json.dumps(example_config, indent=2))
+            out_lines.append(self.finalize_msg)
+            out_lines.append("Example structure:")
+            out_lines.extend(json.dumps(example_config, indent=2).splitlines())
+            log_and_print("\n  ==> Validating Top-level JSON")
+            log_and_print(wrap_in_box(out_lines, indent=2, pad=1))
             self.state = State.FINALIZE
             return
+        log_and_print("\n  ==> Validating Top-level JSON")
+        log_and_print(wrap_in_box(out_lines, indent=2, pad=1))
         self.state = State.JSON_MODEL_SECTION_CHECK
 
 
@@ -309,21 +326,37 @@ class StateMachine:
             f"Model section '{model}' (object)": ok_model,
             f"'{jobs_key}' section (object)": ok_jobs,
         }
+        model_mismatch = self.detected_model != self.model
+        model_missing = isinstance(self.job_data, dict) and model not in self.job_data
+        jobs_missing = ok_model and jobs_key not in entry
         summary = format_status_summary(
             results,
             label="Validation",
             labels={True: "Correct", False: "Incorrect"}
         )
-        log_and_print(summary)
+        out_lines = summary.splitlines()
+        if model_mismatch:
+            out_lines.append(f"[WARN] Detected model '{self.detected_model}' does not match effective model '{self.model}'")
+        if model_missing:
+            out_lines.append(f"[WARN] Config does not contain a '{model}' section")
+        if ok_model and jobs_missing:
+            out_lines.append(f"[WARN] Model '{model}' does not contain a '{jobs_key}' section")
         if not all(results.values()):
             self.finalize_msg = (
                 f"Invalid config: expected a JSON object for model '{model}' "
                 f"with a '{jobs_key}' object inside."
             )
-            log_and_print("Example structure (showing correct model section):")
-            log_and_print(json.dumps(example_config, indent=2))
+            out_lines.append(self.finalize_msg)
+            out_lines.append("Example structure (showing correct model section):")
+            out_lines.extend(json.dumps(example_config, indent=2).splitlines())
+            log_and_print(f"\n  ==> Validating Model Section '{model}'")
+            log_and_print(f"  ==> Validating Job key Section '{jobs_key}'")
+            log_and_print(wrap_in_box(out_lines, indent=2, pad=1))
             self.state = State.FINALIZE
             return
+        log_and_print(f"\n  ==> Validating Model Section '{model}'")
+        log_and_print(f"  ==> Validating Job key Section '{jobs_key}'")
+        log_and_print(wrap_in_box(out_lines, indent=2, pad=1))
         self.state = State.JSON_REQUIRED_KEYS_CHECK
 
 
@@ -333,30 +366,42 @@ class StateMachine:
         entry = self.job_data.get(model, {})
         jobs = entry.get(section_key, {})
         if not isinstance(jobs, dict) or not jobs:
+            out_lines = []
             self.finalize_msg = f"Invalid config: '{model}/{section_key}' must be a non-empty object."
-            log_and_print(self.finalize_msg)
-            log_and_print("Example structure:")
-            log_and_print(json.dumps(validation_config["example_config"], indent=2))
+            out_lines.append(self.finalize_msg)
+            out_lines.append("Example structure:")
+            out_lines.extend(json.dumps(validation_config["example_config"], indent=2).splitlines())
+            log_and_print("\n  ==> Checking Required Job Keys")
+            log_and_print(wrap_in_box(out_lines, indent=2, pad=1))
             self.state = State.FINALIZE
             return
-        results = validate_required_fields(jobs, validation_config["required_job_fields"])
+        required_fields = validation_config.get("required_job_fields", {})
+        if not required_fields:
+            self.state = State.SECONDARY_VALIDATION
+            return
+        results = validate_required_fields(jobs, required_fields)
         decorated = {}
-        for field, expected in validation_config["required_job_fields"].items():
+        for field, expected in required_fields.items():
             types = expected if isinstance(expected, tuple) else (expected,)
             expected_str = " or ".join(t.__name__ for t in types)
             decorated[f"{field} ({expected_str})"] = results.get(field, False)
-        summary = format_status_summary(
-            decorated,
-            label="Job Keys",
-            labels={True: "Correct", False: "Incorrect"}
-        )
-        log_and_print(summary)
+        if not decorated:
+            self.state = State.SECONDARY_VALIDATION
+            return
+        summary = format_status_summary(decorated, label="Job Keys", labels={True: "Correct", False: "Incorrect"})
+        out_lines = []
+        out_lines.extend(summary.splitlines())
         if not all(results.values()):
             self.finalize_msg = "Invalid config: some required fields are missing/invalid."
-            log_and_print("Example structure:")
-            log_and_print(json.dumps(example_config, indent=2))
+            out_lines.append(self.finalize_msg)
+            out_lines.append("Example structure:")
+            out_lines.extend(json.dumps(example_config, indent=2).splitlines())
+            log_and_print("\n  ==> Checking Required Job Keys")
+            log_and_print(wrap_in_box(out_lines, indent=2, pad=1))
             self.state = State.FINALIZE
             return
+        log_and_print("\n  ==> Checking Required Job Keys")
+        log_and_print(wrap_in_box(out_lines, indent=2, pad=1))
         self.state = State.SECONDARY_VALIDATION
 
 
@@ -369,6 +414,8 @@ class StateMachine:
         jobs_block = self.job_data.get(model, {}).get(section_key, {})
         if not isinstance(jobs_block, dict):
             self.finalize_msg = f"Invalid config: '{model}/{section_key}' must be a JSON object."
+            log_and_print("\n  ==> Checking Secondary Keys")
+            log_and_print(wrap_in_box([self.finalize_msg], indent=2, pad=1))
             self.state = State.FINALIZE
             return
         results_map: Dict[str, bool] = {}
@@ -382,19 +429,21 @@ class StateMachine:
                 expected_str = " or ".join(t.__name__ for t in types)
                 decorated_name = f"{subkey}.{fname} ({expected_str})"
                 results_map[decorated_name] = ok
-        summary = format_status_summary(
-            results_map,
-            label="Secondary Keys",
-            labels={True: "Correct", False: "Incorrect"}
-        )
-        log_and_print(summary)
+        summary = format_status_summary(results_map, label="Secondary Keys", labels={True: "Correct", False: "Incorrect"})
+        out_lines = []
+        out_lines.extend(summary.splitlines())
         if not all(results_map.values()):
             self.finalize_msg = "Secondary validation failed."
-            log_and_print("Example structure:")
-            log_and_print(json.dumps(example_config, indent=2))
+            out_lines.append(self.finalize_msg)
+            out_lines.append("Example structure:")
+            out_lines.extend(json.dumps(example_config, indent=2).splitlines())
+            log_and_print("\n  ==> Checking Secondary Keys")
+            log_and_print(wrap_in_box(out_lines, indent=2, pad=1))
             self.state = State.FINALIZE
             return
-        log_and_print(f"\nJob Sub Keys for model '{model}' successfully validated.")
+        out_lines.append(f"Job Sub Keys for model '{model}' successfully validated.")
+        log_and_print("\n  ==> Checking Secondary Keys")
+        log_and_print(wrap_in_box(out_lines, indent=2, pad=1))
         self.state = State.CONFIG_LOADING
 
 
@@ -427,12 +476,18 @@ class StateMachine:
             count_keys=[installed_label, uninstalled_label],
             labels=labels,
         )
-        log_and_print(summary)
+        out_lines = []
+        out_lines.extend(summary.splitlines())
         self.active_jobs = {}
         if self.status_only:
             self.finalize_msg = "Status-only mode: no changes were made."
+            out_lines.append(self.finalize_msg)
+            log_and_print(f"\n  ==> Computing {summary_label} Status")
+            log_and_print(wrap_in_box(out_lines, indent=2, pad=1))
             self.state = State.FINALIZE
             return
+        log_and_print(f"\n  ==> Computing {summary_label} Status")
+        log_and_print(wrap_in_box(out_lines, indent=2, pad=1))
         self.state = State.BUILD_ACTIONS
 
 
@@ -570,7 +625,13 @@ class StateMachine:
                 if k in meta:
                     row[k] = meta[k]
             rows.append(row)
-        print_dict_table(rows, field_names=columns, label=f"Planned {verb.title()} ({key_label})")
+        buf = StringIO()
+        with redirect_stdout(buf):
+            print_dict_table(rows, field_names=columns, label=f"Planned {verb.title()} ({key_label})")
+        out_lines = buf.getvalue().splitlines()
+        if out_lines and not out_lines[0].strip():
+            out_lines = out_lines[1:]
+        log_and_print(wrap_in_box(out_lines, indent=2, pad=1))
         self.active_jobs = {job: (self.all_jobs.get(job, {}) or {}) for job in jobs}
         self.selected_jobs = []
         if self.plan_only:
@@ -578,6 +639,7 @@ class StateMachine:
             self.state = State.FINALIZE
             return
         self.state = State.CONFIRM
+
 
 
     def confirm_action(self) -> None:

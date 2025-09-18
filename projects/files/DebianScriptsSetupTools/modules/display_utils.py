@@ -11,12 +11,21 @@ import getpass
 MAX_COL_WIDTH = 20
 
 
-def format_status_summary(
-    status_dict: Dict[str, Any],
-    label: str = "Item",
-    count_keys: Optional[list] = None,
-    labels: Optional[Dict[Any, str]] = None,
-) -> str:
+def wrap_in_box(val: Any, title: str | None = None, indent: int = 2, pad: int = 1) -> str:
+    """Return a string with val wrapped in an ASCII box. Indentation and padding configurable."""
+    lines = format_value_lines(val)
+    if title:
+        lines.insert(0, f"[ {title} ]")
+    content_width = max((len(line) for line in lines), default=0)
+    inner_lines = [(" " * pad) + line.ljust(content_width) + (" " * pad) for line in lines]
+    inner_width = len(inner_lines[0]) if inner_lines else (pad * 2)
+    border = "+" + "-" * inner_width + "+"
+    prefix = " " * indent
+    out = [prefix + border] + [f"{prefix}|{l}| " for l in inner_lines] + [prefix + border]
+    return "\n".join(out)
+
+
+def format_status_summary(status_dict: Dict[str, Any], label: str = "Item", count_keys: Optional[list] = None, labels: Optional[Dict[Any, str]] = None) -> str:
     """Return a formatted summary of statuses in a dictionary."""
     labels = labels or {True: "INSTALLED", False: "NOT INSTALLED"}
     max_item_len = max([len(label)] + [len(str(item)) for item in status_dict.keys()])
@@ -161,12 +170,11 @@ def select_from_list(title: str, options: list[str]) -> str | None:
     return options[idx - 1] if 1 <= idx <= len(options) else None
 
 
-def pick_constants_interactively(
-    choices: dict[str, tuple[str, Optional[int]]]
-) -> str:
+def pick_constants_interactively(choices: dict[str, tuple[str, Optional[int]]]) -> str:
     """Show a simple menu to choose constants module, filtered by allowed UID."""
     current_uid = os.geteuid()
     current_user = getpass.getuser()
+
     allowed = {
         label: mod
         for label, (mod, uid) in choices.items()
@@ -178,10 +186,17 @@ def pick_constants_interactively(
         if uid is not None and uid != current_uid
     }
     if disallowed:
-        print("\n--- Programs not available for this user ---")
-        for label, (_, uid) in disallowed.items():
-            print(f"  [{'root only' if uid == 0 else f'uid {uid} only'}] {label}")
-        print("-------------------------------------------\n")
+        disallowed_lines = [
+            f"[{'root only' if uid == 0 else f'uid {uid} only'}] {label}"
+            for label, (_, uid) in disallowed.items()
+        ]
+        print(
+            wrap_in_box(
+                disallowed_lines,
+                title="Programs not available for this user",
+                indent=2,
+            )
+        )
     if not allowed:
         raise SystemExit(
             f"[FATAL] No utilities available for user '{current_user}' (uid {current_uid})"
