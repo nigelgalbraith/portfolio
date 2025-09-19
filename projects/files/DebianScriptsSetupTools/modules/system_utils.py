@@ -9,8 +9,35 @@ import getpass
 import datetime
 import uuid
 import shutil
+import pwd
 from shutil import which
 from pathlib import Path
+from typing import List
+
+
+def create_user(username: str) -> bool:
+    """Create a system user (nologin) if it doesn't already exist. Return True on success/no-op."""
+    if not username or not isinstance(username, str):
+        print("[create_user] No username provided, skipping.")
+        return True 
+    try:
+        pwd.getpwnam(username)
+        print(f"[create_user] User '{username}' already exists.")
+        return True
+    except KeyError:
+        print(f"[create_user] User '{username}' not found, creating...")
+
+    try:
+        subprocess.run(
+            ["useradd", "-r", "-U", "-m", "-s", "/usr/sbin/nologin", username],
+            check=True
+        )
+        print(f"[create_user] User '{username}' created successfully.")
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"[create_user] Failed to create user '{username}': {e}")
+        return False
+
 
 def ensure_user_in_group(user: str, group: str) -> bool:
     """Return True if a user is in a system group."""
@@ -235,3 +262,24 @@ def reload_systemd() -> bool:
     except Exception as e:
         print(f"Unexpected error: {e}")
         return False
+
+
+def fix_permissions(user: str, paths: List[str]) -> bool:
+    """Ensure given directories are owned by the specified user (recursively)."""
+    if not user or not paths:
+        print("[fix_permissions] No user or paths provided, skipping.")
+        return True
+
+    for p in paths:
+        if not p:
+            continue
+        try:
+            subprocess.run(
+                ["chown", "-R", f"{user}:{user}", p],
+                check=True
+            )
+            print(f"[fix_permissions] Set ownership of {p} to {user}:{user}")
+        except subprocess.CalledProcessError as e:
+            print(f"[fix_permissions] Failed to set ownership for {p}: {e}")
+            return False
+    return True

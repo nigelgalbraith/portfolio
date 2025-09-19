@@ -17,7 +17,7 @@ from modules.archive_utils import (
     handle_cleanup,
     run_post_install_commands,
 )
-from modules.system_utils import expand_path
+from modules.system_utils import expand_path, create_user, fix_permissions
 from modules.camera_utils import (
     write_m3u,
     remove_m3u,
@@ -34,7 +34,9 @@ DEFAULT_CONFIG   = "default"
 
 # === JSON KEYS ===
 KEY_SERVICE_URL        = "ServiceURL"
-KEY_PLAYLIST_FILE      = "PlaylistFile"
+KEY_PLAYLIST_FILE      = "PlaylistFile" 
+KEY_USERNAME           = "userName"
+KEY_CAM_DIR            = "CamDir"
 KEY_EPG_FILE           = "EPGFile"
 KEY_RESTART_SERVICE    = "RestartService"
 KEY_SERVICE_TEMPLATE   = "ServiceTemplate"
@@ -54,6 +56,11 @@ CONFIG_EXAMPLE = {
             "xteve": {
                 KEY_SERVICE_URL: "http://127.0.0.1:34400",
                 KEY_PLAYLIST_FILE: "/etc/xteve/cameras.m3u",
+                KEY_USERNAME: "xteve",
+                KEY_CAM_DIR: [  "/etc/xteve",
+                                "/var/lib/xteve",
+                                "/var/log/xteve",
+                                "tmp/xteve"],
                 KEY_EPG_FILE: "/etc/xteve/cameras.xml",
                 KEY_RESTART_SERVICE: True,
                 KEY_SERVICE_TEMPLATE: "Services/IPCam/xteve-template.service",
@@ -64,26 +71,33 @@ CONFIG_EXAMPLE = {
                 KEY_SYMLINK_PATH: "/usr/local/bin/xteve",
                 KEY_TMPDIR: "/tmp/ipcam_downloads",
                 KEY_INSTRUCTIONS: [
-                    'echo "Open http://<server-ip>:34400/web in your browser."',
-                    'echo "For \'M3U Playlist Path\', enter: /etc/xteve/cameras.m3u"',
-                    'echo "For \'XMLTV File\', enter: /etc/xteve/cameras.xml"',
-                    'echo "Complete the setup wizard and save."',
-                    'echo "After setup, add Plex DVR and point it to: http://<server-ip>:34400/m3u/xteve.m3u"'
+                  "echo \"Open http://<server-ip>:34400/web in your browser.\"",
+                  "echo \"For 'M3U Playlist Path', enter: /etc/xteve/cameras.m3u\"",
+                  "echo \"For 'XMLTV File', enter: /etc/xteve/cameras.xml\"",
+                  "echo \"Complete the setup wizard and save.\"",
+                  "echo \"After setup, add Plex or kodi DVR and point it to:",
+                  "echo \"http://<server-ip>:34400/m3u/xteve.m3u\"",
+                  "echo \"Use local or remote locations shown in xteve web interface\""
                 ],
                 KEY_CAMERAS: [
-                    {"Name": "Camera 1", "URL": "http://192.168.1.10:554/video"},
-                    {"Name": "Camera 2", "URL": "http://192.168.1.11:554/video"},
+                    {
+                        "Name": "Camera 1",
+                        "URL": "http://192.168.1.10:554/video",
+                        "Description": "Front entrance – wide angle view"
+                    }
                 ],
             }
         }
     }
 }
 
+
 # === VALIDATION CONFIG ===
 VALIDATION_CONFIG = {
     "required_job_fields": {
         KEY_SERVICE_URL: str,
         KEY_PLAYLIST_FILE: str,
+        KEY_USERNAME: str,
         KEY_EPG_FILE: str,
         KEY_RESTART_SERVICE: bool,
         KEY_SERVICE_TEMPLATE: str,
@@ -105,6 +119,7 @@ SECONDARY_VALIDATION = {
         "required_job_fields": {
             "Name": str,
             "URL": str,
+            "Description": str,
         },
     },
     "config_example": CONFIG_EXAMPLE,
@@ -250,6 +265,16 @@ PIPELINE_STATES = {
                     lambda j, m, c: expand_path(m.get(KEY_EPG_FILE, "")),
                     f"meta.{KEY_CAMERAS}",
                 ],
+                "result": "_",
+            },
+            create_user: {
+                "args": [f"meta.{KEY_USERNAME}"],
+                "when": f"meta.{KEY_USERNAME}",
+                "result": "_",
+            },
+            fix_permissions: {
+                "args": [f"meta.{KEY_USERNAME}", f"meta.{KEY_CAM_DIR}"],
+                "when": f"meta.{KEY_USERNAME} and meta.{KEY_CAM_DIR}",
                 "result": "_",
             },
             create_service: {

@@ -8,15 +8,17 @@ import subprocess
 import os
 
 def write_m3u(cameras, m3u_path: Path) -> bool:
-    """Write an M3U playlist file with camera entries."""
+    """Write an M3U playlist file with camera entries (Name + optional Description)."""
     try:
         lines = ["#EXTM3U"]
         for cam in cameras:
             name = cam.get("Name", "Camera")
+            desc = cam.get("Description", "")
             url  = cam.get("URL", "")
             if not url:
                 continue
-            lines.append(f"#EXTINF:-1,{name}")
+            display = f"{name} - {desc}" if desc else name
+            lines.append(f"#EXTINF:-1,{display}")
             lines.append(url)
         content = "\n".join(lines) + "\n"
         m3u_path = Path(m3u_path)
@@ -25,7 +27,7 @@ def write_m3u(cameras, m3u_path: Path) -> bool:
             m3u_path.write_text(content, encoding="utf-8")
         else:
             if str(m3u_path).startswith("/etc/"):
-                proc = subprocess.run(
+                subprocess.run(
                     ["sudo", "tee", str(m3u_path)],
                     input=content.encode("utf-8"),
                     check=True,
@@ -56,8 +58,8 @@ def remove_m3u(m3u_path: Path) -> bool:
         return False
 
 
-def ensure_dummy_xmltv(path: Path, cameras: list[str]) -> None:
-    """Ensure a dummy XMLTV file exists with channels for each camera."""
+def ensure_dummy_xmltv(path: Path, cameras: list[dict]) -> None:
+    """Ensure a dummy XMLTV file exists with channels for each camera (Name + optional Description)."""
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         if not path.exists():
@@ -66,9 +68,12 @@ def ensure_dummy_xmltv(path: Path, cameras: list[str]) -> None:
             channels = []
             for i, cam in enumerate(cameras, start=1):
                 chan_id = f"cam{i}"
+                name = cam.get("Name", f"Camera {i}")
+                desc = cam.get("Description", "")
+                display = f"{name} - {desc}" if desc else name
                 channels.append(
                     f'  <channel id="{chan_id}">\n'
-                    f'    <display-name>{cam}</display-name>\n'
+                    f'    <display-name>{display}</display-name>\n'
                     f'  </channel>\n'
                 )
             content = header + "".join(channels) + footer

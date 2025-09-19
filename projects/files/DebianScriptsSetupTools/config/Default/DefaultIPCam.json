@@ -5,6 +5,11 @@
         "Service": "xTeVe",
         "ServiceURL": "http://127.0.0.1:34400",
         "PlaylistFile": "/etc/xteve/example1.m3u",
+        "userName": "xteve",
+        "CamDir":[ "/etc/xteve",
+                   "/var/lib/xteve",
+                    "/var/log/xteve",
+                    "tmp/xteve"],
         "EPGFile": "/etc/xteve/example1.xml",
         "RestartService": true,
         "ServiceName": "xteve",
@@ -22,34 +27,14 @@
           "Complete the setup wizard and save."
         ],
         "Cameras": [
-          { "Name": "Example Camera 1", "URL": "rtsp://1.1.1.10:8080/stream.sdp" },
-          { "Name": "Example Camera 2", "URL": "rtsp://1.1.1.20:8080/stream.sdp" }
-        ]
-      },
-      "Example2": {
-        "Service": "TVHeadend",
-        "ServiceURL": "http://127.0.0.1:9981",
-        "PlaylistFile": "/etc/tvheadend/example2.m3u",
-        "EPGFile": "/etc/tvheadend/example2.xml",
-        "RestartService": true,
-        "ServiceName": "tvheadend",
-        "ServiceTemplate": "Services/IPCam/tvheadend-template.service",
-
-        "BinaryName": "tvheadend",
-        "AptPackageName": "tvheadend",
-        "DownloadURL": "https://example.com/downloads/tvheadend.tar.gz",
-        "InstallDir": "/opt/tvheadend",
-        "SymlinkPath": "/usr/local/bin/tvheadend",
-        "Instructions": [
-          "Open http://<server-ip>:9981 in your browser.",
-          "Go through initial setup and configure tuners or IPTV inputs.",
-          "Add DVR and configure recording paths."
-        ],
-        "Cameras": [
-          { "Name": "Example Camera A", "URL": "rtsp://2.2.2.10:8554/live.sdp" },
-          { "Name": "Example Camera B", "URL": "rtsp://2.2.2.20:8554/live.sdp" }
+          { 
+            "Name": "Example Camera 1", 
+            "URL": "rtsp://1.1.1.10:8080/stream.sdp",
+            "Description": "Front door – RTSP stream"
+          }
         ]
       }
     }
   }
 }
+
