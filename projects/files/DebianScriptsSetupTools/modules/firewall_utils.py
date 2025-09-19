@@ -40,14 +40,15 @@ def allow_port(ports: Union[int, List[int]], proto: str) -> List[bool]:
     return results
 
 
-def allow_port_for_ip(ports: Union[int, List[int]], proto: str, ips: Union[str, List[str]]) -> List[bool]:
-    """Allow one or more ports from one or more IPs. Prints output, returns list of booleans."""
+def allow_port_for_ip(rule_name: str, ports: Union[int, List[int]], proto: str, ips: Union[str, List[str]]) -> List[bool]:
+    """Allow one or more ports from one or more IPs. Prints grouped output, returns list of booleans."""
     ports = ports if isinstance(ports, (list, tuple)) else [ports]
     ips   = ips if isinstance(ips, (list, tuple)) else [ips]
     results: List[bool] = []
     for port in ports:
+        print(f"[APPLY] Allowing {rule_name} Port={port} Protocol={proto.upper()}")
         for ip in ips:
-            print(f"[APPLY] Allow {proto.upper()} port {port} from {ip}")
+            print(f"   from {ip}")
             res = subprocess.run(
                 ["ufw", "allow", "proto", proto, "from", ip, "to", "any", "port", str(port)],
                 capture_output=True, text=True
@@ -64,17 +65,25 @@ def apply_singleports(singleports):
     """Apply each SinglePorts rule dict via allow_port_for_ip."""
     results = []
     for sp in singleports or []:
-        print(f"\n[GROUP] Applying SinglePort rule: Port={sp['Port']} Protocol={sp['Protocol']} IPs={sp['IPs']}")
-        results.extend(allow_port_for_ip(sp["Port"], sp["Protocol"], sp["IPs"]))
+        results.extend(
+            allow_port_for_ip(
+                sp["RuleName"],
+                sp["Port"],
+                sp["Protocol"],
+                sp["IPs"]
+            )
+        )
     return all(results)
 
 
-def allow_port_range_for_ip(start: int, end: int, proto: str, ips: Union[str, List[str]]) -> List[bool]:
-    """Allow a range of ports from one or more IPs. Prints output, returns list of booleans."""
+def allow_port_range_for_ip(rule_name: str, start: int, end: int, proto: str, ips: Union[str, List[str]]) -> List[bool]:
+    """Allow a range of ports from one or more IPs. Prints grouped output, returns list of booleans."""
     ips = ips if isinstance(ips, (list, tuple)) else [ips]
     results: List[bool] = []
+
+    print(f"[APPLY] Allowing {rule_name} Ports={start}:{end} Protocol={proto.upper()}")
     for ip in ips:
-        print(f"[APPLY] Allow {proto.upper()} ports {start}:{end} from {ip}")
+        print(f"   from {ip}")
         res = subprocess.run(
             ["ufw", "allow", "proto", proto, "from", ip, "to", "any", "port", f"{start}:{end}"],
             capture_output=True, text=True
@@ -91,9 +100,9 @@ def apply_portranges(portranges):
     """Apply each PortRanges rule dict via allow_port_range_for_ip."""
     results = []
     for pr in portranges or []:
-        print(f"\n[GROUP] Applying PortRange rule: Start={pr['StartPort']} End={pr['EndPort']} Protocol={pr['Protocol']} IPs={pr['IPs']}")
         results.extend(
             allow_port_range_for_ip(
+                pr["RuleName"],
                 pr["StartPort"],
                 pr["EndPort"],
                 pr["Protocol"],

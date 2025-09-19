@@ -265,21 +265,23 @@ def reload_systemd() -> bool:
 
 
 def fix_permissions(user: str, paths: List[str]) -> bool:
-    """Ensure given directories are owned by the specified user (recursively)."""
+    """Ensure given directories exist and are owned by the specified user (recursively)."""
     if not user or not paths:
         print("[fix_permissions] No user or paths provided, skipping.")
         return True
-
     for p in paths:
         if not p:
             continue
         try:
+            if not os.path.exists(p):
+                os.makedirs(p, exist_ok=True)
+                print(f"[fix_permissions] Created missing directory {p}")
             subprocess.run(
                 ["chown", "-R", f"{user}:{user}", p],
                 check=True
             )
             print(f"[fix_permissions] Set ownership of {p} to {user}:{user}")
-        except subprocess.CalledProcessError as e:
-            print(f"[fix_permissions] Failed to set ownership for {p}: {e}")
+        except Exception as e:
+            print(f"[fix_permissions] Failed for {p}: {e}")
             return False
     return True

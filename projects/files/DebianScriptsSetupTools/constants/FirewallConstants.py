@@ -24,13 +24,12 @@ DEFAULT_CONFIG   = "Default"
 KEY_APPLICATIONS = "Applications"
 KEY_SINGLE_PORTS = "SinglePorts"
 KEY_PORT_RANGES  = "PortRanges"
-
 KEY_PORT         = "Port"
 KEY_PROTOCOL     = "Protocol"
 KEY_IPS          = "IPs"
-
 KEY_START_PORT   = "StartPort"
 KEY_END_PORT     = "EndPort"
+KEY_RULE_NAME    = "RuleName"
 
 # === EXAMPLE JSON ===
 CONFIG_EXAMPLE = {
@@ -39,10 +38,10 @@ CONFIG_EXAMPLE = {
             "default-firewall": {
                 KEY_APPLICATIONS: ["OpenSSH"],
                 KEY_SINGLE_PORTS: [
-                    {KEY_PORT: 22, KEY_PROTOCOL: "tcp", KEY_IPS: ["192.168.1.0/24"]}
+                    {KEY_RULE_NAME: "SSH", KEY_PORT: 22, KEY_PROTOCOL: "tcp", KEY_IPS: ["192.168.1.0/24"]}
                 ],
                 KEY_PORT_RANGES: [
-                    {KEY_START_PORT: 5000, KEY_END_PORT: 6000, KEY_PROTOCOL: "udp", KEY_IPS: ["10.0.0.0/8"]}
+                    {KEY_RULE_NAME: "Plex", KEY_START_PORT: 5000, KEY_END_PORT: 6000, KEY_PROTOCOL: "udp", KEY_IPS: ["10.0.0.0/8"]}
                 ],
             }
         }
@@ -67,6 +66,7 @@ SECONDARY_VALIDATION = {
     },
     KEY_SINGLE_PORTS: {
         "required_job_fields": {
+            KEY_RULE_NAME: str,
             KEY_PORT: int,
             KEY_PROTOCOL: str,
             KEY_IPS: list,
@@ -75,6 +75,7 @@ SECONDARY_VALIDATION = {
     },
     KEY_PORT_RANGES: {
         "required_job_fields": {
+            KEY_RULE_NAME: str,
             KEY_START_PORT: int,
             KEY_END_PORT: int,
             KEY_PROTOCOL: str,

@@ -8,6 +8,7 @@
         ],
         "SinglePorts": [
           {
+            "RuleName": "SSH",
             "Port": 22,
             "Protocol": "tcp",
             "IPs": [
@@ -16,6 +17,7 @@
             ]
           },
           {
+            "RuleName": "RDP",
             "Port": 3389,
             "Protocol": "tcp",
             "IPs": [
@@ -26,6 +28,7 @@
         ],
         "PortRanges": [
           {
+            "RuleName": "Example",
             "FromPort": 8000,
             "ToPort": 8100,
             "Protocol": "tcp",
