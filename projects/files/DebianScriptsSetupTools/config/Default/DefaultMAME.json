@@ -1,0 +1,19 @@
+{
+  "Default": {
+    "MAME": {
+      "mame": {
+        "TemplateINI": "mame/mame_template.ini",
+        "ActiveINI": "~/.mame/mame.ini",
+        "TemplateUI": "mame/ui_template.ini",
+        "ActiveUI": "~/.mame/ui.ini",
+        "TemplatePlugins": "mame/plugin_template.ini",
+        "ActivePlugins": "~/.mame/plugin.ini",
+        "BinaryPath": "/usr/games/mame",
+        "XMLOutput": "~/MAME/mame.xml",
+        "RomLine": "^rompath.*$",
+        "RomPath": "rompath                   $HOME/mame/roms;",
+        "ConfigSkipLines": ["rompath"]
+      }
+    }
+  }
+}

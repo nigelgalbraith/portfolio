@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Dict, Any
-from modules.system_utils import copy_file, files_match
+from modules.system_utils import copy_file, files_match, replace_pattern
 from modules.mame_utils import produce_xml, reset_defaults
 
 # === CONFIG PATHS & KEYS ===
@@ -20,6 +20,9 @@ KEY_TEMPLATE_PLUGINS   = "TemplatePlugins"
 KEY_ACTIVE_PLUGINS     = "ActivePlugins"
 KEY_BINARY             = "BinaryPath"
 KEY_XML_OUTPUT         = "XMLOutput"
+KEY_ROM_LINE           = "RomLine"
+KEY_ROM_PATH           = "RomPath"
+KEY_CONFIG_SKIP_LINES  = "ConfigSkipLines"
 
 # === EXAMPLE JSON ===
 CONFIG_EXAMPLE: Dict[str, Any] = {
@@ -34,10 +37,14 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
                 KEY_ACTIVE_PLUGINS: "~/.mame/plugin.ini",
                 KEY_BINARY: "/usr/games/mame",
                 KEY_XML_OUTPUT: "~/.mame/mame.xml",
+                KEY_ROM_LINE: "rompath",
+                KEY_ROM_PATH: "rompath                   $HOME/mame/roms;",
+                KEY_CONFIG_SKIP_LINES: ["rompath"], 
             }
         }
     }
 }
+
 
 # === VALIDATION CONFIG ===
 VALIDATION_CONFIG: Dict[str, Any] = {
@@ -50,9 +57,13 @@ VALIDATION_CONFIG: Dict[str, Any] = {
         KEY_ACTIVE_PLUGINS: str,
         KEY_BINARY: str,
         KEY_XML_OUTPUT: str,
+        KEY_ROM_LINE: str,
+        KEY_ROM_PATH: str,
+        KEY_CONFIG_SKIP_LINES: list,
     },
     "example_config": CONFIG_EXAMPLE,
 }
+
 
 
 # === SECONDARY VALIDATION ===
@@ -86,6 +97,7 @@ UNINSTALLED_LABEL    = "OUT OF DATE"
 STATUS_FN_CONFIG: Dict[str, Any] = {
     "fn": files_match,
     "args": [KEY_TEMPLATE, KEY_ACTIVE],
+    "kwargs": {"ignore_prefixes": KEY_CONFIG_SKIP_LINES},
     "labels": {True: INSTALLED_LABEL, False: UNINSTALLED_LABEL},
 }
 
@@ -154,6 +166,18 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
             },
             copy_file: {
                 "args": [KEY_TEMPLATE, KEY_ACTIVE],
+                "result": "copied",
+            },
+            replace_pattern: {
+                "args": [KEY_ACTIVE, KEY_ROM_LINE, KEY_ROM_PATH],
+                "result": "rom_patched",
+            },
+            copy_file: {
+                "args": [KEY_TEMPLATE_UI, KEY_ACTIVE_UI],
+                "result": "copied",
+            },
+            copy_file: {
+                "args": [KEY_TEMPLATE_PLUGINS, KEY_ACTIVE_PLUGINS],
                 "result": "copied",
             },
             produce_xml: {

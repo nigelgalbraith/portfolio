@@ -4,6 +4,7 @@ system_utils.py
 """
 
 import os
+import re
 import subprocess
 import getpass
 import datetime
@@ -12,8 +13,8 @@ import shutil
 import pwd
 from shutil import which
 from pathlib import Path
-from typing import List
-
+from typing import List, Sequence
+ 
 
 def create_user(username: str) -> bool:
     """Create a system user (nologin) if it doesn't already exist. Return True on success/no-op."""
@@ -300,16 +301,46 @@ def copy_file(src: str | Path, dest: str | Path) -> bool:
         return False
 
 
-def files_match(file1: str | Path, file2: str | Path) -> bool:
-    """Return True if both files exist and contents are identical, otherwise False."""
+def files_match(file1: str | Path, file2: str | Path, ignore_prefixes: Sequence[str] = ("rompath",)) -> bool:
+    """Return True if both files exist and contents are identical, ignoring lines starting with any given prefixes."""
     f1, f2 = Path(file1).expanduser(), Path(file2).expanduser()
     if not f1.is_file() or not f2.is_file():
         print(f"[INFO] One or both files do not exist: '{f1}', '{f2}'")
         return False
-    if f1.read_bytes() == f2.read_bytes():
-        print(f"[OK] Files match: '{f1}' == '{f2}'")
+    a, b = [], []
+    for l in f1.read_text(encoding="utf-8", errors="ignore").splitlines():
+        s = l.strip()
+        if not any(s.startswith(p) for p in ignore_prefixes):
+            a.append(l)
+    for l in f2.read_text(encoding="utf-8", errors="ignore").splitlines():
+        s = l.strip()
+        if not any(s.startswith(p) for p in ignore_prefixes):
+            b.append(l)
+    if a == b:
+        print(f"[OK] Files match (ignoring {ignore_prefixes}): '{f1}' == '{f2}'")
         return True
-    else:
-        print(f"[MISMATCH] Files differ: '{f1}' != '{f2}'")
+    print(f"[MISMATCH] Files differ (ignoring {ignore_prefixes}): '{f1}' != '{f2}'")
+    return False
+
+
+def replace_pattern(filepath: str, pattern: str, new_line: str) -> bool:
+    """Replace regex pattern with new_line."""
+    path = Path(filepath).expanduser()
+    try:
+        content = path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        print(f"{filepath} not found"); return False
+    updated, count = re.subn(pattern, new_line, content, flags=re.M)
+    if count == 0:
+        print(f"No matches for pattern '{pattern}'")
         return False
+    path.write_text(updated, encoding="utf-8")
+    print(f"Replaced {count} occurrence(s) of '{pattern}' → {new_line}")
+    return True
+
+
+
+
+
+
 
