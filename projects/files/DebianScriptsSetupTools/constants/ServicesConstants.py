@@ -16,7 +16,7 @@ from modules.service_utils import (
 from modules.logger_utils import install_logrotate_config
 
 # === CONFIG PATHS & KEYS ===
-PRIMARY_CONFIG   = "Config/AppConfigSettings.json"
+PRIMARY_CONFIG   = "config/AppConfigSettings.json"
 JOBS_KEY         = "Services"
 CONFIG_TYPE      = "services"
 DEFAULT_CONFIG   = "Default"

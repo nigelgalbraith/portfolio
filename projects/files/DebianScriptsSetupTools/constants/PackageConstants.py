@@ -4,7 +4,7 @@ from pathlib import Path
 from modules.package_utils import check_package, install_packages, uninstall_packages
 
 # === CONFIG PATHS & KEYS ===
-PRIMARY_CONFIG   = "Config/AppConfigSettings.json"
+PRIMARY_CONFIG   = "config/AppConfigSettings.json"
 JOBS_KEY         = "Packages"
 CONFIG_TYPE      = "package"
 DEFAULT_CONFIG   = "Default"

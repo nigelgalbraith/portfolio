@@ -9,7 +9,7 @@ from modules.flatpak_utils import (
 )
 
 # === CONFIG PATHS & KEYS ===
-PRIMARY_CONFIG   = "Config/AppConfigSettings.json"
+PRIMARY_CONFIG   = "config/AppConfigSettings.json"
 JOBS_KEY         = "Flatpak"
 CONFIG_TYPE      = "flatpak"
 DEFAULT_CONFIG   = "Default"

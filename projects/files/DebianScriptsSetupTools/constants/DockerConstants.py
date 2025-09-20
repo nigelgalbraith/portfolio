@@ -15,7 +15,7 @@ from modules.archive_utils import download_archive_file, install_archive_file, h
 from modules.system_utils import expand_path
 
 # === CONFIG PATHS & KEYS ===
-PRIMARY_CONFIG   = "Config/AppConfigSettings.json"
+PRIMARY_CONFIG   = "config/AppConfigSettings.json"
 JOBS_KEY         = "Docker"
 CONFIG_TYPE      = "docker"
 DEFAULT_CONFIG   = "default"

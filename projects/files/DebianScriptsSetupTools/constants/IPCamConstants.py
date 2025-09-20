@@ -27,7 +27,7 @@ from modules.camera_utils import (
 
 
 # === CONFIG PATHS & KEYS ===
-PRIMARY_CONFIG   = "Config/AppConfigSettings.json"
+PRIMARY_CONFIG   = "config/AppConfigSettings.json"
 JOBS_KEY         = "IPCam"
 CONFIG_TYPE      = "ipcam"
 DEFAULT_CONFIG   = "default"

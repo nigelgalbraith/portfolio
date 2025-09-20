@@ -16,7 +16,7 @@ from modules.archive_utils import (
 from modules.service_utils import start_service_standard
 
 # === CONFIG PATHS & KEYS ===
-PRIMARY_CONFIG   = "Config/AppConfigSettings.json"
+PRIMARY_CONFIG   = "config/AppConfigSettings.json"
 JOBS_KEY         = "Archive"
 CONFIG_TYPE      = "archive"
 DEFAULT_CONFIG   = "Default"

@@ -13,7 +13,7 @@ from modules.service_utils import start_service_standard
 from modules.archive_utils import handle_cleanup
 
 # === CONFIG PATHS & KEYS ===
-PRIMARY_CONFIG   = "Config/AppConfigSettings.json"
+PRIMARY_CONFIG   = "config/AppConfigSettings.json"
 JOBS_KEY         = "DEB"
 CONFIG_TYPE      = "deb"
 DEFAULT_CONFIG   = "Default"

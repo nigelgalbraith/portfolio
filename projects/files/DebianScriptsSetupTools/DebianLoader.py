@@ -68,6 +68,7 @@ AVAILABLE_CONSTANTS = {
     "Archive Installer utility": ("constants.ArchiveConstants", 1000),
     "Docker Manager utility": ("constants.DockerConstants", 1000),
     "DOSLoader utility": ("constants.DOSLoaderConstants", 1000),
+    "MAME utility": ("constants.MAMEConstants", 1000),
     "IPCam utility": ("constants.IPCamConstants", 0),
     "Services Presets utility": ("constants.ServicesConstants", 0),
     "Firewall Presets utility": ("constants.FirewallConstants", 0),

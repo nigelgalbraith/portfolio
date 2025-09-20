@@ -5,7 +5,7 @@ from modules.package_utils import check_package, install_packages, uninstall_pac
 from modules.apt_repo_utils import add_apt_repository, remove_apt_repo_and_keyring
 
 # === CONFIG PATHS & KEYS ===
-PRIMARY_CONFIG   = "Config/AppConfigSettings.json"
+PRIMARY_CONFIG   = "config/AppConfigSettings.json"
 JOBS_KEY         = "ThirdParty"
 CONFIG_TYPE      = "third-party"
 DEFAULT_CONFIG   = "Default"

@@ -9,7 +9,7 @@ from modules.network_utils import (
     is_connected,               
 )
 # === CONFIG PATHS & KEYS ===
-PRIMARY_CONFIG   = "Config/AppConfigSettings.json"
+PRIMARY_CONFIG   = "config/AppConfigSettings.json"
 JOBS_KEY         = "Networks"
 CONFIG_TYPE      = "network"
 DEFAULT_CONFIG   = "Default"

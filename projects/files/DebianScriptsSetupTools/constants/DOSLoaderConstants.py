@@ -13,7 +13,7 @@ from modules.archive_utils import (
 )
 
 # === CONFIG PATHS & KEYS ===
-PRIMARY_CONFIG   = "Config/AppConfigSettings.json"
+PRIMARY_CONFIG   = "config/AppConfigSettings.json"
 JOBS_KEY         = "DOSLoader"
 CONFIG_TYPE      = "dosloader"
 DEFAULT_CONFIG   = "Default"

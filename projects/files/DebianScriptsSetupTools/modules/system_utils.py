@@ -110,7 +110,7 @@ def move_to_trash(path: str | Path) -> bool:
         if not p.exists() and not p.is_symlink():
             return True
         try:
-            from send2trash import send2trash  # type: ignore
+            from send2trash import send2trash
             send2trash(str(p))
             return True
         except ImportError:
@@ -285,3 +285,31 @@ def fix_permissions(user: str, paths: List[str]) -> bool:
             print(f"[fix_permissions] Failed for {p}: {e}")
             return False
     return True
+
+
+def copy_file(src: str | Path, dest: str | Path) -> bool:
+    """Copy src file to dest, overwriting. Returns True if successful, False otherwise."""
+    try:
+        src_p, dest_p = Path(src).expanduser(), Path(dest).expanduser()
+        dest_p.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src_p, dest_p)
+        print(f"[OK] Copied '{src_p}' → '{dest_p}'")
+        return True
+    except Exception as e:
+        print(f"[ERROR] Failed to copy '{src}' → '{dest}': {e}")
+        return False
+
+
+def files_match(file1: str | Path, file2: str | Path) -> bool:
+    """Return True if both files exist and contents are identical, otherwise False."""
+    f1, f2 = Path(file1).expanduser(), Path(file2).expanduser()
+    if not f1.is_file() or not f2.is_file():
+        print(f"[INFO] One or both files do not exist: '{f1}', '{f2}'")
+        return False
+    if f1.read_bytes() == f2.read_bytes():
+        print(f"[OK] Files match: '{f1}' == '{f2}'")
+        return True
+    else:
+        print(f"[MISMATCH] Files differ: '{f1}' != '{f2}'")
+        return False
+

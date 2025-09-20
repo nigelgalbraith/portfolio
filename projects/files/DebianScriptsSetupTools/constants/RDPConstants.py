@@ -12,7 +12,7 @@ from modules.rdp_utils import (
 )
 
 # === CONFIG PATHS & KEYS ===
-PRIMARY_CONFIG   = "Config/AppConfigSettings.json"
+PRIMARY_CONFIG   = "config/AppConfigSettings.json"
 JOBS_KEY         = "RDP"
 CONFIG_TYPE      = "rdp"
 DEFAULT_CONFIG   = "Default"

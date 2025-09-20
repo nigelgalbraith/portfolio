@@ -15,7 +15,7 @@ from modules.firewall_utils import (
 )
 
 # === CONFIG PATHS & KEYS ===
-PRIMARY_CONFIG   = "Config/AppConfigSettings.json"
+PRIMARY_CONFIG   = "config/AppConfigSettings.json"
 JOBS_KEY         = "Firewall"
 CONFIG_TYPE      = "firewall"
 DEFAULT_CONFIG   = "Default"
