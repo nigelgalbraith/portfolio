@@ -2,7 +2,7 @@
   "Default": {
     "Arcade": {
       "mame": {
-        "Packages": ["mame"],
+        "Packages": ["mame", "mame-data", "mame-tools"],
         "SetupCmds": [
           "/usr/games/mame -listxml > ~/Arcade/mame.xml"
         ],
@@ -18,47 +18,15 @@
         ],
         "PatternJobs": [
           {
-            "patternName": "RomPath_SemicolonFix",
-            "filepath": "~/.mame/mame.ini",
-            "pattern": "^rompath.*$",
-            "new_line_list": [
-              "rompath $HOME/Arcade/MAME/roms",
-              "$HOME/Arcade/Neo Geo/roms",
-              "$HOME/Arcade/Nintendo 64/roms",
-              "$HOME/Arcade/Nintendo Entertainment System/roms",
-              "$HOME/Arcade/Nintendo Game Boy Advance/roms",
-              "$HOME/Arcade/Master System/roms",
-              "$HOME/Arcade/Mega Drive/roms",
-              "$HOME/Arcade/Sega32x/roms",
-              "$HOME/Arcade/Sony Playstation/roms",
-              "$HOME/Arcade/Sony Playstation 2/roms",
-              "$HOME/Arcade/Super Nintendo Entertainment System/roms"
-            ]
-          },
-          {
             "patternName": "ArtPathUpdate",
             "filepath": "~/.mame/mame.ini",
             "pattern": "^artpath.*$",
             "new_line_list": [
-              "artpath $HOME/Arcade/MAME/artwork",
-              "$HOME/Arcade/Neo Geo/artwork",
-              "$HOME/Arcade/Nintendo 64/artwork",
-              "$HOME/Arcade/Nintendo Entertainment System/artwork",
-              "$HOME/Arcade/Nintendo Game Boy Advance/artwork",
-              "$HOME/Arcade/Master System/artwork",
-              "$HOME/Arcade/Mega Drive/artwork",
-              "$HOME/Arcade/Sega32x/artwork",
-              "$HOME/Arcade/Sony Playstation/artwork",
-              "$HOME/Arcade/Sony Playstation 2/artwork",
-              "$HOME/Arcade/Super Nintendo Entertainment System/artwork"
-            ]
-          },
-          {
-            "patternName": "SamplePathUpdate",
-            "filepath": "~/.mame/mame.ini",
-            "pattern": "^samplepath.*$",
-            "new_line_list": [
-              "samplepath $HOME/Arcade/MAME/samples"
+              "artpath $HOME/mame/artwork",
+              "/usr/local/share/games/mame/artwork",
+              "/usr/share/games/mame/artwork",
+              "$HOME/Arcade/MAME/artwork",
+              "$HOME/Arcade/Neo Geo/artwork"
             ]
           },
           {
@@ -66,17 +34,9 @@
             "filepath": "~/.mame/ui.ini",
             "pattern": "^cabinets_directory.*$",
             "new_line_list": [
-              "cabinets_directory $HOME/Arcade/MAME/cabinets",
-              "$HOME/Arcade/Neo Geo/cabinets",
-              "$HOME/Arcade/Nintendo 64/cabinets",
-              "$HOME/Arcade/Nintendo Entertainment System/cabinets",
-              "$HOME/Arcade/Nintendo Game Boy Advance/cabinets",
-              "$HOME/Arcade/Master System/cabinets",
-              "$HOME/Arcade/Mega Drive/cabinets",
-              "$HOME/Arcade/Sega32x/cabinets",
-              "$HOME/Arcade/Sony Playstation/cabinets",
-              "$HOME/Arcade/Sony Playstation 2/cabinets",
-              "$HOME/Arcade/Super Nintendo Entertainment System/cabinets"
+              "cabinets_directory cabinets",
+              "cabdevs",
+              "$HOME/Arcade/MAME/cabinets"
             ]
           },
           {
@@ -84,17 +44,8 @@
             "filepath": "~/.mame/ui.ini",
             "pattern": "^cpanels_directory.*$",
             "new_line_list": [
-              "cpanels_directory $HOME/Arcade/MAME/control panels",
-              "$HOME/Arcade/Neo Geo/control panels",
-              "$HOME/Arcade/Nintendo 64/control panels",
-              "$HOME/Arcade/Nintendo Entertainment System/control panels",
-              "$HOME/Arcade/Nintendo Game Boy Advance/control panels",
-              "$HOME/Arcade/Master System/control panels",
-              "$HOME/Arcade/Mega Drive/control panels",
-              "$HOME/Arcade/Sega32x/control panels",
-              "$HOME/Arcade/Sony Playstation/control panels",
-              "$HOME/Arcade/Sony Playstation 2/control panels",
-              "$HOME/Arcade/Super Nintendo Entertainment System/control panels"
+              "cpanels_directory cpanel",
+              "$HOME/Arcade/MAME/control panels"
             ]
           },
           {
@@ -102,53 +53,8 @@
             "filepath": "~/.mame/ui.ini",
             "pattern": "^flyers_directory.*$",
             "new_line_list": [
-              "flyers_directory $HOME/Arcade/MAME/flyers",
-              "$HOME/Arcade/Neo Geo/flyers",
-              "$HOME/Arcade/Nintendo 64/flyers",
-              "$HOME/Arcade/Nintendo Entertainment System/flyers",
-              "$HOME/Arcade/Nintendo Game Boy Advance/flyers",
-              "$HOME/Arcade/Master System/flyers",
-              "$HOME/Arcade/Mega Drive/flyers",
-              "$HOME/Arcade/Sega32x/flyers",
-              "$HOME/Arcade/Sony Playstation/flyers",
-              "$HOME/Arcade/Sony Playstation 2/flyers",
-              "$HOME/Arcade/Super Nintendo Entertainment System/flyers"
-            ]
-          },
-          {
-            "patternName": "UIDir_Marquees",
-            "filepath": "~/.mame/ui.ini",
-            "pattern": "^marquees_directory.*$",
-            "new_line_list": [
-              "marquees_directory $HOME/Arcade/MAME/marquees",
-              "$HOME/Arcade/Neo Geo/marquees",
-              "$HOME/Arcade/Nintendo 64/marquees",
-              "$HOME/Arcade/Nintendo Entertainment System/marquees",
-              "$HOME/Arcade/Nintendo Game Boy Advance/marquees",
-              "$HOME/Arcade/Master System/marquees",
-              "$HOME/Arcade/Mega Drive/marquees",
-              "$HOME/Arcade/Sega32x/marquees",
-              "$HOME/Arcade/Sony Playstation/marquees",
-              "$HOME/Arcade/Sony Playstation 2/marquees",
-              "$HOME/Arcade/Super Nintendo Entertainment System/marquees"
-            ]
-          },
-          {
-            "patternName": "UIDir_Titles",
-            "filepath": "~/.mame/ui.ini",
-            "pattern": "^titles_directory.*$",
-            "new_line_list": [
-              "titles_directory $HOME/Arcade/MAME/titles",
-              "$HOME/Arcade/Neo Geo/titles",
-              "$HOME/Arcade/Nintendo 64/titles",
-              "$HOME/Arcade/Nintendo Entertainment System/titles",
-              "$HOME/Arcade/Nintendo Game Boy Advance/titles",
-              "$HOME/Arcade/Master System/titles",
-              "$HOME/Arcade/Mega Drive/titles",
-              "$HOME/Arcade/Sega32x/titles",
-              "$HOME/Arcade/Sony Playstation/titles",
-              "$HOME/Arcade/Sony Playstation 2/titles",
-              "$HOME/Arcade/Super Nintendo Entertainment System/titles"
+              "flyers_directory flyers",
+              "$HOME/Arcade/MAME/flyers"
             ]
           },
           {
@@ -156,19 +62,52 @@
             "filepath": "~/.mame/ui.ini",
             "pattern": "^icons_directory.*$",
             "new_line_list": [
-              "icons_directory $HOME/Arcade/MAME/icons",
-              "$HOME/Arcade/Neo Geo/icons",
-              "$HOME/Arcade/Nintendo 64/icons",
-              "$HOME/Arcade/Nintendo Entertainment System/icons",
-              "$HOME/Arcade/Nintendo Game Boy Advance/icons",
-              "$HOME/Arcade/Master System/icons",
-              "$HOME/Arcade/Mega Drive/icons",
-              "$HOME/Arcade/Sega32x/icons",
-              "$HOME/Arcade/Sony Playstation/icons",
-              "$HOME/Arcade/Sony Playstation 2/icons",
-              "$HOME/Arcade/Super Nintendo Entertainment System/icons"
+              "icons_directory icons",
+              "$HOME/Arcade/MAME/icons"
+            ]
+          },
+          {
+            "patternName": "UIDir_Marquees",
+            "filepath": "~/.mame/ui.ini",
+            "pattern": "^marquees_directory.*$",
+            "new_line_list": [
+              "marquees_directory marquees",
+              "$HOME/Arcade/MAME/marquees"
+            ]
+          },
+          {
+            "patternName": "RomPath_SemicolonFix",
+            "filepath": "~/.mame/mame.ini",
+            "pattern": "^rompath.*$",
+            "new_line_list": [
+              "rompath $HOME/mame/roms",
+              "/usr/local/share/games/mame/roms",
+              "/usr/share/games/mame/roms",
+              "$HOME/Arcade/MAME/roms",
+              "$HOME/Arcade/Neo Geo/roms"
+            ]
+          },
+          {
+            "patternName": "UIDir_Titles",
+            "filepath": "~/.mame/ui.ini",
+            "pattern": "^titles_directory.*$",
+            "new_line_list": [
+              "titles_directory titles",
+              "$HOME/Arcade/MAME/titles"
+            ]
+          },
+          {
+            "patternName": "SamplePathUpdate",
+            "filepath": "~/.mame/mame.ini",
+            "pattern": "^samplepath.*$",
+            "new_line_list": [
+              "samplepath $HOME/mame/samples",
+              "/usr/local/share/games/mame/samples",
+              "/usr/share/games/mame/samples",
+              "$HOME/Arcade/MAME/samples"
             ]
           }
+
         ]
       },
       "retroarch": {
