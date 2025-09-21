@@ -135,22 +135,6 @@ def create_symlink(target: Path | str, link_path: Path | str) -> bool:
         return False
 
 
-def run_post_install_commands(post_install_cmds) -> bool:
-    """Run post-install shell commands and return True only if all succeed."""
-    if isinstance(post_install_cmds, str):
-        cmds = [os.path.expanduser(post_install_cmds)]
-    elif isinstance(post_install_cmds, list):
-        cmds = [os.path.expanduser(c) for c in post_install_cmds if isinstance(c, str)]
-    else:
-        cmds = []
-    all_ok = True
-    for cmd in cmds:
-        rc = os.system(cmd)
-        if rc != 0:
-            print(f"PostInstall failed (rc={rc}): {cmd}")
-            all_ok = False
-    return all_ok
-
 
 def handle_cleanup(archive_path: Path) -> bool:
     """Delete a temporary archive file and return True on success."""

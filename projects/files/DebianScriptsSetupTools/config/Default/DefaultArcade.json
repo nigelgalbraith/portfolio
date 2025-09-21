@@ -1,0 +1,58 @@
+{
+  "Default": {
+    "Arcade": {
+      "mame": {
+        "Packages": ["mame"],
+        "SetupCmds": [
+          "/usr/games/mame -listxml > ~/MAME/mame.xml"
+        ],
+        "ResetCmds": [
+          "rm -f ~/.mame/*.ini",
+          "mkdir -p ~/.mame",
+          "bash -lc 'cd ~/.mame && /usr/games/mame -createconfig'"
+        ],
+        "SettingsFiles": [
+          { "copyName": "MainConfig",   "src": "settings/mame/mame_template.ini",   "dest": "~/.mame/mame.ini" },
+          { "copyName": "UIConfig",     "src": "settings/mame/ui_template.ini",     "dest": "~/.mame/ui.ini" },
+          { "copyName": "PluginConfig", "src": "settings/mame/plugin_template.ini", "dest": "~/.mame/plugin.ini" }
+        ],
+        "PatternJobs": [
+          {
+            "patternName": "RomPathUpdate",
+            "filepath": "~/.mame/mame.ini",
+            "pattern": "^rompath.*$",
+            "new_line": "rompath                   $HOME/mame/roms;"
+          }
+        ]
+      },
+      "retroarch": {
+        "Packages": [
+          "retroarch",
+          "libretro-nestopia",
+          "libretro-snes9x",
+          "libretro-mgba",
+          "libretro-gambatte",
+          "libretro-desmume",
+          "libretro-beetle-psx",
+          "libretro-beetle-pce-fast",
+          "libretro-beetle-vb",
+          "libretro-beetle-wswan",
+          "libretro-bsnes-mercury-accuracy",
+          "libretro-bsnes-mercury-balanced",
+          "libretro-bsnes-mercury-performance",
+          "libretro-genesisplusgx",
+          "libretro-core-info"
+        ],
+        "SetupCmds": [
+          "retroarch --version"
+        ],
+        "ResetCmds": [
+          "rm -f ~/.config/retroarch/retroarch.cfg",
+          "mkdir -p ~/.config/retroarch/cores ~/.config/retroarch/saves ~/.config/retroarch/states ~/.config/retroarch/system"
+        ],
+        "SettingsFiles": [],
+        "PatternJobs": []
+      }
+    }
+  }
+}

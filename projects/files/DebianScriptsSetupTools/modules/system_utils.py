@@ -13,7 +13,7 @@ import shutil
 import pwd
 from shutil import which
 from pathlib import Path
-from typing import List, Sequence
+from typing import List, Sequence, Dict, Any
  
 
 def create_user(username: str) -> bool:
@@ -289,9 +289,10 @@ def fix_permissions(user: str, paths: List[str]) -> bool:
 
 
 def copy_file(src: str | Path, dest: str | Path) -> bool:
-    """Copy src file to dest, overwriting. Returns True if successful, False otherwise."""
+    """Copy src to dest, overwriting."""
     try:
-        src_p, dest_p = Path(src).expanduser(), Path(dest).expanduser()
+        src_p = Path(src).expanduser().resolve()
+        dest_p = Path(dest).expanduser().resolve()
         dest_p.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(src_p, dest_p)
         print(f"[OK] Copied '{src_p}' → '{dest_p}'")
@@ -301,26 +302,22 @@ def copy_file(src: str | Path, dest: str | Path) -> bool:
         return False
 
 
-def files_match(file1: str | Path, file2: str | Path, ignore_prefixes: Sequence[str] = ("rompath",)) -> bool:
-    """Return True if both files exist and contents are identical, ignoring lines starting with any given prefixes."""
-    f1, f2 = Path(file1).expanduser(), Path(file2).expanduser()
-    if not f1.is_file() or not f2.is_file():
-        print(f"[INFO] One or both files do not exist: '{f1}', '{f2}'")
+def copy_file_dict(mapping: Any) -> bool:
+    """Copy multiple files from dict or list jobs."""
+    results: List[bool] = []
+    if isinstance(mapping, dict):
+        items = [(s, d, None) for s, d in mapping.items()]
+    elif isinstance(mapping, list):
+        items = [(it.get("src"), it.get("dest"), it.get("name")) for it in mapping if isinstance(it, dict)]
+    else:
+        print(f"[ERROR] copy_file_dict: unsupported type {type(mapping).__name__}")
         return False
-    a, b = [], []
-    for l in f1.read_text(encoding="utf-8", errors="ignore").splitlines():
-        s = l.strip()
-        if not any(s.startswith(p) for p in ignore_prefixes):
-            a.append(l)
-    for l in f2.read_text(encoding="utf-8", errors="ignore").splitlines():
-        s = l.strip()
-        if not any(s.startswith(p) for p in ignore_prefixes):
-            b.append(l)
-    if a == b:
-        print(f"[OK] Files match (ignoring {ignore_prefixes}): '{f1}' == '{f2}'")
-        return True
-    print(f"[MISMATCH] Files differ (ignoring {ignore_prefixes}): '{f1}' != '{f2}'")
-    return False
+    print(f"[APPLY] SettingsFiles ({len(items)})")
+    for src, dest, name in items:
+        label = f"{name}: " if name else ""
+        print(f"  - {label}{src} -> {dest}")
+        results.append(copy_file(src, dest))
+    return all(results)
 
 
 def replace_pattern(filepath: str, pattern: str, new_line: str) -> bool:
@@ -332,12 +329,43 @@ def replace_pattern(filepath: str, pattern: str, new_line: str) -> bool:
         print(f"{filepath} not found"); return False
     updated, count = re.subn(pattern, new_line, content, flags=re.M)
     if count == 0:
-        print(f"No matches for pattern '{pattern}'")
-        return False
+        print(f"No matches for pattern '{pattern}'"); return False
     path.write_text(updated, encoding="utf-8")
     print(f"Replaced {count} occurrence(s) of '{pattern}' → {new_line}")
     return True
 
+
+def replace_pattern_dict(replacements: List[Dict[str, Any]]) -> bool:
+    """Run multiple regex replacements."""
+    jobs = replacements or []
+    results: List[bool] = []
+    print(f"[APPLY] PatternJobs ({len(jobs)})")
+    for j in jobs:
+        name  = j.get("name", "")
+        fp    = j["filepath"]
+        patt  = j["pattern"]
+        nline = j["new_line"]
+        label = f"{name}: " if name else ""
+        print(f"  - {label}file={fp} pattern={patt!r}")
+        results.append(replace_pattern(fp, patt, nline))
+    return all(results)
+
+
+def run_commands(post_install_cmds) -> bool:
+    """Run post-install shell commands and return True only if all succeed."""
+    if isinstance(post_install_cmds, str):
+        cmds = [os.path.expanduser(post_install_cmds)]
+    elif isinstance(post_install_cmds, list):
+        cmds = [os.path.expanduser(c) for c in post_install_cmds if isinstance(c, str)]
+    else:
+        cmds = []
+    all_ok = True
+    for cmd in cmds:
+        rc = os.system(cmd)
+        if rc != 0:
+            print(f"PostInstall failed (rc={rc}): {cmd}")
+            all_ok = False
+    return all_ok
 
 
 

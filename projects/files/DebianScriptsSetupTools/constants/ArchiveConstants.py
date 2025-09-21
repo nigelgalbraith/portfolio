@@ -9,11 +9,11 @@ from modules.archive_utils import (
     install_archive_file,
     uninstall_archive_install,
     check_archive_status,
-    run_post_install_commands,
     remove_paths,
     handle_cleanup,
 )
 from modules.service_utils import start_service_standard
+from modules.system_utils import run_commands
 
 # === CONFIG PATHS & KEYS ===
 PRIMARY_CONFIG   = "config/AppConfigSettings.json"
@@ -161,7 +161,7 @@ PIPELINE_STATES = {
             handle_cleanup: {
                 "args": [KEY_DOWNLOAD_PATH],
             },
-            run_post_install_commands: {
+            run_commands: {
                 "args": [KEY_POST_INSTALL],
 
             },
@@ -179,7 +179,7 @@ PIPELINE_STATES = {
             remove_paths: {
                 "args": [lambda j, m, c: [m.get(KEY_EXTRACT_TO)] + (m.get(KEY_TRASH_PATHS) or [])]        
             },
-            run_post_install_commands: {
+            run_commands: {
                 "args": [KEY_POST_UNINSTALL],
             },
 

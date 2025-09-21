@@ -15,9 +15,8 @@ from modules.archive_utils import (
     uninstall_archive_install,
     create_symlink,
     handle_cleanup,
-    run_post_install_commands,
 )
-from modules.system_utils import expand_path, create_user, fix_permissions
+from modules.system_utils import expand_path, create_user, fix_permissions, run_commands
 from modules.camera_utils import (
     write_m3u,
     remove_m3u,
@@ -290,7 +289,7 @@ PIPELINE_STATES = {
                 "when": "archive",
                 "result": "_",
             },
-            run_post_install_commands: {
+            run_commands: {
                 "args": [f"meta.{KEY_INSTRUCTIONS}"],
                 "when": f"meta.{KEY_INSTRUCTIONS}",
                 "result": "_",

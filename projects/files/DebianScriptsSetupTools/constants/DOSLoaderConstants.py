@@ -7,10 +7,11 @@ from modules.archive_utils import (
     install_archive_file,
     uninstall_archive_install,
     check_archive_status,
-    run_post_install_commands,
     remove_paths,
     handle_cleanup,
 )
+
+from modules.system_utils import run_commands
 
 # === CONFIG PATHS & KEYS ===
 PRIMARY_CONFIG   = "config/AppConfigSettings.json"
@@ -168,7 +169,7 @@ PIPELINE_STATES = {
             handle_cleanup: {
                 "args": ["archive_path"],
             },
-            run_post_install_commands: {
+            run_commands: {
                 "args": [KEY_POST_INSTALL],
             },
         },
@@ -192,7 +193,7 @@ PIPELINE_STATES = {
         },
     "RUN": {
         "pipeline": {
-            run_post_install_commands: {
+            run_commands: {
                 "args": [KEY_LAUNCH_CMD],
                 "result": "ran",
             },
