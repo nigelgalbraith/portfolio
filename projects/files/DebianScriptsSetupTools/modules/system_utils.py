@@ -368,28 +368,27 @@ def run_commands(post_install_cmds) -> bool:
     return all_ok
 
 
-def normalize_and_replace_pattern_dict(jobs: Any) -> bool:
-    """Ensure jobs is a list of dicts and normalize 'new_line_list' → 'new_line'."""
-    if not isinstance(jobs, list):
-        print(f"[ERROR] Expected list of dicts, got {type(jobs).__name__}")
-        return False
-    normalized: list[dict[str, Any]] = []
+def convert_dict_list_to_str(
+    jobs: list[dict[str, Any]],
+    from_key: str = "new_line_list",
+    to_key: str = "new_line",
+    sep: str = ";",
+) -> list[dict[str, Any]]:
+    """Convert list under `from_key` into a string at `to_key`, using `sep` as separator."""
     for job in jobs:
-        if not isinstance(job, dict):
-            print(f"[SKIP] Invalid job entry (not dict): {job}")
-            continue
-        job = dict(job)
-        if "new_line_list" in job:
-            parts = job.pop("new_line_list")
+        if from_key in job:
+            parts = job[from_key]
             if parts:
                 first, *rest = parts
                 if " " in first:
                     key, first_val = first.split(maxsplit=1)
-                    job["new_line"] = f"{key} { ';'.join([first_val] + rest) }"
+                    job[to_key] = f"{key} {sep.join([first_val] + rest)}"
                 else:
-                    job["new_line"] = ";".join(parts)
-        normalized.append(job)
-    return replace_pattern_dict(normalized)
+                    job[to_key] = sep.join(parts)
+            del job[from_key]
+    return jobs
+
+
 
 
 

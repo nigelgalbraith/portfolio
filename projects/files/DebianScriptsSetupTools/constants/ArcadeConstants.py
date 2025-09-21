@@ -6,7 +6,8 @@ from modules.system_utils import (
     copy_file, 
     copy_file_dict,  
     run_commands,
-    normalize_and_replace_pattern_dict
+    replace_pattern_dict,
+    convert_dict_list_to_str    
 )
 from modules.package_utils import check_package, install_packages, uninstall_packages
 
@@ -30,7 +31,9 @@ KEY_DEST               = "dest"
 KEY_PATTERN_NAME       = "patternName"
 KEY_FILEPATH           = "filepath"
 KEY_REGEX_PATTERN      = "pattern"
-KEY_NEW_LINE           = "new_line_list"
+KEY_NEW_LINE_LIST      = "new_line_list"
+KEY_NEW_LINE           = "new_line"
+NEW_LINE_SEP           = ";"
 
 
 # === EXAMPLE JSON ===
@@ -69,7 +72,7 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
                         KEY_PATTERN_NAME: "RomPathUpdate",
                         KEY_FILEPATH: "~/.mame/mame.ini",
                         KEY_REGEX_PATTERN: "^rompath.*$",
-                        KEY_NEW_LINE: (
+                        KEY_NEW_LINE_LIST: (
                             "rompath "
                             "$HOME/Arcade/MAME/roms;"
                             "$HOME/Arcade/Neo Geo;"
@@ -80,7 +83,7 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
                         KEY_PATTERN_NAME: "ArtPathUpdate",
                         KEY_FILEPATH: "~/.mame/mame.ini",
                         KEY_REGEX_PATTERN: "^artpath.*$",
-                        KEY_NEW_LINE: (
+                        KEY_NEW_LINE_LIST: (
                             "artpath "
                             "$HOME/Arcade/MAME/artwork;"
                             "$HOME/Arcade/Neo Geo/artwork;"
@@ -91,7 +94,7 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
                         KEY_PATTERN_NAME: "SamplePathUpdate",
                         KEY_FILEPATH: "~/.mame/mame.ini",
                         KEY_REGEX_PATTERN: "^samplepath.*$",
-                        KEY_NEW_LINE: "samplepath $HOME/Arcade/MAME/samples"
+                        KEY_NEW_LINE_LIST: "samplepath $HOME/Arcade/MAME/samples"
                     }
                 ],
             },
@@ -155,7 +158,7 @@ SECONDARY_VALIDATION: Dict[str, Any] = {
             KEY_PATTERN_NAME: str,
             KEY_FILEPATH: str,
             KEY_REGEX_PATTERN: str,
-            KEY_NEW_LINE: list,
+            KEY_NEW_LINE_LIST: list,
         },
         "allow_empty": True,
     },
@@ -277,8 +280,12 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
                 "args": [KEY_SETTINGS_FILES],
                 "result": "settings_copied",
             },
-            normalize_and_replace_pattern_dict: {
-                "args": [KEY_PATTERN_JOBS],
+            convert_dict_list_to_str: {
+                "args": [KEY_PATTERN_JOBS, KEY_NEW_LINE_LIST, KEY_NEW_LINE, NEW_LINE_SEP],
+                "result": "pattern_jobs_ready",
+            },
+            replace_pattern_dict: {
+                "args": ["pattern_jobs_ready"], 
                 "result": "patterns_ok",
             },
             run_commands: {
@@ -296,8 +303,12 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
                 "args": [KEY_SETTINGS_FILES],
                 "result": "settings_copied",
             },
-            normalize_and_replace_pattern_dict: {
-                "args": [KEY_PATTERN_JOBS],
+            convert_dict_list_to_str: {
+                "args": [KEY_PATTERN_JOBS, KEY_NEW_LINE_LIST, KEY_NEW_LINE, NEW_LINE_SEP],
+                "result": "pattern_jobs_ready",
+            },
+            replace_pattern_dict: {
+                "args": ["pattern_jobs_ready"], 
                 "result": "patterns_ok",
             },
             run_commands: {
