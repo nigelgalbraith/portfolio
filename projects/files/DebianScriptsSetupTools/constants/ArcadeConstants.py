@@ -4,10 +4,9 @@ from pathlib import Path
 from typing import Dict, Any
 from modules.system_utils import (
     copy_file, 
-    copy_file_dict, 
-    replace_pattern, 
-    replace_pattern_dict, 
-    run_commands
+    copy_file_dict,  
+    run_commands,
+    normalize_and_replace_pattern_dict
 )
 from modules.package_utils import check_package, install_packages, uninstall_packages
 
@@ -31,7 +30,7 @@ KEY_DEST               = "dest"
 KEY_PATTERN_NAME       = "patternName"
 KEY_FILEPATH           = "filepath"
 KEY_REGEX_PATTERN      = "pattern"
-KEY_NEW_LINE           = "new_line"
+KEY_NEW_LINE           = "new_line_list"
 
 
 # === EXAMPLE JSON ===
@@ -70,7 +69,29 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
                         KEY_PATTERN_NAME: "RomPathUpdate",
                         KEY_FILEPATH: "~/.mame/mame.ini",
                         KEY_REGEX_PATTERN: "^rompath.*$",
-                        KEY_NEW_LINE: "rompath                   $HOME/mame/roms;"
+                        KEY_NEW_LINE: (
+                            "rompath "
+                            "$HOME/Arcade/MAME/roms;"
+                            "$HOME/Arcade/Neo Geo;"
+                            "$HOME/Arcade/Nintendo 64"
+                        )
+                    },
+                    {
+                        KEY_PATTERN_NAME: "ArtPathUpdate",
+                        KEY_FILEPATH: "~/.mame/mame.ini",
+                        KEY_REGEX_PATTERN: "^artpath.*$",
+                        KEY_NEW_LINE: (
+                            "artpath "
+                            "$HOME/Arcade/MAME/artwork;"
+                            "$HOME/Arcade/Neo Geo/artwork;"
+                            "$HOME/Arcade/Nintendo 64/artwork"
+                        )
+                    },
+                    {
+                        KEY_PATTERN_NAME: "SamplePathUpdate",
+                        KEY_FILEPATH: "~/.mame/mame.ini",
+                        KEY_REGEX_PATTERN: "^samplepath.*$",
+                        KEY_NEW_LINE: "samplepath $HOME/Arcade/MAME/samples"
                     }
                 ],
             },
@@ -134,7 +155,7 @@ SECONDARY_VALIDATION: Dict[str, Any] = {
             KEY_PATTERN_NAME: str,
             KEY_FILEPATH: str,
             KEY_REGEX_PATTERN: str,
-            KEY_NEW_LINE: str,
+            KEY_NEW_LINE: list,
         },
         "allow_empty": True,
     },
@@ -256,7 +277,7 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
                 "args": [KEY_SETTINGS_FILES],
                 "result": "settings_copied",
             },
-            replace_pattern_dict: {
+            normalize_and_replace_pattern_dict: {
                 "args": [KEY_PATTERN_JOBS],
                 "result": "patterns_ok",
             },
@@ -275,7 +296,7 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
                 "args": [KEY_SETTINGS_FILES],
                 "result": "settings_copied",
             },
-            replace_pattern_dict: {
+            normalize_and_replace_pattern_dict: {
                 "args": [KEY_PATTERN_JOBS],
                 "result": "patterns_ok",
             },
