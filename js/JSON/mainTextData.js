@@ -4,126 +4,125 @@
 const MAIN_TEXT_DATA = {
   "arcadeCabinet": {
     "paragraphs": [
-      "For this project, I built a custom MAME arcade cabinet using waste MDF and salvaged timber from my joinery work, giving new life to materials that would have otherwise been discarded. The cabinet was designed from scratch and cut using basic woodworking tools, with a focus on keeping costs low while still achieving an authentic retro look and feel.",
-      "I integrated an i-PAC circuit board to handle keyboard inputs from real arcade buttons and joysticks, giving the experience a true arcade feel. The cabinet also includes LED backlighting and a front-mounted coin button for added immersion.",
-      "It runs Windows with HyperSpin as the front-end interface, supporting a library of over 4,000 classic games from various consoles and arcade systems. The build was a great way to combine my interest in retro gaming with hands-on woodworking and hardware integration skills."
+      "For this project, I built a custom MAME arcade cabinet using waste MDF and salvaged timber from my joinery work, giving new life to materials that would have otherwise been discarded. The cabinet was designed from scratch and cut using basic woodworking tools, with a focus on keeping costs low but also maintain an authentic retro look and feel.",
+      "I integrated an i PAC circuit board to handle keyboard inputs from real arcade buttons and joysticks, giving the experience a true arcade feel. The cabinet also includes LED backlighting and a front mounted coin button for added immersion.",
+      "It runs Windows with HyperSpin as the front end interface, supporting a library of over 4,000 classic games from various consoles and arcade systems. The build was a great way to combine my interest in retro gaming with hands on woodworking and hardware integration skills."
     ]
   },
   "greenhouseBoxes": {
-    "paragraphs": [
-      "For this project, I designed a series of planter box layouts within a greenhouse environment using SketchUp 3D software, combining visual planning with practical considerations for indoor cultivation. The model allowed me to explore different configurations for maximizing growing space while ensuring ease of access and efficient use of the greenhouse footprint.",
-      "The construction process involved selecting materials suitable for the humid and controlled conditions of a greenhouse, with attention to drainage, airflow, and maintenance. Sustainability remained a key focus, incorporating reclaimed wood and moisture-resistant components to balance durability with environmental responsibility.",
-      "This project highlights how digital tools like SketchUp can assist in conceptualizing and refining interior growing systems before implementation. The resulting layout supports high-density planting and optimized space usage, making it ideal for year-round cultivation in a compact, controlled environment."
+    "paragraphs":
+    [
+      "I designed a set of planter box layouts in SketchUp, trying out different ways to get the most growing space while still keeping access easy. The idea was to keep it modular so it could be put together in the greenhouse without too much hassle. I used reclaimed wood where I could, and added galvanized screws at the corners to keep it solid.",
+      "Using SketchUp gave me a chance to work through different layouts before I started building, which saved time and cut down on mistakes. It also helped me show the plan more clearly, so everyone could picture how it would fit together in the greenhouse."
     ]
   },
   "kvmLab": {
     "paragraphs": [
-      "The KVM Student Labs project transitioned Techlabs from VMware Workstation Pro to an open-source KVM virtualization stack using Ubuntu, QEMU, and Libvirt. The goal was to reduce licensing costs, improve performance, and streamline the infrastructure with domain-integrated authentication.",
-      "Hardware compatibility and integration with the Active Directory domain posed initial challenges. Constraints in virtualized test environments led to delays, prompting a shift in focus from deployment to feasibility testing. These limitations emphasized the importance of robust backup and documentation processes.",
-      "Despite technical setbacks, the project established a working foundation for domain-authenticated Linux virtualization, complete with Cockpit-based VM management. This solution demonstrated the viability of KVM as a scalable alternative for student lab environments."
+      "The KVM Student Labs project moved Techlabs from VMware Workstation Pro to an open source stack with Ubuntu, QEMU, and Libvirt. The aim was to cut licensing costs, boost performance, and add domain based authentication.",
+      "Getting hardware to work smoothly with Active Directory was a hurdle, and test environment limits caused delays. This shifted the focus toward feasibility testing and highlighted the need for solid backups and clear documentation.",
+      "In the end, the project set up domain authenticated Linux virtualization with Cockpit for VM management, proving KVM is a practical and scalable option for student labs."
     ]
   },
-"sharepointGps": {
+  "sharepointGps": {
     "paragraphs": [
-        "As part of my work with Downer, I implemented a SharePoint-based digital solution to enhance the efficiency and communication within the traffic management team.",
-        "This SharePoint platform became a centralized hub, supporting improved visibility and communication across the team.",
-        "The solution significantly reduced manual paperwork, improved auditability, and helped teams in the field stay connected to the office in real time."
+      "At Downer, I built a SharePoint solution to improve efficiency and communication in the traffic management team.",
+      "The platform became a central hub, giving the team better visibility and easier communication.",
+      "It cut down paperwork, improved audit trails, and kept field crews connected to the office in real time."
     ],
     "lists": [
-        {
+      {
         "title": "Key Features",
         "items": [
-            "Access and manage Traffic Management Plans (TMPs) from tablets on-site.",
-            "Upload daily site checks via smartphones for streamlined reporting.",
-            "Scan traffic signs to automatically log GPS coordinates."
+          "Access and manage Traffic Management Plans (TMPs) from tablets on site.",
+          "Upload daily site checks with smartphones for faster reporting.",
+          "Scan traffic signs to auto log GPS coordinates."
         ]
-        },
-        {
+      },
+      {
         "title": "Operational Benefits",
         "items": [
-            "Forward works planning linking staff, plant, and resources.",
-            "Improved visibility with online access to the weekly planner.",
-            "Crew pre-planning based on job requirements."
+          "Forward works planning that links staff, plant, and resources.",
+          "Better visibility with online weekly planner access.",
+          "Crew pre planning based on job needs."
         ]
-        }
+      }
     ]
-    },
+  },
   "terraceGardens": {
-    "paragraphs": [
-      "For this project, I designed a set of terrace gardens using SketchUp 3D software, combining visual planning with practical layout considerations. The model helped me test different arrangements for planter boxes and levels to ensure both usability and aesthetic balance.",
-      "The construction process involved careful use of materials suited for outdoor conditions, with attention to drainage, accessibility, and maintenance. The project emphasized sustainability, using reclaimed wood and durable components where possible to reduce environmental impact while maintaining aesthetic appeal.",
-      "This project demonstrates how digital tools like SketchUp can aid in conceptualizing and communicating designs before physical work begins. The resulting gardens promote efficient use of vertical space, making them ideal for compact or urban environments where ground area is limited."
-    ]
+    "paragraphs": 
+  [
+    "I designed terrace gardens in SketchUp, trying out different planter box layouts and levels to get a setup that was simple and balanced. The idea was to keep the build straightforward and modular, using reclaimed wood and solid fixings to make it durable but still easy to put together.",
+    "For me it’s about using tech to save time and make the hands on work easier. SketchUp lets me try different options before building, and it also helps when explaining ideas to others. Having a model to look at means everyone can see the same thing and be clear on how it should come together."
+  ]
   },
   "home": {
     "paragraphs": [
-      "I’m an IT professional based in Christchurch, New Zealand, with a strong foundation in infrastructure, networking, virtualization, and automation. I build smart, sustainable, user focused solutions whether for enterprise teams or home grown DIY projects.",
-      "My journey into tech began with hands-on trades work, followed by academic studies at Ara Institute of Canterbury where I focused on cost-effective open-source virtualization and efficient IT infrastructure. That balance between practical know how and innovative thinking continues to shape my approach today.",
-      "Whether it's building a SharePoint system to optimize traffic operations, automating my vegetable garden's irrigation, or running virtual machines for research and testing, I’m driven by problem-solving and efficiency. I believe technology can make life easier and greener when thoughtfully applied.",
-      "Please explore my projects, read more about me, or get in touch. I'm always keen to collaborate with teams that value innovation, sustainability, and practical creativity."
-    ]
+    "I’m an IT professional based in Christchurch, New Zealand, with a broad background in infrastructure, networking, virtualization, and automation. I like putting together smart, practical solutions whether that’s for a workplace setup or one of my own DIY projects.",
+    "I started out doing hands on trades work, then studied at Ara Institute of Canterbury where I got into IT. That mix of practical know how and new ideas still guides how I approach things today.",
+    "For me, it’s always about problem solving and finding efficient ways to get things done. I reckon tech, when used right, can make life easier and a bit greener too.",
+    "Feel free to check out my projects, read a bit more about me, or get in touch. I’m always up for working with people who value innovation, sustainability, and practical creativity."
+  ]
   },
   "about": {
     "paragraphs": [
-      "I'm Nigel Galbraith, an IT professional with a strong foundation in network infrastructure, virtualization, and automation. After years of hands-on experience across diverse industries from traffic planning to joinery, I transitioned into tech to build systems that are not just functional, but sustainable and user-focused.",
-      "During my studies at Ara Institute of Canterbury, I completed a capstone project developing a KVM-based virtualization environment to replace proprietary software a step toward open-source learning and cost-effective lab setups. I thrive on technical challenges and enjoy turning complex problems into elegant, automated solutions.",
-      "Outside of work, I build personal projects like a custom arcade machine, a media server, and an automated irrigation system for my vegetable garden. These DIY builds reflect how I approach technology: creatively, practically, and with a sense of fun."
+      "I'm Nigel Galbraith, an IT professional with a broad background in infrastructure, virtualization, and automation. I started out in trades before moving into tech, which gave me a practical way of looking at systems making sure they’re reliable, sustainable, and easy to use.",
+      "I like tackling complex problems and finding efficient solutions. For me, tech works best when it’s practical, creative, and makes life easier."
     ]
   },
-"contact": {
-    "paragraphs": [
-        "If you'd like to get in touch, please reach out using one of the following methods:",
-        "Feel free to connect or send a message I’d love to hear from you!"
-    ],
-    "lists": [
-        {
-        "items": [
-            'Email: <a href="mailto:nigel.galbraith@proton.me">nigelgalbraith@proton.me</a>',
-            'GitHub: <a href="https://github.com/nigelgalbraith/nigelgalbraith.github.io" rel="noopener" target="_blank">github.com/nigelgalbraith</a>',
-            'LinkedIn: <a href="https://linkedin.com/in/nigelgalbraith" rel="noopener" target="_blank">linkedin.com/in/nigelgalbraith</a>'
-        ]
-        }
-    ]
+  "contact": {
+      "paragraphs": [
+          "Want to get in touch? Here are a few ways you can reach me.",
+          "Send a message anytime, I’d be keen to hear from you."
+      ],
+      "lists": [
+          {
+          "items": [
+              'Email: <a href="mailto:nigel.galbraith@proton.me">nigelgalbraith@proton.me</a>',
+              'GitHub: <a href="https://github.com/nigelgalbraith/nigelgalbraith.github.io" rel="noopener" target="_blank">github.com/nigelgalbraith</a>',
+              'LinkedIn: <a href="https://linkedin.com/in/nigelgalbraith" rel="noopener" target="_blank">linkedin.com/in/nigelgalbraith</a>'
+          ]
+          }
+      ]
   },
   "portfolioWebsite": {
     "paragraphs": [
-      "This project documents how I built the very website you're viewing from folder layout to JavaScript behaviors. It serves as both a portfolio and a demonstration of modular, maintainable web design without frameworks.",
-      "The site uses static HTML for pages, with consistent styling and behavior controlled through reusable JavaScript modules. All content is dynamically injected into templates to keep maintenance simple and reduce code duplication. Every project has its own page, and reusable loaders handle everything from responsive images to dynamic footers.",
-      "The architecture separates structure (HTML), style (CSS), and behavior (JS) in a clear, modular format. Rather than relying on site builders or libraries, I coded it all manually to gain deeper control over layout, accessibility, and performance."
+      "Here I’ve documented how I put together my portfolio site, from the folder layout to the JavaScript that runs it. I set it up to be modular and easy to maintain, without using frameworks.",
+      "The pages are static HTML with styling and behavior handled by reusable JavaScript modules. Content gets pulled into templates, which keeps things simple to update and avoids repeating code. Each project has its own page, and loaders take care of things like images and footers.",
+      "The setup keeps structure (HTML), style (CSS), and behavior (JS) clearly separated. Building it from scratch gave me full control over layout, accessibility, and performance, while also giving me the chance to teach myself new skills along the way."
     ]
   },
   "quizCreator": {
     "paragraphs": [
-        "This project is a self-contained quiz generator that allows questions, answers, and detailed explanations to be added through a structured Excel spreadsheet, then converted into a dynamic, interactive web-based quiz.",
-        "I created this tool to provide a simple, offline solution for quiz creation no need to sign up for third-party platforms or rely on internet connectivity. The ability to generate and run quizzes locally makes it ideal for personal study, classrooms, or environments with limited access.",
-        "Throughout my study, repetition and practice played a crucial role in helping me retain and apply new information. This project enabled me to create targeted quizzes tailored to my learning needs and pace. It gave me the flexibility to reinforce key concepts through custom questions and revisit topics as often as needed.",
-        "While the current version is built around CyberOps content, the design is adaptable users can easily modify or replace the spreadsheet to suit any subject area. Whether it's IT, science, languages, or general knowledge, the tool can be repurposed to match.",
-        "Beyond its practical use, this project served as a valuable way to apply and test the tools and skills I was learning throughout my coursework. It involved working with Python for data handling and conversion, Excel integration with pandas, web technologies like HTML, JavaScript, and JSON for the quiz interface, and user-focused design to ensure the experience was intuitive and engaging."
+      "This project is a self contained quiz generator that takes questions, answers, and explanations from a structured Excel spreadsheet and turns them into an interactive web quiz.",
+      "I built it as a simple offline tool no sign ups, no third party platforms, and no need for internet access. Being able to create and run quizzes locally makes it handy for personal study, classrooms, or places with limited connectivity.",
+      "Repetition and practice were key to how I learned during my study. This project let me build quizzes tailored to my own pace and topics, so I could reinforce concepts and revisit areas as often as needed.",
+      "The current version is based on CyberOps content, but the setup is flexible. Swap out the spreadsheet and it can be used for IT, science, languages, or any subject.",
+      "It was also a way to put my skills into practice using Python and pandas for data handling, Excel integration, and web tech like HTML, JavaScript, and JSON to build the quiz interface. The focus was on keeping it easy to use and practical."
     ]
-   },
-   "thematic": {
+  },
+  "thematic": {
     "paragraphs": [
-        "This project was created to streamline the process of thematic analysis by combining structured Excel sheets with automated data handling and web export tools. It simplifies what can often be a time-consuming and repetitive task, providing a more efficient way to organise and interpret qualitative data.",
-        "I designed this system to reduce manual overhead no more constant copying, pasting, or cross-referencing between sheets. By using built-in macros and structured workflows, it helps maintain consistency across the analysis and ensures that factors, groupings, and categories are properly recorded and referenced.",
-        "During my own work with qualitative datasets, I found that managing themes and tracking related metadata could quickly become overwhelming. This project gave me a more practical and repeatable approach, making it easier to focus on insights rather than formatting or troubleshooting formulas.",
-        "The final output can be exported to a web-based format, allowing thematic findings to be reviewed and navigated more clearly. Glossaries, group relationships, and even basic risk assessment visuals are automatically included, making the end result both informative and accessible.",
-        "Like my other tools, this project was also an opportunity to apply what I’ve been learning in areas like Excel automation, Python scripting, and front-end web development. It’s flexible enough to adapt to different types of thematic work whether for research, education, or internal reporting."
+      "This project streamlines thematic analysis by combining structured Excel sheets with automated data handling and web export tools. It takes a task that’s usually repetitive and time consuming and makes it faster and more organised.",
+      "I built it to cut down on manual work no endless copying, pasting, or cross referencing. With macros and structured workflows, it keeps the analysis consistent and makes sure factors, groupings, and categories are properly tracked.",
+      "When I worked with qualitative datasets, I found it easy to get lost managing themes and metadata. This system gave me a clearer, repeatable process, letting me focus more on the insights instead of fixing formulas or formatting.",
+      "The results can be exported to a web format, so findings are easier to review and navigate. It also builds glossaries, group relationships, and simple risk model automatically, making easier to understand.",
+      "It was a chance to apply what I’ve been learning Excel automation, Python scripting, and front end web development. It’s flexible enough to handle different types of thematic work, from research to education or internal reporting."
     ]
-    },
-    "powerShellCloudBackup": {
+  },
+  "powerShellCloudBackup": {
       "paragraphs": [
-        "This tool allows users to back up selected files and folders to cloud storage destinations such as Google Drive, Dropbox, and Mega NZ before shutting down or logging off. Users can choose between zipped backups (with retention) and raw file copies (append or mirror mode). The program supports customizable settings, GUI configuration, and sync completion detection.",
-        "While the tool has been thoroughly tested, it is strongly recommended that users perform a manual backup first to ensure there is no risk of data loss. This is especially important when using 'Mirror' mode, which may delete files in the destination to match the source. Always double-check your paths and settings before enabling automatic shutdown.",
-        "Note: Most cloud providers like Google Drive, Dropbox, and Mega NZ offer a file recovery or version history window (typically up to 30 days), which may help restore accidentally deleted files. However, relying on this should not replace cautious setup and testing.",
-        "All backup settings are stored in editable JSON files, making it easy to customize the behavior of the tool or update preferences without modifying the script itself. Advanced users can also add support for additional cloud providers by extending the `cloudProviders.json` file with a new provider block."
-      ]
-    },
-    "debianInstallSuite": {
-      "paragraphs": [
-        "This collection of Python and Bash scripts automates the setup of Debian-based systems using a modular, model-aware design. Each script targets a specific aspect of system configuration such as installing packages, setting up firewall rules, configuring RDP access, deploying system services, or managing third-party repositories. All behavior is driven by structured JSON config files that map to individual system models, making the tool flexible and scalable across diverse environments.",
-        "Scripts follow a consistent lifecycle: detect system model, load matching config, validate user input, execute the job, and log all results to a versioned logs directory. Each installer prompts users before making changes, reducing the risk of misconfiguration. Logging is built in at every stage, and logs are auto-rotated to avoid clutter.",
-        "This suite is particularly useful for system administrators and IT teams who want to streamline repeatable setups for classrooms, labs, or business machines. Instead of maintaining a one-size-fits-all image, you can define clear rules for each device type and apply them with a single command.",
-        "All logic is modularized into shared utility modules handling logging, service setup, file permissions, JSON parsing, and more making the scripts easy to extend, debug, and maintain. Future enhancements could include GUI wrappers, remote execution tools, or Ansible-style batch automation built on top of this clean foundation."
+      "This tool backs up selected files and folders to cloud storage like Google Drive, Dropbox, or Mega NZ before shutdown or logoff. You can choose between zipped backups (with retention) or raw file copies in append or mirror mode. It includes customizable settings, a GUI for configuration, and checks to confirm sync is complete.",
+      "Even though it’s been tested, I recommend running a manual backup first to avoid data loss. This matters most in 'Mirror' mode, which can delete files in the destination to match the source. Always double check your paths and settings before using automatic shutdown.",
+      "Most cloud providers, including Google Drive, Dropbox, and Mega NZ, keep deleted files for a short time (usually up to 30 days), which can help recover mistakes. Still, it’s best to set things up carefully from the start.",
+      "Backup settings are stored in editable JSON files, so you can update preferences without touching the script. You can also add new cloud providers by extending the `cloudProviders.json` file with another provider block."
+    ]
+  },
+  "debianInstallSuite": {
+    "paragraphs": [
+      "This set of Python and Bash scripts automates the setup of Debian based systems using a modular, model aware design. Each script handles a specific task like installing packages, setting firewall rules, configuring RDP, deploying services, or managing third party repos. All behavior is driven by JSON config files linked to system models, making the tool flexible across different environments.",
+      "The scripts follow a simple flow: detect the system model, load the right config, validate input, run the job, and log everything to a versioned logs directory. Each installer asks for confirmation before changes are made, and logs are rotated automatically to keep things tidy.",
+      "Instead of maintaining one standard image, the scripts let you define rules per device type and apply them with a single command.",
+      "Core logic is split into utility modules for logging, service setup, file permissions, JSON parsing, and more. This makes them easy to extend and maintain, with room to grow into GUI tools, remote execution, or Ansible style automation later on."
       ]
     }
 };

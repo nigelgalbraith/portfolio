@@ -7,7 +7,7 @@ thematic: [
     title: "Thematic Analysis Structure and Relationships",
     img: "ThematicAnalysisStructureEDR.png",
     alt: "Thematic Analysis Structure and Relationships",
-    text: "This project uses a structured workflow to transform raw text into meaningful insights. At its core, the thematic analysis links Extracts (raw data) to Factors (identified themes), which are then grouped into Groups, Sub-Groups, and categorized further. This structured hierarchy allows for powerful visualizations, risk models, and filtering in the final web output.The process begins in Excel, where users record and classify data. A Python script converts the workbook into structured JSON, enabling dynamic exploration on the final webpages"
+    text: "This project uses a structured workflow to transform raw text into meaningful insights. The thematic analysis links Extracts (raw data) to Factors (identified themes), which are then grouped into Groups, Sub-Groups, and categorized further if needed. This structured hierarchy allows for visualizations, risk models, and filtering in the final web output.Starting in Excel users record and classify data. A Python script converts the workbook into structured JSON allowing the data to be viewed visually in the webpages"
   },
   {
     title: "Thematic Analysis Diagram",
@@ -19,7 +19,7 @@ thematic: [
     title: "Step 1: Enter Extracts and Identify Factors",
     img: "ThematicAnalysisIntial.png",
     alt: "Entering Extracts and Factors",
-    text: "Begin by collecting qualitative data such as participant quotes, observations, or written feedback. Each distinct segment, referred to as an 'extract,' is entered into the Excel workbook. Alongside each extract, note any recurring themes, patterns, or ideas, which are captured as individual 'factors.' If you are entering a factor manually, first set the mode to 'Manual' to avoid duplication caused by the macro. Once factors are added to the glossary table, they become available for selection via the drop-down list at that point, switch the mode back to 'List' to enable structured selection and maintain consistency. If you need to edit or delete specific factors later, switch to 'Manual' mode before making changes to ensure smooth editing without macro interference."
+    text: "Begin by collecting qualitative data such as participant quotes, observations, or written feedback. Each relating data point, referred to as an 'extract,' is entered into the Excel workbook. Alongside each extract, note any recurring themes, patterns, or ideas, which are captured 'factors.' If you are entering a factor manually, first set the mode to 'Manual' to avoid duplication caused by the macro. Once factors are added to the glossary table, they become available for selection via the drop-down list at that point, switch the mode back to 'List' to enable the selection to help maintain consistency. If you need to edit or delete specific factors later, switch to 'Manual' mode before making changes to prevent any macro interference."
   },
   {
     title: "Step 2: View Identified Factors",
@@ -37,31 +37,31 @@ thematic: [
     title: "Step 4. Assign Group and Sub-Group Values",
     img: "UpdateGroupSubGroup.png",
     alt: "Group and Sub-Group Update",
-    text: "Return to the Thematic Analysis sheet and click the 'Update Group' and 'Update Sub Group' buttons. These will populate the appropriate values from your Glossary Table. If you also need to edit factor entries manually such as updating or deleting values be sure to switch the mode to 'Manual' first to prevent duplication or conflicts caused by the macro. Once editing is complete, switch back to 'List' mode to resume structured selection. The sheet highlights missing factors from the glossary in red, providing quick visual feedback if anything is incomplete."
+    text: "Return to the Thematic Analysis sheet and click the 'Update Group' and 'Update Sub Group' buttons. These will populate the appropriate values from your Glossary Table. If you also need to edit factor entries manually such as updating or deleting values be sure to switch the mode to 'Manual' first to prevent duplication or conflicts caused by the macro. Once editing is complete, switch back to 'List' mode to resume structured selection. The sheet highlights missing factors from the glossary in red, providing feedback if anything is incomplete."
   },
   {
     title: "Step 5. Refresh the Search Tool Dataset",
     img: "UpdateSearchTool.png",
     alt: "Search Tool Data",
-    text: "This step pulls everything together. Run the update function to copy all the finalized factors and their assignments into the Search Tool Data sheet. This dataset powers the dropdown filters and logic behind the web-based search tool, so keeping it up to date ensures accurate results later on."
+    text: "This step pulls everything together. Run the update function to copy all the finalized factors and their assignments into the Search Tool Data sheet. This dataset is used in the dropdown filters and logic behind the web-based search tool."
   },
   {
     title: "Step 6. Define Categories and Sub-Categories",
     img: "UpdateCatSubCat.png",
     alt: "Finalizing Categories",
-    text: "Add or review the Category and Sub-Category tags for each factor. You can use the buttons to automatically fill these in from the Glossary Table. Add new rows if you've introduced additional themes during your review. This structure helps support advanced filtering and future reporting."
+    text: "Add or review the Category and Sub-Category tags for each factor. You can use the buttons to automatically fill these in from the Glossary Table. Add new rows if you've introduced additional themes during your review."
   },
   {
     title: "Step 7. Export for Web Use",
     img: "TAWebUpdateFlow.png",
     alt: "Exporting Thematic Analysis",
-    text: "Once everything looks good, save the workbook as 'Thematic-Analysis-Complete.xlsm'. Then run the 'Python-Update-Webpage.py' script from the Python-Import folder. This script turns your structured Excel data into JSON and HTML, which power the interactive web pages for analysis and search."
+    text: "Once everything looks good, save the workbook as 'Thematic-Analysis-Complete.xlsm'. Then run the 'Python-Update-Webpage.py' script from the Python-Import folder. This script turns your structured Excel data into JSON and HTML, which power the web pages for analysis and search."
   },
   {
     title: "Site HTML Structure Overview",
     img: "ThematicAnalysisHTMLStructure.png",
     alt: "Thematic Analysis HTML Page Structure",
-    text: "This diagram illustrates the overall structure of the HTML pages in the thematic analysis tool. Each page serves a specific purpose in presenting analysis results, grouped content, and detailed views. Understanding this structure helps clarify how your exported data connects to the interface."
+    text: "This diagram illustrates the overall structure of the HTML pages in the thematic analysis tool. Each page serves a specific purpose in presenting analysis results, grouped content, and detailed views."
   },
   {
     title: "Excel to JSON Conversion",
@@ -79,13 +79,13 @@ thematic: [
     title: "JavaScript and Data Flow Structure",
     img: "ThematicAnalysisJSPages.png",
     alt: "Thematic Analysis JavaScript and JSON Relationships",
-    text: "Once data is exported to JSON, a set of JavaScript modules process and display it within each page. This diagram shows the relationships between the various scripts (`intGroupAnalysis.js`, `RiskMatrix.js`, etc.) and their associated data files. It helps make sense of how your thematic structure is rendered dynamically across the site."
+    text: "Once data is exported to JSON, a set of JavaScript modules process and display it within each page. This diagram shows the relationships between the various scripts (`intGroupAnalysis.js`, `RiskMatrix.js`, etc.) and their associated data files. It helps make sense of how your thematic structure is rendered across the site."
   },
   {
     title: "Search Tool JavaScript and Data Flow",
     img: "SearchToolHTMLStructure.png",
     alt: "Search Tool Site Map",
-    text: "This diagram illustrates the simplified structure of the Search Tool interface. It shows how the main HTML page (`Index.html`) connects to key JavaScript controllers (`initSearchTool.js`, `SearchTool.js`) and the underlying dataset (`toolJSON.js`). This clear separation makes it easier to understand the flow from page initialization to data filtering logic."
+    text: "This diagram illustrates the simplified structure of the Search Tool interface. It shows how the main HTML page (`Index.html`) connects to key JavaScript controllers (`initSearchTool.js`, `SearchTool.js`) and the  dataset (`toolJSON.js`). This clear separation makes it easier to understand the flow from page initialization to data filtering logic."
   },
   {
     title: "Step 8. Use the Search Tool Webpage",
@@ -97,7 +97,7 @@ thematic: [
     title: "Step 9. Review the Thematic Analysis Web Output",
     img: "ThematicWebResults.png",
     alt: "Thematic Analysis Output",
-    text: "This page lays out your entire thematic structure visually. You’ll see Groups, their linked Factors, and the Extracts they were drawn from. Depending on the data, you might also see visual metrics like risk levels or frequency scores. It’s a great way to step back and get a full-picture view."
+    text: "This page lays out your entire thematic structure visually. You’ll see Groups, their linked Factors, and the Extracts they were drawn from. Depending on the data, you might also see visual metrics like risk levels or frequency scores."
   },
   {
     title: "Groupings Overview",
@@ -109,25 +109,25 @@ thematic: [
     title: "Factor-Level Analysis",
     img: "FactorAnalysisWeb.png",
     alt: "Thematic Analysis Factor Analysis Output",
-    text: "Dive into each factor to see how often it appears, what context it's used in, and which themes it supports. This helps surface which ideas are most influential, underused, or worth following up on. Great for prioritising themes or backing up decisions with data."
+    text: "Veiw each factor to see how often it appears, what context it's used in, and which themes it supports. This helps surface which ideas are most influential, underused, or worth following up on."
   },
   {
     title: "Group-Level Analysis",
     img: "GroupAnalysisWeb.png",
     alt: "Thematic Analysis Group Analysis Output",
-    text: "This breakdown shows the size, spread, and relative weight of each Group. You can compare how often each theme is mentioned and how it connects to others. It’s helpful when you want to identify dominant topics or check for gaps in coverage."
+    text: "This breakdown shows the size, spread, and relative weight of each Group. You can compare how often each theme is mentioned and how it connects to others. It’s helpful when you want to identify dominant topics or check for gaps in analysis coverage."
   },
   {
     title: "Sub-Group Analysis",
     img: "SubGroupAnalysisWeb.png",
     alt: "Thematic Analysis Sub Group Analysis Output",
-    text: "Takes you deeper into the smaller, more focused themes within each Group. Sub-Groups can highlight niche concerns, outliers, or specific issues tied to a broader topic. Use this when you need to fine-tune your insights or tailor your findings to a specific audience."
+    text: "Shows more focused themes within each Group. Sub-Groups can highlight niche concerns, outliers, or specific issues tied to a broader topic. Use this when you need to fine-tune your insights."
   },
   {
     title: "Risk Model Creator",
     img: "RiskModelCreatorWeb.png",
     alt: "Thematic Analysis Risk Model Creator Output",
-    text: "This tool lets you build custom risk models based on the grouped factors. You can define scenarios, assign risk levels, and visually map out how different themes impact potential outcomes. It's especially useful if you’re turning qualitative data into action plans or dashboards."
+    text: "This tool lets you build custom risk models based on the grouped factors. You can define scenarios, assign risk levels, and visually map out how different themes impact potential outcomes. It's useful if you’re turning qualitative data into action plans or dashboards."
   }
   ],
 
@@ -137,7 +137,7 @@ thematic: [
     title: "Quiz Creator System Overview",
     img: "QuizCreatorStructure.png",
     alt: "Quiz Creator Site Map",
-    text: "This diagram shows the structure of the quiz system. The HTML pages load the core JavaScript modules, which in turn access a shared JSON file for all quiz data. This clear separation of structure, logic, and content allows for flexible updates and easy maintenance."
+    text: "This diagram shows the structure of the quiz system. The HTML pages load the core JavaScript modules, which in turn access a shared JSON file for all quiz data. This separation of structure, logic, and content allows for flexible updates and easy maintenance."
   },
   {
     title: "Step 1: Add Custom Questions and Answers",
@@ -161,7 +161,7 @@ thematic: [
     title: "Quiz Data Cleaning and Script Injection",
     img: "QuizCleanFlow.png",
     alt: "Quiz Cleaning and Injection",
-    text: "Once the raw JSON is created, this stage cleans and restructures the data. It splits fields like 'Multiple Answers', groups them by module, and wraps the result in a JavaScript variable. This output is injected into the quiz interface, ready for live use."
+    text: "Once the raw JSON is created, this stage cleans and restructures the data. It splits fields like 'Multiple Answers', groups them by module, and wraps the result in a JavaScript variable. This output is injected into the quiz interface."
   },
   {
     title: "Step 3: Launch the Quiz Selector",
@@ -204,7 +204,7 @@ thematic: [
     },
     {
     title: "JavaScript Architecture (Project Pages)",
-    text: "The Projects page has its own set of modular JavaScript files, such as `projectListLoader.js`, `carousel.js`, and `embedSketchfab.js`. Each of these loads specific data (like project steps or Sketchfab models) only when needed. This structure ensures better performance and easier updates as more features are added.",
+    text: "The Projects page has its own set of modular JavaScript files, such as `projectListLoader.js`, `carousel.js`, and `embedSketchfab.js`. Each of these loads specific data (like project steps or Sketchfab models). This structure makes it easier updates as more features are added.",
     img: "SiteJSProjectPages.png",
     alt: "Diagram showing JavaScript loaders and JSON data modules for the Projects page"
     },
@@ -228,7 +228,7 @@ thematic: [
     },
     {
       title: "projectStepsData.js",
-      text: "Used to walk through project processes, this script loads structured steps from `projectSteps.js` and renders them as expandable sections. It’s ideal for tutorials or detailed walkthroughs, keeping each step clearly separated and easy to follow.",
+      text: "This script loads structured steps from `projectSteps.js` and renders them as sections. It’s good for projects with logical project steps, keeping each step clearly separated and easy to follow.",
       img: "projectStepsDataFlow.png",
       alt: "Flowchart showing how step data is loaded and displayed"
     },
@@ -240,13 +240,13 @@ thematic: [
     },
     {
       title: "carousel.js",
-      text: "This script builds a responsive image carousel from data in `carouselData.js`. It generates slide elements, sets up left/right navigation, and handles auto-advance. Great for previewing multiple screenshots in a compact space.",
+      text: "This script builds a responsive image carousel from data in `carouselData.js`. It generates slide elements, sets up left/right navigation, and handles auto-advance. Helps for previewing multiple screenshots one space.",
       img: "carouselFlow.png",
       alt: "Flowchart showing how carousel images are loaded and rotated"
     },
     {
       title: "modalZoom.js",
-      text: "When users click on a media item (image or model), this script opens a modal for an enlarged view. It improves accessibility and allows users to explore fine details without leaving the page.",
+      text: "When users click on a media item (image or model), this script opens a modal for an enlarged view. It allows users to explore the images closer if needed without leaving the page.",
       img: "modalZoomFlow.png",
       alt: "Flowchart showing modal activation and image zoom"
     },
@@ -270,37 +270,37 @@ thematic: [
     },
     {
       title: "footerIconLoader.js",
-      text: "This script reads icon entries from `iconRegistry.js` and generates the clickable icons in the site footer (e.g., GitHub, LinkedIn). It ensures consistent styling and makes it easy to update links globally.",
+      text: "This script reads icon entries from `iconRegistry.js` and generates the clickable icons in the site footer (e.g., GitHub, LinkedIn). It helps with consistent styling and makes it easy to update links globally.",
       img: "footerIconLoaderFlow.png",
       alt: "Flowchart showing how footer icons are built and inserted"
     },
     {
       title: "responsiveImageLoader.js",
-      text: "To improve performance, this script checks screen width and selects the best image resolution for the device. It helps avoid loading large images on mobile and makes sure visuals stay sharp.",
+      text: "To improve performance, this script checks screen width and selects the best image resolution for the device. It helps avoid loading large images on mobile.",
       img: "responsiveImageLoaderFlow.png",
       alt: "Flowchart showing image resolution selection and loading"
     },
     {
       title: "resumeLoader.js",
-      text: "This script builds the timeline on the Resume page using data from `resumeData.js`. It loops through jobs, roles, and dates, and formats them into vertical entries that are easy to read.",
+      text: "This script builds the timeline on the Resume page using data from `resumeData.js`. It loops through jobs, roles, and dates, and formats them into vertical entries.",
       img: "resumeLoaderFlow.png",
       alt: "Flowchart showing how resume entries are rendered"
     },
     {
       title: "skillsLoader.js",
-      text: "Loads the skill set from `skillsData.js`, and creates icons, labels, or badges for each one. Skills are sorted into categories and displayed responsively so they look good on any screen size.",
+      text: "Loads the skill set from `skillsData.js`, and creates icons, labels, or badges for each one. Skills are sorted into categories and displayed responsively.",
       img: "skillsLoaderFlow.png",
       alt: "Flowchart showing how skills data is visualized"
     },
     {
       title: "Generate-SiteDiagrams.py",
-      text: "This Python script generates Mermaid diagrams for HTML and JavaScript structure. It loads site layout from JSON, writes `.mmd` syntax, and uses the Mermaid CLI to export `.svg` and `.png` diagrams used in the Portfolio.",
+      text: "This Python script generates Mermaid diagrams for HTML and JavaScript structure. It loads site layout from JSON, writes `.mmd` syntax, and uses the Mermaid CLI to export `.svg` and `.png` diagrams used in the webpages.",
       img: "GenerateSiteDiagramsFlow.png",
       alt: "Flowchart showing how the Mermaid site diagrams are generated"
     },
     {
       title: "Image-Optimizer.py",
-      text: "This tool resizes images into multiple screen-specific sizes (desktop, laptop, mobile) and compresses thumbnails and icons. It keeps the site fast while maintaining quality visuals.",
+      text: "This tool resizes images into multiple screen-specific sizes (desktop, laptop, mobile) and compresses thumbnails and icons. It helps the site stay fast while maintaining image quality.",
       img: "ImageOptimizerFlow.png",
       alt: "Flowchart showing how images are processed for different screen sizes"
     },
@@ -377,7 +377,7 @@ thematic: [
       title: "FileSystemUI.psm1 Flowchart",
       img: "BackupFileSystemUIFlow.png",
       alt: "Flowchart of FileSystemUI.psm1",
-      text: "This module builds the advanced tree-view picker for selecting multiple source folders. It also manages how those paths are passed back to the main form."
+      text: "This module builds the tree-view picker for selecting multiple source folders. It also manages how those paths are passed back to the main form."
     },
     {
       title: "Step 6: Review the Log",
