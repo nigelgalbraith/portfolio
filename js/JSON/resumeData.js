@@ -2,7 +2,7 @@
 // Contains structured resume data for dynamic injection.
 
 const resumeData = {
-  professionalOutline: `I have been able to experience many industries at both the middle management and operational levels. This has allowed me to gain different perspectives and understand the importance of providing a solution that suits the needs at every level. These different perspectives have also highlighted the importance of not only communicating your solution in a professional manner but also being open to criticism to allow for constant improvements that may not have been considered.`,
+  professionalOutline: `My career has taken me through a variety of roles, giving me both hands-on operational experience and exposure to management responsibilities. This mix has shown me that effective solutions need to balance practical realities with broader objectives. It’s also reinforced the importance of clear communication and a willingness to adapt, as the best outcomes often come from considering ideas and perspectives beyond your own.`,
   
   experience: [
     {
@@ -11,13 +11,13 @@ const resumeData = {
       role: "Support Analyst",
       date: "Jan 2025 – Feb 2025",
       outline: [
-        "Contributed to frontline monitoring and incident management in a 24/7 managed services environment.",
-        "Quickly integrated into an access-restricted environment during a transitional period for the team."
+        "Gained exposure to frontline monitoring and incident management in a 24/7 managed services environment.",
+        "Adapted quickly to an access-restricted setting during a transitional period for the team."
       ],
       achievements: [
-        "Developed a rapid understanding of Tait’s internal monitoring and ITSM systems to assist in live network support.",
-        "Shadowed senior analysts to participate in early-stage problem investigations and understand root cause analysis workflows.",
-        "Demonstrated integrity and reliability within a short time frame, earning trust and respect from team members."
+        "Built early familiarity with Tait’s internal monitoring and ITSM systems while assisting in live network support.",
+        "Shadowed senior analysts to observe problem investigations and root cause analysis workflows.",
+        "Demonstrated reliability and professionalism, earning the trust of team members in a short time."
       ]
     },
     {
