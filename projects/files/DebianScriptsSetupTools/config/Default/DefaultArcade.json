@@ -4,7 +4,7 @@
       "mame": {
         "Packages": ["mame", "mame-data", "mame-tools"],
         "SetupCmds": [
-          "/usr/games/mame -listxml > ~/Arcade/mame.xml"
+          "/usr/games/mame -listxml > ~/Arcade/mame.xml && echo \"mame.xml export completed!\""
         ],
         "ResetCmds": [
           "rm -f ~/.mame/*.ini",
