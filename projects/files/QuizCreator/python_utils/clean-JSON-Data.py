@@ -1,6 +1,90 @@
 #!/usr/bin/env python3
 # Universal JSON cleaner (supports: split_only, grouped, numbered_keys)
 
+"""
+clean-JSON-Data.py — Universal JSON Cleaner
+
+This script processes JSON files according to a user-supplied configuration,
+supporting multiple transformation modes:
+
+1. split_only:
+   - Splits text fields into lists using a specified separator.
+   - Optionally removes unwanted substrings and casts numeric values to integers.
+
+2. grouped:
+   - Flattens input (list or {sheet:[...]}) into records.
+   - Groups records by one or more keys.
+   - Builds sub-groups containing only selected fields.
+   - Useful for restructuring imported Excel data into grouped JSON objects.
+
+3. numbered_keys:
+   - Converts a list of records into a dictionary with sequential numeric keys.
+
+------------------------------------------------------------------------------
+Usage:
+    ./clean-JSON-Data.py <config_json_or_path>
+
+Where <config_json_or_path> is either:
+  - Path to a JSON configuration file, or
+  - A raw JSON string containing the configuration.
+
+------------------------------------------------------------------------------
+Configuration JSON format:
+
+{
+    "separator": ",",                 # (optional) default global separator, supports escape codes (e.g., "\\n")
+    "text_remove": [";", "extra"],    # (optional) strings to strip from all processed fields
+    "jobs": [
+        {
+            "type": "split_only",
+            "input_json": "raw.json",
+            "output_json": "cleaned.json",
+            "keys_to_split": ["tags"],
+            "separator": ";",         # (optional, overrides global)
+            "cast_int": false,        # (optional)
+            "output_js": "data.js",   # (optional) also export as JS const
+            "json_prefix": "jsonData" # (optional, default: "jsonData")
+        },
+        {
+            "type": "grouped",
+            "input_json": "combined.json",
+            "output_json": "grouped.json",
+            "main_key": "id",
+            "keys_to_split": ["values"],
+            "group_by_keys": ["Category"],
+            "sub_group_by_key": "Items",
+            "sub_key_fields": ["Name","Value"],
+            "cast_int": true
+        },
+        {
+            "type": "numbered_keys",
+            "input_json": "list.json",
+            "output_json": "numbered.json",
+            "keys_to_split": ["tags"],
+            "separator": "\\n"
+        }
+    ]
+}
+
+------------------------------------------------------------------------------
+Requirements:
+    - Python 3.x
+
+------------------------------------------------------------------------------
+Examples:
+
+1. Run with config file:
+    ./clean-JSON-Data.py config.json
+
+2. Run with inline JSON:
+    ./clean-JSON-Data.py '{"jobs":[{"type":"split_only","input_json":"in.json","output_json":"out.json","keys_to_split":["tags"],"separator":","}]}'
+
+------------------------------------------------------------------------------
+Output:
+    - JSON files written to the specified path(s).
+    - Optional JavaScript files exported as `const <prefix> = {...};`.
+"""
+
 import sys, os, json
 from collections import defaultdict
 

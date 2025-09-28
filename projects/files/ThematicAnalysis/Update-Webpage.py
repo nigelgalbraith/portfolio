@@ -1,5 +1,87 @@
 # Python web update tool (universal importer/cleaner)
 
+"""
+web_update_tool.py — Python Web Update Tool (Universal Importer/Cleaner)
+
+This script automates the workflow of preparing JSON/JavaScript data for web apps.
+It ties together the universal Excel importer and universal JSON cleaner, then
+deploys the cleaned JavaScript files to the appropriate web application directories.
+
+------------------------------------------------------------------------------
+Workflow:
+
+1. Import Excel → JSON  
+   - Runs the universal Excel importer (`import-Excel-Data.py`) with a configuration
+     that defines which sheets to export and where to place the JSON files.
+
+2. Clean JSON → Clean JSON + Prefixed JS  
+   - Runs the universal JSON cleaner (`clean-JSON-Data.py`) with a configuration
+     that defines how to process the imported JSON (split, group, number keys).
+   - Optionally exports cleaned JSON as prefixed JavaScript constants.
+
+3. Deploy JS → Web Applications  
+   - Copies the generated `.js` files to the correct `src/` folders of web apps
+     (e.g., SearchTool-Web, ThematicAnalysis-Web).
+
+------------------------------------------------------------------------------
+Usage:
+    python web_update_tool.py
+
+------------------------------------------------------------------------------
+Configuration:
+
+- IMPORT_CFG  
+  Defines how to extract data from Excel:
+  {
+      "excel_file": "Thematic-Analysis-Complete.xlsm",
+      "outputs": [
+          {
+              "type": "per_sheet",
+              "output_folder": "json_files",
+              "sheets": [
+                  {"name": "Tool Data", "start_row": 4, "output_json": "tool.json"},
+                  {"name": "Thematic Analysis", "start_row": 8, "output_json": "thematic_analysis.json"},
+                  {"name": "Risk Matrix", "start_row": 3, "output_json": "risk_matrix.json"}
+              ]
+          }
+      ]
+  }
+
+- CLEAN_CFG  
+  Defines the transformations to apply:
+  - grouped (group by keys, keep sub-fields)
+  - split_only (split fields into lists)
+  - numbered_keys (convert list → dict with numbered keys)
+  Also supports `output_js` and `json_prefix` for web-ready JavaScript exports.
+
+- FILE_TO_DEST  
+  Maps generated `.js` files to destination folders in web applications.
+
+------------------------------------------------------------------------------
+Requirements:
+    - Python 3.x
+    - pandas, openpyxl (required by importer)
+    - No additional dependencies for cleaner
+
+------------------------------------------------------------------------------
+Output:
+    - Cleaned JSON files written to `json_files/`
+    - JavaScript files (prefixed const variables) written to `json_files/`
+    - JS files copied into web app `src/` folders for immediate use
+
+------------------------------------------------------------------------------
+Example Run:
+    $ python web_update_tool.py
+
+This will:
+    1) Import sheets from Thematic-Analysis-Complete.xlsm
+    2) Clean and transform JSON files
+    3) Export toolJSON.js, thematic_analysisJSON.js, risk_matrixJSON.js
+    4) Copy them into the correct web app folders
+
+------------------------------------------------------------------------------
+"""
+
 import subprocess
 import shutil
 import os

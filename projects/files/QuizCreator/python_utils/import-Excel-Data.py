@@ -1,6 +1,86 @@
 #!/usr/bin/env python3
 # import_data.py — universal Excel -> JSON importer (argument-driven)
 
+"""
+import_data.py — Universal Excel → JSON Importer
+
+This script imports data from Excel (.xlsx) files into JSON format, driven entirely
+by a JSON configuration passed as the first argument (either a file path or a raw
+JSON string). It supports three modes of operation:
+
+1. Combined import:
+   - Multiple sheets are read and combined into a single JSON file in the format:
+     { "SheetName": [ {row}, ... ] }.
+
+2. Per-sheet import:
+   - Each sheet is exported to its own JSON file, either with a user-defined filename
+     or a default <SheetName>.json. Files are placed in a target folder.
+
+3. Single-sheet import:
+   - A specific sheet is exported to a specified JSON file.
+
+------------------------------------------------------------------------------
+Usage:
+    ./import_data.py <config_json_or_path>
+
+Where <config_json_or_path> is either:
+  - Path to a JSON configuration file, or
+  - A raw JSON string containing the configuration.
+
+------------------------------------------------------------------------------
+Configuration JSON format:
+
+{
+    "excel_file": "workbook.xlsx",
+    "start_row": 1,                # (optional) Default row to start reading (1-based)
+    "orient": "records",           # (optional) Pandas JSON orientation (default: "records")
+    "outputs": [
+        {
+            "type": "combined",
+            "output_json": "combined.json",
+            "sheets": [
+                { "name": "Sheet1", "start_row": 2 },
+                { "name": "Sheet2" }
+            ]
+        },
+        {
+            "type": "per_sheet",
+            "output_folder": "output_folder",
+            "sheets": [
+                { "name": "Sheet1" },
+                { "name": "Sheet2", "output_json": "custom.json" }
+            ]
+        },
+        {
+            "type": "single",
+            "sheet": "Sheet3",
+            "start_row": 3,
+            "output_json": "sheet3.json"
+        }
+    ]
+}
+
+------------------------------------------------------------------------------
+Requirements:
+    - Python 3.x
+    - pandas
+    - openpyxl
+
+------------------------------------------------------------------------------
+Examples:
+
+1. Run with config file:
+    ./import_data.py config.json
+
+2. Run with inline JSON:
+    ./import_data.py '{"excel_file":"book.xlsx","outputs":[{"type":"single","sheet":"Data","output_json":"data.json"}]}'
+
+------------------------------------------------------------------------------
+Output:
+    - JSON files written to the specified folder(s) or file(s), with optional indentation
+      for combined mode and ISO date formatting where applicable.
+"""
+
 import sys, os, json
 
 REQUIRED_PACKAGES = ["pandas", "openpyxl"]
@@ -83,13 +163,6 @@ def main():
     orient       = cfg.get("orient", "records")
     start_default= int(cfg.get("start_row", 1))
 
-    """
-    Supported outputs:
-      - {"type":"combined", "sheets":[{"name":"M1","start_row":2},...], "output_json":"json_files/All.json"}
-      - {"type":"per_sheet", "sheets":[{"name":"JobRegister","start_row":5,"output_json":"job_register.json"}], "output_folder":"json_files"}
-      - {"type":"single", "sheet":"JobRegister", "start_row":5, "output_json":"json_files/job_register.json"}
-    Provide one or more items in cfg["outputs"].
-    """
     outputs = cfg["outputs"]
     for out in outputs:
         otype = out["type"]
