@@ -129,16 +129,25 @@
           "libretro-core-info"
         ],
         "SetupCmds": [
-          "retroarch --version"
+          "bash -lc 'chmod +x settings/retroarch/generate_playlists.sh'",
+          "bash -lc 'settings/retroarch/generate_playlists.sh \"$HOME/Arcade\"'"
         ],
         "ResetCmds": [
           "rm -f ~/.config/retroarch/retroarch.cfg",
           "mkdir -p ~/.config/retroarch/cores ~/.config/retroarch/saves ~/.config/retroarch/states ~/.config/retroarch/system"
         ],
         "SettingsFiles": [],
-        "PatternJobs": []
+        "PatternJobs": [
+        {
+          "patternName": "SetArcadeDirInScript",
+          "filepath": "settings/retroarch/generate_playlists.sh",
+          "pattern": "^ARCADE_DIR=.*$",
+          "new_line_list": [
+            "ARCADE_DIR=\"$HOME/Arcade\""
+          ]
+        }
+      ]
       }
     }
   }
 }
-
