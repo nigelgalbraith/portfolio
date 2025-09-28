@@ -763,7 +763,7 @@
             "Question": "What is the primary goal of a security audit?",
             "Multiple Answers": "Evaluate security measures\n Test network speed\n Backup data\n Encrypt communications",
             "Correct Answer": "Evaluate security measures",
-            "Explanation": "Security audits assess and evaluate an organization\u2019s security measures and practices."
+            "Explanation": "Security audits assess and evaluate an organization’s security measures and practices."
         },
         {
             "ID": 86,
@@ -7345,7 +7345,7 @@
             "Question": "What is the primary goal of a privilege escalation attack?",
             "Multiple Answers": "To gain higher levels of access\nTo monitor network traffic\nTo manage network devices\nTo encrypt data",
             "Correct Answer": "To gain higher levels of access",
-            "Explanation": "Privilege escalation attacks aim to increase an attacker\u2019s access rights within a system."
+            "Explanation": "Privilege escalation attacks aim to increase an attacker’s access rights within a system."
         },
         {
             "ID": 14,
@@ -8140,7 +8140,7 @@
             "ID": 13,
             "Module": 19,
             "Module Name": "Access Control",
-            "Question": "What does the term \u201cleast privilege\u201d mean in access control?",
+            "Question": "What does the term “least privilege” mean in access control?",
             "Multiple Answers": "Granting users only the minimum level of access necessary\nAllowing users unrestricted access\nUsing strong passwords\nEncrypting all data",
             "Correct Answer": "Granting users only the minimum level of access necessary",
             "Explanation": "The principle of least privilege ensures users have only the access they need to perform their job."
@@ -8176,7 +8176,7 @@
             "ID": 17,
             "Module": 19,
             "Module Name": "Access Control",
-            "Question": "What does \u201cdiscretionary access control\u201d (DAC) allow users to do?",
+            "Question": "What does “discretionary access control” (DAC) allow users to do?",
             "Multiple Answers": "Set permissions for their own resources\nEnforce system-wide access policies\nEncrypt all data\nMonitor network traffic",
             "Correct Answer": "Set permissions for their own resources",
             "Explanation": "DAC allows users to set access permissions for resources they own or manage."
@@ -8194,7 +8194,7 @@
             "ID": 19,
             "Module": 19,
             "Module Name": "Access Control",
-            "Question": "What does the term \u201cnetwork access control\u201d (NAC) refer to?",
+            "Question": "What does the term “network access control” (NAC) refer to?",
             "Multiple Answers": "Controlling which devices can access the network\nEncrypting data\nManaging user passwords\nMonitoring network performance",
             "Correct Answer": "Controlling which devices can access the network",
             "Explanation": "NAC systems enforce policies to control device access to the network based on security requirements."
@@ -8212,7 +8212,7 @@
             "ID": 21,
             "Module": 19,
             "Module Name": "Access Control",
-            "Question": "What does \u201cmandatory access control\u201d (MAC) enforce?",
+            "Question": "What does “mandatory access control” (MAC) enforce?",
             "Multiple Answers": "System-enforced policies for resource access\nUser-defined permissions\nEncryption standards\nNetwork traffic management",
             "Correct Answer": "System-enforced policies for resource access",
             "Explanation": "MAC enforces access policies set by the system administrator, not the individual users."
@@ -8257,7 +8257,7 @@
             "ID": 26,
             "Module": 19,
             "Module Name": "Access Control",
-            "Question": "What does \u201cdiscretionary\u201d mean in the context of Discretionary Access Control (DAC)?",
+            "Question": "What does “discretionary” mean in the context of Discretionary Access Control (DAC)?",
             "Multiple Answers": "The owner of a resource can set access permissions\nAccess permissions are set by system administrators\nPermissions are enforced by policies\nAccess is controlled by encryption",
             "Correct Answer": "The owner of a resource can set access permissions",
             "Explanation": "DAC allows resource owners to control access to their resources."
@@ -8266,7 +8266,7 @@
             "ID": 27,
             "Module": 19,
             "Module Name": "Access Control",
-            "Question": "What does \u201cleast privilege\u201d aim to minimize?",
+            "Question": "What does “least privilege” aim to minimize?",
             "Multiple Answers": "The risk of unauthorized access\nThe amount of data encrypted\nThe number of access control policies\nThe complexity of network design",
             "Correct Answer": "The risk of unauthorized access",
             "Explanation": "The least privilege principle minimizes the risk of unauthorized access by limiting permissions."
@@ -8293,7 +8293,7 @@
             "ID": 30,
             "Module": 19,
             "Module Name": "Access Control",
-            "Question": "What does the term \u201cdefense in depth\u201d refer to in access control?",
+            "Question": "What does the term “defense in depth” refer to in access control?",
             "Multiple Answers": "Using multiple layers of security controls\nFocusing on a single security measure\nIgnoring access policies\nConcentrating on physical security",
             "Correct Answer": "Using multiple layers of security controls",
             "Explanation": "Defense in depth involves implementing multiple layers of security to protect against threats."
@@ -8349,7 +8349,7 @@
             "ID": 6,
             "Module": 20,
             "Module Name": "Threat Intelligence",
-            "Question": "What does the term \u201cthreat landscape\u201d refer to?",
+            "Question": "What does the term “threat landscape” refer to?",
             "Multiple Answers": "The overall view of threats and vulnerabilities in a specific environment\nThe layout of network devices\nThe design of security policies\nThe structure of malware",
             "Correct Answer": "The overall view of threats and vulnerabilities in a specific environment",
             "Explanation": "The threat landscape encompasses all potential threats and vulnerabilities that could impact an organization."
@@ -8394,7 +8394,7 @@
             "ID": 11,
             "Module": 20,
             "Module Name": "Threat Intelligence",
-            "Question": "What does the term \u201ccyber kill chain\u201d refer to?",
+            "Question": "What does the term “cyber kill chain” refer to?",
             "Multiple Answers": "A model describing stages of a cyber attack\nA type of malware\nA network defense strategy\nA threat actor's profile",
             "Correct Answer": "A model describing stages of a cyber attack",
             "Explanation": "The cyber kill chain outlines the steps an attacker takes from initial intrusion to the final objective."
@@ -8421,7 +8421,7 @@
             "ID": 14,
             "Module": 20,
             "Module Name": "Threat Intelligence",
-            "Question": "What does \u201cbehavioral analysis\u201d in threat intelligence focus on?",
+            "Question": "What does “behavioral analysis” in threat intelligence focus on?",
             "Multiple Answers": "Identifying patterns and anomalies in behavior\nEncrypting data\nManaging network devices\nConfiguring user accounts",
             "Correct Answer": "Identifying patterns and anomalies in behavior",
             "Explanation": "Behavioral analysis looks for unusual patterns that may indicate malicious activity."
@@ -8439,7 +8439,7 @@
             "ID": 16,
             "Module": 20,
             "Module Name": "Threat Intelligence",
-            "Question": "What does the term \u201cAPT\u201d stand for in threat intelligence?",
+            "Question": "What does the term “APT” stand for in threat intelligence?",
             "Multiple Answers": "Advanced Persistent Threat\nAutomated Penetration Test\nActive Protection Tool\nApplied Protocol Techniques",
             "Correct Answer": "Advanced Persistent Threat",
             "Explanation": "APT refers to a sophisticated and persistent type of threat actor that targets specific organizations."
@@ -8466,7 +8466,7 @@
             "ID": 19,
             "Module": 20,
             "Module Name": "Threat Intelligence",
-            "Question": "What does \u201cthreat intelligence fusion\u201d involve?",
+            "Question": "What does “threat intelligence fusion” involve?",
             "Multiple Answers": "Combining data from multiple sources for comprehensive analysis\nEncrypting sensitive information\nConfiguring network devices\nManaging user accounts",
             "Correct Answer": "Combining data from multiple sources for comprehensive analysis",
             "Explanation": "Fusion involves integrating various sources of threat data for a complete picture of the threat environment."
@@ -8520,7 +8520,7 @@
             "ID": 25,
             "Module": 20,
             "Module Name": "Threat Intelligence",
-            "Question": "What does the term \u201cthreat landscape\u201d describe?",
+            "Question": "What does the term “threat landscape” describe?",
             "Multiple Answers": "The overall view of potential threats and vulnerabilities\nThe layout of network infrastructure\nThe design of security protocols\nThe types of malware present",
             "Correct Answer": "The overall view of potential threats and vulnerabilities",
             "Explanation": "The threat landscape encompasses all potential threats and weaknesses in a given environment."
@@ -8538,7 +8538,7 @@
             "ID": 27,
             "Module": 20,
             "Module Name": "Threat Intelligence",
-            "Question": "What does \u201cindicators of compromise\u201d (IOCs) help identify?",
+            "Question": "What does “indicators of compromise” (IOCs) help identify?",
             "Multiple Answers": "Signs that a security breach or attack has occurred\nEffective encryption methods\nUser account configurations\nNetwork performance issues",
             "Correct Answer": "Signs that a security breach or attack has occurred",
             "Explanation": "IOCs provide evidence of an attack or breach, helping in detection and response."
@@ -8565,7 +8565,7 @@
             "ID": 30,
             "Module": 20,
             "Module Name": "Threat Intelligence",
-            "Question": "What does \u201ccyber threat hunting\u201d involve?",
+            "Question": "What does “cyber threat hunting” involve?",
             "Multiple Answers": "Proactively searching for signs of threats and vulnerabilities within a network\nEncrypting sensitive data\nConfiguring network devices\nManaging user accounts",
             "Correct Answer": "Proactively searching for signs of threats and vulnerabilities within a network",
             "Explanation": "Cyber threat hunting involves actively seeking out potential threats within a network before they manifest."
@@ -9928,7 +9928,7 @@
             "Question": "Which of the following can be a result of a security breach?",
             "Multiple Answers": "Data loss\nSystem downtime\nReputation damage\nAll of the above",
             "Correct Answer": "All of the above",
-            "Explanation": "Security breaches can lead to data loss, system downtime, and damage to an organization\u2019s reputation."
+            "Explanation": "Security breaches can lead to data loss, system downtime, and damage to an organization’s reputation."
         }
     ],
     "M26": [
@@ -10751,7 +10751,7 @@
         {
             "ID": 1,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is the primary purpose of a firewall?",
             "Multiple Answers": "To block unauthorized access\nTo encrypt data\nTo manage network traffic\nTo speed up network connections",
             "Correct Answer": "To block unauthorized access\nTo manage network traffic",
@@ -10760,7 +10760,7 @@
         {
             "ID": 2,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "Which protocol is commonly used to secure communication over a network?",
             "Multiple Answers": "FTP\nHTTP\nHTTPS\nSMTP",
             "Correct Answer": "HTTPS",
@@ -10769,7 +10769,7 @@
         {
             "ID": 3,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What does the acronym DNS stand for?",
             "Multiple Answers": "Domain Name Service\nDynamic Network Security\nData Network System\nDirect Network Server",
             "Correct Answer": "Domain Name Service",
@@ -10778,7 +10778,7 @@
         {
             "ID": 4,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is a common use of intrusion detection systems (IDS)?",
             "Multiple Answers": "Detecting unauthorized access\nManaging network performance\nBacking up data\nConfiguring firewalls",
             "Correct Answer": "Detecting unauthorized access",
@@ -10787,7 +10787,7 @@
         {
             "ID": 5,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "Which of the following is a form of network attack that floods a network with excessive traffic?",
             "Multiple Answers": "Denial of Service (DoS)\nPhishing\nSQL Injection\nMan-in-the-Middle",
             "Correct Answer": "Denial of Service (DoS)",
@@ -10796,7 +10796,7 @@
         {
             "ID": 6,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is the function of a VPN?",
             "Multiple Answers": "Encrypting internet traffic\nIncreasing network speed\nManaging network devices\nBlocking ads",
             "Correct Answer": "Encrypting internet traffic",
@@ -10805,7 +10805,7 @@
         {
             "ID": 7,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What does the acronym ACL stand for in the context of network security?",
             "Multiple Answers": "Access Control List\nAdvanced Configuration Layer\nApplication Control Log\nAutomated Compliance Layer",
             "Correct Answer": "Access Control List",
@@ -10814,7 +10814,7 @@
         {
             "ID": 8,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is the primary function of a router in a network?",
             "Multiple Answers": "Directing data packets between networks\nEncrypting data\nManaging email\nStoring data",
             "Correct Answer": "Directing data packets between networks",
@@ -10823,7 +10823,7 @@
         {
             "ID": 9,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "Which protocol is used for secure email communication?",
             "Multiple Answers": "POP3\nIMAP\nSMTP\nS/MIME",
             "Correct Answer": "S/MIME",
@@ -10832,7 +10832,7 @@
         {
             "ID": 10,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is a common technique used to protect against SQL injection attacks?",
             "Multiple Answers": "Input validation\nSession management\nData encryption\nNetwork segmentation",
             "Correct Answer": "Input validation",
@@ -10841,7 +10841,7 @@
         {
             "ID": 11,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What does the term \"phishing\" refer to?",
             "Multiple Answers": "Fraudulent attempts to obtain sensitive information\nInjecting malicious code\nBlocking network traffic\nEncrypting data",
             "Correct Answer": "Fraudulent attempts to obtain sensitive information",
@@ -10850,7 +10850,7 @@
         {
             "ID": 12,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "Which of the following is a type of malware that can replicate itself and spread to other systems?",
             "Multiple Answers": "Virus\nSpyware\nAdware\nRansomware",
             "Correct Answer": "Virus",
@@ -10859,7 +10859,7 @@
         {
             "ID": 13,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What does the acronym SIEM stand for in cybersecurity?",
             "Multiple Answers": "Security Information and Event Management\nSystem Information and Event Management\nSecure Internet and Email Management\nService Information and Event Management",
             "Correct Answer": "Security Information and Event Management",
@@ -10868,7 +10868,7 @@
         {
             "ID": 14,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is the purpose of two-factor authentication?",
             "Multiple Answers": "To enhance security by requiring two forms of verification\nTo increase system speed\nTo manage user permissions\nTo configure network settings",
             "Correct Answer": "To enhance security by requiring two forms of verification",
@@ -10877,7 +10877,7 @@
         {
             "ID": 15,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What does the acronym IDS stand for?",
             "Multiple Answers": "Intrusion Detection System\nInternet Detection System\nIntegrated Defense System\nInformation Data Security",
             "Correct Answer": "Intrusion Detection System",
@@ -10886,7 +10886,7 @@
         {
             "ID": 16,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "Which of the following is a common method for securing data at rest?",
             "Multiple Answers": "Encryption\nFirewalls\nNetwork monitoring\nAccess control",
             "Correct Answer": "Encryption",
@@ -10895,7 +10895,7 @@
         {
             "ID": 17,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is a \"honeypot\" in network security?",
             "Multiple Answers": "A system designed to attract and analyze attacks\nA tool for encrypting data\nA method for filtering network traffic\nA device for managing network performance",
             "Correct Answer": "A system designed to attract and analyze attacks",
@@ -10904,7 +10904,7 @@
         {
             "ID": 18,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is the primary purpose of a DLP (Data Loss Prevention) system?",
             "Multiple Answers": "To prevent unauthorized access to sensitive data\nTo encrypt network traffic\nTo manage user accounts\nTo perform system backups",
             "Correct Answer": "To prevent unauthorized access to sensitive data",
@@ -10913,7 +10913,7 @@
         {
             "ID": 19,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "Which of the following is an example of a physical security control?",
             "Multiple Answers": "Access card readers\nFirewalls\nAntivirus software\nIntrusion detection systems",
             "Correct Answer": "Access card readers",
@@ -10922,7 +10922,7 @@
         {
             "ID": 20,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What does the acronym HTTPS stand for?",
             "Multiple Answers": "Hypertext Transfer Protocol Secure\nHigh Transfer Protocol Security\nHyperlink Text Transfer Security\nHigh-level Text Protocol Secure",
             "Correct Answer": "Hypertext Transfer Protocol Secure",
@@ -10931,7 +10931,7 @@
         {
             "ID": 21,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is a common sign of a ransomware attack?",
             "Multiple Answers": "Files are encrypted and a ransom is demanded\nSystem performance increases\nNetwork devices are offline\nData is deleted",
             "Correct Answer": "Files are encrypted and a ransom is demanded",
@@ -10940,7 +10940,7 @@
         {
             "ID": 22,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "Which of the following is a type of social engineering attack?",
             "Multiple Answers": "Phishing\nSQL Injection\nDoS Attack\nMan-in-the-Middle",
             "Correct Answer": "Phishing",
@@ -10949,7 +10949,7 @@
         {
             "ID": 23,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is the main purpose of network segmentation?",
             "Multiple Answers": "To improve security by isolating different network segments\nTo increase network speed\nTo simplify network management\nTo reduce network costs",
             "Correct Answer": "To improve security by isolating different network segments",
@@ -10958,7 +10958,7 @@
         {
             "ID": 24,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is a common use of the Nmap tool?",
             "Multiple Answers": "Network discovery and vulnerability scanning\nEmail management\nData encryption\nIncident response",
             "Correct Answer": "Network discovery and vulnerability scanning",
@@ -10967,7 +10967,7 @@
         {
             "ID": 25,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What does the term \"zero-day exploit\" refer to?",
             "Multiple Answers": "A vulnerability that is exploited before a fix is available\nA type of ransomware\nA method for encrypting data\nA tool for network monitoring",
             "Correct Answer": "A vulnerability that is exploited before a fix is available",
@@ -10976,7 +10976,7 @@
         {
             "ID": 26,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "Which of the following protocols is used for remote administration of systems?",
             "Multiple Answers": "SSH\nHTTP\nFTP\nSMTP",
             "Correct Answer": "SSH",
@@ -10985,7 +10985,7 @@
         {
             "ID": 27,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is the role of a security information and event management (SIEM) system?",
             "Multiple Answers": "To collect, analyze, and manage security data and events\nTo configure network settings\nTo encrypt data\nTo manage user permissions",
             "Correct Answer": "To collect, analyze, and manage security data and events",
@@ -10994,7 +10994,7 @@
         {
             "ID": 28,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is the purpose of a vulnerability assessment?",
             "Multiple Answers": "To identify and evaluate potential security weaknesses\nTo manage network traffic\nTo configure firewalls\nTo perform system backups",
             "Correct Answer": "To identify and evaluate potential security weaknesses",
@@ -11003,7 +11003,7 @@
         {
             "ID": 29,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "Which of the following is an example of a hardware-based security device?",
             "Multiple Answers": "Firewall appliance\nAntivirus software\nDLP system\nSIEM system",
             "Correct Answer": "Firewall appliance",
@@ -11012,7 +11012,7 @@
         {
             "ID": 30,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is a key feature of multi-factor authentication (MFA)?",
             "Multiple Answers": "Requiring more than one form of verification\nIncreasing network speed\nEncrypting data\nConfiguring firewalls",
             "Correct Answer": "Requiring more than one form of verification",
@@ -11021,7 +11021,7 @@
         {
             "ID": 31,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is the purpose of using a DMZ (Demilitarized Zone) in network security?",
             "Multiple Answers": "To isolate public-facing services from internal network\nTo enhance network speed\nTo encrypt data\nTo manage user access",
             "Correct Answer": "To isolate public-facing services from internal network",
@@ -11030,7 +11030,7 @@
         {
             "ID": 32,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "Which protocol is used for secure file transfer over a network?",
             "Multiple Answers": "FTP\nSFTP\nSMTP\nHTTP",
             "Correct Answer": "SFTP",
@@ -11039,7 +11039,7 @@
         {
             "ID": 33,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What does the acronym NAT stand for in networking?",
             "Multiple Answers": "Network Address Translation\nNetwork Access Terminal\nNew Application Technology\nNetwork Automated Tracking",
             "Correct Answer": "Network Address Translation",
@@ -11048,7 +11048,7 @@
         {
             "ID": 34,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is the main function of an IDS (Intrusion Detection System)?",
             "Multiple Answers": "To monitor network traffic for suspicious activity\nTo block unauthorized access\nTo encrypt data\nTo manage user permissions",
             "Correct Answer": "To monitor network traffic for suspicious activity",
@@ -11057,7 +11057,7 @@
         {
             "ID": 35,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "Which type of malware disguises itself as a legitimate program to trick users into running it?",
             "Multiple Answers": "Trojan\nVirus\nWorm\nAdware",
             "Correct Answer": "Trojan",
@@ -11066,7 +11066,7 @@
         {
             "ID": 36,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is a common use of network segmentation?",
             "Multiple Answers": "To improve security and performance by isolating different network segments\nTo increase data storage\nTo manage network devices\nTo reduce network speed",
             "Correct Answer": "To improve security and performance by isolating different network segments",
@@ -11075,7 +11075,7 @@
         {
             "ID": 37,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What does the acronym WPA stand for in wireless network security?",
             "Multiple Answers": "Wi-Fi Protected Access\nWideband Protected Access\nWireless Public Access\nWeb Protocol Access",
             "Correct Answer": "Wi-Fi Protected Access",
@@ -11084,7 +11084,7 @@
         {
             "ID": 38,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is the primary goal of a vulnerability scan?",
             "Multiple Answers": "To identify potential security weaknesses\nTo encrypt data\nTo configure network settings\nTo manage user accounts",
             "Correct Answer": "To identify potential security weaknesses",
@@ -11093,7 +11093,7 @@
         {
             "ID": 39,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "Which protocol is commonly used to manage network devices?",
             "Multiple Answers": "SNMP\nHTTP\nFTP\nSMTP",
             "Correct Answer": "SNMP",
@@ -11102,7 +11102,7 @@
         {
             "ID": 40,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is the purpose of a security audit?",
             "Multiple Answers": "To review and assess an organization's security posture\nTo increase network speed\nTo manage user permissions\nTo configure firewalls",
             "Correct Answer": "To review and assess an organization's security posture",
@@ -11111,7 +11111,7 @@
         {
             "ID": 41,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is a common indicator of a phishing email?",
             "Multiple Answers": "Unusual or unexpected requests for sensitive information\nHigh system performance\nNetwork device configurations\nData backups",
             "Correct Answer": "Unusual or unexpected requests for sensitive information",
@@ -11120,7 +11120,7 @@
         {
             "ID": 42,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What does the acronym SSL stand for?",
             "Multiple Answers": "Secure Sockets Layer\nSecure Service Layer\nSystem Security Layer\nSimple Security Layer",
             "Correct Answer": "Secure Sockets Layer",
@@ -11129,7 +11129,7 @@
         {
             "ID": 43,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "Which of the following is a type of physical security control?",
             "Multiple Answers": "Security cameras\nFirewalls\nAntivirus software\nEncryption",
             "Correct Answer": "Security cameras",
@@ -11138,7 +11138,7 @@
         {
             "ID": 44,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is a common method for detecting network intrusions?",
             "Multiple Answers": "Network traffic analysis\nFile encryption\nUser access management\nData backups",
             "Correct Answer": "Network traffic analysis",
@@ -11147,7 +11147,7 @@
         {
             "ID": 45,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What does the term \"zero-day vulnerability\" refer to?",
             "Multiple Answers": "A security flaw that is exploited before a fix is available\nA type of encryption\nA method for network segmentation\nA tool for monitoring",
             "Correct Answer": "A security flaw that is exploited before a fix is available",
@@ -11156,7 +11156,7 @@
         {
             "ID": 46,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "Which of the following is used to prevent unauthorized access to a network?",
             "Multiple Answers": "Access control lists (ACLs)\nFile encryption\nData backup\nSystem updates",
             "Correct Answer": "Access control lists (ACLs)",
@@ -11165,7 +11165,7 @@
         {
             "ID": 47,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is a common use of a network sniffer?",
             "Multiple Answers": "To capture and analyze network traffic\nTo block unauthorized access\nTo configure firewalls\nTo encrypt data",
             "Correct Answer": "To capture and analyze network traffic",
@@ -11174,7 +11174,7 @@
         {
             "ID": 48,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is the role of multi-factor authentication in cybersecurity?",
             "Multiple Answers": "To provide an additional layer of security by requiring multiple forms of verification\nTo increase system performance\nTo manage network devices\nTo back up data",
             "Correct Answer": "To provide an additional layer of security by requiring multiple forms of verification",
@@ -11183,7 +11183,7 @@
         {
             "ID": 49,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is a common sign of a denial of service (DoS) attack?",
             "Multiple Answers": "Unusually high network traffic\nSystem performance improvement\nData encryption\nReduced network usage",
             "Correct Answer": "Unusually high network traffic",
@@ -11192,7 +11192,7 @@
         {
             "ID": 50,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What does the acronym MFA stand for?",
             "Multiple Answers": "Multi-Factor Authentication\nManual Firewall Application\nManaged File Access\nMulti-Function Application",
             "Correct Answer": "Multi-Factor Authentication",
@@ -11201,7 +11201,7 @@
         {
             "ID": 51,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is the purpose of data encryption?",
             "Multiple Answers": "To protect data from unauthorized access\nTo increase system speed\nTo configure network devices\nTo manage user accounts",
             "Correct Answer": "To protect data from unauthorized access",
@@ -11210,7 +11210,7 @@
         {
             "ID": 52,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is a common use of a honeypot in network security?",
             "Multiple Answers": "To attract and analyze cyber attackers\nTo encrypt sensitive data\nTo manage network devices\nTo configure firewalls",
             "Correct Answer": "To attract and analyze cyber attackers",
@@ -11219,7 +11219,7 @@
         {
             "ID": 53,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is the main purpose of an access control list (ACL)?",
             "Multiple Answers": "To specify permissions for network resources\nTo encrypt data\nTo manage system performance\nTo monitor network traffic",
             "Correct Answer": "To specify permissions for network resources",
@@ -11228,7 +11228,7 @@
         {
             "ID": 54,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "Which protocol is used to securely access and manage network devices?",
             "Multiple Answers": "SSH\nHTTP\nFTP\nSMTP",
             "Correct Answer": "SSH",
@@ -11237,7 +11237,7 @@
         {
             "ID": 55,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is a common method for preventing data breaches?",
             "Multiple Answers": "Implementing strong access controls\nIncreasing system performance\nConfiguring network settings\nManaging user accounts",
             "Correct Answer": "Implementing strong access controls",
@@ -11246,7 +11246,7 @@
         {
             "ID": 56,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is the primary function of a VPN (Virtual Private Network)?",
             "Multiple Answers": "To encrypt internet traffic\nTo manage network devices\nTo increase data storage\nTo configure firewalls",
             "Correct Answer": "To encrypt internet traffic",
@@ -11255,7 +11255,7 @@
         {
             "ID": 57,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What does the acronym DLP stand for?",
             "Multiple Answers": "Data Loss Prevention\nDynamic Link Protocol\nData Layer Protection\nDevice Loss Prevention",
             "Correct Answer": "Data Loss Prevention",
@@ -11264,7 +11264,7 @@
         {
             "ID": 58,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is a common sign of an infected system?",
             "Multiple Answers": "Unusual system behavior or performance issues\nIncreased network speed\nImproved system performance\nUnchanged network settings",
             "Correct Answer": "Unusual system behavior or performance issues",
@@ -11273,7 +11273,7 @@
         {
             "ID": 59,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is the purpose of a security policy?",
             "Multiple Answers": "To define rules and procedures for managing security\nTo increase network speed\nTo manage user accounts\nTo configure hardware",
             "Correct Answer": "To define rules and procedures for managing security",
@@ -11282,7 +11282,7 @@
         {
             "ID": 60,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What does the acronym SIEM stand for in cybersecurity?",
             "Multiple Answers": "Security Information and Event Management\nSystem Integration and Event Monitoring\nSecure Internet and Email Management\nService Integration and Event Monitoring",
             "Correct Answer": "Security Information and Event Management",
@@ -11291,7 +11291,7 @@
         {
             "ID": 61,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is a common method for securing network communications?",
             "Multiple Answers": "Encryption\nNetwork segmentation\nTraffic shaping\nUser authentication",
             "Correct Answer": "Encryption\nNetwork segmentation\nUser authentication",
@@ -11300,7 +11300,7 @@
         {
             "ID": 62,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What does the acronym IP stand for in networking?",
             "Multiple Answers": "Internet Protocol\nIntegrated Protocol\nInterconnected Path\nInternal Processing",
             "Correct Answer": "Internet Protocol",
@@ -11309,7 +11309,7 @@
         {
             "ID": 63,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is the primary purpose of a firewall in network security?",
             "Multiple Answers": "To block unauthorized access\nTo increase network speed\nTo manage user permissions\nTo encrypt data",
             "Correct Answer": "To block unauthorized access",
@@ -11318,7 +11318,7 @@
         {
             "ID": 64,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "Which protocol provides secure remote access to a network device?",
             "Multiple Answers": "SSH\nTelnet\nFTP\nHTTP",
             "Correct Answer": "SSH",
@@ -11327,7 +11327,7 @@
         {
             "ID": 65,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is the main function of a router in a network?",
             "Multiple Answers": "To route data between different networks\nTo encrypt data\nTo manage user access\nTo increase network speed",
             "Correct Answer": "To route data between different networks",
@@ -11336,7 +11336,7 @@
         {
             "ID": 66,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is a key feature of a VPN (Virtual Private Network)?",
             "Multiple Answers": "Encrypting internet traffic\nIncreasing network speed\nManaging user accounts\nConfiguring firewalls",
             "Correct Answer": "Encrypting internet traffic",
@@ -11345,7 +11345,7 @@
         {
             "ID": 67,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is the role of antivirus software in cybersecurity?",
             "Multiple Answers": "To detect and remove malware\nTo manage network traffic\nTo configure firewalls\nTo back up data",
             "Correct Answer": "To detect and remove malware",
@@ -11354,7 +11354,7 @@
         {
             "ID": 68,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What does the acronym DNS stand for in networking?",
             "Multiple Answers": "Domain Name System\nDynamic Network Service\nData Network Service\nDistributed Node System",
             "Correct Answer": "Domain Name System",
@@ -11363,7 +11363,7 @@
         {
             "ID": 69,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is a common indicator of a brute-force attack?",
             "Multiple Answers": "Multiple failed login attempts\nUnusual network traffic\nIncreased system performance\nDecreased network speed",
             "Correct Answer": "Multiple failed login attempts",
@@ -11372,7 +11372,7 @@
         {
             "ID": 70,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What does the acronym IDS stand for in network security?",
             "Multiple Answers": "Intrusion Detection System\nIntegrated Data System\nIntelligent Detection Service\nInternet Data Security",
             "Correct Answer": "Intrusion Detection System",
@@ -11381,7 +11381,7 @@
         {
             "ID": 71,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is a common method for preventing unauthorized access to a network?",
             "Multiple Answers": "Implementing access control lists (ACLs)\nIncreasing system speed\nEncrypting data\nConfiguring firewalls",
             "Correct Answer": "Implementing access control lists (ACLs)",
@@ -11390,7 +11390,7 @@
         {
             "ID": 72,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is the main purpose of a network intrusion prevention system (NIPS)?",
             "Multiple Answers": "To detect and block malicious activities in network traffic\nTo encrypt data\nTo manage user accounts\nTo configure network devices",
             "Correct Answer": "To detect and block malicious activities in network traffic",
@@ -11399,7 +11399,7 @@
         {
             "ID": 73,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What does the acronym SSL/TLS stand for in network security?",
             "Multiple Answers": "Secure Sockets Layer/Transport Layer Security\nSystem Security Layer/Transport Layer System\nSimple Security Layer/Transport Link Security\nSecure Service Layer/Technical Layer Security",
             "Correct Answer": "Secure Sockets Layer/Transport Layer Security",
@@ -11408,7 +11408,7 @@
         {
             "ID": 74,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is the role of a network access control (NAC) system?",
             "Multiple Answers": "To enforce security policies on network devices\nTo manage network traffic\nTo provide secure remote access\nTo detect malware",
             "Correct Answer": "To enforce security policies on network devices",
@@ -11417,7 +11417,7 @@
         {
             "ID": 75,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is a common type of cyber attack that targets email systems?",
             "Multiple Answers": "Phishing\nDDoS attack\nSQL injection\nCross-site scripting",
             "Correct Answer": "Phishing",
@@ -11426,7 +11426,7 @@
         {
             "ID": 76,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What does the acronym RDP stand for in network security?",
             "Multiple Answers": "Remote Desktop Protocol\nReliable Data Protocol\nRemote Data Processing\nReal-Time Data Protocol",
             "Correct Answer": "Remote Desktop Protocol",
@@ -11435,7 +11435,7 @@
         {
             "ID": 77,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is a key feature of a network security policy?",
             "Multiple Answers": "Defining rules and procedures for managing network security\nIncreasing network performance\nConfiguring network hardware\nManaging user accounts",
             "Correct Answer": "Defining rules and procedures for managing network security",
@@ -11444,7 +11444,7 @@
         {
             "ID": 78,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is a common sign of a network traffic anomaly?",
             "Multiple Answers": "Unexpected spikes in traffic\nReduced network speed\nImproved system performance\nConsistent network usage",
             "Correct Answer": "Unexpected spikes in traffic",
@@ -11453,7 +11453,7 @@
         {
             "ID": 79,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What does the acronym EDR stand for in cybersecurity?",
             "Multiple Answers": "Endpoint Detection and Response\nEnhanced Data Recovery\nEncrypted Data Retrieval\nEnterprise Data Resource",
             "Correct Answer": "Endpoint Detection and Response",
@@ -11462,7 +11462,7 @@
         {
             "ID": 80,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is a common method for ensuring data integrity?",
             "Multiple Answers": "Using checksums and hashes\nIncreasing network bandwidth\nEncrypting data\nConfiguring firewalls",
             "Correct Answer": "Using checksums and hashes",
@@ -11471,7 +11471,7 @@
         {
             "ID": 81,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is the purpose of a digital certificate in cybersecurity?",
             "Multiple Answers": "To verify the identity of entities and encrypt communications\nTo manage user access\nTo configure network devices\nTo increase system performance",
             "Correct Answer": "To verify the identity of entities and encrypt communications",
@@ -11480,7 +11480,7 @@
         {
             "ID": 82,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What does the acronym VMI stand for in cybersecurity?",
             "Multiple Answers": "Virtual Machine Introspection\nVirtual Machine Integration\nVirtual Management Interface\nVirtual Machine Isolation",
             "Correct Answer": "Virtual Machine Introspection",
@@ -11489,7 +11489,7 @@
         {
             "ID": 83,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is a common sign of a malware infection?",
             "Multiple Answers": "Unexpected changes in system behavior\nIncreased network speed\nDecreased system usage\nImproved system performance",
             "Correct Answer": "Unexpected changes in system behavior",
@@ -11498,7 +11498,7 @@
         {
             "ID": 84,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What does the acronym IAM stand for in cybersecurity?",
             "Multiple Answers": "Identity and Access Management\nIntegrated Application Management\nInternet Access Monitoring\nInformation Assurance Management",
             "Correct Answer": "Identity and Access Management",
@@ -11507,7 +11507,7 @@
         {
             "ID": 85,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is a common use of a security information and event management (SIEM) system?",
             "Multiple Answers": "To aggregate and analyze security event data\nTo manage network traffic\nTo encrypt data\nTo configure firewalls",
             "Correct Answer": "To aggregate and analyze security event data",
@@ -11516,7 +11516,7 @@
         {
             "ID": 86,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What does the acronym VPN stand for in cybersecurity?",
             "Multiple Answers": "Virtual Private Network\nVirtual Public Network\nVariable Privacy Network\nVirtual Protected Network",
             "Correct Answer": "Virtual Private Network",
@@ -11525,7 +11525,7 @@
         {
             "ID": 87,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is a common use of a network firewall?",
             "Multiple Answers": "To control and monitor network traffic\nTo manage user accounts\nTo encrypt data\nTo perform backups",
             "Correct Answer": "To control and monitor network traffic",
@@ -11534,7 +11534,7 @@
         {
             "ID": 88,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What does the acronym URL stand for in internet security?",
             "Multiple Answers": "Uniform Resource Locator\nUniversal Resource Link\nUniform Resource Link\nUniversal Resource Locator",
             "Correct Answer": "Uniform Resource Locator",
@@ -11543,7 +11543,7 @@
         {
             "ID": 89,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What is a common method for detecting network intrusions?",
             "Multiple Answers": "Analyzing network traffic patterns\nIncreasing network bandwidth\nConfiguring firewalls\nManaging user permissions",
             "Correct Answer": "Analyzing network traffic patterns",
@@ -11552,7 +11552,7 @@
         {
             "ID": 90,
             "Module": 99,
-            "Module Name": "CyberOps Associate \u2013 FINAL",
+            "Module Name": "CyberOps Associate – FINAL",
             "Question": "What does the acronym DLP stand for in cybersecurity?",
             "Multiple Answers": "Data Loss Prevention\nData Link Protocol\nDigital Loss Protection\nDynamic Link Protocol",
             "Correct Answer": "Data Loss Prevention",

@@ -55,7 +55,7 @@ thematic: [
     title: "Step 7. Export for Web Use",
     img: "TAWebUpdateFlow.png",
     alt: "Exporting Thematic Analysis",
-    text: "Once everything looks good, save the workbook as 'Thematic-Analysis-Complete.xlsm'. Then run the 'Python-Update-Webpage.py' script from the Python-Import folder. This script turns your structured Excel data into JSON and HTML, which power the web pages for analysis and search."
+    text: "Once everything looks good, save the workbook as 'Thematic-Analysis-Complete.xlsm'. Then un the Python-Update-Webpage.py script (the one that now owns all constants). If you need to change paths or sheet settings, update the IMPORT_CFG and CLEAN_CFG blocks inside Python-Update-Webpage.py. This script turns your structured Excel data into JSON and HTML, which power the web pages for analysis and search."
   },
   {
     title: "Site HTML Structure Overview",
@@ -149,7 +149,7 @@ thematic: [
     title: "Step 2: Quiz: Update the Webpage Content",
     img: "quizWebUpdateFlow.png",
     alt: "Quiz Python Program Flow Chart",
-    text: "Once your spreadsheet is finalised, run the 'Python-Update-Webpage.py' script from the Python-Import folder. This script updates the quiz content by extracting data from the Excel workbook, formatting it, and saving new HTML and JSON files used by the quiz interface."
+    text: "Once your spreadsheet is finalised, run Python-Update-Webpage.py. It converts Excel → JSON and then cleans/exports the JS using the constants defined in that file. This script updates the quiz content by extracting data from the Excel workbook, formatting it, and saving new HTML and JSON files used by the quiz interface."
   },
   {
     title: "Excel to Quiz JSON Import",
@@ -185,7 +185,7 @@ thematic: [
     title: "Step 6: Build and Load Custom Quizzes",
     img: "QuizCreatorScreenShot-QuizExcelSheetDefine.png",
     alt: "Quiz ExcelSheet Definition",
-    text: "While the default quizzes use CyberOps examples, you can easily adapt the tool for other topics. Just create a new Excel file using the same structure, then update the path in the 'import-Tool-Data.py' script to point to your new file. The rest of the system will adapt automatically."
+    text: "While the default quizzes use CyberOps examples, you can easily adapt the tool for other topics. Just create a new Excel file using the same structure, then update the Excel path in Python-Update-Webpage.py → IMPORT_CFG['excel_file']. (If needed, also adjust sheet_names, start_row, and output filenames in the same IMPORT_CFG; and the cleaner’s output names in CLEAN_CFG.. The rest of the system will adapt automatically."
   }
   ],
   // Step-by-step breakdown for the Website project

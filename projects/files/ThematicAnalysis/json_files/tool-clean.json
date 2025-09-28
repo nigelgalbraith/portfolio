@@ -1,4 +1,4 @@
-const jsonData = [
+[
     {
         "ID": 1,
         "Extracts": "NSW Health is changing how it does things to meet challenges. They're putting in a big program to fix clinical, corporate, and tech stuff. Getting the right IT tools is key to making sure these changes last. Before, they had a mess of different systems which made things harder and more expensive. Plus, some of their systems are ancient and hard to support",
@@ -2272,4 +2272,4 @@ const jsonData = [
             }
         ]
     }
-];
+]
