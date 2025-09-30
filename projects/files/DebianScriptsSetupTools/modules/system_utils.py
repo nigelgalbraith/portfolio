@@ -372,20 +372,28 @@ def convert_dict_list_to_str(
     jobs: list[dict[str, Any]],
     from_key: str = "new_line_list",
     to_key: str = "new_line",
-    sep: str = ";",
+    sep: str | None = None,  
 ) -> list[dict[str, Any]]:
-    """Convert list under `from_key` into a string at `to_key`, using `sep` as separator."""
+    """Join job[from_key] into a string at job[to_key], using per-job job['sep']. If 'sep' is not present in a job, use the function arg `sep` if provided; otherwise raise. """
     for job in jobs:
-        if from_key in job:
-            parts = job[from_key]
-            if parts:
-                first, *rest = parts
-                if " " in first:
-                    key, first_val = first.split(maxsplit=1)
-                    job[to_key] = f"{key} {sep.join([first_val] + rest)}"
-                else:
-                    job[to_key] = sep.join(parts)
-            del job[from_key]
+        if from_key not in job:
+            continue
+        parts = job[from_key]
+        if not isinstance(parts, list) or not all(isinstance(p, str) for p in parts):
+            raise ValueError(f"{from_key} must be a list[str] in PatternJob '{job.get('patternName','?')}'")
+        job_sep = job.get("sep", sep)
+        if job_sep is None:
+            raise ValueError(f"Missing 'sep' in PatternJob '{job.get('patternName','?')}'. Pass it in the JSON.")
+
+        if parts:
+            first, *rest = parts
+            if " " in first:
+                key, first_val = first.split(maxsplit=1)
+                joined = job_sep.join([first_val] + rest) if rest or first_val else first_val
+                job[to_key] = f"{key} {joined}"
+            else:
+                job[to_key] = job_sep.join(parts)
+        del job[from_key]
     return jobs
 
 

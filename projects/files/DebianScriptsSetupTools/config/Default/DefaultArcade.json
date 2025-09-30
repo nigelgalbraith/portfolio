@@ -27,7 +27,8 @@
               "/usr/share/games/mame/artwork",
               "$HOME/Arcade/MAME/artwork",
               "$HOME/Arcade/Neo Geo/artwork"
-            ]
+            ],
+            "sep": ";"
           },
           {
             "patternName": "UIDir_Cabinets",
@@ -37,7 +38,8 @@
               "cabinets_directory cabinets",
               "cabdevs",
               "$HOME/Arcade/MAME/cabinets"
-            ]
+            ],
+            "sep": ";"
           },
           {
             "patternName": "UIDir_CPanels",
@@ -46,7 +48,8 @@
             "new_line_list": [
               "cpanels_directory cpanel",
               "$HOME/Arcade/MAME/control panels"
-            ]
+            ],
+            "sep": ";"
           },
           {
             "patternName": "UIDir_Flyers",
@@ -55,7 +58,8 @@
             "new_line_list": [
               "flyers_directory flyers",
               "$HOME/Arcade/MAME/flyers"
-            ]
+            ],
+            "sep": ";"
           },
           {
             "patternName": "UIDir_Icons",
@@ -64,7 +68,8 @@
             "new_line_list": [
               "icons_directory icons",
               "$HOME/Arcade/MAME/icons"
-            ]
+            ],
+            "sep": ";"
           },
           {
             "patternName": "UIDir_Marquees",
@@ -73,7 +78,8 @@
             "new_line_list": [
               "marquees_directory marquees",
               "$HOME/Arcade/MAME/marquees"
-            ]
+            ],
+            "sep": ";"
           },
           {
             "patternName": "RomPath_SemicolonFix",
@@ -85,7 +91,8 @@
               "/usr/share/games/mame/roms",
               "$HOME/Arcade/MAME/roms",
               "$HOME/Arcade/Neo Geo/roms"
-            ]
+            ],
+            "sep": ";"
           },
           {
             "patternName": "UIDir_Titles",
@@ -94,7 +101,8 @@
             "new_line_list": [
               "titles_directory titles",
               "$HOME/Arcade/MAME/titles"
-            ]
+            ],
+            "sep": ";"
           },
           {
             "patternName": "SamplePathUpdate",
@@ -105,48 +113,114 @@
               "/usr/local/share/games/mame/samples",
               "/usr/share/games/mame/samples",
               "$HOME/Arcade/MAME/samples"
-            ]
+            ],
+            "sep": ";"
           }
-
         ]
       },
       "retroarch": {
         "Packages": [
           "retroarch",
+          "libretro-core-info",
           "libretro-nestopia",
           "libretro-snes9x",
+          "libretro-genesisplusgx",
+          "libretro-beetle-psx",
           "libretro-mgba",
           "libretro-gambatte",
           "libretro-desmume",
-          "libretro-beetle-psx",
           "libretro-beetle-pce-fast",
           "libretro-beetle-vb",
           "libretro-beetle-wswan",
           "libretro-bsnes-mercury-accuracy",
           "libretro-bsnes-mercury-balanced",
-          "libretro-bsnes-mercury-performance",
-          "libretro-genesisplusgx",
-          "libretro-core-info"
+          "libretro-bsnes-mercury-performance"
         ],
         "SetupCmds": [
-          "bash -lc 'chmod +x settings/retroarch/generate_playlists.sh'",
-          "bash -lc 'settings/retroarch/generate_playlists.sh \"$HOME/Arcade\"'"
+          "bash -lc 'mkdir -p ~/.config/retroarch/system ~/.config/retroarch/system/pcsx2/bios'",
+          "bash -lc 'cp -v ~/Arcade/\"Sony Playstation\"/bios/* ~/.config/retroarch/system/ || true'",
+          "bash -lc 'cp -v ~/Arcade/\"Sony Playstation 2\"/bios/* ~/.config/retroarch/system/pcsx2/bios/ || true'",
+          "bash -lc 'rm -f ~/.config/retroarch/playlists/*.lpl || true'",
+          "bash -lc 'python3 settings/retroarch/generate_playlists.py'"
         ],
         "ResetCmds": [
           "rm -f ~/.config/retroarch/retroarch.cfg",
-          "mkdir -p ~/.config/retroarch/cores ~/.config/retroarch/saves ~/.config/retroarch/states ~/.config/retroarch/system"
+          "rm -rf ~/.config/retroarch/playlists/*",
+          "mkdir -p ~/.config/retroarch/cores ~/.config/retroarch/saves ~/.config/retroarch/states ~/.config/retroarch/system ~/.config/retroarch/playlists"
         ],
         "SettingsFiles": [],
         "PatternJobs": [
-        {
-          "patternName": "SetArcadeDirInScript",
-          "filepath": "settings/retroarch/generate_playlists.sh",
-          "pattern": "^ARCADE_DIR=.*$",
-          "new_line_list": [
-            "ARCADE_DIR=\"$HOME/Arcade\""
-          ]
-        }
-      ]
+          {
+            "patternName": "SetROMPath_MAME",
+            "filepath": "settings/retroarch/generate_playlists.py",
+            "pattern": "^MAME\\s*=.*$",
+            "new_line_list": ["MAME = str(Path.home() / \"Arcade/MAME/roms\")"],
+            "sep": ""
+          },
+          {
+            "patternName": "SetROMPath_NeoGeo",
+            "filepath": "settings/retroarch/generate_playlists.py",
+            "pattern": "^NEO_GEO\\s*=.*$",
+            "new_line_list": ["NEO_GEO = str(Path.home() / \"Arcade/Neo Geo/roms\")"],
+            "sep": ""
+          },
+          {
+            "patternName": "SetROMPath_NES",
+            "filepath": "settings/retroarch/generate_playlists.py",
+            "pattern": "^NES\\s*=.*$",
+            "new_line_list": ["NES = str(Path.home() / \"Arcade/Nintendo Entertainment System/roms\")"],
+            "sep": ""
+          },
+          {
+            "patternName": "SetROMPath_SNES",
+            "filepath": "settings/retroarch/generate_playlists.py",
+            "pattern": "^SNES\\s*=.*$",
+            "new_line_list": ["SNES = str(Path.home() / \"Arcade/Super Nintendo Entertainment System/roms\")"],
+            "sep": ""
+          },
+          {
+            "patternName": "SetROMPath_MegaDrive",
+            "filepath": "settings/retroarch/generate_playlists.py",
+            "pattern": "^MEGA_DRIVE\\s*=.*$",
+            "new_line_list": ["MEGA_DRIVE = str(Path.home() / \"Arcade/Mega Drive/roms\")"],
+            "sep": ""
+          },
+          {
+            "patternName": "SetROMPath_MasterSystem",
+            "filepath": "settings/retroarch/generate_playlists.py",
+            "pattern": "^MASTER_SYSTEM\\s*=.*$",
+            "new_line_list": ["MASTER_SYSTEM = str(Path.home() / \"Arcade/Master System/roms\")"],
+            "sep": ""
+          },
+          {
+            "patternName": "SetROMPath_Sega32X",
+            "filepath": "settings/retroarch/generate_playlists.py",
+            "pattern": "^SEGA32X\\s*=.*$",
+            "new_line_list": ["SEGA32X = str(Path.home() / \"Arcade/Sega32x/roms\")"],
+            "sep": ""
+          },
+          {
+            "patternName": "SetROMPath_N64",
+            "filepath": "settings/retroarch/generate_playlists.py",
+            "pattern": "^N64\\s*=.*$",
+            "new_line_list": ["N64 = str(Path.home() / \"Arcade/Nintendo 64/roms\")"],
+            "sep": ""
+          },
+          {
+            "patternName": "SetROMPath_PSX",
+            "filepath": "settings/retroarch/generate_playlists.py",
+            "pattern": "^PSX\\s*=.*$",
+            "new_line_list": ["PSX = str(Path.home() / \"Arcade/Sony Playstation/roms\")"],
+            "sep": ""
+          },
+          {
+            "patternName": "SetROMPath_PS2",
+            "filepath": "settings/retroarch/generate_playlists.py",
+            "pattern": "^PS2\\s*=.*$",
+            "new_line_list": ["PS2 = str(Path.home() / \"Arcade/Sony Playstation 2/roms\")"],
+            "sep": ""
+          }
+        ]
       }
     }
   }

@@ -33,7 +33,7 @@ KEY_FILEPATH           = "filepath"
 KEY_REGEX_PATTERN      = "pattern"
 KEY_NEW_LINE_LIST      = "new_line_list"
 KEY_NEW_LINE           = "new_line"
-NEW_LINE_SEP           = ";"
+KEY_SEP                = "sep"
 
 
 # === EXAMPLE JSON ===
@@ -74,10 +74,11 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
                         KEY_REGEX_PATTERN: "^rompath.*$",
                         KEY_NEW_LINE_LIST: (
                             "rompath "
-                            "$HOME/Arcade/MAME/roms;"
-                            "$HOME/Arcade/Neo Geo;"
+                            "$HOME/Arcade/MAME/roms;",
+                            "$HOME/Arcade/Neo Geo;",
                             "$HOME/Arcade/Nintendo 64"
-                        )
+                        ),
+                        KEY_SEP: ";"
                     },
                     {
                         KEY_PATTERN_NAME: "ArtPathUpdate",
@@ -85,16 +86,20 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
                         KEY_REGEX_PATTERN: "^artpath.*$",
                         KEY_NEW_LINE_LIST: (
                             "artpath "
-                            "$HOME/Arcade/MAME/artwork;"
-                            "$HOME/Arcade/Neo Geo/artwork;"
+                            "$HOME/Arcade/MAME/artwork;",
+                            "$HOME/Arcade/Neo Geo/artwork;",
                             "$HOME/Arcade/Nintendo 64/artwork"
-                        )
+                        ),
+                        KEY_SEP: ";"
                     },
                     {
                         KEY_PATTERN_NAME: "SamplePathUpdate",
                         KEY_FILEPATH: "~/.mame/mame.ini",
                         KEY_REGEX_PATTERN: "^samplepath.*$",
-                        KEY_NEW_LINE_LIST: "samplepath $HOME/Arcade/MAME/samples"
+                        KEY_NEW_LINE_LIST: [
+                            "samplepath $HOME/Arcade/MAME/samples"
+                        ],
+                        KEY_SEP: ";"
                     }
                 ],
             },
@@ -124,7 +129,7 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
                     "mkdir -p ~/.config/retroarch/cores ~/.config/retroarch/saves ~/.config/retroarch/states ~/.config/retroarch/system"
                 ],
                 KEY_SETTINGS_FILES: [],
-                KEY_PATTERN_JOBS: []
+                KEY_PATTERN_JOBS: [],
             }
         }
     }
@@ -159,6 +164,7 @@ SECONDARY_VALIDATION: Dict[str, Any] = {
             KEY_FILEPATH: str,
             KEY_REGEX_PATTERN: str,
             KEY_NEW_LINE_LIST: list,
+            KEY_SEP: str,
         },
         "allow_empty": True,
     },
@@ -221,6 +227,14 @@ ACTIONS: Dict[str, Dict[str, Any]] = {
         "execute_state": "INSTALL",
         "post_state": "CONFIG_LOADING",
     },
+    f"Uninstall {JOBS_KEY}": {
+        "verb": "uninstall",
+        "filter_status": True,
+        "label": INSTALLED_LABEL,
+        "prompt": f"Uninstall {JOBS_KEY}? [y/n]: ",
+        "execute_state": "UNINSTALL",
+        "post_state": "CONFIG_LOADING",
+    },
     f"Update {JOBS_KEY} Settings": {
         "verb": "update",
         "filter_status": True, 
@@ -235,14 +249,6 @@ ACTIONS: Dict[str, Dict[str, Any]] = {
         "label": RESET_LABEL,
         "prompt": f"Reset {JOBS_KEY} config to defaults? [y/n]: ",
         "execute_state": "RESET",
-        "post_state": "CONFIG_LOADING",
-    },
-    f"Uninstall {JOBS_KEY}": {
-        "verb": "uninstall",
-        "filter_status": True,
-        "label": INSTALLED_LABEL,
-        "prompt": f"Uninstall {JOBS_KEY}? [y/n]: ",
-        "execute_state": "UNINSTALL",
         "post_state": "CONFIG_LOADING",
     },
     "Cancel": {
@@ -281,7 +287,7 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
                 "result": "settings_copied",
             },
             convert_dict_list_to_str: {
-                "args": [KEY_PATTERN_JOBS, KEY_NEW_LINE_LIST, KEY_NEW_LINE, NEW_LINE_SEP],
+                "args": [KEY_PATTERN_JOBS, KEY_NEW_LINE_LIST, KEY_NEW_LINE, KEY_SEP],
                 "result": "pattern_jobs_ready",
             },
             replace_pattern_dict: {
@@ -304,7 +310,7 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
                 "result": "settings_copied",
             },
             convert_dict_list_to_str: {
-                "args": [KEY_PATTERN_JOBS, KEY_NEW_LINE_LIST, KEY_NEW_LINE, NEW_LINE_SEP],
+                "args": [KEY_PATTERN_JOBS, KEY_NEW_LINE_LIST, KEY_NEW_LINE, KEY_SEP],
                 "result": "pattern_jobs_ready",
             },
             replace_pattern_dict: {
