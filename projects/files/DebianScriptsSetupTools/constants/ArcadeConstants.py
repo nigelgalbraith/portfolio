@@ -3,13 +3,13 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Dict, Any
 from modules.system_utils import (
-    copy_file, 
     copy_file_dict,  
     run_commands,
     replace_pattern_dict,
     convert_dict_list_to_str    
 )
 from modules.package_utils import check_package, install_packages, uninstall_packages
+from modules.archive_utils import remove_paths
 
 # === CONFIG PATHS & KEYS ===
 PRIMARY_CONFIG   = "config/AppConfigSettings.json"
@@ -22,7 +22,8 @@ KEY_SETUP_CMDS         = "SetupCmds"
 KEY_RESET_CMDS         = "ResetCmds"
 KEY_SETTINGS_FILES     = "SettingsFiles"
 KEY_PATTERN_JOBS       = "PatternJobs"
-KEY_PACKAGES           = "Packages" 
+KEY_PACKAGES           = "Packages"
+KEY_REMOVE_PATHS       = "RemovePaths"
 
 # === SUB-JSON KEYS ===
 KEY_COPY_NAME          = "copyName"
@@ -45,8 +46,10 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
                 KEY_SETUP_CMDS: [
                     "/usr/games/mame -listxml > ~/MAME/mame.xml"
                 ],
+                KEY_REMOVE_PATHS: [
+                    "~/.mame/*.ini"
+                ],
                 KEY_RESET_CMDS: [
-                    "rm -f ~/.mame/*.ini",
                     "mkdir -p ~/.mame",
                     "bash -lc 'cd ~/.mame && /usr/games/mame -createconfig'"
                 ],
@@ -72,24 +75,22 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
                         KEY_PATTERN_NAME: "RomPathUpdate",
                         KEY_FILEPATH: "~/.mame/mame.ini",
                         KEY_REGEX_PATTERN: "^rompath.*$",
-                        KEY_NEW_LINE_LIST: (
-                            "rompath "
-                            "$HOME/Arcade/MAME/roms;",
-                            "$HOME/Arcade/Neo Geo;",
+                        KEY_NEW_LINE_LIST: [
+                            "rompath $HOME/Arcade/MAME/roms",
+                            "$HOME/Arcade/Neo Geo",
                             "$HOME/Arcade/Nintendo 64"
-                        ),
+                        ],
                         KEY_SEP: ";"
                     },
                     {
                         KEY_PATTERN_NAME: "ArtPathUpdate",
                         KEY_FILEPATH: "~/.mame/mame.ini",
                         KEY_REGEX_PATTERN: "^artpath.*$",
-                        KEY_NEW_LINE_LIST: (
-                            "artpath "
-                            "$HOME/Arcade/MAME/artwork;",
-                            "$HOME/Arcade/Neo Geo/artwork;",
+                        KEY_NEW_LINE_LIST: [
+                            "artpath $HOME/Arcade/MAME/artwork",
+                            "$HOME/Arcade/Neo Geo/artwork",
                             "$HOME/Arcade/Nintendo 64/artwork"
-                        ),
+                        ],
                         KEY_SEP: ";"
                     },
                     {
@@ -124,9 +125,12 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
                 KEY_SETUP_CMDS: [
                     "retroarch --version"
                 ],
+                KEY_REMOVE_PATHS: [
+                    "~/.config/retroarch/retroarch.cfg",
+                    "~/.config/retroarch/playlists/*.lpl"
+                ],
                 KEY_RESET_CMDS: [
-                    "rm -f ~/.config/retroarch/retroarch.cfg",
-                    "mkdir -p ~/.config/retroarch/cores ~/.config/retroarch/saves ~/.config/retroarch/states ~/.config/retroarch/system"
+                    "mkdir -p ~/.config/retroarch/cores ~/.config/retroarch/saves ~/.config/retroarch/states ~/.config/retroarch/system ~/.config/retroarch/playlists"
                 ],
                 KEY_SETTINGS_FILES: [],
                 KEY_PATTERN_JOBS: [],
@@ -136,12 +140,14 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
 }
 
 
+
 # === VALIDATION CONFIG ===
 VALIDATION_CONFIG: Dict[str, Any] = {
     "required_job_fields": {
         KEY_PACKAGES: list, 
         KEY_SETUP_CMDS: list,
         KEY_RESET_CMDS: list,
+        KEY_REMOVE_PATHS: list,
         KEY_SETTINGS_FILES: list,
         KEY_PATTERN_JOBS: list,
     },
@@ -208,6 +214,7 @@ PLAN_COLUMN_ORDER = [
     KEY_PACKAGES,
     KEY_SETTINGS_FILES,
     KEY_PATTERN_JOBS,
+    KEY_REMOVE_PATHS, 
     KEY_SETUP_CMDS,
     KEY_RESET_CMDS,
 ]
@@ -282,10 +289,6 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
                 "args": [KEY_PACKAGES],   
                 "result": "installed",
             },
-            copy_file_dict: {
-                "args": [KEY_SETTINGS_FILES],
-                "result": "settings_copied",
-            },
             convert_dict_list_to_str: {
                 "args": [KEY_PATTERN_JOBS, KEY_NEW_LINE_LIST, KEY_NEW_LINE, KEY_SEP],
                 "result": "pattern_jobs_ready",
@@ -293,6 +296,10 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
             replace_pattern_dict: {
                 "args": ["pattern_jobs_ready"], 
                 "result": "patterns_ok",
+            },
+            copy_file_dict: {
+                "args": [KEY_SETTINGS_FILES],
+                "result": "settings_copied",
             },
             run_commands: {
                 "args": [KEY_SETUP_CMDS],
@@ -305,10 +312,6 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
     },
     "UPDATE_SETTINGS": {
         "pipeline": {
-            copy_file_dict: {
-                "args": [KEY_SETTINGS_FILES],
-                "result": "settings_copied",
-            },
             convert_dict_list_to_str: {
                 "args": [KEY_PATTERN_JOBS, KEY_NEW_LINE_LIST, KEY_NEW_LINE, KEY_SEP],
                 "result": "pattern_jobs_ready",
@@ -316,6 +319,10 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
             replace_pattern_dict: {
                 "args": ["pattern_jobs_ready"], 
                 "result": "patterns_ok",
+            },
+            copy_file_dict: {
+                "args": [KEY_SETTINGS_FILES],
+                "result": "settings_copied",
             },
             run_commands: {
                 "args": [KEY_SETUP_CMDS],
@@ -328,10 +335,8 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
     },
     "RESET": {
         "pipeline": {
-            run_commands: {
-                "args": [KEY_RESET_CMDS],
-                "result": "reset_ok",
-            },
+            remove_paths: { "args": [KEY_REMOVE_PATHS], "result": "removed" },
+            run_commands: { "args": [KEY_RESET_CMDS], "result": "reset_ok" },
         },
         "label": RESET_LABEL,
         "success_key": "reset_ok",
@@ -339,17 +344,12 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
     },
     "UNINSTALL": {
         "pipeline": {
-            run_commands: {
-                "args": [KEY_RESET_CMDS],
-                "result": "reset_ok",
-            },
-            uninstall_packages: {
-                "args": [KEY_PACKAGES], 
-                "result": "uninstalled",
-            },
+            remove_paths: { "args": [KEY_REMOVE_PATHS], "result": "removed" },
+            run_commands: { "args": [KEY_RESET_CMDS], "result": "cleanup_ok" },
+            uninstall_packages: { "args": [KEY_PACKAGES], "result": "uninstalled" },
         },
         "label": UNINSTALLED_LABEL,
-        "success_key": "reset_ok",
+        "success_key": "uninstalled",
         "post_state": "CONFIG_LOADING",
     },
 }

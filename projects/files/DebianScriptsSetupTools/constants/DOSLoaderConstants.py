@@ -27,7 +27,7 @@ KEY_CHECK_PATH     = "CheckPath"
 KEY_STRIP_TOP      = "StripTopLevel"
 KEY_LAUNCH_CMD     = "LaunchCmd"
 KEY_POST_INSTALL   = "PostInstall"
-KEY_DOWNLOAD_PATH = "DownloadPath"
+KEY_DOWNLOAD_PATH  = "DownloadPath"
 
 # Example JSON structure
 CONFIG_EXAMPLE = {
