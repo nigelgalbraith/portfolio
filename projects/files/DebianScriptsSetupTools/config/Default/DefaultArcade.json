@@ -89,7 +89,9 @@
         ],
         "RemovePaths": [
           "~/.config/retroarch/retroarch.cfg",
-          "~/.config/retroarch/playlists/*.lpl"
+          "~/.config/retroarch/playlists/*.lpl",
+          "~/bin/kodi-retroarch.sh",
+          "~/.kodi/userdata/favourites.xml"
         ],
         "ResetCmds": [
           "mkdir -p ~/.config/retroarch/cores ~/.config/retroarch/saves ~/.config/retroarch/states ~/.config/retroarch/system ~/.config/retroarch/playlists"
