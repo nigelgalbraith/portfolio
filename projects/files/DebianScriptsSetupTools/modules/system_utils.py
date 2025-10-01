@@ -321,37 +321,6 @@ def copy_file_dict(mapping: Any) -> bool:
     return all(results)
 
 
-def replace_pattern(filepath: str, pattern: str, new_line: str) -> bool:
-    """Replace regex pattern with new_line."""
-    path = Path(filepath).expanduser()
-    try:
-        content = path.read_text(encoding="utf-8")
-    except FileNotFoundError:
-        print(f"{filepath} not found"); return False
-    updated, count = re.subn(pattern, new_line, content, flags=re.M)
-    if count == 0:
-        print(f"No matches for pattern '{pattern}'"); return False
-    path.write_text(updated, encoding="utf-8")
-    print(f"Replaced {count} occurrence(s) of '{pattern}' → {new_line}")
-    return True
-
-
-def replace_pattern_dict(replacements: List[Dict[str, Any]]) -> bool:
-    """Run multiple regex replacements."""
-    jobs = replacements or []
-    results: List[bool] = []
-    print(f"[APPLY] PatternJobs ({len(jobs)})")
-    for j in jobs:
-        name  = j.get("name", "")
-        fp    = j["filepath"]
-        patt  = j["pattern"]
-        nline = j["new_line"]
-        label = f"{name}: " if name else ""
-        print(f"  - {label}file={fp} pattern={patt!r}")
-        results.append(replace_pattern(fp, patt, nline))
-    return all(results)
-
-
 def run_commands(post_install_cmds) -> bool:
     """Run post-install shell commands and return True only if all succeed."""
     if isinstance(post_install_cmds, str):

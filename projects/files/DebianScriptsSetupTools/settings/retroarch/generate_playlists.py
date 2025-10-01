@@ -8,6 +8,7 @@ Generate RetroArch playlists (.lpl) for the systems defined in core_map.json.
 """
 
 from __future__ import annotations
+import argparse
 import json
 import os
 import sys
@@ -19,7 +20,7 @@ from typing import Dict, List, Tuple
 # ========= Config paths =========
 PLAYLIST_DIR  = str(Path.home() / ".config/retroarch/playlists")
 CORE_DIR      = str(Path.home() / ".config/retroarch/cores")
-CORE_MAP_FILE = str(Path(__file__).parent / "core_map.json")
+CORE_MAP_FILE = str(Path(__file__).parent / "CoreMap.json")
 
 # ========= Helpers =========
 def ensure_dir(path: os.PathLike[str] | str) -> None:
@@ -97,18 +98,39 @@ def write_playlist(playlist_title: str, items: List[Dict[str, str]], out_dir: os
         f.write("\n")
     return out_path
 
+# ========= CLI =========
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Generate RetroArch playlists from a core-map JSON")
+    parser.add_argument(
+        "--core-map",
+        dest="core_map",
+        default=None,
+        help="Path to core_map JSON (absolute or relative to this script). If omitted, uses CORE_MAP_FILE."
+    )
+    return parser.parse_args()
+
 # ========= Main =========
 def main() -> None:
+    args = parse_args()
+
+    # Resolve core-map path
+    script_dir = Path(__file__).parent
+    core_map_path = (
+        Path(CORE_MAP_FILE)
+        if args.core_map is None
+        else (Path(args.core_map) if Path(args.core_map).is_absolute() else (script_dir / args.core_map))
+    )
+
     # Load core_map.json
     try:
-        with open(CORE_MAP_FILE, "r", encoding="utf-8") as f:
+        with open(core_map_path, "r", encoding="utf-8") as f:
             data = json.load(f)
         core_urls = data.get("cores", [])
         core_map  = data.get("core_map", [])
         if not isinstance(core_map, list):
             raise ValueError("core_map must be a list of dicts")
     except Exception as e:
-        print(f"!! Failed to load CORE_MAP from {CORE_MAP_FILE}: {e}")
+        print(f"!! Failed to load CORE_MAP from {core_map_path}: {e}")
         sys.exit(1)
 
     # Download cores

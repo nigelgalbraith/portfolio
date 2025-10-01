@@ -9,8 +9,8 @@
     "Archive": "config/Desktop/DesktopArchive.json",
     "Docker": "config/Desktop/DesktopDocker.json",
     "RDP": "config/Desktop/DesktopRDP.json",
-    "IPCam": "config/Desktop/DesktopIPCam.json",
     "DOSLoader": "config/Desktop/DesktopMSDOS.json",
+    "IPCam": "config/Desktop/DesktopIPCam.json",
     "Arcade": "config/Desktop/DesktopArcade.json"
   },
   "YOUR MEDIACENTRE MODEL": {
@@ -35,8 +35,8 @@
     "Archive": "config/Laptop/LaptopArchive.json",
     "Docker": "config/Laptop/LaptopDocker.json",
     "RDP": "config/Laptop/LaptopRDP.json",
-    "IPCam": "config/Laptop/LaptopIPCam.json",
     "DOSLoader": "config/Laptop/LaptopMSDOS.json",
+    "IPCam": "config/Laptop/LaptopIPCam.json",
     "Arcade": "config/Laptop/LaptopArcade.json"
   },
   "Default": {
@@ -45,7 +45,6 @@
     "ThirdParty": "config/Default/DefaultThirdParty.json",
     "Firewall": "config/Default/DefaultFW.json",
     "Flatpak": "config/Default/DefaultFlatpak.json",
-    "Services": "config/Default/DefaultServices.json",
     "Networks": "config/Default/DefaultNetwork.json",
     "Archive": "config/Default/DefaultArchive.json",
     "Docker": "config/Default/DefaultDocker.json",
