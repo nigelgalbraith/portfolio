@@ -69,6 +69,7 @@ AVAILABLE_CONSTANTS = {
     "Docker Manager utility": ("constants.DockerConstants", 1000),
     "DOSLoader utility": ("constants.DOSLoaderConstants", 1000),
     "Arcade utility": ("constants.ArcadeConstants", 1000),
+    "Launcher utility": ("constants.LauncherConstants", 0),
     "IPCam utility": ("constants.IPCamConstants", 0),
     "Services Presets utility": ("constants.ServicesConstants", 0),
     "Firewall Presets utility": ("constants.FirewallConstants", 0),

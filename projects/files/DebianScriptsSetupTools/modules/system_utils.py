@@ -12,10 +12,13 @@ import uuid
 import shutil
 import pwd
 import glob
+import stat
+import pwd
+import grp
 from shutil import which
 from pathlib import Path
-from typing import List, Sequence, Dict, Any
- 
+from typing import List, Sequence, Dict, Any, Union
+
 
 def create_user(username: str) -> bool:
     """Create a system user (nologin) if it doesn't already exist. Return True on success/no-op."""
@@ -304,7 +307,7 @@ def copy_file(src: str | Path, dest: str | Path) -> bool:
 
 
 def copy_file_dict(mapping: Any) -> bool:
-    """Copy multiple files from dict or list jobs."""
+    """Copy multiple files or directories from dict or list jobs."""
     results: List[bool] = []
     if isinstance(mapping, dict):
         items = [(s, d, None) for s, d in mapping.items()]
@@ -317,7 +320,16 @@ def copy_file_dict(mapping: Any) -> bool:
     for src, dest, name in items:
         label = f"{name}: " if name else ""
         print(f"  - {label}{src} -> {dest}")
-        results.append(copy_file(src, dest))
+        try:
+            if os.path.isdir(src):
+                shutil.copytree(src, dest, dirs_exist_ok=True)
+                results.append(True)
+            else:
+                shutil.copy2(src, dest)
+                results.append(True)
+        except Exception as e:
+            print(f"[ERROR] Failed to copy {src} → {dest}: {e}")
+            results.append(False)
     return all(results)
 
 
@@ -366,6 +378,37 @@ def convert_dict_list_to_str(
         del job[from_key]
     return jobs
 
+def chmod_paths(entries: Union[List[str], List[dict]]) -> bool:
+    """Apply chmod to paths, default 644, support dicts with mode."""
+    if not entries: return True
+    ok = True
+    for item in entries:
+        path, mode = (item.get("path"), item.get("mode", "644")) if isinstance(item, dict) else (item, "644")
+        try:
+            p = Path(path)
+            if not p.exists():
+                print(f"[chmod_paths] WARNING: {p} missing; skipping"); ok = False; continue
+            os.chmod(p, int(mode, 8))
+            print(f"[chmod_paths] chmod {mode} {p}")
+        except Exception as e:
+            print(f"[chmod_paths] ERROR: {path}: {e}"); ok = False
+    return ok
+
+def chown_paths(user: str, paths: List[str], recursive: bool=False) -> bool:
+    """chown user:user on given paths, recurse if dir and recursive=True."""
+    if not user or not paths: return True
+    ok = True
+    for p in paths:
+        if not p: continue
+        try:
+            if recursive and Path(p).is_dir():
+                subprocess.run(["chown","-R",f"{user}:{user}",p],check=True)
+            else:
+                subprocess.run(["chown",f"{user}:{user}",p],check=True)
+            print(f"[chown_paths] chown {user}:{user} {p}{' (recursive)' if recursive and Path(p).is_dir() else ''}")
+        except Exception as e:
+            print(f"[chown_paths] ERROR: {p}: {e}"); ok = False
+    return ok
 
 
 
