@@ -310,8 +310,9 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
         "pipeline": {
             create_user_login: {"args": [lambda j, m, c: m.get(KEY_CHOWN_USER, "launcher")], "result": "user_ok"},
             add_user_to_group: {"args": [lambda j, m, c: m.get(KEY_CHOWN_USER, "launcher"), lambda j, m, c: m.get(KEY_USER_GROUPS, [])], "result": "groups_added"},
-            make_dirs:         {"args": [KEY_SETUP_DIRS],  "result": "setup_dirs_ok"},
-            copy_file_dict:    {"args": [KEY_KIOSK_FILES], "result": "kiosk_files_copied"},
+            make_dirs:         {"args": [KEY_SETUP_DIRS], "result": "setup_dirs_ok"},
+            copy_file_dict:    {"args": [KEY_SETTINGS_FILES], "result": "settings_files_copied"},
+            copy_folder_dict:  {"args": [KEY_SETTINGS_FOLDERS], "result": "settings_folders_copied"},
             chmod_paths:       {"args": [KEY_CHMOD_PATHS], "result": "chmod_ok"},
             chown_paths:       {"args": [lambda j, m, c: m.get(KEY_CHOWN_USER, "launcher"), KEY_CHOWN_PATHS, lambda j, m, c: bool(m.get(KEY_CHOWN_RECURSIVE, False))], "result": "chown_ok"},
         },
