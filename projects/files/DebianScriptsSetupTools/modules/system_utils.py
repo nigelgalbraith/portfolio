@@ -22,6 +22,7 @@ from typing import List, Sequence, Dict, Any, Union
 
 def create_user(username: str) -> bool:
     """Create a system user (nologin) if it doesn't already exist. Return True on success/no-op."""
+    import pwd, subprocess
     if not username or not isinstance(username, str):
         print("[create_user] No username provided, skipping.")
         return True 
@@ -41,6 +42,78 @@ def create_user(username: str) -> bool:
         return True
     except subprocess.CalledProcessError as e:
         print(f"[create_user] Failed to create user '{username}': {e}")
+        return False
+
+
+def create_user_login(username: str, groups: list[str] | None = None) -> bool:
+    """Create a normal login user (/bin/bash) if it doesn't already exist. Return True on success/no-op."""
+    import pwd, subprocess
+    if not username or not isinstance(username, str):
+        print("[create_user_login] No username provided, skipping.")
+        return True
+    try:
+        pwd.getpwnam(username)
+        print(f"[create_user_login] User '{username}' already exists.")
+        return True
+    except KeyError:
+        print(f"[create_user_login] User '{username}' not found, creating...")
+
+    try:
+        cmd = ["useradd", "-m", "-s", "/bin/bash", "-U", username]
+        subprocess.run(cmd, check=True)
+        if groups:
+            subprocess.run(["usermod", "-aG", ",".join(groups), username], check=True)
+        print(f"[create_user_login] User '{username}' created successfully.")
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"[create_user_login] Failed to create user '{username}': {e}")
+        return False
+
+def kill_user_session(username: str) -> bool:
+    """Kill all processes and sessions for a given user."""
+    import pwd, subprocess, time
+    if not username or not isinstance(username, str):
+        print("[kill_user_session] No username provided, skipping.")
+        return True
+    try:
+        pwd.getpwnam(username)
+    except KeyError:
+        print(f"[kill_user_session] User '{username}' does not exist, nothing to kill.")
+        return True
+    try:
+        subprocess.run(["loginctl", "terminate-user", username], check=False)
+        subprocess.run(["pkill", "-u", username], check=False)
+        time.sleep(0.5)
+        subprocess.run(["pkill", "-KILL", "-u", username], check=False)
+        subprocess.run(["loginctl", "disable-linger", username], check=False)
+        print(f"[kill_user_session] Killed sessions/processes for '{username}'.")
+        return True
+    except Exception as e:
+        print(f"[kill_user_session] Error killing session for '{username}': {e}")
+        return False
+
+
+def remove_user(username: str, remove_home: bool = True) -> bool:
+    """Remove a system user.  If remove_home is True, the home directory and mail spool are removed too. Returns True on success/no-op."""
+    import pwd, subprocess
+    if not username or not isinstance(username, str):
+        print("[remove_user] No username provided, skipping.")
+        return True
+    try:
+        pwd.getpwnam(username)
+    except KeyError:
+        print(f"[remove_user] User '{username}' does not exist, nothing to do.")
+        return True
+    try:
+        cmd = ["userdel"]
+        if remove_home:
+            cmd.append("-r")
+        cmd.append(username)
+        subprocess.run(cmd, check=True)
+        print(f"[remove_user] User '{username}' removed successfully.")
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"[remove_user] Failed to remove user '{username}': {e}")
         return False
 
 
@@ -151,23 +224,27 @@ def secure_logs_for_user(path: Path, username: str):
         print(f"Error applying permissions: {e}")
 
 
-def add_user_to_group(user: str, group: str) -> bool:
-    """Add a user to a system group using usermod -aG."""
+def add_user_to_group(user: str, groups: list[str]) -> bool:
+    """Add a user to one or more system groups using usermod -aG."""
+    import subprocess
+    if not user or not groups:
+        print("[add_user_to_group] No user or groups provided, skipping.")
+        return True
     try:
-        print(f"Adding user '{user}' to group '{group}'...")
+        group_str = ",".join(groups)
+        print(f"[add_user_to_group] Adding user '{user}' to group(s): {group_str}...")
         res = subprocess.run(
-            ["sudo", "usermod", "-aG", group, user],
+            ["usermod", "-aG", group_str, user],
             check=False
         )
         if res.returncode == 0:
-            print(f"User '{user}' added to '{group}'.")
-            print("NOTE: You must log out and log back in for this to take effect.")
+            print(f"[add_user_to_group] User '{user}' added to group(s): {group_str}.")
             return True
         else:
-            print(f"Failed to add user '{user}' to group '{group}'.")
+            print(f"[add_user_to_group] Failed to add user '{user}' to group(s): {group_str}.")
             return False
     except Exception as e:
-        print(f"Exception while adding user to group: {e}")
+        print(f"[add_user_to_group] Exception: {e}")
         return False
 
 
@@ -307,7 +384,7 @@ def copy_file(src: str | Path, dest: str | Path) -> bool:
 
 
 def copy_file_dict(mapping: Any) -> bool:
-    """Copy multiple files or directories from dict or list jobs."""
+    """Copy multiple files or directories from dict or list jobs (expands ~ and $VARS)."""
     results: List[bool] = []
     if isinstance(mapping, dict):
         items = [(s, d, None) for s, d in mapping.items()]
@@ -317,18 +394,49 @@ def copy_file_dict(mapping: Any) -> bool:
         print(f"[ERROR] copy_file_dict: unsupported type {type(mapping).__name__}")
         return False
     print(f"[APPLY] SettingsFiles ({len(items)})")
-    for src, dest, name in items:
+    for src_raw, dest_raw, name in items:
         label = f"{name}: " if name else ""
-        print(f"  - {label}{src} -> {dest}")
+        print(f"  - {label}{src_raw} -> {dest_raw}")
         try:
+            src = os.path.expanduser(os.path.expandvars(str(src_raw)))
+            dest = os.path.expanduser(os.path.expandvars(str(dest_raw)))
+
             if os.path.isdir(src):
                 shutil.copytree(src, dest, dirs_exist_ok=True)
                 results.append(True)
             else:
+                Path(dest).parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(src, dest)
                 results.append(True)
         except Exception as e:
-            print(f"[ERROR] Failed to copy {src} → {dest}: {e}")
+            print(f"[ERROR] Failed to copy {src_raw} → {dest_raw}: {e}")
+            results.append(False)
+    return all(results)
+
+
+def copy_folder_dict(mapping: Any) -> bool:
+    """Copy multiple folders from dict or list jobs (expands ~ and $VARS)."""
+    results: List[bool] = []
+    if isinstance(mapping, dict):
+        items = [(s, d, None) for s, d in mapping.items()]
+    elif isinstance(mapping, list):
+        items = [(it.get("src"), it.get("dest"), it.get("name")) for it in mapping if isinstance(it, dict)]
+    else:
+        print(f"[ERROR] copy_folder_dict: unsupported type {type(mapping).__name__}")
+        return False
+    print(f"[APPLY] FolderCopies ({len(items)})")
+    for src_raw, dest_raw, name in items:
+        label = f"{name}: " if name else ""
+        print(f"  - {label}{src_raw} -> {dest_raw}")
+        try:
+            src = os.path.expanduser(os.path.expandvars(str(src_raw)))
+            dest = os.path.expanduser(os.path.expandvars(str(dest_raw)))
+            if not os.path.isdir(src):
+                raise FileNotFoundError(f"Source folder not found: {src}")
+            shutil.copytree(src, dest, dirs_exist_ok=True)
+            results.append(True)
+        except Exception as e:
+            print(f"[ERROR] Failed to copy {src_raw} → {dest_raw}: {e}")
             results.append(False)
     return all(results)
 
@@ -411,6 +519,18 @@ def chown_paths(user: str, paths: List[str], recursive: bool=False) -> bool:
     return ok
 
 
+def make_dirs(dirs: list[str]) -> bool:
+    """Ensure all directories in the list exist. Returns True if successful/no-op."""
+    import os
+    try:
+        for d in dirs:
+            path = os.path.expanduser(d)
+            os.makedirs(path, exist_ok=True)
+            print(f"[make_dirs] Ensured directory exists: {path}")
+        return True
+    except Exception as e:
+        print(f"[make_dirs] Error creating directories: {e}")
+        return False
 
 
 

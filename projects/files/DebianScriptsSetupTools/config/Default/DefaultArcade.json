@@ -3,21 +3,28 @@
     "Arcade": {
       "mame": {
         "Packages": ["mame", "mame-data", "mame-tools"],
+        "SetupDirs": [
+          "~/.mame",
+          "~/Arcade"
+        ],
         "SetupCmds": [
           "/usr/games/mame -listxml > ~/Arcade/mame.xml && echo \"mame.xml export completed!\""
         ],
         "RemovePaths": [
           "~/.mame/*.ini"
         ],
+        "ResetDirs": [
+          "~/.mame"
+        ],
         "ResetCmds": [
-          "mkdir -p ~/.mame",
           "bash -lc 'cd ~/.mame && /usr/games/mame -createconfig'"
         ],
         "SettingsFiles": [
-          { "copyName": "MainConfig", "src": "settings/mame/Default/Default-mame_template.ini", "dest": "~/.mame/mame.ini" },
-          { "copyName": "UIConfig", "src": "settings/mame/Default/Default-ui_template.ini", "dest": "~/.mame/ui.ini" },
+          { "copyName": "MainConfig",   "src": "settings/mame/Default/Default-mame_template.ini",   "dest": "~/.mame/mame.ini" },
+          { "copyName": "UIConfig",     "src": "settings/mame/Default/Default-ui_template.ini",     "dest": "~/.mame/ui.ini" },
           { "copyName": "PluginConfig", "src": "settings/mame/Default/Default-plugin_template.ini", "dest": "~/.mame/plugin.ini" }
-        ]
+        ],
+        "SettingsFolders" :[]
       },
       "retroarch": {
         "Packages": [
@@ -37,22 +44,31 @@
           "libretro-bsnes-mercury-balanced",
           "libretro-bsnes-mercury-performance"
         ],
+        "SetupDirs": [
+          "~/.config/retroarch",
+          "~/.config/retroarch/system",
+          "~/.config/retroarch/system/pcsx2/bios",
+          "~/.config/retroarch/cores",
+          "~/.config/retroarch/saves",
+          "~/.config/retroarch/states",
+          "~/.config/retroarch/playlists"
+        ],
         "SetupCmds": [
-          "bash -lc 'mkdir -p ~/.config/retroarch/system ~/.config/retroarch/system/pcsx2/bios'",
           "bash -lc 'python3 settings/retroarch/generate_playlists.py --core-map Default/Default-CoreMap.json'"
         ],
         "RemovePaths": [
           "~/.config/retroarch/retroarch.cfg",
           "~/.config/retroarch/playlists/*.lpl"
         ],
-        "ResetCmds": [
-          "mkdir -p ~/.config/retroarch/cores ~/.config/retroarch/saves ~/.config/retroarch/states ~/.config/retroarch/system ~/.config/retroarch/playlists"
+        "ResetDirs": [
+          "~/.config/retroarch"
         ],
-        "SettingsFiles": [
-          { "copyName": "PSX BIOS scph1001.bin", "src": "~/Arcade/Sony Playstation/bios/scph1001.bin", "dest": "~/.config/retroarch/system/scph1001.bin" },
-          { "copyName": "PSX BIOS scph5502.bin", "src": "~/Arcade/Sony Playstation/bios/scph5502.bin", "dest": "~/.config/retroarch/system/scph5502.bin" },
-          { "copyName": "PS2 BIOS scph39001.bin", "src": "~/Arcade/Sony Playstation 2/bios/scph39001.bin", "dest": "~/.config/retroarch/system/pcsx2/bios/scph39001.bin" },
-          { "copyName": "PS2 BIOS SCPH-70004_BIOS_V12_PAL_200.BIN", "src": "~/Arcade/Sony Playstation 2/bios/SCPH-70004_BIOS_V12_PAL_200.BIN", "dest": "~/.config/retroarch/system/pcsx2/bios/SCPH-70004_BIOS_V12_PAL_200.BIN" }
+        "ResetCmds": [],
+
+        "SettingsFiles": [],
+        "SettingsFolders": [
+          { "copyName": "PSX BIOS folder", "src": "~/Arcade/Sony Playstation/bios", "dest": "~/.config/retroarch/system" },
+          { "copyName": "PS2 BIOS folder", "src": "~/Arcade/Sony Playstation 2/bios", "dest": "~/.config/retroarch/system/pcsx2/bios" }
         ]
       }
     }

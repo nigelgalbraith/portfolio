@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Dict, Any
+
 from modules.system_utils import (
-    copy_file_dict,  
-    run_commands
+    copy_file_dict,
+    copy_folder_dict,  
+    make_dirs,         
+    run_commands       
 )
 from modules.package_utils import check_package, install_packages, uninstall_packages
 from modules.archive_utils import remove_paths
@@ -19,8 +22,11 @@ DEFAULT_CONFIG   = "Default"
 KEY_SETUP_CMDS         = "SetupCmds"
 KEY_RESET_CMDS         = "ResetCmds"
 KEY_SETTINGS_FILES     = "SettingsFiles"
+KEY_SETTINGS_FOLDERS   = "SettingsFolders"  
 KEY_PACKAGES           = "Packages"
 KEY_REMOVE_PATHS       = "RemovePaths"
+KEY_SETUP_DIRS         = "SetupDirs"
+KEY_RESET_DIRS         = "ResetDirs"
 
 # === SUB-JSON KEYS ===
 KEY_COPY_NAME          = "copyName"
@@ -32,64 +38,73 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
     "YOUR MODEL HERE": {
         JOBS_KEY: {
             "mame": {
-                KEY_PACKAGES: ["mame"],
+                KEY_PACKAGES: ["mame", "mame-data", "mame-tools"],
+                KEY_SETUP_DIRS: [
+                    "~/.mame",
+                    "~/Arcade"
+                ],
                 KEY_SETUP_CMDS: [
-                    "/usr/games/mame -listxml > ~/MAME/mame.xml"
+                    "/usr/games/mame -listxml > ~/Arcade/mame.xml && echo \"mame.xml export completed!\""
                 ],
                 KEY_REMOVE_PATHS: [
                     "~/.mame/*.ini"
                 ],
+                KEY_RESET_DIRS: [
+                    "~/.mame"
+                ],
                 KEY_RESET_CMDS: [
-                    "mkdir -p ~/.mame",
                     "bash -lc 'cd ~/.mame && /usr/games/mame -createconfig'"
                 ],
                 KEY_SETTINGS_FILES: [
-                    {
-                        KEY_COPY_NAME: "MainConfig",
-                        KEY_SRC: "~/mame_templates/mame.ini",
-                        KEY_DEST: "~/.mame/mame.ini"
-                    },
-                    {
-                        KEY_COPY_NAME: "UIConfig",
-                        KEY_SRC: "~/mame_templates/ui.ini",
-                        KEY_DEST: "~/.mame/ui.ini"
-                    },
-                    {
-                        KEY_COPY_NAME: "PluginConfig",
-                        KEY_SRC: "~/mame_templates/plugin.ini",
-                        KEY_DEST: "~/.mame/plugin.ini"
-                    }
-                ]
+                    {KEY_COPY_NAME: "MainConfig",   KEY_SRC: "settings/mame/Desktop/Desktop-mame_template.ini",   KEY_DEST: "~/.mame/mame.ini"},
+                    {KEY_COPY_NAME: "UIConfig",     KEY_SRC: "settings/mame/Desktop/Desktop-ui_template.ini",     KEY_DEST: "~/.mame/ui.ini"},
+                    {KEY_COPY_NAME: "PluginConfig", KEY_SRC: "settings/mame/Desktop/Desktop-plugin_template.ini", KEY_DEST: "~/.mame/plugin.ini"}
+                ],
+                KEY_SETTINGS_FOLDERS: []  
             },
             "retroarch": {
                 KEY_PACKAGES: [
                     "retroarch",
+                    "libretro-core-info",
                     "libretro-nestopia",
                     "libretro-snes9x",
+                    "libretro-genesisplusgx",
+                    "libretro-beetle-psx",
                     "libretro-mgba",
                     "libretro-gambatte",
                     "libretro-desmume",
-                    "libretro-beetle-psx",
                     "libretro-beetle-pce-fast",
                     "libretro-beetle-vb",
                     "libretro-beetle-wswan",
                     "libretro-bsnes-mercury-accuracy",
                     "libretro-bsnes-mercury-balanced",
-                    "libretro-bsnes-mercury-performance",
-                    "libretro-genesisplusgx",
-                    "libretro-core-info"
+                    "libretro-bsnes-mercury-performance"
+                ],
+                KEY_SETUP_DIRS: [
+                    "~/.config/retroarch",
+                    "~/.config/retroarch/system",
+                    "~/.config/retroarch/system/pcsx2/bios",
+                    "~/.config/retroarch/cores",
+                    "~/.config/retroarch/saves",
+                    "~/.config/retroarch/states",
+                    "~/.config/retroarch/playlists"
                 ],
                 KEY_SETUP_CMDS: [
-                    "retroarch --version"
+                    "bash -lc 'python3 settings/retroarch/generate_playlists.py --core-map Desktop/Desktop-CoreMap.json'"
                 ],
                 KEY_REMOVE_PATHS: [
                     "~/.config/retroarch/retroarch.cfg",
                     "~/.config/retroarch/playlists/*.lpl"
                 ],
-                KEY_RESET_CMDS: [
-                    "mkdir -p ~/.config/retroarch/cores ~/.config/retroarch/saves ~/.config/retroarch/states ~/.config/retroarch/system ~/.config/retroarch/playlists"
+                KEY_RESET_DIRS: [
+                    "~/.config/retroarch"
                 ],
-                KEY_SETTINGS_FILES: []
+                KEY_RESET_CMDS: [],
+                KEY_SETTINGS_FILES: [],
+                KEY_SETTINGS_FOLDERS: [
+                    {KEY_COPY_NAME: "PSX BIOS folder", KEY_SRC: "~/Arcade/Sony Playstation/bios",     KEY_DEST: "~/.config/retroarch/system"},
+                    {KEY_COPY_NAME: "PS2 BIOS folder", KEY_SRC: "~/Arcade/Sony Playstation 2/bios",  KEY_DEST: "~/.config/retroarch/system/pcsx2/bios"}
+                ]
             }
         }
     }
@@ -98,18 +113,29 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
 # === VALIDATION CONFIG ===
 VALIDATION_CONFIG: Dict[str, Any] = {
     "required_job_fields": {
-        KEY_PACKAGES: list, 
+        KEY_PACKAGES: list,
+        KEY_SETTINGS_FILES: list,
+        KEY_SETTINGS_FOLDERS: list,  
+        KEY_REMOVE_PATHS: list,
+        KEY_SETUP_DIRS: list,
+        KEY_RESET_DIRS: list,
         KEY_SETUP_CMDS: list,
         KEY_RESET_CMDS: list,
-        KEY_REMOVE_PATHS: list,
-        KEY_SETTINGS_FILES: list,
     },
-    "example_config": CONFIG_EXAMPLE, 
+    "example_config": CONFIG_EXAMPLE,
 }
 
 # === SECONDARY VALIDATION ===
 SECONDARY_VALIDATION: Dict[str, Any] = {
     KEY_SETTINGS_FILES: {
+        "required_job_fields": {
+            KEY_COPY_NAME: str,
+            KEY_SRC: str,
+            KEY_DEST: str,
+        },
+        "allow_empty": True,
+    },
+    KEY_SETTINGS_FOLDERS: {  
         "required_job_fields": {
             KEY_COPY_NAME: str,
             KEY_SRC: str,
@@ -139,9 +165,9 @@ LOGS_TO_KEEP    = 10
 ROTATE_LOG_NAME = f"{LOG_PREFIX}_*.log"
 
 # === USER / LABELS ===
-REQUIRED_USER     = "Standard"
+REQUIRED_USER       = "Standard"
 INSTALLED_LABEL     = "INSTALLED"
-UNINSTALLED_LABEL    = "UNINSTALLED"
+UNINSTALLED_LABEL   = "UNINSTALLED"
 RESET_LABEL         = "Reset"
 
 # === STATUS CHECK CONFIG ===
@@ -155,11 +181,13 @@ STATUS_FN_CONFIG = {
 PLAN_COLUMN_ORDER = [
     KEY_PACKAGES,
     KEY_SETTINGS_FILES,
-    KEY_REMOVE_PATHS, 
+    KEY_SETTINGS_FOLDERS, 
+    KEY_REMOVE_PATHS,
+    KEY_SETUP_DIRS,
     KEY_SETUP_CMDS,
+    KEY_RESET_DIRS,
     KEY_RESET_CMDS,
 ]
-
 OPTIONAL_PLAN_COLUMNS = {}
 
 # === ACTIONS ===
@@ -184,7 +212,7 @@ ACTIONS: Dict[str, Dict[str, Any]] = {
     },
     f"Update {JOBS_KEY} Settings": {
         "verb": "update",
-        "filter_status": True, 
+        "filter_status": True,
         "label": INSTALLED_LABEL,
         "prompt": f"Update {JOBS_KEY} settings (copy templates + apply edits)? [y/n]: ",
         "execute_state": "UPDATE_SETTINGS",
@@ -225,8 +253,10 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
     "INSTALL": {
         "pipeline": {
             install_packages: { "args": [KEY_PACKAGES], "result": "installed" },
-            copy_file_dict:   { "args": [KEY_SETTINGS_FILES], "result": "settings_copied" },
+            make_dirs:        { "args": [KEY_SETUP_DIRS], "result": "setup_dirs_ok" },
             run_commands:     { "args": [KEY_SETUP_CMDS], "result": "setup_ok" },
+            copy_file_dict:   { "args": [KEY_SETTINGS_FILES], "result": "settings_files_copied" },
+            copy_folder_dict: { "args": [KEY_SETTINGS_FOLDERS], "result": "settings_folders_copied" },  
         },
         "label": INSTALLED_LABEL,
         "success_key": "setup_ok",
@@ -234,16 +264,19 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
     },
     "UPDATE_SETTINGS": {
         "pipeline": {
-            copy_file_dict: { "args": [KEY_SETTINGS_FILES], "result": "settings_copied" },
-            run_commands:   { "args": [KEY_SETUP_CMDS], "result": "setup_ok" },
+            make_dirs:        { "args": [KEY_SETUP_DIRS], "result": "setup_dirs_ok" },
+            run_commands:     { "args": [KEY_SETUP_CMDS], "result": "setup_ok" },
+            copy_file_dict:   { "args": [KEY_SETTINGS_FILES], "result": "settings_files_copied" },
+            copy_folder_dict: { "args": [KEY_SETTINGS_FOLDERS], "result": "settings_folders_copied" }, 
         },
         "label": INSTALLED_LABEL,
-        "success_key": "setup_ok",  
+        "success_key": "setup_ok",
         "post_state": "CONFIG_LOADING",
     },
     "RESET": {
         "pipeline": {
             remove_paths: { "args": [KEY_REMOVE_PATHS], "result": "removed" },
+            make_dirs:    { "args": [KEY_RESET_DIRS], "result": "reset_dirs_ok" },
             run_commands: { "args": [KEY_RESET_CMDS], "result": "reset_ok" },
         },
         "label": RESET_LABEL,
@@ -252,9 +285,9 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
     },
     "UNINSTALL": {
         "pipeline": {
-            remove_paths:      { "args": [KEY_REMOVE_PATHS], "result": "removed" },
-            run_commands:      { "args": [KEY_RESET_CMDS], "result": "cleanup_ok" },
-            uninstall_packages:{ "args": [KEY_PACKAGES], "result": "uninstalled" },
+            remove_paths:       { "args": [KEY_REMOVE_PATHS], "result": "removed" },
+            make_dirs:          { "args": [KEY_RESET_DIRS], "result": "cleanup_ok" },
+            uninstall_packages: { "args": [KEY_PACKAGES], "result": "uninstalled" },
         },
         "label": UNINSTALLED_LABEL,
         "success_key": "uninstalled",

@@ -15,8 +15,16 @@ from modules.service_utils import (
     enable_and_start_service,
     stop_and_disable_service,
 )
-from modules.system_utils import copy_file_dict, run_commands, chmod_paths, chown_paths
-
+from modules.system_utils import (
+    copy_file_dict,
+    copy_folder_dict,   # NEW: folders
+    chmod_paths, chown_paths,
+    create_user_login,
+    remove_user,
+    kill_user_session,
+    add_user_to_group,
+    make_dirs,
+)
 
 # === CONFIG PATHS & KEYS ===
 PRIMARY_CONFIG   = "config/AppConfigSettings.json"
@@ -28,24 +36,25 @@ DEFAULT_CONFIG   = "Default"
 KEY_DOWNLOAD_URL       = "DownloadURL"
 KEY_ENABLE_SERVICE     = "EnableService"
 KEY_DOWNLOAD_DIR       = "download_dir"
-KEY_SETUP_CMDS         = "SetupCmds"
-KEY_RESET_CMDS         = "ResetCmds"
 KEY_SETTINGS_FILES     = "SettingsFiles"
+KEY_SETTINGS_FOLDERS   = "SettingsFolders"   # NEW
 KEY_PACKAGES           = "Packages"
 KEY_REMOVE_PATHS       = "RemovePaths"
 
+# New: Dir lists & groups
+KEY_SETUP_DIRS         = "SetupDirs"
+KEY_RESET_DIRS         = "ResetDirs"
+KEY_USER_GROUPS        = "UserGroups"
+
 # === KIOSK (JSON) KEYS ===
 KEY_KIOSK_FILES            = "KioskFiles"
-KEY_KIOSK_CMDS             = "KioskCmds"
 KEY_KIOSK_REMOVE_PATHS     = "KioskRemovePaths"
-KEY_KIOSK_DM_MAP           = "KioskDisplayManagers"
-KEY_KIOSK_DISABLE_CMDS     = "KioskDisableCmds"
 
 # === PERMS (JSON) KEYS ===
-KEY_CHMOD_PATHS        = "ChmodPaths"       
-KEY_CHOWN_PATHS        = "ChownPaths"        
-KEY_CHOWN_USER         = "ChownUser"         
-KEY_CHOWN_RECURSIVE    = "ChownRecursive"    
+KEY_CHMOD_PATHS        = "ChmodPaths"
+KEY_CHOWN_PATHS        = "ChownPaths"
+KEY_CHOWN_USER         = "ChownUser"
+KEY_CHOWN_RECURSIVE    = "ChownRecursive"
 
 # === SUB-JSON KEYS ===
 KEY_COPY_NAME          = "copyName"
@@ -61,68 +70,43 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
                 KEY_ENABLE_SERVICE: False,
                 KEY_DOWNLOAD_DIR: "/tmp/launcher-downloads",
                 KEY_SETTINGS_FILES: [
-                    {
-                        KEY_COPY_NAME: "FlexINI",
-                        KEY_SRC: "settings/flex/Desktop/Desktop-Flex-Template-config.ini",
-                        KEY_DEST: "~/.config/flex-launcher/config.ini",
-                    }
+                    {KEY_COPY_NAME: "FlexINI", KEY_SRC: "settings/flex/Desktop/Desktop-Flex-Template-config.ini", KEY_DEST: "/home/launcher/.config/flex-launcher/config.ini"}
                 ],
-                KEY_REMOVE_PATHS: [
-                    "~/.config/flex-launcher/*.ini"
+                KEY_SETTINGS_FOLDERS: [],  # NEW: drop assets/themes later
+                KEY_REMOVE_PATHS: ["/home/launcher/.config/flex-launcher/*.ini"],
+                KEY_SETUP_DIRS: [
+                    "/home/launcher/.config/flex-launcher",
+                    "/etc/sddm.conf.d",
+                    "/home/launcher/.config/openbox",
+                    "/home/launcher/.config/dconf",
+                    "/home/launcher/.config/akonadi",
+                    "/home/launcher/.config/kdeconnect"
                 ],
-                KEY_RESET_CMDS: [
-                    "mkdir -p ~/.config/flex-launcher"
+                KEY_RESET_DIRS: [
+                    "/home/launcher/.config/flex-launcher"
                 ],
-                KEY_SETUP_CMDS: [
-                    'echo "Flex Launcher Setup Completed!"'
-                ],
+                KEY_USER_GROUPS: ["audio", "video"],
                 KEY_KIOSK_FILES: [
-                    {
-                        KEY_COPY_NAME: "LightDM autologin",
-                        KEY_SRC: "settings/flex/Desktop/Desktop-Flex-50-autologin.conf",
-                        KEY_DEST: "/etc/lightdm/lightdm.conf.d/50-autologin.conf",
-                    },
-                    {
-                        KEY_COPY_NAME: "Openbox autostart",
-                        KEY_SRC: "settings/flex/Desktop/Desktop-Flex-autostart.sh",
-                        KEY_DEST: "~/.config/openbox/autostart",
-                    },
-                    {
-                        KEY_COPY_NAME: "DMRC",
-                        KEY_SRC: "settings/flex/Desktop/Desktop-Flex-dmrc",
-                        KEY_DEST: "~/.dmrc",
-                    },
-                ],
-                KEY_KIOSK_CMDS: [
-                    "mkdir -p /etc/lightdm/lightdm.conf.d",
-                    "mkdir -p ~/.config/openbox"
+                    {KEY_COPY_NAME: "SDDM autologin", KEY_SRC: "settings/flex/Desktop/Desktop-Flex-50-autologin.conf", KEY_DEST: "/etc/sddm.conf.d/10-autologin.conf"},
+                    {KEY_COPY_NAME: "Openbox autostart", KEY_SRC: "settings/flex/Desktop/Desktop-Flex-autostart.sh", KEY_DEST: "/home/launcher/.config/openbox/autostart"},
+                    {KEY_COPY_NAME: "DMRC", KEY_SRC: "settings/flex/Desktop/Desktop-Flex-dmrc", KEY_DEST: "/home/launcher/.dmrc"}
                 ],
                 KEY_CHMOD_PATHS: [
-                    { "path": "~/.dmrc", "mode": "600" },
-                    { "path": "~/.config/openbox/autostart", "mode": "755" }
+                    {"path": "/home/launcher/.dmrc", "mode": "600"},
+                    {"path": "/home/launcher/.config/openbox/autostart", "mode": "755"}
                 ],
-                KEY_CHOWN_USER: "nigel",
-                KEY_CHOWN_PATHS: [
-                    "~/.dmrc",
-                    "~/.config/openbox/autostart"
-                ],
-                KEY_CHOWN_RECURSIVE: False,
-
+                KEY_CHOWN_USER: "launcher",
+                KEY_CHOWN_PATHS: ["/home/launcher/.dmrc", "/home/launcher/.config"],
+                KEY_CHOWN_RECURSIVE: True,
                 KEY_KIOSK_REMOVE_PATHS: [
-                    "~/.config/openbox/autostart",
-                    "/etc/lightdm/lightdm.conf.d/50-autologin.conf",
-                    "~/.dmrc"
-                ],
-                KEY_KIOSK_DM_MAP: {
-                    "enable": "lightdm",
-                    "disable": "sddm"
-                },
-                KEY_KIOSK_DISABLE_CMDS: [],
+                    "/home/launcher/.config/openbox/autostart",
+                    "/etc/sddm.conf.d/10-autologin.conf",
+                    "/home/launcher/.dmrc"
+                ]
             }
         }
     }
 }
-
 
 # === VALIDATION CONFIG ===
 VALIDATION_CONFIG: Dict[str, Any] = {
@@ -130,6 +114,7 @@ VALIDATION_CONFIG: Dict[str, Any] = {
         KEY_DOWNLOAD_URL: str,
         KEY_ENABLE_SERVICE: (bool, type(None)),
         KEY_DOWNLOAD_DIR: str,
+        # Not requiring SettingsFiles/Folders here to keep your original loose validation
     },
     "example_config": CONFIG_EXAMPLE,
 }
@@ -137,19 +122,15 @@ VALIDATION_CONFIG: Dict[str, Any] = {
 # === SECONDARY VALIDATION  ===
 SECONDARY_VALIDATION: Dict[str, Any] = {
     KEY_SETTINGS_FILES: {
-        "required_job_fields": {
-            KEY_COPY_NAME: str,
-            KEY_SRC: str,
-            KEY_DEST: str,
-        },
+        "required_job_fields": {KEY_COPY_NAME: str, KEY_SRC: str, KEY_DEST: str},
         "allow_empty": True,
     },
     KEY_KIOSK_FILES: {
-        "required_job_fields": {
-            KEY_COPY_NAME: str,
-            KEY_SRC: str,
-            KEY_DEST: str,
-        },
+        "required_job_fields": {KEY_COPY_NAME: str, KEY_SRC: str, KEY_DEST: str},
+        "allow_empty": True,
+    },
+    KEY_SETTINGS_FOLDERS: {  # NEW
+        "required_job_fields": {KEY_COPY_NAME: str, KEY_SRC: str, KEY_DEST: str},
         "allow_empty": True,
     },
 }
@@ -192,9 +173,10 @@ PLAN_COLUMN_ORDER = [
     KEY_DOWNLOAD_DIR,
     KEY_ENABLE_SERVICE,
     KEY_SETTINGS_FILES,
+    KEY_SETTINGS_FOLDERS,  # NEW
     KEY_REMOVE_PATHS,
-    KEY_SETUP_CMDS,
-    KEY_RESET_CMDS,
+    KEY_SETUP_DIRS,
+    KEY_RESET_DIRS,
 ]
 OPTIONAL_PLAN_COLUMNS = {}
 
@@ -271,33 +253,19 @@ SUB_MENU: Dict[str, str] = {
 }
 
 # === DEPENDENCIES ===
-DEPENDENCIES = ["wget", "dpkg", "chromium", "lightdm", "openbox"]
+DEPENDENCIES = ["wget", "dpkg", "chromium", "sddm", "openbox", "dbus-user-session", "dbus-x11"]
 
 # === PIPELINES  ===
 PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
     "INSTALL": {
         "pipeline": {
-            download_deb_file: {
-                "args": ["job", KEY_DOWNLOAD_URL, KEY_DOWNLOAD_DIR],
-                "result": "download_ok",
-            },
-            install_deb_file: {
-                "args": [lambda j, m, c: Path(m[KEY_DOWNLOAD_DIR]) / f"{j}.deb", "job"],
-                "result": "installed",
-                "when":  lambda j, m, c: bool(c.get("download_ok")),
-            },
-            enable_and_start_service: {
-                "args": [lambda j, m, c: m.get("ServiceName", j)],
-                "when":  lambda j, m, c: bool(m.get(KEY_ENABLE_SERVICE)),
-                "result": "service_started",
-            },
-            handle_cleanup: {
-                "args": [lambda j, m, c: Path(m[KEY_DOWNLOAD_DIR]) / f"{j}.deb"],
-                "result": "cleaned",
-                "when":  lambda j, m, c: bool(c.get("download_ok")),
-            },
-            copy_file_dict:   { "args": [KEY_SETTINGS_FILES], "result": "settings_copied" },
-            run_commands:     { "args": [KEY_SETUP_CMDS], "result": "setup_ok" },
+            download_deb_file: {"args": ["job", KEY_DOWNLOAD_URL, KEY_DOWNLOAD_DIR], "result": "download_ok"},
+            install_deb_file:  {"args": [lambda j, m, c: Path(m[KEY_DOWNLOAD_DIR]) / f"{j}.deb", "job"], "result": "installed", "when": lambda j, m, c: bool(c.get("download_ok"))},
+            enable_and_start_service: {"args": [lambda j, m, c: m.get("ServiceName", j)], "when": lambda j, m, c: bool(m.get(KEY_ENABLE_SERVICE)), "result": "service_started"},
+            handle_cleanup: {"args": [lambda j, m, c: Path(m[KEY_DOWNLOAD_DIR]) / f"{j}.deb"], "result": "cleaned", "when": lambda j, m, c: bool(c.get("download_ok"))},
+            make_dirs: {"args": [KEY_SETUP_DIRS], "result": "setup_dirs_ok"},
+            copy_file_dict: {"args": [KEY_SETTINGS_FILES], "result": "settings_files_copied"},
+            copy_folder_dict: {"args": [KEY_SETTINGS_FOLDERS], "result": "settings_folders_copied"},  # NEW
         },
         "label": INSTALLED_LABEL,
         "success_key": "installed",
@@ -306,18 +274,19 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
 
     "UPDATE_SETTINGS": {
         "pipeline": {
-            copy_file_dict: { "args": [KEY_SETTINGS_FILES], "result": "settings_copied" },
-            run_commands:   { "args": [KEY_SETUP_CMDS], "result": "setup_ok" },
+            make_dirs:      {"args": [KEY_SETUP_DIRS], "result": "setup_dirs_ok"},
+            copy_file_dict: {"args": [KEY_SETTINGS_FILES], "result": "settings_files_copied"},
+            copy_folder_dict: {"args": [KEY_SETTINGS_FOLDERS], "result": "settings_folders_copied"},  # NEW
         },
         "label": INSTALLED_LABEL,
-        "success_key": "setup_ok",
+        "success_key": "settings_files_copied",
         "post_state": "CONFIG_LOADING",
     },
 
     "RESET": {
         "pipeline": {
-            remove_paths: { "args": [KEY_REMOVE_PATHS], "result": "removed" },
-            run_commands: { "args": [KEY_RESET_CMDS], "result": "reset_ok" },
+            remove_paths: {"args": [KEY_REMOVE_PATHS], "result": "removed"},
+            make_dirs:    {"args": [KEY_RESET_DIRS], "result": "reset_ok"},
         },
         "label": RESET_LABEL,
         "success_key": "reset_ok",
@@ -326,9 +295,9 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
 
     "UNINSTALL": {
         "pipeline": {
-            uninstall_packages: { "args": ["job"], "result": "uninstalled" },
-            remove_paths:       { "args": [KEY_REMOVE_PATHS], "result": "removed" },
-            run_commands:       { "args": [KEY_RESET_CMDS], "result": "cleanup_ok" },
+            uninstall_packages: {"args": ["job"], "result": "uninstalled"},
+            remove_paths:       {"args": [KEY_REMOVE_PATHS], "result": "removed"},
+            make_dirs:          {"args": [KEY_RESET_DIRS], "result": "cleanup_ok"},
         },
         "label": UNINSTALLED_LABEL,
         "success_key": "uninstalled",
@@ -337,46 +306,26 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
 
     "ENABLE_KIOSK": {
         "pipeline": {
-            copy_file_dict: { "args": [KEY_KIOSK_FILES], "result": "kiosk_files_copied" },
-            run_commands:   { "args": [KEY_KIOSK_CMDS], "result": "kiosk_cmds_ok" },
-            chmod_paths:    { "args": [KEY_CHMOD_PATHS], "result": "chmod_ok" },
-            chown_paths:    {
-                "args": [
-                    lambda j, m, c: m.get(KEY_CHOWN_USER, "nigel"),
-                    KEY_CHOWN_PATHS,
-                    lambda j, m, c: bool(m.get(KEY_CHOWN_RECURSIVE, False))
-                ],
-                "result": "chown_ok",
-            },
-            stop_and_disable_service: {
-                "args": [lambda j, m, c: (m.get(KEY_KIOSK_DM_MAP, {}) or {}).get("disable")],
-                "result": "dm_old_stopped",
-            },
-            enable_and_start_service: {
-                "args": [lambda j, m, c: (m.get(KEY_KIOSK_DM_MAP, {}) or {}).get("enable")],
-                "result": "dm_new_started",
-            },
+            create_user_login: {"args": [lambda j, m, c: m.get(KEY_CHOWN_USER, "launcher")], "result": "user_ok"},
+            add_user_to_group: {"args": [lambda j, m, c: m.get(KEY_CHOWN_USER, "launcher"), lambda j, m, c: m.get(KEY_USER_GROUPS, [])], "result": "groups_added"},
+            make_dirs:         {"args": [KEY_SETUP_DIRS],  "result": "setup_dirs_ok"},
+            copy_file_dict:    {"args": [KEY_KIOSK_FILES], "result": "kiosk_files_copied"},
+            chmod_paths:       {"args": [KEY_CHMOD_PATHS], "result": "chmod_ok"},
+            chown_paths:       {"args": [lambda j, m, c: m.get(KEY_CHOWN_USER, "launcher"), KEY_CHOWN_PATHS, lambda j, m, c: bool(m.get(KEY_CHOWN_RECURSIVE, False))], "result": "chown_ok"},
         },
         "label": "KIOSK",
-        "success_key": "dm_new_started",
+        "success_key": "chown_ok",
         "post_state": "CONFIG_LOADING",
     },
 
     "DISABLE_KIOSK": {
         "pipeline": {
-            remove_paths:   { "args": [KEY_KIOSK_REMOVE_PATHS], "result": "kiosk_removed" },
-            run_commands:   { "args": [KEY_KIOSK_DISABLE_CMDS], "result": "kiosk_disable_cmds_ok" },
-            stop_and_disable_service: {
-                "args": [lambda j, m, c: (m.get(KEY_KIOSK_DM_MAP, {}) or {}).get("enable")],
-                "result": "dm_kiosk_stopped",
-            },
-            enable_and_start_service: {
-                "args": [lambda j, m, c: (m.get(KEY_KIOSK_DM_MAP, {}) or {}).get("disable")],
-                "result": "dm_normal_started",
-            },
+            kill_user_session: {"args": [lambda j, m, c: m.get(KEY_CHOWN_USER, "launcher")], "result": "session_killed"},
+            remove_user:       {"args": [lambda j, m, c: m.get(KEY_CHOWN_USER, "launcher")], "result": "user_removed"},
+            remove_paths:      {"args": [KEY_KIOSK_REMOVE_PATHS], "result": "kiosk_removed"},
         },
         "label": "KIOSK",
-        "success_key": "dm_normal_started",
+        "success_key": "kiosk_removed",
         "post_state": "CONFIG_LOADING",
     },
 }
