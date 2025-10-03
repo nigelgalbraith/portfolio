@@ -17,7 +17,7 @@ from modules.service_utils import (
 )
 from modules.system_utils import (
     copy_file_dict,
-    copy_folder_dict,   # NEW: folders
+    copy_folder_dict,
     chmod_paths, chown_paths,
     create_user_login,
     remove_user,
@@ -37,7 +37,7 @@ KEY_DOWNLOAD_URL       = "DownloadURL"
 KEY_ENABLE_SERVICE     = "EnableService"
 KEY_DOWNLOAD_DIR       = "download_dir"
 KEY_SETTINGS_FILES     = "SettingsFiles"
-KEY_SETTINGS_FOLDERS   = "SettingsFolders"   # NEW
+KEY_SETTINGS_FOLDERS   = "SettingsFolders"
 KEY_PACKAGES           = "Packages"
 KEY_REMOVE_PATHS       = "RemovePaths"
 
@@ -70,38 +70,38 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
                 KEY_ENABLE_SERVICE: False,
                 KEY_DOWNLOAD_DIR: "/tmp/launcher-downloads",
                 KEY_SETTINGS_FILES: [
-                    {KEY_COPY_NAME: "FlexINI", KEY_SRC: "settings/flex/Desktop/Desktop-Flex-Template-config.ini", KEY_DEST: "/home/launcher/.config/flex-launcher/config.ini"}
+                    {KEY_COPY_NAME: "FlexINI", KEY_SRC: "settings/flex/Desktop/Desktop-Flex-Template-config.ini", KEY_DEST: "/etc/flex-launcher/config.ini"}
                 ],
-                KEY_SETTINGS_FOLDERS: [],  # NEW: drop assets/themes later
-                KEY_REMOVE_PATHS: ["/home/launcher/.config/flex-launcher/*.ini"],
+                KEY_SETTINGS_FOLDERS: [],
+                KEY_REMOVE_PATHS: ["/etc/flex-launcher/*.ini"],
                 KEY_SETUP_DIRS: [
-                    "/home/launcher/.config/flex-launcher",
+                    "/etc/flex-launcher",
                     "/etc/sddm.conf.d",
-                    "/home/launcher/.config/openbox",
-                    "/home/launcher/.config/dconf",
-                    "/home/launcher/.config/akonadi",
-                    "/home/launcher/.config/kdeconnect"
+                    "/etc/openbox",
+                    "/etc/dconf",
+                    "/etc/akonadi",
+                    "/etc/kdeconnect"
                 ],
                 KEY_RESET_DIRS: [
-                    "/home/launcher/.config/flex-launcher"
+                    "/etc/flex-launcher"
                 ],
                 KEY_USER_GROUPS: ["audio", "video"],
                 KEY_KIOSK_FILES: [
                     {KEY_COPY_NAME: "SDDM autologin", KEY_SRC: "settings/flex/Desktop/Desktop-Flex-50-autologin.conf", KEY_DEST: "/etc/sddm.conf.d/10-autologin.conf"},
-                    {KEY_COPY_NAME: "Openbox autostart", KEY_SRC: "settings/flex/Desktop/Desktop-Flex-autostart.sh", KEY_DEST: "/home/launcher/.config/openbox/autostart"},
-                    {KEY_COPY_NAME: "DMRC", KEY_SRC: "settings/flex/Desktop/Desktop-Flex-dmrc", KEY_DEST: "/home/launcher/.dmrc"}
+                    {KEY_COPY_NAME: "Openbox autostart", KEY_SRC: "settings/flex/Desktop/Desktop-Flex-autostart.sh", KEY_DEST: "/etc/openbox/autostart"},
+                    {KEY_COPY_NAME: "DMRC", KEY_SRC: "settings/flex/Desktop/Desktop-Flex-dmrc", KEY_DEST: "/etc/dmrc"}
                 ],
                 KEY_CHMOD_PATHS: [
-                    {"path": "/home/launcher/.dmrc", "mode": "600"},
-                    {"path": "/home/launcher/.config/openbox/autostart", "mode": "755"}
+                    {"path": "/etc/dmrc", "mode": "600"},
+                    {"path": "/etc/openbox/autostart", "mode": "755"}
                 ],
                 KEY_CHOWN_USER: "launcher",
-                KEY_CHOWN_PATHS: ["/home/launcher/.dmrc", "/home/launcher/.config"],
+                KEY_CHOWN_PATHS: ["/etc/dmrc", "/etc/flex-launcher"],
                 KEY_CHOWN_RECURSIVE: True,
                 KEY_KIOSK_REMOVE_PATHS: [
-                    "/home/launcher/.config/openbox/autostart",
+                    "/etc/openbox/autostart",
                     "/etc/sddm.conf.d/10-autologin.conf",
-                    "/home/launcher/.dmrc"
+                    "/etc/dmrc"
                 ]
             }
         }
@@ -114,7 +114,6 @@ VALIDATION_CONFIG: Dict[str, Any] = {
         KEY_DOWNLOAD_URL: str,
         KEY_ENABLE_SERVICE: (bool, type(None)),
         KEY_DOWNLOAD_DIR: str,
-        # Not requiring SettingsFiles/Folders here to keep your original loose validation
     },
     "example_config": CONFIG_EXAMPLE,
 }
@@ -129,8 +128,11 @@ SECONDARY_VALIDATION: Dict[str, Any] = {
         "required_job_fields": {KEY_COPY_NAME: str, KEY_SRC: str, KEY_DEST: str},
         "allow_empty": True,
     },
-    KEY_SETTINGS_FOLDERS: {  # NEW
+    KEY_SETTINGS_FOLDERS: {
         "required_job_fields": {KEY_COPY_NAME: str, KEY_SRC: str, KEY_DEST: str},
+        "allow_empty": True,
+    },
+    KEY_REMOVE_PATHS: {
         "allow_empty": True,
     },
 }
@@ -173,7 +175,7 @@ PLAN_COLUMN_ORDER = [
     KEY_DOWNLOAD_DIR,
     KEY_ENABLE_SERVICE,
     KEY_SETTINGS_FILES,
-    KEY_SETTINGS_FOLDERS,  # NEW
+    KEY_SETTINGS_FOLDERS,
     KEY_REMOVE_PATHS,
     KEY_SETUP_DIRS,
     KEY_RESET_DIRS,
@@ -265,7 +267,7 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
             handle_cleanup: {"args": [lambda j, m, c: Path(m[KEY_DOWNLOAD_DIR]) / f"{j}.deb"], "result": "cleaned", "when": lambda j, m, c: bool(c.get("download_ok"))},
             make_dirs: {"args": [KEY_SETUP_DIRS], "result": "setup_dirs_ok"},
             copy_file_dict: {"args": [KEY_SETTINGS_FILES], "result": "settings_files_copied"},
-            copy_folder_dict: {"args": [KEY_SETTINGS_FOLDERS], "result": "settings_folders_copied"},  # NEW
+            copy_folder_dict: {"args": [KEY_SETTINGS_FOLDERS], "result": "settings_folders_copied"},
         },
         "label": INSTALLED_LABEL,
         "success_key": "installed",
@@ -276,7 +278,7 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
         "pipeline": {
             make_dirs:      {"args": [KEY_SETUP_DIRS], "result": "setup_dirs_ok"},
             copy_file_dict: {"args": [KEY_SETTINGS_FILES], "result": "settings_files_copied"},
-            copy_folder_dict: {"args": [KEY_SETTINGS_FOLDERS], "result": "settings_folders_copied"},  # NEW
+            copy_folder_dict: {"args": [KEY_SETTINGS_FOLDERS], "result": "settings_folders_copied"},
         },
         "label": INSTALLED_LABEL,
         "success_key": "settings_files_copied",

@@ -18,17 +18,15 @@
           "/home/launcher/.config/flex-launcher"
         ],
         "UserGroups": ["audio", "video"],
-
         "SettingsFiles": [
-          { "copyName": "FlexINI", "src": "settings/flex/Default/Default-Flex-Template-config.ini", "dest": "/home/launcher/.config/flex-launcher/config.ini" }
+          { "copyName": "FlexINI", "src": "settings/flex/Desktop/Desktop-Flex-Template-config.ini", "dest": "/home/launcher/.config/flex-launcher/config.ini" }
         ],
         "SettingsFolders": [],
         "KioskFiles": [
-          { "copyName": "SDDM autologin", "src": "settings/flex/Default/Default-Flex-50-autologin.conf", "dest": "/etc/sddm.conf.d/10-autologin.conf" },
-          { "copyName": "Openbox autostart", "src": "settings/flex/Default/Default-Flex-autostart.sh", "dest": "/home/launcher/.config/openbox/autostart" },
-          { "copyName": "DMRC", "src": "settings/flex/Default/Default-Flex-dmrc", "dest": "/home/launcher/.dmrc" }
+          { "copyName": "SDDM autologin", "src": "settings/flex/Desktop/Desktop-Flex-50-autologin.conf", "dest": "/etc/sddm.conf.d/10-autologin.conf" },
+          { "copyName": "Openbox autostart", "src": "settings/flex/Desktop/Desktop-Flex-autostart.sh", "dest": "/home/launcher/.config/openbox/autostart" },
+          { "copyName": "DMRC", "src": "settings/flex/Desktop/Desktop-Flex-dmrc", "dest": "/home/launcher/.dmrc" }
         ],
-
         "ChmodPaths": [
           { "path": "/home/launcher/.dmrc", "mode": "600" },
           { "path": "/home/launcher/.config/openbox/autostart", "mode": "755" }
@@ -39,7 +37,6 @@
           "/home/launcher/.config"
         ],
         "ChownRecursive": true,
-
         "KioskRemovePaths": [
           "/home/launcher/.config/openbox/autostart",
           "/etc/sddm.conf.d/10-autologin.conf",
