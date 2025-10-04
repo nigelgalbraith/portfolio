@@ -44,7 +44,6 @@ KEY_REMOVE_PATHS       = "RemovePaths"
 
 # New: Dir lists & groups
 KEY_SETUP_DIRS         = "SetupDirs"
-KEY_RESET_DIRS         = "ResetDirs"
 KEY_USER_GROUPS        = "UserGroups"
 
 # === KIOSK (JSON) KEYS ===
@@ -52,10 +51,14 @@ KEY_KIOSK_FILES            = "KioskFiles"
 KEY_KIOSK_REMOVE_PATHS     = "KioskRemovePaths"
 
 # === PERMS (JSON) KEYS ===
-KEY_CHMOD_PATHS        = "ChmodPaths"
-KEY_CHOWN_PATHS        = "ChownPaths"
-KEY_CHOWN_USER         = "ChownUser"
-KEY_CHOWN_RECURSIVE    = "ChownRecursive"
+KEY_CHMOD_PATHS          = "ChmodPaths"
+KEY_CHOWN_PATHS          = "ChownPaths"
+KEY_CHOWN_USER           = "ChownUser"
+KEY_CHOWN_RECURSIVE      = "ChownRecursive"
+
+# settings-scoped perms (used only in UPDATE_SETTINGS)
+KEY_SETTINGS_CHMOD_PATHS = "SettingsChmodPaths"
+KEY_SETTINGS_CHOWN_PATHS = "SettingsChownPaths"
 
 # === Packages (JSON) Keys ===
 KEY_ADDITIONAL_PKGS    = "AdditionalPackages"
@@ -76,41 +79,70 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
                 KEY_ENABLE_SERVICE: False,
                 KEY_DOWNLOAD_DIR: "/tmp/launcher-downloads",
                 KEY_SETTINGS_FILES: [
-                    {KEY_COPY_NAME: "FlexINI", KEY_SRC: "settings/flex/Desktop/Desktop-Flex-Template-config.ini", KEY_DEST: "/etc/flex-launcher/config.ini"}
+                    {KEY_COPY_NAME: "FlexINI",
+                     KEY_SRC:  "settings/flex/Desktop/Desktop-Flex-Template-config.ini",
+                     KEY_DEST: "/home/launcher/.config/flex-launcher/config.ini"}
                 ],
                 KEY_SETTINGS_FOLDERS: [],
-                KEY_REMOVE_PATHS: ["/etc/flex-launcher/*.ini"],
+                KEY_SETTINGS_CHMOD_PATHS: [
+                    {"path": "/home/launcher/.config/flex-launcher/config.ini", "mode": "644"}
+                ],
+                KEY_SETTINGS_CHOWN_PATHS: [
+                    {"path": "/home/launcher/.config/flex-launcher/config.ini"}
+                ],
+                KEY_REMOVE_PATHS: [
+                    "/home/launcher/.config/flex-launcher/config.ini"
+                ],
                 KEY_SETUP_DIRS: [
-                    "/home/launcher/.config/flex-launcher",
-                    "/etc/lightdm/lightdm.conf.d",
+                    "/home/launcher/.config",
                     "/home/launcher/.config/openbox",
-                    "/home/launcher/.config/dconf",
-                    "/home/launcher/.config/akonadi",
-                    "/home/launcher/.config/kdeconnect",
-                    "/home/launcher/.cache/openbox",
+                    "/home/launcher/.config/flex-launcher",
+                    "/etc/lightdm/lightdm.conf.d"
                 ],
                 KEY_KIOSK_FILES: [
-                    {KEY_COPY_NAME: "LightDM autologin", KEY_SRC: "settings/flex/Desktop/Desktop-LightDM-50-launcher.conf", KEY_DEST: "/etc/lightdm/lightdm.conf.d/50-launcher.conf"},
-                    {KEY_COPY_NAME: "Openbox autostart", KEY_SRC: "settings/flex/Desktop/Desktop-Flex-autostart.sh", KEY_DEST: "/home/launcher/.config/openbox/autostart"},
-                    {KEY_COPY_NAME: "DMRC", KEY_SRC: "settings/flex/Desktop/Desktop-Flex-dmrc", KEY_DEST: "/home/launcher/.dmrc"},
+                    {KEY_COPY_NAME: "LightDM autologin",
+                     KEY_SRC:  "settings/flex/Desktop/Desktop-LightDM-50-launcher.conf",
+                     KEY_DEST: "/etc/lightdm/lightdm.conf.d/50-launcher.conf"},
+                    {KEY_COPY_NAME: "Openbox autostart",
+                     KEY_SRC:  "settings/flex/Desktop/Desktop-Flex-autostart.sh",
+                     KEY_DEST: "/home/launcher/.config/openbox/autostart"},
+                    {KEY_COPY_NAME: "DMRC",
+                     KEY_SRC:  "settings/flex/Desktop/Desktop-Flex-dmrc",
+                     KEY_DEST: "/home/launcher/.dmrc"}
                 ],
                 KEY_CHMOD_PATHS: [
-                    {"path": "/home/launcher/.dmrc", "mode": "600"},
                     {"path": "/home/launcher/.config/openbox/autostart", "mode": "755"},
+                    {"path": "/home/launcher/.dmrc",                     "mode": "600"}
                 ],
-                KEY_CHOWN_PATHS: ["/home/launcher", "/home/launcher/.config", "/home/launcher/.cache", "/home/launcher/.dmrc"],
+                KEY_CHOWN_PATHS: [
+                    {"path": "/home/launcher"},
+                    {"path": "/home/launcher/.config"},
+                    {"path": "/home/launcher/.cache"},
+                    {"path": "/home/launcher/.dmrc"}
+                ],
+                KEY_CHOWN_RECURSIVE: True,
+
                 KEY_KIOSK_REMOVE_PATHS: [
                     "/home/launcher/.config/openbox/autostart",
                     "/etc/lightdm/lightdm.conf.d/50-launcher.conf",
-                    "/home/launcher/.dmrc",
+                    "/home/launcher/.dmrc"
                 ],
-                KEY_DEFAULT_DM: "sddm",
+
+                KEY_DEFAULT_DM: "gdm3",
                 KEY_KIOSK_DM:   "lightdm",
-                KEY_ADDITIONAL_PKGS: ["chromium"],
+                KEY_ADDITIONAL_PKGS: [
+                    "chromium",
+                    "dbus-user-session",
+                    "dbus-x11",
+                    "lightdm-gtk-greeter",
+                    "lightdm-gtk-greeter-settings",
+                    "libsdl2-image-2.0-0"
+                ],
             }
         }
     }
 }
+
 
 # === VALIDATION CONFIG ===
 VALIDATION_CONFIG: Dict[str, Any] = {
@@ -144,7 +176,15 @@ SECONDARY_VALIDATION: Dict[str, Any] = {
     KEY_CHOWN_PATHS: {
         "required_job_fields": {"path": str},
         "allow_empty": True
-    }
+    },
+    KEY_SETTINGS_CHMOD_PATHS: {
+        "required_job_fields": {"path": str, "mode": str},
+        "allow_empty": True
+    },
+    KEY_SETTINGS_CHOWN_PATHS: {
+        "required_job_fields": {"path": str},
+        "allow_empty": True
+    },
 }
 
 # === DETECTION CONFIG ===
@@ -188,7 +228,6 @@ PLAN_COLUMN_ORDER = [
     KEY_SETTINGS_FOLDERS,
     KEY_REMOVE_PATHS,
     KEY_SETUP_DIRS,
-    KEY_RESET_DIRS,
     KEY_DEFAULT_DM,
     KEY_KIOSK_DM,  
 ]
@@ -289,6 +328,7 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
         "post_state": "CONFIG_LOADING",
     },
 
+    # UPDATE only settings; scope perms to those settings
     "UPDATE_SETTINGS": {
         "pipeline": {
             create_user_login: {"args": [lambda j, m, c: m.get(KEY_CHOWN_USER, "launcher")], "result": "user_ok"},
@@ -296,6 +336,26 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
             make_dirs:      {"args": [KEY_SETUP_DIRS], "result": "setup_dirs_ok"},
             copy_file_dict: {"args": [KEY_SETTINGS_FILES], "result": "settings_files_copied"},
             copy_folder_dict: {"args": [KEY_SETTINGS_FOLDERS], "result": "settings_folders_copied"},
+            chmod_paths: {
+                "args": [lambda j, m, c: (
+                    (m.get(KEY_SETTINGS_CHMOD_PATHS) or []) or
+                    ([{"path": f[KEY_DEST], "mode": "644"} for f in (m.get(KEY_SETTINGS_FILES, []) or [])] +
+                     [{"path": d[KEY_DEST], "mode": "755"} for d in (m.get(KEY_SETTINGS_FOLDERS, []) or [])])
+                )],
+                "result": "chmod_ok"
+            },
+            chown_paths: {
+                "args": [
+                    lambda j, m, c: m.get(KEY_CHOWN_USER, "launcher"),
+                    lambda j, m, c: (
+                        (m.get(KEY_SETTINGS_CHOWN_PATHS) or []) or
+                        ([{"path": f[KEY_DEST]} for f in (m.get(KEY_SETTINGS_FILES, []) or [])] +
+                         [{"path": d[KEY_DEST]} for d in (m.get(KEY_SETTINGS_FOLDERS, []) or [])])
+                    ),
+                    lambda j, m, c: True  
+                ],
+                "result": "chown_ok"
+            },
         },
         "label": INSTALLED_LABEL,
         "success_key": "settings_files_copied",
@@ -305,7 +365,7 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
     "RESET": {
         "pipeline": {
             remove_paths: {"args": [KEY_REMOVE_PATHS], "result": "removed"},
-            make_dirs:    {"args": [KEY_RESET_DIRS], "result": "reset_ok"},
+            make_dirs:    {"args": [KEY_SETUP_DIRS], "result": "reset_ok"},
         },
         "label": RESET_LABEL,
         "success_key": "reset_ok",
@@ -316,7 +376,7 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
         "pipeline": {
             uninstall_packages: {"args": ["job"], "result": "uninstalled"},
             remove_paths:       {"args": [KEY_REMOVE_PATHS], "result": "removed"},
-            make_dirs:          {"args": [KEY_RESET_DIRS], "result": "cleanup_ok"},
+            make_dirs:          {"args": [KEY_SETUP_DIRS], "result": "cleanup_ok"},
         },
         "label": UNINSTALLED_LABEL,
         "success_key": "uninstalled",
@@ -336,7 +396,7 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
             enable_and_start_service: {"args": [lambda j, m, c: m.get(KEY_KIOSK_DM)], "result": "dm_on"},
         },
         "label": "KIOSK",
-        "success_key":  "dm_on",  
+        "success_key":  "dm_on",
         "post_state": "CONFIG_LOADING",
     },
 
