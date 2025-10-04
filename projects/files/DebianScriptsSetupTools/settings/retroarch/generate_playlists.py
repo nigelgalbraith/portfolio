@@ -19,7 +19,7 @@ from typing import Dict, List, Tuple
 
 # ========= Defaults & config paths =========
 DEFAULT_PLAYLIST_DIR = "/var/lib/arcade/retroarch/playlists"
-DEFAULT_CORE_DIR     = "/usr/share/arcade/cores"
+DEFAULT_CORE_DIR     = "/usr/lib/x86_64-linux-gnu/libretro"
 CORE_MAP_FILE        = str(Path(__file__).parent / "CoreMap.json")
 
 # ========= Helpers =========
