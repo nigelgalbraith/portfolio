@@ -516,22 +516,28 @@ def chmod_paths(entries: Union[List[str], List[dict]]) -> bool:
             print(f"[chmod_paths] ERROR: {path}: {e}"); ok = False
     return ok
 
-def chown_paths(user: str, paths: List[str], recursive: bool=False) -> bool:
-    """chown user:user on given paths, recurse if dir and recursive=True."""
-    if not user or not paths: return True
+def chown_paths(user: str, paths: list[dict], recursive: bool=False, default_group: str|None=None) -> bool:
+    if not user or not paths:
+        return True
     ok = True
-    for p in paths:
-        if not p: continue
+    for item in paths:
+        p = item.get("path")
+        if not p:
+            continue
+        owner = user
+        group = item.get("group", default_group or user) 
+        rec = item.get("recursive", recursive) and Path(p).is_dir()
         try:
-            if recursive and Path(p).is_dir():
-                subprocess.run(["chown","-R",f"{user}:{user}",p],check=True)
+            target = f"{owner}:{group}"
+            if rec:
+                subprocess.run(["chown", "-R", target, p], check=True)
             else:
-                subprocess.run(["chown",f"{user}:{user}",p],check=True)
-            print(f"[chown_paths] chown {user}:{user} {p}{' (recursive)' if recursive and Path(p).is_dir() else ''}")
+                subprocess.run(["chown", target, p], check=True)
+            print(f"[chown_paths] chown {target} {p}{' (recursive)' if rec else ''}")
         except Exception as e:
-            print(f"[chown_paths] ERROR: {p}: {e}"); ok = False
+            print(f"[chown_paths] ERROR: {p}: {e}")
+            ok = False
     return ok
-
 
 def make_dirs(dirs: list[str]) -> bool:
     """Ensure all directories in the list exist. Returns True if successful/no-op."""

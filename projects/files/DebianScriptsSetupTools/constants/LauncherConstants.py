@@ -141,6 +141,10 @@ SECONDARY_VALIDATION: Dict[str, Any] = {
     KEY_REMOVE_PATHS: {
         "allow_empty": True,
     },
+    KEY_CHOWN_PATHS: {
+        "required_job_fields": {"path": str},
+        "allow_empty": True
+    }
 }
 
 # === DETECTION CONFIG ===

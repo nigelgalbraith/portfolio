@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Generate RetroArch playlists (.lpl) for the systems defined in core_map.json.
+Generate RetroArch playlists (.lpl) for the systems defined in CoreMap.json.
 
-- core_map.json is the single source of truth.
+- CoreMap.json is the single source of truth.
 - Ensures required cores exist by downloading from Libretro buildbot if missing.
 - Falls back to DETECT if a core .so still isn't found.
 """
@@ -17,20 +17,19 @@ import zipfile
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-# ========= Config paths =========
-PLAYLIST_DIR  = str(Path.home() / ".config/retroarch/playlists")
-CORE_DIR      = str(Path.home() / ".config/retroarch/cores")
-CORE_MAP_FILE = str(Path(__file__).parent / "CoreMap.json")
+# ========= Defaults & config paths =========
+DEFAULT_PLAYLIST_DIR = "/var/lib/arcade/retroarch/playlists"
+DEFAULT_CORE_DIR     = "/usr/share/arcade/cores"
+CORE_MAP_FILE        = str(Path(__file__).parent / "CoreMap.json")
 
 # ========= Helpers =========
 def ensure_dir(path: os.PathLike[str] | str) -> None:
     Path(path).mkdir(parents=True, exist_ok=True)
 
-
 def download_and_extract_core(url: str, dest_dir: str) -> None:
     """Download and extract a core into dest_dir if the .so is missing."""
     zip_name = os.path.basename(url)
-    so_name = zip_name[:-4]
+    so_name = zip_name[:-4] 
     so_path = Path(dest_dir) / so_name
     if so_path.exists():
         print(f"✓ {so_name} already present")
@@ -43,6 +42,7 @@ def download_and_extract_core(url: str, dest_dir: str) -> None:
     except Exception as e:
         print(f"!! Failed to download {zip_name}: {e}", file=sys.stderr)
         return
+
     try:
         with zipfile.ZipFile(zip_path, "r") as zf:
             zf.extractall(dest_dir)
@@ -51,7 +51,6 @@ def download_and_extract_core(url: str, dest_dir: str) -> None:
     except Exception as e:
         print(f"!! Failed to extract {zip_name}: {e}", file=sys.stderr)
 
-
 def iter_rom_files(rom_dir: os.PathLike[str] | str):
     """Yield absolute ROM file paths under rom_dir (recursive)."""
     if not rom_dir or not os.path.isdir(rom_dir):
@@ -59,7 +58,6 @@ def iter_rom_files(rom_dir: os.PathLike[str] | str):
     for root, _, files in os.walk(rom_dir):
         for name in sorted(files):
             yield os.path.join(root, name)
-
 
 def core_for_entry(entry: Dict[str, str], core_dir: str) -> Tuple[str, str]:
     """Given a CORE_MAP entry and core_dir, return (core_path, core_name)."""
@@ -71,7 +69,6 @@ def core_for_entry(entry: Dict[str, str], core_dir: str) -> Tuple[str, str]:
             return candidate, core_name
     return "", core_name
 
-
 def make_item(path: str, label: str, db_name_lpl: str, core_path: str, core_name: str) -> Dict[str, str]:
     return {
         "path": path,
@@ -81,7 +78,6 @@ def make_item(path: str, label: str, db_name_lpl: str, core_path: str, core_name
         "crc32": "00000000|crc",
         "db_name": db_name_lpl,
     }
-
 
 def write_playlist(playlist_title: str, items: List[Dict[str, str]], out_dir: os.PathLike[str] | str) -> str:
     """playlist_title: DB title like 'Nintendo - Nintendo 64' → creates '<title>.lpl'"""
@@ -105,7 +101,19 @@ def parse_args() -> argparse.Namespace:
         "--core-map",
         dest="core_map",
         default=None,
-        help="Path to core_map JSON (absolute or relative to this script). If omitted, uses CORE_MAP_FILE."
+        help="Path to CoreMap.json (absolute or relative to this script). If omitted, uses CORE_MAP_FILE."
+    )
+    parser.add_argument(
+        "--playlist-dir",
+        dest="playlist_dir",
+        default=None,
+        help="Override the playlist output directory (JSON/Default if omitted)."
+    )
+    parser.add_argument(
+        "--core-dir",
+        dest="core_dir",
+        default=None,
+        help="Override the cores directory (JSON/Default if omitted)."
     )
     return parser.parse_args()
 
@@ -121,7 +129,7 @@ def main() -> None:
         else (Path(args.core_map) if Path(args.core_map).is_absolute() else (script_dir / args.core_map))
     )
 
-    # Load core_map.json
+    # Load CoreMap.json
     try:
         with open(core_map_path, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -129,34 +137,37 @@ def main() -> None:
         core_map  = data.get("core_map", [])
         if not isinstance(core_map, list):
             raise ValueError("core_map must be a list of dicts")
+
+        # Read directories from JSON (with defaults), allow CLI overrides
+        playlist_dir = args.playlist_dir or data.get("PlaylistDir", DEFAULT_PLAYLIST_DIR)
+        core_dir     = args.core_dir     or data.get("CoreDir",     DEFAULT_CORE_DIR)
     except Exception as e:
         print(f"!! Failed to load CORE_MAP from {core_map_path}: {e}")
         sys.exit(1)
 
     # Download cores
-    ensure_dir(CORE_DIR)
+    ensure_dir(core_dir)
     for url in core_urls:
-        download_and_extract_core(url, CORE_DIR)
+        download_and_extract_core(url, core_dir)
 
     # Generate playlists
-    ensure_dir(PLAYLIST_DIR)
+    ensure_dir(playlist_dir)
     for entry in core_map:
         system = entry.get("system", "Unknown")
         db_title = entry.get("db", system)
         db_name_lpl = f"{db_title}.lpl"
         rom_dir = os.path.expanduser(entry.get("roms", ""))
 
-        core_path, core_name = core_for_entry(entry, CORE_DIR)
+        core_path, core_name = core_for_entry(entry, core_dir)
 
         items: List[Dict[str, str]] = []
         for rom in iter_rom_files(rom_dir):
             items.append(make_item(rom, Path(rom).name, db_name_lpl, core_path, core_name))
 
-        out = write_playlist(db_title, items, PLAYLIST_DIR)
+        out = write_playlist(db_title, items, playlist_dir)
         print(f"Created playlist: {out}")
 
-    print(f"Playlists generated in {PLAYLIST_DIR}")
-
+    print(f"Playlists generated in {playlist_dir}")
 
 if __name__ == "__main__":
     main()

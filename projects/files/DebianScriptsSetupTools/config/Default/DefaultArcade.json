@@ -4,28 +4,50 @@
       "mame": {
         "Packages": ["mame", "mame-data", "mame-tools"],
         "SetupDirs": [
-          "~/.mame",
-          "~/Arcade"
+          "/etc/mame",
+          "/usr/share/arcade",
+          "/usr/share/arcade/MAME",
+          "/usr/share/arcade/NeoGeo",
+          "/var/lib/arcade",
+          "/var/lib/arcade/mame",
+          "/var/lib/arcade/mame/cfg",
+          "/var/lib/arcade/mame/nvram",
+          "/var/lib/arcade/mame/inp",
+          "/var/lib/arcade/mame/sta",
+          "/var/lib/arcade/mame/snap",
+          "/var/lib/arcade/mame/diff",
+          "/var/lib/arcade/mame/comments"
         ],
         "SetupCmds": [
-          "/usr/games/mame -listxml > ~/Arcade/mame.xml && echo \"mame.xml export completed!\""
+          "/usr/games/mame -listxml > /var/lib/arcade/mame.xml && echo \"mame.xml export completed!\""
+        ],
+        "ChmodPaths": [
+          { "path": "/usr/share/arcade", "mode": "2755", "recursive": true },
+          { "path": "/var/lib/arcade",   "mode": "2775", "recursive": true }
+        ],
+        "ChownUser": "nigel",
+        "ChownGroup": "arcade",
+        "ChownRecursive": true,
+        "ChownPaths": [
+          { "path": "/usr/share/arcade" },
+          { "path": "/var/lib/arcade" },
+          { "path": "/var/lib/arcade/mame" }
         ],
         "RemovePaths": [
-          "~/.mame/*.ini"
+          "/etc/mame/*.ini"
         ],
-        "ResetDirs": [
-          "~/.mame"
-        ],
+        "ResetDirs": [ "/etc/mame" ],
         "ResetCmds": [
-          "bash -lc 'cd ~/.mame && /usr/games/mame -createconfig'"
+          "bash -lc 'cd /etc/mame && /usr/games/mame -createconfig'"
         ],
         "SettingsFiles": [
-          { "copyName": "MainConfig",   "src": "settings/mame/Default/Default-mame_template.ini",   "dest": "~/.mame/mame.ini" },
-          { "copyName": "UIConfig",     "src": "settings/mame/Default/Default-ui_template.ini",     "dest": "~/.mame/ui.ini" },
-          { "copyName": "PluginConfig", "src": "settings/mame/Default/Default-plugin_template.ini", "dest": "~/.mame/plugin.ini" }
+          { "copyName": "MainConfig",   "src": "settings/mame/Default/Default-mame_template.ini",   "dest": "/etc/mame/mame.ini" },
+          { "copyName": "UIConfig",     "src": "settings/mame/Default/Default-ui_template.ini",     "dest": "/etc/mame/ui.ini" },
+          { "copyName": "PluginConfig", "src": "settings/mame/Default/Default-plugin_template.ini", "dest": "/etc/mame/plugin.ini" }
         ],
-        "SettingsFolders" :[]
+        "SettingsFolders": []
       },
+
       "retroarch": {
         "Packages": [
           "retroarch",
@@ -45,32 +67,43 @@
           "libretro-bsnes-mercury-performance"
         ],
         "SetupDirs": [
-          "~/.config/retroarch",
-          "~/.config/retroarch/system",
-          "~/.config/retroarch/system/pcsx2/bios",
-          "~/.config/retroarch/cores",
-          "~/.config/retroarch/saves",
-          "~/.config/retroarch/states",
-          "~/.config/retroarch/playlists"
+          "/etc/retroarch",
+          "/usr/share/arcade/retroarch",
+          "/usr/share/arcade/retroarch/cores",
+          "/var/lib/arcade/retroarch",
+          "/var/lib/arcade/retroarch/saves",
+          "/var/lib/arcade/retroarch/states",
+          "/var/lib/arcade/retroarch/playlists"
         ],
         "SetupCmds": [
           "bash -lc 'python3 settings/retroarch/generate_playlists.py --core-map Default/Default-CoreMap.json'"
         ],
+        "ChmodPaths": [
+          { "path": "/usr/share/arcade/retroarch", "mode": "2755", "recursive": true },
+          { "path": "/var/lib/arcade/retroarch",   "mode": "2775", "recursive": true }
+        ],
+        "ChownUser": "nigel",
+        "ChownGroup": "arcade",
+        "ChownRecursive": true,
+        "ChownPaths": [
+          { "path": "/usr/share/arcade/retroarch" },
+          { "path": "/var/lib/arcade/retroarch" }
+        ],
         "RemovePaths": [
-          "~/.config/retroarch/retroarch.cfg",
-          "~/.config/retroarch/playlists/*.lpl"
+          "/etc/retroarch/retroarch.cfg",
+          "/var/lib/arcade/retroarch/playlists/*.lpl"
         ],
-        "ResetDirs": [
-          "~/.config/retroarch"
-        ],
+        "ResetDirs": [ "/etc/retroarch" ],
         "ResetCmds": [],
-
-        "SettingsFiles": [],
+        "SettingsFiles": [
+          { "copyName": "RetroArchConfig", "src": "settings/retroarch/Default/Default-template-retroarch.cfg", "dest": "/etc/retroarch/retroarch.cfg" }
+        ],
         "SettingsFolders": [
-          { "copyName": "PSX BIOS folder", "src": "~/Arcade/Sony Playstation/bios", "dest": "~/.config/retroarch/system" },
-          { "copyName": "PS2 BIOS folder", "src": "~/Arcade/Sony Playstation 2/bios", "dest": "~/.config/retroarch/system/pcsx2/bios" }
+          { "copyName": "PSX BIOS folder", "src": "/usr/share/arcade/Sony Playstation/bios",    "dest": "/etc/retroarch/system" },
+          { "copyName": "PS2 BIOS folder", "src": "/usr/share/arcade/Sony Playstation 2/bios", "dest": "/etc/retroarch/system/pcsx2/bios" }
         ]
       }
     }
   }
 }
+

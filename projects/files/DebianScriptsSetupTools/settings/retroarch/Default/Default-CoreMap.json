@@ -7,15 +7,18 @@
     "https://buildbot.libretro.com/nightly/linux/x86_64/latest/pcsx_rearmed_libretro.so.zip"
   ],
   "core_map": [
-    { "system": "MAME", "core": "mame_libretro.so", "name": "MAME", "db": "MAME", "roms": "~/Arcade/MAME/roms" },
-    { "system": "Neo Geo", "core": "fbneo_libretro.so", "name": "Arcade (FBNeo)", "db": "FBNeo - Arcade Games", "roms": "~/Arcade/Neo Geo/roms" },
-    { "system": "Nintendo Entertainment System", "core": "nestopia_libretro.so", "name": "Nintendo (Nestopia)", "db": "Nintendo - Nintendo Entertainment System", "roms": "~/Arcade/Nintendo Entertainment System/roms" },
-    { "system": "Super Nintendo Entertainment System", "core": "snes9x_libretro.so", "name": "SNES (Snes9x)", "db": "Nintendo - Super Nintendo Entertainment System", "roms": "~/Arcade/Super Nintendo Entertainment System/roms" },
-    { "system": "Mega Drive", "core": "genesis_plus_gx_libretro.so", "name": "Sega (Genesis Plus GX)", "db": "Sega - Mega Drive - Genesis", "roms": "~/Arcade/Mega Drive/roms" },
-    { "system": "Master System", "core": "genesis_plus_gx_libretro.so", "name": "Sega (Genesis Plus GX)", "db": "Sega - Master System - Mark III", "roms": "~/Arcade/Master System/roms" },
-    { "system": "Sega32x", "core": "picodrive_libretro.so", "name": "Sega 32X (PicoDrive)", "db": "Sega - 32X", "roms": "~/Arcade/Sega32x/roms" },
-    { "system": "Nintendo 64", "core": "parallel_n64_libretro.so", "name": "Nintendo 64 (Mupen64Plus-Next)", "db": "Nintendo - Nintendo 64", "roms": "~/Arcade/Nintendo 64/roms" },
-    { "system": "Sony Playstation", "core": "pcsx_rearmed_libretro.so", "name": "Sony - PlayStation (Rearmed PSX)", "db": "Sony - PlayStation", "roms": "~/Arcade/Sony Playstation/roms" },
-    { "system": "Sony Playstation 2", "core": "pcsx2_libretro.so", "name": "Sony - PlayStation 2 (PCSX2)", "db": "Sony - PlayStation 2", "roms": "~/Arcade/Sony Playstation 2/roms" }
-  ]
+    { "system": "MAME", "core": "mame_libretro.so", "name": "MAME", "db": "MAME", "roms": "/usr/share/arcade/MAME/roms" },
+    { "system": "Neo Geo", "core": "fbneo_libretro.so", "name": "arcade (FBNeo)", "db": "FBNeo - arcade Games", "roms": "/usr/share/arcade/Neo Geo/roms" },
+    { "system": "Nintendo Entertainment System", "core": "nestopia_libretro.so", "name": "Nintendo (Nestopia)", "db": "Nintendo - Nintendo Entertainment System", "roms": "/usr/share/arcade/Nintendo Entertainment System/roms" },
+    { "system": "Super Nintendo Entertainment System", "core": "snes9x_libretro.so", "name": "SNES (Snes9x)", "db": "Nintendo - Super Nintendo Entertainment System", "roms": "/usr/share/arcade/Super Nintendo Entertainment System/roms" },
+    { "system": "Mega Drive", "core": "genesis_plus_gx_libretro.so", "name": "Sega (Genesis Plus GX)", "db": "Sega - Mega Drive - Genesis", "roms": "/usr/share/arcade/Mega Drive/roms" },
+    { "system": "Master System", "core": "genesis_plus_gx_libretro.so", "name": "Sega (Genesis Plus GX)", "db": "Sega - Master System - Mark III", "roms": "/usr/share/arcade/Master System/roms" },
+    { "system": "Sega32x", "core": "picodrive_libretro.so", "name": "Sega 32X (PicoDrive)", "db": "Sega - 32X", "roms": "/usr/share/arcade/Sega32x/roms" },
+    { "system": "Nintendo 64", "core": "parallel_n64_libretro.so", "name": "Nintendo 64 (Mupen64Plus-Next)", "db": "Nintendo - Nintendo 64", "roms": "/usr/share/arcade/Nintendo 64/roms" },
+    { "system": "Sony Playstation", "core": "pcsx_rearmed_libretro.so", "name": "Sony - PlayStation (Rearmed PSX)", "db": "Sony - PlayStation", "roms": "/usr/share/arcade/Sony Playstation/roms" },
+    { "system": "Sony Playstation 2", "core": "pcsx2_libretro.so", "name": "Sony - PlayStation 2 (PCSX2)", "db": "Sony - PlayStation 2", "roms": "/usr/share/arcade/Sony Playstation 2/roms" }
+  ],
+  "PlaylistDir": "/var/lib/arcade/retroarch/playlists",
+  "CoreDir": "/usr/share/arcade/cores"
 }
+

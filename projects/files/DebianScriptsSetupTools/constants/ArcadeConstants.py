@@ -5,9 +5,12 @@ from typing import Dict, Any
 
 from modules.system_utils import (
     copy_file_dict,
-    copy_folder_dict,  
-    make_dirs,         
-    run_commands       
+    copy_folder_dict,
+    make_dirs,
+    run_commands,
+    chmod_paths,
+    chown_paths,
+    create_group,
 )
 from modules.package_utils import check_package, install_packages, uninstall_packages
 from modules.archive_utils import remove_paths
@@ -22,11 +25,16 @@ DEFAULT_CONFIG   = "Default"
 KEY_SETUP_CMDS         = "SetupCmds"
 KEY_RESET_CMDS         = "ResetCmds"
 KEY_SETTINGS_FILES     = "SettingsFiles"
-KEY_SETTINGS_FOLDERS   = "SettingsFolders"  
+KEY_SETTINGS_FOLDERS   = "SettingsFolders"
 KEY_PACKAGES           = "Packages"
 KEY_REMOVE_PATHS       = "RemovePaths"
 KEY_SETUP_DIRS         = "SetupDirs"
 KEY_RESET_DIRS         = "ResetDirs"
+KEY_CHMOD_PATHS        = "ChmodPaths"
+KEY_CHOWN_PATHS        = "ChownPaths"      
+KEY_CHOWN_USER         = "ChownUser"
+KEY_CHOWN_GROUP        = "ChownGroup"
+KEY_CHOWN_RECURSIVE    = "ChownRecursive"  
 
 # === SUB-JSON KEYS ===
 KEY_COPY_NAME          = "copyName"
@@ -60,7 +68,16 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
                     {KEY_COPY_NAME: "UIConfig",     KEY_SRC: "settings/mame/Desktop/Desktop-ui_template.ini",     KEY_DEST: "~/.mame/ui.ini"},
                     {KEY_COPY_NAME: "PluginConfig", KEY_SRC: "settings/mame/Desktop/Desktop-plugin_template.ini", KEY_DEST: "~/.mame/plugin.ini"}
                 ],
-                KEY_SETTINGS_FOLDERS: []  
+                KEY_SETTINGS_FOLDERS: [],
+                KEY_CHMOD_PATHS: [
+                    {"path": "~/Arcade", "mode": "755", "recursive": True}
+                ],
+                KEY_CHOWN_USER: "root",
+                KEY_CHOWN_GROUP: "Arcade",
+                KEY_CHOWN_RECURSIVE: True,
+                KEY_CHOWN_PATHS: [
+                    {"path": "~/Arcade"} 
+                ],
             },
             "retroarch": {
                 KEY_PACKAGES: [
@@ -104,7 +121,15 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
                 KEY_SETTINGS_FOLDERS: [
                     {KEY_COPY_NAME: "PSX BIOS folder", KEY_SRC: "~/Arcade/Sony Playstation/bios",     KEY_DEST: "~/.config/retroarch/system"},
                     {KEY_COPY_NAME: "PS2 BIOS folder", KEY_SRC: "~/Arcade/Sony Playstation 2/bios",  KEY_DEST: "~/.config/retroarch/system/pcsx2/bios"}
-                ]
+                ],
+                KEY_CHMOD_PATHS: [
+                    {"path": "~/.config/retroarch", "mode": "755", "recursive": True}
+                ],
+                KEY_CHOWN_USER: "root",
+                KEY_CHOWN_RECURSIVE: True,
+                KEY_CHOWN_PATHS: [
+                    {"path": "~/.config/retroarch"}
+                ],
             }
         }
     }
@@ -115,12 +140,14 @@ VALIDATION_CONFIG: Dict[str, Any] = {
     "required_job_fields": {
         KEY_PACKAGES: list,
         KEY_SETTINGS_FILES: list,
-        KEY_SETTINGS_FOLDERS: list,  
+        KEY_SETTINGS_FOLDERS: list,
         KEY_REMOVE_PATHS: list,
         KEY_SETUP_DIRS: list,
         KEY_RESET_DIRS: list,
         KEY_SETUP_CMDS: list,
         KEY_RESET_CMDS: list,
+        KEY_CHMOD_PATHS: list,
+        KEY_CHOWN_PATHS: list,     
     },
     "example_config": CONFIG_EXAMPLE,
 }
@@ -135,14 +162,27 @@ SECONDARY_VALIDATION: Dict[str, Any] = {
         },
         "allow_empty": True,
     },
-    KEY_SETTINGS_FOLDERS: {  
+    KEY_SETTINGS_FOLDERS: {
         "required_job_fields": {
             KEY_COPY_NAME: str,
             KEY_SRC: str,
             KEY_DEST: str,
         },
         "allow_empty": True,
-    }
+    },
+    KEY_CHMOD_PATHS: {
+        "required_job_fields": {
+            "path": str,
+            "mode": str,
+        },
+        "allow_empty": True,
+    },
+    KEY_CHOWN_PATHS: {  
+        "required_job_fields": {
+            "path": str,   
+        },
+        "allow_empty": True,
+    },
 }
 
 # === DETECTION CONFIG ===
@@ -181,10 +221,12 @@ STATUS_FN_CONFIG = {
 PLAN_COLUMN_ORDER = [
     KEY_PACKAGES,
     KEY_SETTINGS_FILES,
-    KEY_SETTINGS_FOLDERS, 
+    KEY_SETTINGS_FOLDERS,
     KEY_REMOVE_PATHS,
     KEY_SETUP_DIRS,
     KEY_SETUP_CMDS,
+    KEY_CHMOD_PATHS,
+    KEY_CHOWN_PATHS,   
     KEY_RESET_DIRS,
     KEY_RESET_CMDS,
 ]
@@ -256,7 +298,10 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
             make_dirs:        { "args": [KEY_SETUP_DIRS], "result": "setup_dirs_ok" },
             run_commands:     { "args": [KEY_SETUP_CMDS], "result": "setup_ok" },
             copy_file_dict:   { "args": [KEY_SETTINGS_FILES], "result": "settings_files_copied" },
-            copy_folder_dict: { "args": [KEY_SETTINGS_FOLDERS], "result": "settings_folders_copied" },  
+            copy_folder_dict: { "args": [KEY_SETTINGS_FOLDERS], "result": "settings_folders_copied" },
+            chmod_paths:      { "args": [KEY_CHMOD_PATHS], "result": "chmod_ok" },
+            create_group:     { "args": [lambda j, m, c: m.get(KEY_CHOWN_GROUP, "arcade")],"result": "group_ok"},
+            chown_paths:      {"args": [lambda j,m,c: m.get(KEY_CHOWN_USER, "root"), KEY_CHOWN_PATHS, lambda j,m,c: bool(m.get(KEY_CHOWN_RECURSIVE, False)), lambda j,m,c: m.get(KEY_CHOWN_GROUP)], "result": "chown_ok"},
         },
         "label": INSTALLED_LABEL,
         "success_key": "setup_ok",
@@ -267,7 +312,11 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
             make_dirs:        { "args": [KEY_SETUP_DIRS], "result": "setup_dirs_ok" },
             run_commands:     { "args": [KEY_SETUP_CMDS], "result": "setup_ok" },
             copy_file_dict:   { "args": [KEY_SETTINGS_FILES], "result": "settings_files_copied" },
-            copy_folder_dict: { "args": [KEY_SETTINGS_FOLDERS], "result": "settings_folders_copied" }, 
+            copy_folder_dict: { "args": [KEY_SETTINGS_FOLDERS], "result": "settings_folders_copied" },
+            chmod_paths:      { "args": [KEY_CHMOD_PATHS], "result": "chmod_ok" },
+            create_group:     { "args": [lambda j, m, c: m.get(KEY_CHOWN_GROUP, "arcade")],"result": "group_ok"},
+            chown_paths:      {"args": [lambda j,m,c: m.get(KEY_CHOWN_USER, "root"), KEY_CHOWN_PATHS, lambda j,m,c: bool(m.get(KEY_CHOWN_RECURSIVE, False)), lambda j,m,c: m.get(KEY_CHOWN_GROUP)], "result": "chown_ok"},
+
         },
         "label": INSTALLED_LABEL,
         "success_key": "setup_ok",
