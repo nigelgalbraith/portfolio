@@ -165,7 +165,7 @@ LOGS_TO_KEEP    = 10
 ROTATE_LOG_NAME = f"{LOG_PREFIX}_*.log"
 
 # === USER / LABELS ===
-REQUIRED_USER       = "Standard"
+REQUIRED_USER       = "root"
 INSTALLED_LABEL     = "INSTALLED"
 UNINSTALLED_LABEL   = "UNINSTALLED"
 RESET_LABEL         = "Reset"

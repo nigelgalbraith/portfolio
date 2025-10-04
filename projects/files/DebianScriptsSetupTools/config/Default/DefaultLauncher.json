@@ -5,42 +5,50 @@
         "DownloadURL": "https://github.com/complexlogic/flex-launcher/releases/download/v2.2/flex-launcher_2.2_amd64.deb",
         "EnableService": false,
         "download_dir": "/tmp/launcher-downloads",
-        "RemovePaths": ["/home/launcher/.config/flex-launcher/*.ini"],
-        "SetupDirs": [
-          "/home/launcher/.config/flex-launcher",
-          "/etc/sddm.conf.d",
-          "/home/launcher/.config/openbox",
-          "/home/launcher/.config/dconf",
-          "/home/launcher/.config/akonadi",
-          "/home/launcher/.config/kdeconnect"
-        ],
-        "ResetDirs": [
-          "/home/launcher/.config/flex-launcher"
-        ],
-        "UserGroups": ["audio", "video"],
-        "SettingsFiles": [
-          { "copyName": "FlexINI", "src": "settings/flex/Desktop/Desktop-Flex-Template-config.ini", "dest": "/home/launcher/.config/flex-launcher/config.ini" }
-        ],
+
         "SettingsFolders": [],
-        "KioskFiles": [
-          { "copyName": "SDDM autologin", "src": "settings/flex/Desktop/Desktop-Flex-50-autologin.conf", "dest": "/etc/sddm.conf.d/10-autologin.conf" },
-          { "copyName": "Openbox autostart", "src": "settings/flex/Desktop/Desktop-Flex-autostart.sh", "dest": "/home/launcher/.config/openbox/autostart" },
-          { "copyName": "DMRC", "src": "settings/flex/Desktop/Desktop-Flex-dmrc", "dest": "/home/launcher/.dmrc" }
+        "SettingsFiles": [
+          { "copyName": "FlexINI (system-wide)", "src": "settings/flex/Desktop/Desktop-Flex-Template-config.ini", "dest": "/etc/flex-launcher/config.ini" }
         ],
+        "RemovePaths": [
+          "/etc/flex-launcher/*.ini"
+        ],
+
+        "SetupDirs": [
+          "/home/launcher/.config",
+          "/home/launcher/.config/openbox",
+          "/home/launcher/.config/flex-launcher",
+          "/etc/flex-launcher",
+          "/etc/lightdm/lightdm.conf.d"
+        ],
+        "KioskFiles": [
+          { "copyName": "LightDM autologin", "src": "settings/flex/Desktop/Desktop-LightDM-50-launcher.conf", "dest": "/etc/lightdm/lightdm.conf.d/50-launcher.conf" },
+          { "copyName": "Openbox autostart", "src": "settings/flex/Desktop/Desktop-Flex-autostart.sh",          "dest": "/home/launcher/.config/openbox/autostart" },
+          { "copyName": "DMRC",              "src": "settings/flex/Desktop/Desktop-Flex-dmrc",                  "dest": "/home/launcher/.dmrc" }
+        ],
+
         "ChmodPaths": [
-          { "path": "/home/launcher/.dmrc", "mode": "600" },
-          { "path": "/home/launcher/.config/openbox/autostart", "mode": "755" }
+          { "path": "/home/launcher/.config/openbox/autostart", "mode": "755" },
+          { "path": "/home/launcher/.dmrc",                     "mode": "644" }
         ],
         "ChownUser": "launcher",
         "ChownPaths": [
+          "/home/launcher",
           "/home/launcher/.dmrc",
-          "/home/launcher/.config"
+          "/home/launcher/.config",
+          "/home/launcher/.cache"
         ],
         "ChownRecursive": true,
-        "KioskRemovePaths": [
-          "/home/launcher/.config/openbox/autostart",
-          "/etc/sddm.conf.d/10-autologin.conf",
-          "/home/launcher/.dmrc"
+
+        "UserGroups": ["audio", "video"],
+        "DefaultDM": "sddm",
+        "KioskDM":   "lightdm",
+
+        "AdditionalPackages": [
+          "chromium",
+          "dbus-user-session",
+          "dbus-x11",
+          "lightdm-gtk-greeter"
         ]
       }
     }
