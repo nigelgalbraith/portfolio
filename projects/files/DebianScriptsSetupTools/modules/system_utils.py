@@ -580,6 +580,36 @@ def create_group(groups) -> bool:
             print(f"[create_group] Group '{group}' already exists.")
     return ok
 
+
+def set_default_display_manager(dm_package: str, dm_service: str) -> bool:
+    """   Set the system's default display manager (by package path), create/refresh the display-manager alias to the given service unit,and ensure the boot target is graphical.  """
+    try:
+        default_file = Path("/etc/X11/default-display-manager")
+        alias_link   = Path("/etc/systemd/system/display-manager.service")
+        real_unit    = Path(f"/lib/systemd/system/{dm_service}.service")
+        dm_path      = f"/usr/sbin/{dm_package}"
+        default_file.parent.mkdir(parents=True, exist_ok=True)
+        default_file.write_text(dm_path + "\n")
+        print(f"[INFO] Default display manager set to: {dm_path}")
+        if not real_unit.exists():
+            print(f"[ERROR] Expected unit not found: {real_unit}")
+            return False
+        try:
+            alias_link.unlink(missing_ok=True)
+        except Exception:
+            pass
+        alias_link.symlink_to(real_unit)
+        print(f"[INFO] Linked {alias_link} → {real_unit}")
+        subprocess.run(["systemctl", "daemon-reload"], check=True)
+        subprocess.run(["systemctl", "set-default", "graphical.target"], check=True)
+        print("[INFO] Graphical target set as default.")
+        return True
+    except Exception as e:
+        print(f"[ERROR] set_default_display_manager({dm_package}, {dm_service}) failed: {e}")
+        return False
+
+
+
         
 
 

@@ -424,17 +424,43 @@ class StateMachine:
         for subkey, rules in secondary_validation.items():
             if subkey == "config_example" or not isinstance(rules, dict):
                 continue
-            required = rules.get("required_job_fields", {}) or {}
-            field_results = validate_secondary_subkey(jobs_block, subkey, rules)
-            for fname, ok in field_results.items():
-                types = required[fname] if isinstance(required[fname], tuple) else (required[fname],)
+            required = rules.get("required_job_fields") or {}
+            allow_empty = bool(rules.get("allow_empty", False))
+            agg: Dict[str, bool] = {fname: True for fname in required}
+            for _, job_cfg in jobs_block.items():
+                value = job_cfg.get(subkey, None)
+                if isinstance(value, dict) and required:
+                    for fname, ftype in required.items():
+                        types = ftype if isinstance(ftype, tuple) else (ftype,)
+                        agg[fname] = agg[fname] and (fname in value) and isinstance(value[fname], types)
+                elif isinstance(value, list):
+                    if not required:
+                        continue
+                    if len(value) == 0:
+                        for fname in required:
+                            agg[fname] = agg[fname] and allow_empty
+                    else:
+                        for fname, ftype in required.items():
+                            types = ftype if isinstance(ftype, tuple) else (ftype,)
+                            ok_all = True
+                            for item in value:
+                                if not isinstance(item, dict) or (fname not in item) or (not isinstance(item[fname], types)):
+                                    ok_all = False
+                                    break
+                            agg[fname] = agg[fname] and ok_all
+                else:
+                    if required:
+                        for fname in required:
+                            agg[fname] = agg[fname] and (allow_empty if value in (None, []) else False)
+            for fname, ok in agg.items():
+                ftype = required.get(fname, str)
+                types = ftype if isinstance(ftype, tuple) else (ftype,)
                 expected_str = " or ".join(t.__name__ for t in types)
-                decorated_name = f"{subkey}.{fname} ({expected_str})"
-                results_map[decorated_name] = ok
+                results_map[f"{subkey}.{fname} ({expected_str})"] = ok
         summary = format_status_summary(results_map, label="Secondary Keys", labels={True: "Correct", False: "Incorrect"})
         out_lines = []
         out_lines.extend(summary.splitlines())
-        if not all(results_map.values()):
+        if not results_map or not all(results_map.values()):
             self.finalize_msg = "Secondary validation failed."
             out_lines.append(self.finalize_msg)
             out_lines.append("Example structure:")

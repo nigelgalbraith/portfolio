@@ -13,8 +13,7 @@ from modules.package_utils import (
     install_packages,
 )
 from modules.service_utils import (
-    enable_and_start_service,
-    stop_and_disable_service,
+    restart_service,
 )
 from modules.system_utils import (
     copy_file_dict,
@@ -25,6 +24,7 @@ from modules.system_utils import (
     kill_user_session,
     add_user_to_group,
     make_dirs,
+    set_default_display_manager,  
 )
 
 # === CONFIG PATHS & KEYS ===
@@ -35,7 +35,6 @@ DEFAULT_CONFIG   = "Default"
 
 # === JSON KEYS ===
 KEY_DOWNLOAD_URL       = "DownloadURL"
-KEY_ENABLE_SERVICE     = "EnableService"
 KEY_DOWNLOAD_DIR       = "download_dir"
 KEY_SETTINGS_FILES     = "SettingsFiles"
 KEY_SETTINGS_FOLDERS   = "SettingsFolders"
@@ -56,14 +55,16 @@ KEY_CHOWN_PATHS          = "ChownPaths"
 KEY_CHOWN_USER           = "ChownUser"
 KEY_CHOWN_RECURSIVE      = "ChownRecursive"
 
-# settings-scoped perms (used only in UPDATE_SETTINGS)
+# settings-scoped perms ===
 KEY_SETTINGS_CHMOD_PATHS = "SettingsChmodPaths"
 KEY_SETTINGS_CHOWN_PATHS = "SettingsChownPaths"
 
 # === Packages (JSON) Keys ===
 KEY_ADDITIONAL_PKGS    = "AdditionalPackages"
-KEY_DEFAULT_DM         = "DefaultDM"
-KEY_KIOSK_DM           = "KioskDM"
+
+# === Display Manager  ===
+KEY_DEFAULT_DM         = "DefaultDM"   
+KEY_KIOSK_DM           = "KioskDM"     
 
 # === SUB-JSON KEYS ===
 KEY_COPY_NAME          = "copyName"
@@ -76,9 +77,10 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
         JOBS_KEY: {
             "flex-launcher": {
                 KEY_DOWNLOAD_URL: "https://github.com/complexlogic/flex-launcher/releases/download/v2.2/flex-launcher_2.2_amd64.deb",
-                KEY_ENABLE_SERVICE: False,
+                KEY_DOWNLOAD_DIR: "/tmp",  
                 KEY_USERS: ["launcher"],
                 KEY_USER_GROUPS: ["audio", "video", "arcade"],
+
                 KEY_SETTINGS_FILES: [
                     {
                         KEY_COPY_NAME: "FlexINI",
@@ -87,21 +89,26 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
                     }
                 ],
                 KEY_SETTINGS_FOLDERS: [],
+
                 KEY_SETTINGS_CHMOD_PATHS: [
                     {"path": "/home/launcher/.config/flex-launcher/config.ini", "mode": "644"}
                 ],
                 KEY_SETTINGS_CHOWN_PATHS: [
                     {"path": "/home/launcher/.config/flex-launcher/config.ini"}
                 ],
+
                 KEY_REMOVE_PATHS: [
-                    "/home/launcher/.config/flex-launcher/config.ini"
+                    "/home/launcher/.config/flex-launcher/config.ini",
+                    "/home/launcher/.dmrc"  
                 ],
+
                 KEY_SETUP_DIRS: [
                     "/home/launcher/.config",
                     "/home/launcher/.config/openbox",
                     "/home/launcher/.config/flex-launcher",
                     "/etc/lightdm/lightdm.conf.d"
                 ],
+
                 KEY_KIOSK_FILES: [
                     {
                         KEY_COPY_NAME: "LightDM autologin",
@@ -112,26 +119,21 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
                         KEY_COPY_NAME: "Openbox autostart",
                         KEY_SRC:  "settings/flex/Desktop/Desktop-Flex-autostart.sh",
                         KEY_DEST: "/home/launcher/.config/openbox/autostart"
-                    },
-                    {
-                        KEY_COPY_NAME: "DMRC",
-                        KEY_SRC:  "settings/flex/Desktop/Desktop-Flex-dmrc",
-                        KEY_DEST: "/home/launcher/.dmrc"
                     }
                 ],
+
                 KEY_CHMOD_PATHS: [
-                    {"path": "/home/launcher/.config/openbox/autostart", "mode": "755"},
-                    {"path": "/home/launcher/.dmrc", "mode": "600"}
+                    {"path": "/home/launcher/.config/openbox/autostart", "mode": "755"}
                 ],
                 KEY_CHOWN_PATHS: [
                     {"path": "/home/launcher"},
                     {"path": "/home/launcher/.config"},
-                    {"path": "/home/launcher/.cache"},
-                    {"path": "/home/launcher/.dmrc"}
+                    {"path": "/home/launcher/.cache"}
                 ],
                 KEY_CHOWN_RECURSIVE: True,
-                KEY_DEFAULT_DM: "gdm3",
-                KEY_KIOSK_DM:   "lightdm",
+                KEY_DEFAULT_DM: {"package": "gdm3", "service": "gdm"},
+                KEY_KIOSK_DM:   {"package": "lightdm", "service": "lightdm"},
+
                 KEY_ADDITIONAL_PKGS: [
                     "chromium",
                     "dbus-user-session",
@@ -145,12 +147,10 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
     }
 }
 
-
 # === VALIDATION CONFIG ===
 VALIDATION_CONFIG: Dict[str, Any] = {
     "required_job_fields": {
         KEY_DOWNLOAD_URL: str,
-        KEY_ENABLE_SERVICE: (bool, type(None)),
         KEY_DOWNLOAD_DIR: str,
         KEY_SETTINGS_FILES: list,
         KEY_SETTINGS_FOLDERS: list,
@@ -159,12 +159,14 @@ VALIDATION_CONFIG: Dict[str, Any] = {
         KEY_REMOVE_PATHS: list,
         KEY_SETUP_DIRS: list,
         KEY_KIOSK_FILES: list,
-        KEY_DEFAULT_DM: str,
-        KEY_KIOSK_DM: str,
+        KEY_DEFAULT_DM: dict,   
+        KEY_KIOSK_DM: dict,    
         KEY_ADDITIONAL_PKGS: list,
         KEY_CHMOD_PATHS: list,
         KEY_CHOWN_PATHS: list,
         KEY_CHOWN_RECURSIVE: (bool, type(None)),
+        KEY_DEFAULT_DM: dict,
+        KEY_KIOSK_DM: dict,
     },
     "example_config": CONFIG_EXAMPLE,
 }
@@ -197,6 +199,14 @@ SECONDARY_VALIDATION: Dict[str, Any] = {
     KEY_SETTINGS_CHOWN_PATHS: {
         "required_job_fields": {"path": str},
         "allow_empty": True
+    },
+    KEY_DEFAULT_DM: {
+        "required_job_fields": {"package": str, "service": str},
+        "allow_empty": False
+    },
+    KEY_KIOSK_DM: {
+        "required_job_fields": {"package": str, "service": str},
+        "allow_empty": False
     },
 }
 
@@ -236,13 +246,12 @@ STATUS_FN_CONFIG: Dict[str, Any] = {
 PLAN_COLUMN_ORDER = [
     KEY_DOWNLOAD_URL,
     KEY_DOWNLOAD_DIR,
-    KEY_ENABLE_SERVICE,
     KEY_SETTINGS_FILES,
     KEY_SETTINGS_FOLDERS,
     KEY_REMOVE_PATHS,
     KEY_SETUP_DIRS,
     KEY_DEFAULT_DM,
-    KEY_KIOSK_DM,  
+    KEY_KIOSK_DM,
 ]
 OPTIONAL_PLAN_COLUMNS = {}
 
@@ -327,8 +336,14 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
         "pipeline": {
             download_deb_file: {"args": ["job", KEY_DOWNLOAD_URL, KEY_DOWNLOAD_DIR], "result": "download_ok"},
             install_deb_file:  {"args": [lambda j, m, c: Path(m[KEY_DOWNLOAD_DIR]) / f"{j}.deb", "job"], "result": "installed", "when": lambda j, m, c: bool(c.get("download_ok"))},
-            install_packages: {"args": [lambda j, m, c: [m[KEY_DEFAULT_DM], m[KEY_KIOSK_DM]] + m.get(KEY_ADDITIONAL_PKGS, [])], "result": "pkgs_installed"},
-            enable_and_start_service: {"args": [lambda j, m, c: m.get("ServiceName", j)], "when": lambda j, m, c: bool(m.get(KEY_ENABLE_SERVICE)), "result": "service_started"},
+            install_packages: {
+                "args": [lambda j, m, c: [
+                    m[KEY_DEFAULT_DM]["package"],
+                    m[KEY_KIOSK_DM]["package"]
+                ] + m.get(KEY_ADDITIONAL_PKGS, [])],
+                "result": "pkgs_installed"
+            },
+
             handle_cleanup: {"args": [lambda j, m, c: Path(m[KEY_DOWNLOAD_DIR]) / f"{j}.deb"], "result": "cleaned", "when": lambda j, m, c: bool(c.get("download_ok"))},
             create_user_login: {"args": [lambda j, m, c: m.get(KEY_CHOWN_USER, "launcher")], "result": "user_ok"},
             add_user_to_group: {"args": [lambda j, m, c: m.get(KEY_USERS, []), lambda j, m, c: m.get(KEY_USER_GROUPS, [])], "result": "groups_added"},
@@ -340,11 +355,12 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
         "success_key": "installed",
         "post_state": "CONFIG_LOADING",
     },
-    
+
     "UPDATE_SETTINGS": {
         "pipeline": {
             create_user_login: {"args": [lambda j, m, c: m.get(KEY_CHOWN_USER, "launcher")], "result": "user_ok"},
-            add_user_to_group: {"args": [lambda j, m, c: m.get(KEY_USERS, []), lambda j, m, c: m.get(KEY_USER_GROUPS, [])], "result": "groups_added"},            make_dirs:      {"args": [KEY_SETUP_DIRS], "result": "setup_dirs_ok"},
+            add_user_to_group: {"args": [lambda j, m, c: m.get(KEY_USERS, []), lambda j, m, c: m.get(KEY_USER_GROUPS, [])], "result": "groups_added"},
+            make_dirs:      {"args": [KEY_SETUP_DIRS], "result": "setup_dirs_ok"},
             copy_file_dict: {"args": [KEY_SETTINGS_FILES], "result": "settings_files_copied"},
             copy_folder_dict: {"args": [KEY_SETTINGS_FOLDERS], "result": "settings_folders_copied"},
             chmod_paths: {
@@ -363,7 +379,7 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
                         ([{"path": f[KEY_DEST]} for f in (m.get(KEY_SETTINGS_FILES, []) or [])] +
                          [{"path": d[KEY_DEST]} for d in (m.get(KEY_SETTINGS_FOLDERS, []) or [])])
                     ),
-                    lambda j, m, c: True  
+                    lambda j, m, c: True
                 ],
                 "result": "chown_ok"
             },
@@ -397,13 +413,17 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
     "ENABLE_KIOSK": {
         "pipeline": {
             create_user_login: {"args": [lambda j, m, c: m.get(KEY_CHOWN_USER, "launcher")], "result": "user_ok"},
-            add_user_to_group: {"args": [lambda j, m, c: m.get(KEY_USERS, []), lambda j, m, c: m.get(KEY_USER_GROUPS, [])], "result": "groups_added"},            make_dirs:         {"args": [KEY_SETUP_DIRS],  "result": "setup_dirs_ok"},
+            add_user_to_group: {"args": [lambda j, m, c: m.get(KEY_USERS, []), lambda j, m, c: m.get(KEY_USER_GROUPS, [])], "result": "groups_added"},
+            make_dirs:         {"args": [KEY_SETUP_DIRS],  "result": "setup_dirs_ok"},
             copy_file_dict:    {"args": [lambda j, m, c: (m.get(KEY_KIOSK_FILES, []) or []) + (m.get(KEY_SETTINGS_FILES, []) or [])], "result": "files_copied"},
             copy_folder_dict:  {"args": [KEY_SETTINGS_FOLDERS], "result": "settings_folders_copied"},
             chmod_paths:       {"args": [KEY_CHMOD_PATHS], "result": "chmod_ok"},
             chown_paths:       {"args": [lambda j, m, c: m.get(KEY_CHOWN_USER, "launcher"), KEY_CHOWN_PATHS, lambda j, m, c: bool(m.get(KEY_CHOWN_RECURSIVE, False))], "result": "chown_ok"},
-            stop_and_disable_service: {"args": [lambda j, m, c: m.get(KEY_DEFAULT_DM)], "result": "dm_off"},
-            enable_and_start_service: {"args": [lambda j, m, c: m.get(KEY_KIOSK_DM)], "result": "dm_on"},
+            set_default_display_manager: {"args": [
+                lambda j, m, c: m[KEY_KIOSK_DM]["package"],
+                lambda j, m, c: m[KEY_KIOSK_DM]["service"],
+            ], "result": "dm_set"},
+            restart_service: {"args": [lambda j, m, c: m[KEY_KIOSK_DM]["service"]], "result": "dm_on"},
         },
         "label": "KIOSK",
         "success_key":  "dm_on",
@@ -412,11 +432,14 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
 
     "DISABLE_KIOSK": {
         "pipeline": {
-            stop_and_disable_service: {"args": [lambda j, m, c: m.get(KEY_KIOSK_DM)], "result": "dm_off"},
-            enable_and_start_service: {"args": [lambda j, m, c: m.get(KEY_DEFAULT_DM)], "result": "dm_on"},
+            set_default_display_manager: {"args": [
+                lambda j,m,c: m[KEY_DEFAULT_DM]["package"],
+                lambda j,m,c: m[KEY_DEFAULT_DM]["service"],
+            ], "result": "dm_set"},
+            restart_service: {"args": [lambda j, m, c: m[KEY_DEFAULT_DM]["service"]], "result": "dm_on"},
         },
         "label": "KIOSK",
-        "success_key":  "dm_on",
+        "success_key": "dm_on",
         "post_state": "CONFIG_LOADING",
     },
 }

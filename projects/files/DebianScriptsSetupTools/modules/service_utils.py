@@ -99,11 +99,25 @@ def remove_path_optional(path: str | Path | None) -> bool:
 
 
 def restart_service(service_name: str) -> bool:
-    """Restart a systemd service."""
+    """Restart (or start if inactive) a systemd service, with basic logging."""
+    print(f"\n[INFO] Attempting to restart service: {service_name}")
     try:
-        subprocess.run(["systemctl", "restart", service_name], check=True)
+        result = subprocess.run(
+            ["systemctl", "restart", service_name],
+            check=True,
+            capture_output=True,
+            text=True
+        )
+        print(f"[SUCCESS] Service '{service_name}' restarted successfully.")
+        if result.stdout.strip():
+            print(f"[OUTPUT] {result.stdout.strip()}")
         return True
-    except subprocess.CalledProcessError:
+    except subprocess.CalledProcessError as e:
+        print(f"[WARNING] Failed to restart service '{service_name}'.")
+        if e.stderr:
+            print(f"[ERROR] {e.stderr.strip()}")
+        if e.stdout:
+            print(f"[DETAILS] {e.stdout.strip()}")
         return False
 
 
