@@ -5,9 +5,6 @@
         "Packages": ["mame", "mame-data", "mame-tools"],
         "SetupDirs": [
           "/etc/mame",
-          "/usr/share/arcade",
-          "/usr/share/arcade/MAME",
-          "/usr/share/arcade/NeoGeo",
           "/var/lib/arcade",
           "/var/lib/arcade/mame",
           "/var/lib/arcade/mame/cfg",
@@ -25,7 +22,7 @@
           { "path": "/usr/share/arcade", "mode": "2755", "recursive": true },
           { "path": "/var/lib/arcade",   "mode": "2775", "recursive": true }
         ],
-        "ChownUser": "nigel",
+        "ChownUser": "user",
         "ChownGroup": "arcade",
         "ChownRecursive": true,
         "ChownPaths": [
@@ -41,9 +38,9 @@
           "bash -lc 'cd /etc/mame && /usr/games/mame -createconfig'"
         ],
         "SettingsFiles": [
-          { "copyName": "MainConfig",   "src": "settings/mame/Default/Default-mame_template.ini",   "dest": "/etc/mame/mame.ini" },
-          { "copyName": "UIConfig",     "src": "settings/mame/Default/Default-ui_template.ini",     "dest": "/etc/mame/ui.ini" },
-          { "copyName": "PluginConfig", "src": "settings/mame/Default/Default-plugin_template.ini", "dest": "/etc/mame/plugin.ini" }
+          { "copyName": "MainConfig",   "src": "settings/mame/Desktop/Desktop-mame_template.ini",   "dest": "/etc/mame/mame.ini" },
+          { "copyName": "UIConfig",     "src": "settings/mame/Desktop/Desktop-ui_template.ini",     "dest": "/etc/mame/ui.ini" },
+          { "copyName": "PluginConfig", "src": "settings/mame/Desktop/Desktop-plugin_template.ini", "dest": "/etc/mame/plugin.ini" }
         ],
         "SettingsFolders": []
       },
@@ -52,9 +49,6 @@
         "Packages": [
           "retroarch",
           "libretro-core-info",
-          "libretro-nestopia",
-          "libretro-snes9x",
-          "libretro-genesisplusgx",
           "libretro-beetle-psx",
           "libretro-mgba",
           "libretro-gambatte",
@@ -68,35 +62,35 @@
         ],
         "SetupDirs": [
           "/etc/retroarch",
-          "/usr/share/arcade/retroarch",
-          "/usr/share/arcade/retroarch/cores",
           "/var/lib/arcade/retroarch",
           "/var/lib/arcade/retroarch/saves",
           "/var/lib/arcade/retroarch/states",
           "/var/lib/arcade/retroarch/playlists"
         ],
         "SetupCmds": [
-          "bash -lc 'python3 settings/retroarch/generate_playlists.py --core-map Default/Default-CoreMap.json'"
+          "bash -lc 'python3 settings/retroarch/generate_playlists.py --core-map Desktop/Desktop-CoreMap.json'",
+          "bash -lc 'bash settings/retroarch/install_retroarch_launcher.sh'"
         ],
         "ChmodPaths": [
-          { "path": "/usr/share/arcade/retroarch", "mode": "2755", "recursive": true },
+          { "path": "/usr/share/arcade", "mode": "2755", "recursive": true },
           { "path": "/var/lib/arcade/retroarch",   "mode": "2775", "recursive": true }
         ],
         "ChownUser": "nigel",
         "ChownGroup": "arcade",
         "ChownRecursive": true,
-        "ChownPaths": [
-          { "path": "/usr/share/arcade/retroarch" },
-          { "path": "/var/lib/arcade/retroarch" }
+          "ChownPaths": [
+            { "path": "/usr/share/arcade" },
+            { "path": "/var/lib/arcade/retroarch" }
         ],
         "RemovePaths": [
           "/etc/retroarch/retroarch.cfg",
-          "/var/lib/arcade/retroarch/playlists/*.lpl"
+          "/var/lib/arcade/retroarch/playlists/*.lpl",
+          "/home/*/.config/retroarch/retroarch.cfg"
         ],
         "ResetDirs": [ "/etc/retroarch" ],
         "ResetCmds": [],
         "SettingsFiles": [
-          { "copyName": "RetroArchConfig", "src": "settings/retroarch/Default/Default-template-retroarch.cfg", "dest": "/etc/retroarch/retroarch.cfg" }
+          { "copyName": "RetroArchConfig", "src": "settings/retroarch/Desktop/Desktop-template-retroarch.cfg", "dest": "/etc/retroarch/retroarch.cfg" }
         ],
         "SettingsFolders": [
           { "copyName": "PSX BIOS folder", "src": "/usr/share/arcade/Sony Playstation/bios",    "dest": "/etc/retroarch/system" },
@@ -106,4 +100,3 @@
     }
   }
 }
-
