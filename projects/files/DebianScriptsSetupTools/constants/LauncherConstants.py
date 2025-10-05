@@ -400,14 +400,23 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
     },
 
     "UNINSTALL": {
-        "pipeline": {
-            uninstall_packages: {"args": ["job"], "result": "uninstalled"},
-            remove_paths:       {"args": [KEY_REMOVE_PATHS], "result": "removed"},
-            make_dirs:          {"args": [KEY_SETUP_DIRS], "result": "cleanup_ok"},
+    "pipeline": {
+        set_default_display_manager: {"args": [
+            lambda j,m,c: m[KEY_DEFAULT_DM]["package"],
+            lambda j,m,c: m[KEY_DEFAULT_DM]["service"],
+        ], "result": "dm_set"},
+        restart_service: {"args": [lambda j,m,c: m[KEY_DEFAULT_DM]["service"]], "result": "dm_on"},
+
+        uninstall_packages: {
+        "args": [lambda j, m, c: [j] + m.get(KEY_ADDITIONAL_PKGS, []) + [m[KEY_KIOSK_DM]["package"]]],
+        "result": "uninstalled"
         },
-        "label": UNINSTALLED_LABEL,
-        "success_key": "uninstalled",
-        "post_state": "CONFIG_LOADING",
+        remove_paths: {"args": [KEY_REMOVE_PATHS], "result": "removed"},
+        make_dirs:    {"args": [KEY_SETUP_DIRS], "result": "cleanup_ok"},
+    },
+    "label": UNINSTALLED_LABEL,
+    "success_key": "uninstalled",
+    "post_state": "CONFIG_LOADING",
     },
 
     "ENABLE_KIOSK": {
