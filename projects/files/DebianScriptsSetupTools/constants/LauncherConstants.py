@@ -44,11 +44,11 @@ KEY_REMOVE_PATHS       = "RemovePaths"
 
 # New: Dir lists & groups
 KEY_SETUP_DIRS         = "SetupDirs"
+KEY_USERS              = "Users"
 KEY_USER_GROUPS        = "UserGroups"
 
 # === KIOSK (JSON) KEYS ===
 KEY_KIOSK_FILES            = "KioskFiles"
-KEY_KIOSK_REMOVE_PATHS     = "KioskRemovePaths"
 
 # === PERMS (JSON) KEYS ===
 KEY_CHMOD_PATHS          = "ChmodPaths"
@@ -77,11 +77,14 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
             "flex-launcher": {
                 KEY_DOWNLOAD_URL: "https://github.com/complexlogic/flex-launcher/releases/download/v2.2/flex-launcher_2.2_amd64.deb",
                 KEY_ENABLE_SERVICE: False,
-                KEY_DOWNLOAD_DIR: "/tmp/launcher-downloads",
+                KEY_USERS: ["launcher"],
+                KEY_USER_GROUPS: ["audio", "video", "arcade"],
                 KEY_SETTINGS_FILES: [
-                    {KEY_COPY_NAME: "FlexINI",
-                     KEY_SRC:  "settings/flex/Desktop/Desktop-Flex-Template-config.ini",
-                     KEY_DEST: "/home/launcher/.config/flex-launcher/config.ini"}
+                    {
+                        KEY_COPY_NAME: "FlexINI",
+                        KEY_SRC:  "settings/flex/Desktop/Desktop-Flex-Template-config.ini",
+                        KEY_DEST: "/home/launcher/.config/flex-launcher/config.ini"
+                    }
                 ],
                 KEY_SETTINGS_FOLDERS: [],
                 KEY_SETTINGS_CHMOD_PATHS: [
@@ -100,19 +103,25 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
                     "/etc/lightdm/lightdm.conf.d"
                 ],
                 KEY_KIOSK_FILES: [
-                    {KEY_COPY_NAME: "LightDM autologin",
-                     KEY_SRC:  "settings/flex/Desktop/Desktop-LightDM-50-launcher.conf",
-                     KEY_DEST: "/etc/lightdm/lightdm.conf.d/50-launcher.conf"},
-                    {KEY_COPY_NAME: "Openbox autostart",
-                     KEY_SRC:  "settings/flex/Desktop/Desktop-Flex-autostart.sh",
-                     KEY_DEST: "/home/launcher/.config/openbox/autostart"},
-                    {KEY_COPY_NAME: "DMRC",
-                     KEY_SRC:  "settings/flex/Desktop/Desktop-Flex-dmrc",
-                     KEY_DEST: "/home/launcher/.dmrc"}
+                    {
+                        KEY_COPY_NAME: "LightDM autologin",
+                        KEY_SRC:  "settings/flex/Desktop/Desktop-LightDM-50-launcher.conf",
+                        KEY_DEST: "/etc/lightdm/lightdm.conf.d/50-launcher.conf"
+                    },
+                    {
+                        KEY_COPY_NAME: "Openbox autostart",
+                        KEY_SRC:  "settings/flex/Desktop/Desktop-Flex-autostart.sh",
+                        KEY_DEST: "/home/launcher/.config/openbox/autostart"
+                    },
+                    {
+                        KEY_COPY_NAME: "DMRC",
+                        KEY_SRC:  "settings/flex/Desktop/Desktop-Flex-dmrc",
+                        KEY_DEST: "/home/launcher/.dmrc"
+                    }
                 ],
                 KEY_CHMOD_PATHS: [
                     {"path": "/home/launcher/.config/openbox/autostart", "mode": "755"},
-                    {"path": "/home/launcher/.dmrc",                     "mode": "600"}
+                    {"path": "/home/launcher/.dmrc", "mode": "600"}
                 ],
                 KEY_CHOWN_PATHS: [
                     {"path": "/home/launcher"},
@@ -121,13 +130,6 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
                     {"path": "/home/launcher/.dmrc"}
                 ],
                 KEY_CHOWN_RECURSIVE: True,
-
-                KEY_KIOSK_REMOVE_PATHS: [
-                    "/home/launcher/.config/openbox/autostart",
-                    "/etc/lightdm/lightdm.conf.d/50-launcher.conf",
-                    "/home/launcher/.dmrc"
-                ],
-
                 KEY_DEFAULT_DM: "gdm3",
                 KEY_KIOSK_DM:   "lightdm",
                 KEY_ADDITIONAL_PKGS: [
@@ -150,8 +152,19 @@ VALIDATION_CONFIG: Dict[str, Any] = {
         KEY_DOWNLOAD_URL: str,
         KEY_ENABLE_SERVICE: (bool, type(None)),
         KEY_DOWNLOAD_DIR: str,
+        KEY_SETTINGS_FILES: list,
+        KEY_SETTINGS_FOLDERS: list,
+        KEY_SETTINGS_CHMOD_PATHS: list,
+        KEY_SETTINGS_CHOWN_PATHS: list,
+        KEY_REMOVE_PATHS: list,
+        KEY_SETUP_DIRS: list,
+        KEY_KIOSK_FILES: list,
         KEY_DEFAULT_DM: str,
         KEY_KIOSK_DM: str,
+        KEY_ADDITIONAL_PKGS: list,
+        KEY_CHMOD_PATHS: list,
+        KEY_CHOWN_PATHS: list,
+        KEY_CHOWN_RECURSIVE: (bool, type(None)),
     },
     "example_config": CONFIG_EXAMPLE,
 }
@@ -318,7 +331,7 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
             enable_and_start_service: {"args": [lambda j, m, c: m.get("ServiceName", j)], "when": lambda j, m, c: bool(m.get(KEY_ENABLE_SERVICE)), "result": "service_started"},
             handle_cleanup: {"args": [lambda j, m, c: Path(m[KEY_DOWNLOAD_DIR]) / f"{j}.deb"], "result": "cleaned", "when": lambda j, m, c: bool(c.get("download_ok"))},
             create_user_login: {"args": [lambda j, m, c: m.get(KEY_CHOWN_USER, "launcher")], "result": "user_ok"},
-            add_user_to_group: {"args": [lambda j, m, c: m.get(KEY_CHOWN_USER, "launcher"), lambda j, m, c: m.get(KEY_USER_GROUPS, [])], "result": "groups_added"},
+            add_user_to_group: {"args": [lambda j, m, c: m.get(KEY_USERS, []), lambda j, m, c: m.get(KEY_USER_GROUPS, [])], "result": "groups_added"},
             make_dirs: {"args": [KEY_SETUP_DIRS], "result": "setup_dirs_ok"},
             copy_file_dict:    {"args": [lambda j, m, c: (m.get(KEY_KIOSK_FILES, []) or []) + (m.get(KEY_SETTINGS_FILES, []) or [])], "result": "files_copied"},
             copy_folder_dict: {"args": [KEY_SETTINGS_FOLDERS], "result": "settings_folders_copied"},
@@ -327,13 +340,11 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
         "success_key": "installed",
         "post_state": "CONFIG_LOADING",
     },
-
-    # UPDATE only settings; scope perms to those settings
+    
     "UPDATE_SETTINGS": {
         "pipeline": {
             create_user_login: {"args": [lambda j, m, c: m.get(KEY_CHOWN_USER, "launcher")], "result": "user_ok"},
-            add_user_to_group: {"args": [lambda j, m, c: m.get(KEY_CHOWN_USER, "launcher"), lambda j, m, c: m.get(KEY_USER_GROUPS, [])], "result": "groups_added"},
-            make_dirs:      {"args": [KEY_SETUP_DIRS], "result": "setup_dirs_ok"},
+            add_user_to_group: {"args": [lambda j, m, c: m.get(KEY_USERS, []), lambda j, m, c: m.get(KEY_USER_GROUPS, [])], "result": "groups_added"},            make_dirs:      {"args": [KEY_SETUP_DIRS], "result": "setup_dirs_ok"},
             copy_file_dict: {"args": [KEY_SETTINGS_FILES], "result": "settings_files_copied"},
             copy_folder_dict: {"args": [KEY_SETTINGS_FOLDERS], "result": "settings_folders_copied"},
             chmod_paths: {
@@ -386,8 +397,7 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
     "ENABLE_KIOSK": {
         "pipeline": {
             create_user_login: {"args": [lambda j, m, c: m.get(KEY_CHOWN_USER, "launcher")], "result": "user_ok"},
-            add_user_to_group: {"args": [lambda j, m, c: m.get(KEY_CHOWN_USER, "launcher"), lambda j, m, c: m.get(KEY_USER_GROUPS, [])], "result": "groups_added"},
-            make_dirs:         {"args": [KEY_SETUP_DIRS],  "result": "setup_dirs_ok"},
+            add_user_to_group: {"args": [lambda j, m, c: m.get(KEY_USERS, []), lambda j, m, c: m.get(KEY_USER_GROUPS, [])], "result": "groups_added"},            make_dirs:         {"args": [KEY_SETUP_DIRS],  "result": "setup_dirs_ok"},
             copy_file_dict:    {"args": [lambda j, m, c: (m.get(KEY_KIOSK_FILES, []) or []) + (m.get(KEY_SETTINGS_FILES, []) or [])], "result": "files_copied"},
             copy_folder_dict:  {"args": [KEY_SETTINGS_FOLDERS], "result": "settings_folders_copied"},
             chmod_paths:       {"args": [KEY_CHMOD_PATHS], "result": "chmod_ok"},
@@ -402,7 +412,6 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
 
     "DISABLE_KIOSK": {
         "pipeline": {
-            remove_paths:      {"args": [KEY_KIOSK_REMOVE_PATHS], "result": "kiosk_removed"},
             stop_and_disable_service: {"args": [lambda j, m, c: m.get(KEY_KIOSK_DM)], "result": "dm_off"},
             enable_and_start_service: {"args": [lambda j, m, c: m.get(KEY_DEFAULT_DM)], "result": "dm_on"},
         },

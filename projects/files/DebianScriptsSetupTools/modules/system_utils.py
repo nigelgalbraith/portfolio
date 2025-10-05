@@ -224,27 +224,31 @@ def secure_logs_for_user(path: Path, username: str):
         print(f"Error applying permissions: {e}")
 
 
-def add_user_to_group(user: str, groups: list[str]) -> bool:
-    """Add a user to one or more system groups using usermod -aG."""
-    if not user or not groups:
-        print("[add_user_to_group] No user or groups provided, skipping.")
+def add_user_to_group(users, groups) -> bool:
+    """Add one or more users to one or more system groups."""
+    if not users or not groups:
+        print("[add_user_to_group] No users or groups provided, skipping.")
         return True
-    try:
-        group_str = ",".join(groups)
-        print(f"[add_user_to_group] Adding user '{user}' to group(s): {group_str}...")
-        res = subprocess.run(
-            ["usermod", "-aG", group_str, user],
-            check=False
-        )
-        if res.returncode == 0:
-            print(f"[add_user_to_group] User '{user}' added to group(s): {group_str}.")
-            return True
-        else:
-            print(f"[add_user_to_group] Failed to add user '{user}' to group(s): {group_str}.")
-            return False
-    except Exception as e:
-        print(f"[add_user_to_group] Exception: {e}")
-        return False
+    if isinstance(users, str):
+        users = [users]
+    if isinstance(groups, str):
+        groups = [groups]
+
+    ok = True
+    for user in users:
+        try:
+            group_str = ",".join(groups)
+            print(f"[add_user_to_group] Adding user '{user}' to group(s): {group_str}...")
+            res = subprocess.run(["usermod", "-aG", group_str, user], check=False)
+            if res.returncode == 0:
+                print(f"[add_user_to_group] User '{user}' added to group(s): {group_str}.")
+            else:
+                print(f"[add_user_to_group] Failed to add user '{user}' to group(s): {group_str}.")
+                ok = False
+        except Exception as e:
+            print(f"[add_user_to_group] Exception for '{user}': {e}")
+            ok = False
+    return ok
 
 
 def add_users_to_group(users: list[str], group: str) -> bool:
@@ -554,25 +558,28 @@ def make_dirs(dirs: list[str]) -> bool:
 
 
 
-def create_group(group: str) -> bool:
-    """Create a system group if it does not already exist."""
-    if not group:
-        print("[create_group] No group specified")
-        return False
-    try:
-        result = subprocess.run(["getent", "group", group], capture_output=True, text=True)
-        if result.returncode == 0:
-            print(f"[create_group] Group '{group}' already exists")
-            return True
-        subprocess.run(["groupadd", group], check=True)
-        print(f"[create_group] Group '{group}' created successfully")
+def create_group(groups) -> bool:
+    """Create one or more groups if they don't already exist."""
+    if not groups:
         return True
-    except subprocess.CalledProcessError as e:
-        print(f"[create_group] Failed to create group '{group}': {e}")
-        return False
-    except Exception as e:
-        print(f"[create_group] Unexpected error: {e}")
-        return Fa
+    if isinstance(groups, str):
+        groups = [groups]
+
+    ok = True
+    for group in groups:
+        print(f"[create_group] Ensuring group '{group}' exists...")
+        result = subprocess.run(["getent", "group", group], stdout=subprocess.DEVNULL)
+        if result.returncode != 0:
+            res = subprocess.run(["groupadd", group], check=False)
+            if res.returncode == 0:
+                print(f"[create_group] Group '{group}' created.")
+            else:
+                print(f"[create_group] Failed to create '{group}'.")
+                ok = False
+        else:
+            print(f"[create_group] Group '{group}' already exists.")
+    return ok
+
         
 
 

@@ -11,6 +11,7 @@ from modules.system_utils import (
     chmod_paths,
     chown_paths,
     create_group,
+    add_user_to_group,
 )
 from modules.package_utils import check_package, install_packages, uninstall_packages
 from modules.archive_utils import remove_paths
@@ -31,10 +32,14 @@ KEY_REMOVE_PATHS       = "RemovePaths"
 KEY_SETUP_DIRS         = "SetupDirs"
 KEY_RESET_DIRS         = "ResetDirs"
 KEY_CHMOD_PATHS        = "ChmodPaths"
-KEY_CHOWN_PATHS        = "ChownPaths"      
-KEY_CHOWN_USER         = "ChownUser"
-KEY_CHOWN_GROUP        = "ChownGroup"
-KEY_CHOWN_RECURSIVE    = "ChownRecursive"  
+KEY_CHOWN_PATHS        = "ChownPaths"
+KEY_CHOWN_USER         = "ChownUser"     
+KEY_CHOWN_GROUP        = "ChownGroup"    
+KEY_CHOWN_RECURSIVE    = "ChownRecursive"
+
+# Membership (arcade-specific)
+KEY_ARCADE_USERS       = "arcadeUsers"   
+KEY_ARCADE_GROUPS      = "arcadeGroups"  
 
 # === SUB-JSON KEYS ===
 KEY_COPY_NAME          = "copyName"
@@ -72,12 +77,16 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
                 KEY_CHMOD_PATHS: [
                     {"path": "~/Arcade", "mode": "755", "recursive": True}
                 ],
+                # Ownership (single owner & group)
                 KEY_CHOWN_USER: "root",
                 KEY_CHOWN_GROUP: "Arcade",
                 KEY_CHOWN_RECURSIVE: True,
                 KEY_CHOWN_PATHS: [
-                    {"path": "~/Arcade"} 
+                    {"path": "~/Arcade"}
                 ],
+                # Membership (optional)
+                KEY_ARCADE_USERS: ["root"],
+                KEY_ARCADE_GROUPS: ["Arcade"],
             },
             "retroarch": {
                 KEY_PACKAGES: [
@@ -125,11 +134,15 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
                 KEY_CHMOD_PATHS: [
                     {"path": "~/.config/retroarch", "mode": "755", "recursive": True}
                 ],
+                # Ownership
                 KEY_CHOWN_USER: "root",
                 KEY_CHOWN_RECURSIVE: True,
                 KEY_CHOWN_PATHS: [
                     {"path": "~/.config/retroarch"}
                 ],
+                # Membership (optional)
+                KEY_ARCADE_USERS: ["root"],
+                KEY_ARCADE_GROUPS: ["Arcade"],
             }
         }
     }
@@ -147,7 +160,7 @@ VALIDATION_CONFIG: Dict[str, Any] = {
         KEY_SETUP_CMDS: list,
         KEY_RESET_CMDS: list,
         KEY_CHMOD_PATHS: list,
-        KEY_CHOWN_PATHS: list,     
+        KEY_CHOWN_PATHS: list,
     },
     "example_config": CONFIG_EXAMPLE,
 }
@@ -177,9 +190,9 @@ SECONDARY_VALIDATION: Dict[str, Any] = {
         },
         "allow_empty": True,
     },
-    KEY_CHOWN_PATHS: {  
+    KEY_CHOWN_PATHS: {
         "required_job_fields": {
-            "path": str,   
+            "path": str,
         },
         "allow_empty": True,
     },
@@ -226,7 +239,7 @@ PLAN_COLUMN_ORDER = [
     KEY_SETUP_DIRS,
     KEY_SETUP_CMDS,
     KEY_CHMOD_PATHS,
-    KEY_CHOWN_PATHS,   
+    KEY_CHOWN_PATHS,
     KEY_RESET_DIRS,
     KEY_RESET_CMDS,
 ]
@@ -300,13 +313,33 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
             copy_file_dict:   { "args": [KEY_SETTINGS_FILES], "result": "settings_files_copied" },
             copy_folder_dict: { "args": [KEY_SETTINGS_FOLDERS], "result": "settings_folders_copied" },
             chmod_paths:      { "args": [KEY_CHMOD_PATHS], "result": "chmod_ok" },
-            create_group:     { "args": [lambda j, m, c: m.get(KEY_CHOWN_GROUP, "arcade")],"result": "group_ok"},
-            chown_paths:      {"args": [lambda j,m,c: m.get(KEY_CHOWN_USER, "root"), KEY_CHOWN_PATHS, lambda j,m,c: bool(m.get(KEY_CHOWN_RECURSIVE, False)), lambda j,m,c: m.get(KEY_CHOWN_GROUP)], "result": "chown_ok"},
+
+                create_group: {
+                    "args": [lambda j, m, c: m.get(KEY_ARCADE_GROUPS)],
+                    "result": "groups_ok"
+                },
+            add_user_to_group: {
+                "args": [
+                    lambda j, m, c: m.get(KEY_ARCADE_USERS),
+                    lambda j, m, c: m.get(KEY_ARCADE_GROUPS)
+                ],
+                "result": "arcade_groups_added"
+            },
+            chown_paths: {
+                "args": [
+                    lambda j, m, c: m.get(KEY_CHOWN_USER),
+                    KEY_CHOWN_PATHS,
+                    lambda j, m, c: bool(m.get(KEY_CHOWN_RECURSIVE)),
+                    lambda j, m, c: m.get(KEY_CHOWN_GROUP)
+                ],
+                "result": "chown_ok"
+            },
         },
         "label": INSTALLED_LABEL,
         "success_key": "setup_ok",
         "post_state": "CONFIG_LOADING",
     },
+
     "UPDATE_SETTINGS": {
         "pipeline": {
             make_dirs:        { "args": [KEY_SETUP_DIRS], "result": "setup_dirs_ok" },
@@ -314,14 +347,33 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
             copy_file_dict:   { "args": [KEY_SETTINGS_FILES], "result": "settings_files_copied" },
             copy_folder_dict: { "args": [KEY_SETTINGS_FOLDERS], "result": "settings_folders_copied" },
             chmod_paths:      { "args": [KEY_CHMOD_PATHS], "result": "chmod_ok" },
-            create_group:     { "args": [lambda j, m, c: m.get(KEY_CHOWN_GROUP, "arcade")],"result": "group_ok"},
-            chown_paths:      {"args": [lambda j,m,c: m.get(KEY_CHOWN_USER, "root"), KEY_CHOWN_PATHS, lambda j,m,c: bool(m.get(KEY_CHOWN_RECURSIVE, False)), lambda j,m,c: m.get(KEY_CHOWN_GROUP)], "result": "chown_ok"},
 
+            create_group: {
+                "args": [lambda j, m, c: m.get(KEY_ARCADE_GROUPS)],
+                "result": "groups_ok"
+            },
+            add_user_to_group: {
+                "args": [
+                    lambda j, m, c: m.get(KEY_ARCADE_USERS),
+                    lambda j, m, c: m.get(KEY_ARCADE_GROUPS)
+                ],
+                "result": "arcade_groups_added"
+            },
+            chown_paths: {
+                "args": [
+                    lambda j, m, c: m.get(KEY_CHOWN_USER),
+                    KEY_CHOWN_PATHS,
+                    lambda j, m, c: bool(m.get(KEY_CHOWN_RECURSIVE)),
+                    lambda j, m, c: m.get(KEY_CHOWN_GROUP)
+                ],
+                "result": "chown_ok"
+            },
         },
         "label": INSTALLED_LABEL,
         "success_key": "setup_ok",
         "post_state": "CONFIG_LOADING",
     },
+
     "RESET": {
         "pipeline": {
             remove_paths: { "args": [KEY_REMOVE_PATHS], "result": "removed" },
@@ -332,6 +384,7 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
         "success_key": "reset_ok",
         "post_state": "CONFIG_LOADING",
     },
+
     "UNINSTALL": {
         "pipeline": {
             remove_paths:       { "args": [KEY_REMOVE_PATHS], "result": "removed" },
