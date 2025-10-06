@@ -48,11 +48,12 @@ def check_when(cond: Any, job: str, meta: Dict[str, Any], ctx: Dict[str, Any]) -
 
 
 def status_candidates(job_status: Dict[str, bool], want: Optional[bool]) -> List[str]:
+    """Return job names filtered by desired status without changing original order."""
     if want is None:
-        return sorted(job_status.keys())
+        return list(job_status.keys())
     if want is True:
-        return sorted([j for j, ok in job_status.items() if ok])
-    return sorted([j for j, ok in job_status.items() if not ok])
+        return [j for j, ok in job_status.items() if ok]
+    return [j for j, ok in job_status.items() if not ok]
 
 
 def parse_args(consts: Any) -> argparse.Namespace:

@@ -479,7 +479,7 @@ class StateMachine:
         """Load the package list (DEB keys) for the model; advance to PACKAGE_STATUS."""
         model = self.model
         block = self.job_data[model][jobs_key]
-        self.all_jobs = {job: block.get(job, {}) or {} for job in sorted(block.keys())}
+        self.all_jobs = {job: block.get(job, {}) or {} for job in block.keys()}
         self.active_jobs = self.all_jobs.copy()
         self.state = State.PACKAGE_STATUS if self.active_jobs else State.MENU_SELECTION
 

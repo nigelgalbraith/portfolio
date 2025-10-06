@@ -149,3 +149,32 @@ def ensure_service_installed(service_name: str, template_path: Path) -> bool:
         return True
     except subprocess.CalledProcessError:
         return False
+
+
+def restart_services_in_order(job_name, meta):
+    """Restart all services in ascending order based on their 'Order' field."""
+    import subprocess
+    try:
+        if not isinstance(meta, dict):
+            print(f"[ERROR] Invalid metadata passed for {job_name}")
+            return False
+        services = sorted(meta.items(), key=lambda item: item[1].get("Order", 0))
+        print("\n  ==> Restarting services in defined order")
+        for name, svc in services:
+            service_name = svc.get("ServiceName")
+            if not service_name:
+                print(f"[WARN] Skipping {name}: missing ServiceName")
+                continue
+            try:
+                subprocess.run(["systemctl", "restart", service_name], check=True)
+                print(f"[OK] Restarted: {service_name}")
+            except subprocess.CalledProcessError as e:
+                print(f"[ERROR] Failed to restart {service_name}: {e}")
+                return False
+        return True
+    except Exception as e:
+        print(f"[FATAL] restart_services_in_order failed: {e}")
+        return False
+
+
+

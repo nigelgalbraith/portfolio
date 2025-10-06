@@ -3,7 +3,8 @@
     "Packages": {
       "vlc": {},
       "audacious": {},
-      "audacity": {}
+      "audacity": {},
+      "firefox-esr": {}
     }
   }
 }
