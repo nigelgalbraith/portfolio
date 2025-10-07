@@ -411,7 +411,7 @@ def copy_file_dict(mapping: Any) -> bool:
     else:
         print(f"[ERROR] copy_file_dict: unsupported type {type(mapping).__name__}")
         return False
-    print(f"[APPLY] SettingsFiles ({len(items)})")
+    print(f"[APPLY] CopyFiles ({len(items)})")
     for src_raw, dest_raw, name in items:
         label = f"{name}: " if name else ""
         print(f"  - {label}{src_raw} -> {dest_raw}")
@@ -543,19 +543,18 @@ def chown_paths(user: str, paths: list[dict], recursive: bool=False, default_gro
             ok = False
     return ok
 
+
 def make_dirs(dirs: list[str]) -> bool:
     """Ensure all directories in the list exist. Returns True if successful/no-op."""
-    import os
     try:
         for d in dirs:
-            path = os.path.expanduser(d)
+            path = os.path.expanduser(os.path.expandvars(d))
             os.makedirs(path, exist_ok=True)
             print(f"[make_dirs] Ensured directory exists: {path}")
         return True
     except Exception as e:
         print(f"[make_dirs] Error creating directories: {e}")
         return False
-
 
 
 def create_group(groups) -> bool:
@@ -609,8 +608,51 @@ def set_default_display_manager(dm_package: str, dm_service: str) -> bool:
         return False
 
 
+def remove_paths(paths) -> bool:
+    """Move files/folders to the user's trash; supports ~ and globs (*)."""
+    if not paths:
+        print("[remove_paths] No paths provided, nothing to do.")
+        return True
+    if isinstance(paths, str):
+        paths = [paths]
+    trash_dir = Path.home() / ".local/share/Trash/files"
+    trash_dir.mkdir(parents=True, exist_ok=True)
+    print(f"[remove_paths] Trash directory: {trash_dir}")
+    all_ok = True
+    for p in paths:
+        expanded = os.path.expanduser(p)
+        matches = glob.glob(expanded)  
+        if not matches:
+            print(f"[remove_paths] No matches for: {p}")
+            all_ok = False
+            continue
+        for match in matches:
+            path_obj = Path(match)
+            if path_obj.exists():
+                try:
+                    dest = trash_dir / path_obj.name
+                    counter = 1
+                    while dest.exists():
+                        dest = trash_dir / f"{path_obj.stem}_{counter}{path_obj.suffix}"
+                        counter += 1
+                    print(f"[remove_paths] Moving {path_obj} -> {dest}")
+                    shutil.move(str(path_obj), str(dest))
+                    print(f"[remove_paths] Success: {path_obj} moved to trash.")
+                except Exception as e:
+                    print(f"[remove_paths] ERROR moving {path_obj}: {e}")
+                    all_ok = False
+            else:
+                print(f"[remove_paths] Path does not exist (even after glob): {path_obj}")
+                all_ok = False
+    print(f"[remove_paths] Completed. all_ok = {all_ok}")
+    return all_ok
 
-        
+
+def check_folder_path(path: str) -> bool:
+    """Check if a folder path exists."""
+    return Path(os.path.expandvars(path)).expanduser().exists()
+
+
 
 
 

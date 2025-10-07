@@ -7,11 +7,10 @@ from modules.archive_utils import (
     install_archive_file,
     uninstall_archive_install,
     check_archive_status,
-    remove_paths,
     handle_cleanup,
 )
 
-from modules.system_utils import run_commands
+from modules.system_utils import run_commands, remove_paths
 
 # === CONFIG PATHS & KEYS ===
 PRIMARY_CONFIG   = "config/AppConfigSettings.json"

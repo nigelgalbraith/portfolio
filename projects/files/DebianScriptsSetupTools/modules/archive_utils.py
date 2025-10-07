@@ -10,6 +10,7 @@ import subprocess
 import glob
 from pathlib import Path
 from typing import Optional, Iterable, List
+from zipfile import ZipFile
 
 ARCHIVE_EXTENSIONS = (".tar.gz", ".tgz", ".tar.xz", ".tar.bz2", ".zip")
 
@@ -146,42 +147,20 @@ def handle_cleanup(archive_path: Path) -> bool:
         return False
 
 
-def remove_paths(paths) -> bool:
-    """Move files/folders to the user's trash; supports ~ and globs (*)."""
-    if not paths:
-        print("[remove_paths] No paths provided, nothing to do.")
-        return True
-    if isinstance(paths, str):
-        paths = [paths]
-    trash_dir = Path.home() / ".local/share/Trash/files"
-    trash_dir.mkdir(parents=True, exist_ok=True)
-    print(f"[remove_paths] Trash directory: {trash_dir}")
-    all_ok = True
-    for p in paths:
-        expanded = os.path.expanduser(p)
-        matches = glob.glob(expanded)  
-        if not matches:
-            print(f"[remove_paths] No matches for: {p}")
-            all_ok = False
+def create_zip_archive(zips):
+    """Create one or more zip archives from a list of (src, output) tuples."""
+    if isinstance(zips, tuple):
+        zips = [zips]
+    for src, output in zips:
+        src_path = Path(os.path.expandvars(os.path.expanduser(src)))
+        out_path = Path(os.path.expandvars(os.path.expanduser(output)))
+        if not src_path.exists():
+            print(f"[create_zip_archive] Source not found: {src_path}")
             continue
-        for match in matches:
-            path_obj = Path(match)
-            if path_obj.exists():
-                try:
-                    dest = trash_dir / path_obj.name
-                    counter = 1
-                    while dest.exists():
-                        dest = trash_dir / f"{path_obj.stem}_{counter}{path_obj.suffix}"
-                        counter += 1
-                    print(f"[remove_paths] Moving {path_obj} -> {dest}")
-                    shutil.move(str(path_obj), str(dest))
-                    print(f"[remove_paths] Success: {path_obj} moved to trash.")
-                except Exception as e:
-                    print(f"[remove_paths] ERROR moving {path_obj}: {e}")
-                    all_ok = False
-            else:
-                print(f"[remove_paths] Path does not exist (even after glob): {path_obj}")
-                all_ok = False
-    print(f"[remove_paths] Completed. all_ok = {all_ok}")
-    return all_ok
+        with ZipFile(out_path, "w") as zipf:
+            for p in src_path.rglob("*"):
+                if p.is_file():
+                    zipf.write(p, p.relative_to(src_path))
+        print(f"[create_zip_archive] Created: {out_path}")
+    return True
 

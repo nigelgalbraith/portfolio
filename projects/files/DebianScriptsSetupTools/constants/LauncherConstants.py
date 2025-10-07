@@ -4,7 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict
 
-from modules.archive_utils import handle_cleanup, remove_paths
+from modules.archive_utils import handle_cleanup,
 from modules.package_utils import (
     check_package,
     download_deb_file,
@@ -24,7 +24,8 @@ from modules.system_utils import (
     kill_user_session,
     add_user_to_group,
     make_dirs,
-    set_default_display_manager,  
+    set_default_display_manager,
+    remove_paths,
 )
 
 # === CONFIG PATHS & KEYS ===

@@ -1,0 +1,246 @@
+# constants/BackupConstants.py
+from pathlib import Path
+from modules.system_utils import copy_folder_dict, copy_file_dict, remove_paths, check_folder_path, make_dirs
+from modules.archive_utils import create_zip_archive  
+
+# === CONFIG PATHS & KEYS ===
+PRIMARY_CONFIG = "config/AppConfigSettings.json"
+JOBS_KEY       = "Backup"
+CONFIG_TYPE    = "backup"
+DEFAULT_CONFIG = "Default"
+
+# === JSON KEYS ===
+KEY_SOURCE_FOLDERS  = "CopyFolders"
+KEY_SOURCE_FILES    = "CopyFiles"
+KEY_ZIP_ARCHIVES    = "ZipArchives"
+KEY_CHECK_PATH      = "CheckPath"
+
+# === COMMON SUBKEYS ===
+SUBKEY_COPY_NAME    = "copyName"
+SUBKEY_SRC          = "src"
+SUBKEY_DEST         = "dest"
+SUBKEY_ZIP_NAME     = "zipName"
+SUBKEY_OUTPUT       = "output"
+
+# === EXAMPLE CONFIG ===
+CONFIG_EXAMPLE = {
+    "Default": {
+        JOBS_KEY: {
+            "HomeBackup": {
+                KEY_SOURCE_FOLDERS: [
+                    { "copyName": "Documents", "src": "/home/user/Documents", "dest": "/mnt/backup/Documents" },
+                    { "copyName": "Pictures", "src": "/home/user/Pictures", "dest": "/mnt/backup/Pictures" }
+                ],
+                KEY_SOURCE_FILES: [
+                    { "copyName": "BashRC", "src": "/home/user/.bashrc", "dest": "/mnt/backup/.bashrc" }
+                ],
+                KEY_ZIP_ARCHIVES: [
+                    {
+                        "zipName": "HomeBackupArchive",
+                        "src": "/mnt/backup",
+                        "output": "/mnt/backup/home_backup.zip"
+                    }
+                ],
+                KEY_CHECK_PATH: "/mnt/backup"
+            }
+        }
+    }
+}
+
+# === VALIDATION CONFIG ===
+VALIDATION_CONFIG = {
+    "required_job_fields": {
+        KEY_SOURCE_FOLDERS: list,
+        KEY_SOURCE_FILES: list,
+        KEY_ZIP_ARCHIVES: list,
+        KEY_CHECK_PATH: str,
+    },
+    "example_config": CONFIG_EXAMPLE,
+}
+
+# === SECONDARY VALIDATION ===
+SECONDARY_VALIDATION = {
+    KEY_SOURCE_FOLDERS: {
+        "required_job_fields": {
+            SUBKEY_COPY_NAME: str,
+            SUBKEY_SRC: str,
+            SUBKEY_DEST: str,
+        },
+        "allow_empty": True,
+    },
+    KEY_SOURCE_FILES: {
+        "required_job_fields": {
+            SUBKEY_COPY_NAME: str,
+            SUBKEY_SRC: str,
+            SUBKEY_DEST: str,
+        },
+        "allow_empty": True,
+    },
+    KEY_ZIP_ARCHIVES: {
+        "required_job_fields": {
+            SUBKEY_ZIP_NAME: str,
+            SUBKEY_SRC: str,
+            SUBKEY_OUTPUT: str,
+        },
+        "allow_empty": True,
+    },
+}
+
+# === DETECTION CONFIG ===
+DETECTION_CONFIG = {
+    "primary_config": PRIMARY_CONFIG,
+    "config_type": CONFIG_TYPE,
+    "jobs_key": JOBS_KEY,
+    "default_config": DEFAULT_CONFIG,
+    "config_example": CONFIG_EXAMPLE,
+    "default_config_note": (
+        "No model-specific config was found. Using the 'Default' section instead."
+    ),
+}
+
+# === LOGGING ===
+LOG_PREFIX      = "backup_job"
+LOG_DIR         = Path.home() / "logs" / "backup"
+LOGS_TO_KEEP    = 10
+ROTATE_LOG_NAME = f"{LOG_PREFIX}_*.log"
+
+# === USER / LABELS ===
+REQUIRED_USER     = "Standard"
+INSTALLED_LABEL   = "DONE"
+UNINSTALLED_LABEL = "NOT DONE"
+
+# === STATUS FUNCTION CONFIG ===
+STATUS_FN_CONFIG = {
+    "fn": check_folder_path,
+    "args": [lambda j, m, c: m.get(KEY_CHECK_PATH)],
+    "labels": {True: INSTALLED_LABEL, False: UNINSTALLED_LABEL},
+}
+
+# === DEPENDENCIES ===
+DEPENDENCIES = ["rsync", "zip"]
+
+# === ACTIONS ===
+ACTIONS = {
+    "_meta": {"title": "Backup Utility"},
+    "Copy Folders": {
+        "verb": "copy folders",
+        "filter_status": None,
+        "label": INSTALLED_LABEL,
+        "prompt": "Copy folders to backup destination? [y/n]: ",
+        "execute_state": "COPY_FOLDERS",
+        "post_state": "CONFIG_LOADING",
+    },
+    "Copy Files": {
+        "verb": "copy files",
+        "filter_status": None,
+        "label": INSTALLED_LABEL,
+        "prompt": "Copy individual files to backup destination? [y/n]: ",
+        "execute_state": "COPY_FILES",
+        "post_state": "CONFIG_LOADING",
+    },
+    "Create Zip Archive": {
+        "verb": "archive",
+        "filter_status": None,
+        "label": INSTALLED_LABEL,
+        "prompt": "Create zip archive from backup content? [y/n]: ",
+        "execute_state": "CREATE_ZIP",
+        "post_state": "CONFIG_LOADING",
+    },
+    "Run All Tasks": {
+        "verb": "run all backup tasks",
+        "filter_status": None,
+        "label": INSTALLED_LABEL,
+        "prompt": "Run all backup steps (folders, files, zip)? [y/n]: ",
+        "execute_state": "ALL_TASKS",
+        "post_state": "CONFIG_LOADING",
+    },
+    "Cancel": {
+        "verb": None,
+        "filter_status": None,
+        "label": None,
+        "prompt": None,
+        "execute_state": "FINALIZE",
+        "post_state": "FINALIZE",
+    },
+}
+
+# === SUB-MENU ===
+SUB_MENU = {
+    "title": "Select Backup Job",
+    "all_label": "All",
+    "cancel_label": "Cancel",
+    "cancel_state": "MENU_SELECTION",
+}
+
+# === PLANNING COLUMNS ===
+PLAN_COLUMN_ORDER = [
+    KEY_SOURCE_FOLDERS,
+    KEY_SOURCE_FILES,
+    KEY_ZIP_ARCHIVES,
+]
+
+OPTIONAL_PLAN_COLUMNS = {}
+
+# === PIPELINE STATES ===
+PIPELINE_STATES = {
+    "COPY_FOLDERS": {
+        "pipeline": {
+         make_dirs: {
+                "args": [lambda j, m, c: [f["dest"] for f in m.get(KEY_SOURCE_FOLDERS, [])]],
+                "result": "dirs_ready",
+            },
+            copy_folder_dict: {
+                "args": [KEY_SOURCE_FOLDERS],
+                "result": "folders_copied",
+            },
+        },
+        "label": INSTALLED_LABEL,
+        "success_key": "folders_copied",
+        "post_state": "CONFIG_LOADING",
+    },
+    "COPY_FILES": {
+        "pipeline": {
+            copy_file_dict: {
+                "args": [KEY_SOURCE_FILES],
+                "result": "files_copied",
+            },
+        },
+        "label": INSTALLED_LABEL,
+        "success_key": "files_copied",
+        "post_state": "CONFIG_LOADING",
+    },
+    "CREATE_ZIP": {
+        "pipeline": {
+            create_zip_archive: {
+                "args": [lambda j, m, c: [(z["src"], z["output"]) for z in m.get(KEY_ZIP_ARCHIVES, [])]],
+                "result": "archives_created",
+            },
+        },
+        "label": INSTALLED_LABEL,
+        "success_key": "archives_created",
+        "post_state": "CONFIG_LOADING",
+    },
+    "ALL_TASKS": {
+        "pipeline": {
+            make_dirs: {
+                "args": [lambda j, m, c: [f["dest"] for f in m.get(KEY_SOURCE_FOLDERS, [])]],
+                "result": "dirs_ready",
+            },
+            copy_folder_dict: {
+                "args": [KEY_SOURCE_FOLDERS],
+                "result": "folders_copied",
+            },
+            copy_file_dict: {
+                "args": [KEY_SOURCE_FILES],
+                "result": "files_copied",
+            },
+            create_zip_archive: {
+                "args": [lambda j, m, c: [(z["src"], z["output"]) for z in m.get(KEY_ZIP_ARCHIVES, [])]],
+                "result": "archives_created",
+            },
+        },
+        "label": INSTALLED_LABEL,
+        "success_key": "archives_created",
+        "post_state": "CONFIG_LOADING",
+    },
+}

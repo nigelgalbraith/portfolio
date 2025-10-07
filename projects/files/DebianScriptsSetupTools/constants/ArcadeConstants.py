@@ -12,9 +12,9 @@ from modules.system_utils import (
     chown_paths,
     create_group,
     add_user_to_group,
+    remove_paths,
 )
 from modules.package_utils import check_package, install_packages, uninstall_packages
-from modules.archive_utils import remove_paths
 
 # === CONFIG PATHS & KEYS ===
 PRIMARY_CONFIG   = "config/AppConfigSettings.json"
