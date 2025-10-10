@@ -4,7 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any, Dict
 
-from modules.archive_utils import handle_cleanup,
+from modules.archive_utils import handle_cleanup
 from modules.package_utils import (
     check_package,
     download_deb_file,

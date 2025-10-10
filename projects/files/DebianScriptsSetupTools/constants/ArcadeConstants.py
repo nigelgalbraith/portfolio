@@ -342,6 +342,7 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
 
     "UPDATE_SETTINGS": {
         "pipeline": {
+            remove_paths:     { "args": [KEY_REMOVE_PATHS], "result": "removed" },
             make_dirs:        { "args": [KEY_SETUP_DIRS], "result": "setup_dirs_ok" },
             run_commands:     { "args": [KEY_SETUP_CMDS], "result": "setup_ok" },
             copy_file_dict:   { "args": [KEY_SETTINGS_FILES], "result": "settings_files_copied" },
@@ -387,6 +388,7 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
 
     "UNINSTALL": {
         "pipeline": {
+            run_commands:       { "args": [KEY_RESET_CMDS], "result": "reset_ok" },
             remove_paths:       { "args": [KEY_REMOVE_PATHS], "result": "removed" },
             make_dirs:          { "args": [KEY_RESET_DIRS], "result": "cleanup_ok" },
             uninstall_packages: { "args": [KEY_PACKAGES], "result": "uninstalled" },
