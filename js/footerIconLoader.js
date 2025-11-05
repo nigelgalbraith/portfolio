@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
       src: `${imagePathPrefix}/icons/optimized/github.png`,
     },
     {
-      href: "https://linkedin.com/in/nigelgalbraith",
+      href: "https://www.linkedin.com/in/nigel-galbraith/",
       alt: "LinkedIn",
       src: `${imagePathPrefix}/icons/optimized/linkedin.png`,
     },
