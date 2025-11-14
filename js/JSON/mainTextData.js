@@ -5,7 +5,7 @@ const MAIN_TEXT_DATA = {
   "arcadeCabinet": {
     "paragraphs": [
       "For this project, I built a custom MAME arcade cabinet using waste MDF and salvaged timber from my joinery work, giving new life to materials that would have otherwise been discarded. The cabinet was designed from scratch and cut using basic woodworking tools, with a focus on keeping costs low but also maintain an authentic retro look and feel.",
-      "I integrated an i PAC circuit board to handle keyboard inputs from real arcade buttons and joysticks, giving the experience a true arcade feel. The cabinet also includes LED backlighting and a front mounted coin button for added immersion.",
+      "I integrated an i PAC circuit board to handle keyboard inputs from real arcade buttons and joysticks, giving the experience a true arcade feel",
       "It runs Windows with HyperSpin as the front end interface, supporting a library of over 4,000 classic games from various consoles and arcade systems. The build was a great way to combine my interest in retro gaming with hands on woodworking and hardware integration skills."
     ]
   },
