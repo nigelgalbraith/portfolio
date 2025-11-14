@@ -1,0 +1,55 @@
+{
+  "meta": {
+    "main_label": "HTMLPages",
+    "second_label": "JavaScript",
+    "third_label": "DataAndServices",
+    "main_title": "Language Translator – Home Page",
+    "second_title": "Pane Scripts",
+    "third_title": "Intro, Cards, and Messages",
+    "key_main": "HTMLPages",
+    "key_second": "JavaScript",
+    "key_third": "DataAndServices",
+    "key_links": "links",
+    "key_styles": "styles",
+    "key_classes": "classes",
+    "key_class_map": "class_map"
+  },
+
+  "HTMLPages": {
+    "HomePage": "index.html"
+  },
+
+  "JavaScript": {
+    "StatusTickerPane": "StatusTickerPane.js",
+    "IntroPane": "IntroPane.js",
+    "IntroCardPane": "IntroCardPane.js"
+  },
+
+  "DataAndServices": {
+    "IntroTextData": "intro.js",
+    "IntroCardData": "introCard.js",
+    "MessagesData": "messages.json"
+  },
+
+  "links": [
+    ["HomePage", "StatusTickerPane"],
+    ["HomePage", "IntroPane"],
+    ["HomePage", "IntroCardPane"],
+
+    ["IntroPane", "IntroTextData"],
+    ["IntroCardPane", "IntroCardData"],
+    ["StatusTickerPane", "MessagesData"]
+  ],
+
+  "class_map": {
+    "HomePage": "primary",
+
+    "StatusTickerPane": "secondary",
+    "IntroPane": "secondary",
+    "IntroCardPane": "secondary",
+
+    "IntroTextData": "tertiary",
+    "IntroCardData": "tertiary",
+    "MessagesData": "tertiary"
+  }
+}

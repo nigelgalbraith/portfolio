@@ -1,0 +1,31 @@
+graph TD
+
+  subgraph HTMLPages [Language Translator – Home Page]
+    HomePage[index.html]
+  end
+
+  subgraph JavaScript [Pane Scripts]
+    StatusTickerPane[StatusTickerPane.js]
+    IntroPane[IntroPane.js]
+    IntroCardPane[IntroCardPane.js]
+  end
+
+  subgraph DataAndServices [Intro, Cards, and Messages]
+    IntroTextData[intro.js]
+    IntroCardData[introCard.js]
+    MessagesData[messages.json]
+  end
+
+  HomePage --> StatusTickerPane
+  HomePage --> IntroPane
+  HomePage --> IntroCardPane
+  IntroPane --> IntroTextData
+  IntroCardPane --> IntroCardData
+  StatusTickerPane --> MessagesData
+  class HomePage primary
+  class StatusTickerPane secondary
+  class IntroPane secondary
+  class IntroCardPane secondary
+  class IntroTextData tertiary
+  class IntroCardData tertiary
+  class MessagesData tertiary

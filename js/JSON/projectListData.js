@@ -136,5 +136,33 @@ const PROJECT_LIST_DATA = [
         <li>Executes pipelines with full logging and rotation policy.</li>
       </ul>
     `
+  },
+  {
+    "href": "projects/TextCreator.html",
+    "img": "images/thumbs/optimized/TextCreatorOllama.png",
+    "alt": "Text Creator Thumbnail",
+    "title": "Text Creator",
+    "description": `
+      <ul>
+        <li>Local text generator powered by Ollama and Piper.</li>
+        <li>Modular pane based UI with profile loading, custom fields, and checklists.</li>
+        <li>Generates structured prompts and renders text with on page preview.</li>
+        <li>Includes optional text to speech and a full profile builder interface.</li>
+      </ul>
+  `
+  },
+  {
+    "href": "projects/LanguageTranslator.html",
+    "img": "images/thumbs/optimized/LanguageTranslator.png",
+    "alt": "Language Translator Thumbnail",
+    "title": "Language Translator",
+    "description": `
+      <ul>
+        <li>Self-hosted translation UI using LibreTranslate and Piper TTS.</li>
+        <li>Supports English ↔ Spanish and English ↔ Chinese with natural sounding voices.</li>
+        <li>Nginx reverse proxy provides API routes, additional Languages can be added easily</li>
+        <li>Modular UI built with reusable panes for text input, previews, toggles, and TTS.</li>
+      </ul>
+  `
   }
 ];

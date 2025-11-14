@@ -1,0 +1,71 @@
+{
+  "meta": {
+    "main_label": "HTMLPages",
+    "second_label": "JavaScript",
+    "third_label": "DataAndServices",
+    "main_title": "Spanish Translator Page",
+    "second_title": "Pane Scripts",
+    "third_title": "Intro, Messages, and Services",
+    "key_main": "HTMLPages",
+    "key_second": "JavaScript",
+    "key_third": "DataAndServices",
+    "key_links": "links",
+    "key_styles": "styles",
+    "key_classes": "classes",
+    "key_class_map": "class_map"
+  },
+
+  "HTMLPages": {
+    "SpanishPage": "spanish.html"
+  },
+
+  "JavaScript": {
+    "StatusTickerPane": "StatusTickerPane.js",
+    "IntroPane": "IntroPane.js",
+    "TextEntryPane": "TextEntryPane.js",
+    "TranslatePreviewPane": "TranslatePreviewPane.js",
+    "GeneratorPiperPane": "GeneratorPiperPane.js",
+    "ButtonSwitch": "ButtonSwitch.js"
+  },
+
+  "DataAndServices": {
+    "IntroTextData": "intro.js",
+    "MessagesData": "messages.json",
+    "TranslateService": "LibreTranslate service",
+    "PiperEnglishService": "Piper English voice",
+    "PiperSpanishService": "Piper Spanish voice"
+  },
+
+  "links": [
+    ["SpanishPage", "StatusTickerPane"],
+    ["SpanishPage", "IntroPane"],
+    ["SpanishPage", "TextEntryPane"],
+    ["SpanishPage", "TranslatePreviewPane"],
+    ["SpanishPage", "GeneratorPiperPane"],
+    ["SpanishPage", "ButtonSwitch"],
+
+    ["IntroPane", "IntroTextData"],
+    ["StatusTickerPane", "MessagesData"],
+
+    ["TranslatePreviewPane", "TranslateService"],
+    ["GeneratorPiperPane", "PiperEnglishService"],
+    ["GeneratorPiperPane", "PiperSpanishService"]
+  ],
+
+  "class_map": {
+    "SpanishPage": "primary",
+
+    "StatusTickerPane": "secondary",
+    "IntroPane": "secondary",
+    "TextEntryPane": "secondary",
+    "TranslatePreviewPane": "secondary",
+    "GeneratorPiperPane": "secondary",
+    "ButtonSwitch": "secondary",
+
+    "IntroTextData": "tertiary",
+    "MessagesData": "tertiary",
+    "TranslateService": "tertiary",
+    "PiperEnglishService": "tertiary",
+    "PiperSpanishService": "tertiary"
+  }
+}

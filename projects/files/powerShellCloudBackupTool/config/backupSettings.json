@@ -2,31 +2,31 @@
     "Dropbox":  {
                     "Append":  false,
                     "Mirror":  false,
-                    "Source":  "",
-                    "Name":  "",
+                    "Source":  "D:\\Documents\\GitHub\\portfolio.github.io",
+                    "Name":  "portfolio.github.io",
                     "Freq":  "Daily",
                     "Zip":  true,
                     "Keep":  1,
-                    "Dest":  ""
+                    "Dest":  "C:\\Users\\Lenovo\\Dropbox"
                 },
     "Mega":  {
                  "Append":  false,
                  "Mirror":  true,
-                 "Source":  "",
+                 "Source":  "D:\\Documents\\Backups\r\nD:\\Documents\\NZMA\r\nD:\\Documents\\Personal\r\nD:\\Pictures",
                  "Name":  "",
                  "Freq":  null,
                  "Zip":  false,
                  "Keep":  2,
-                 "Dest":  ""
+                 "Dest":  "D:\\Documents\\Mega"
              },
     "Google":  {
                    "Append":  false,
                    "Mirror":  true,
-                   "Source":  "",
+                   "Source":  "D:\\Documents\\Books\r\nD:\\Documents\\Custom Office Templates\r\nD:\\Documents\\Piano\r\nD:\\Documents\\SketchUp\r\nD:\\Documents\\Software\r\nD:\\Documents\\Woodwork\r\nD:\\Documents\\Zoom",
                    "Name":  "",
                    "Freq":  "Daily",
                    "Zip":  false,
                    "Keep":  3,
-                   "Dest":  ""
+                   "Dest":  "D:\\Documents\\Google Drive"
                }
 }

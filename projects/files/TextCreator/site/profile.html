@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Profile Builder — Text Letter</title>
+
+  <!-- Responsive layout -->
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Main CSS -->
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- Inline favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%2306b6d4'/><text x='50' y='62' font-size='58' text-anchor='middle' fill='%23071018'>CL</text></svg>">
+</head>
+
+<body>
+<div class="app">
+
+  <!-- Header + Navigation + Profile Loader -->
+  <header class="header-centered">
+    <h1>Profile Creator</h1>
+
+    <nav class="nav">
+      <div class="nav-links">
+        <a href="index.html">Generator</a>
+        <a href="profile.html" aria-current="page">Profile Builder</a>
+      </div>
+    </nav>
+
+    <div class="profile-loader-wrapper">
+      <!-- Load button pane -->
+      <div
+        data-pane="profile-loader"
+        data-profile-global="LETTER_PROFILE"
+        data-default-profile="data/default.json"
+        data-profile-event="profileLoaded"
+        data-button-label="Load Profile"
+        data-accept="application/json"
+        data-ticker-id="profile-main"
+      ></div>
+
+      <!-- Typewriter ticker pane -->
+      <div
+        class="profile-loader-ticker"
+        data-pane="status-ticker"
+        data-messages-url="data/messages.json"
+        data-ticker-id="profile-main"
+      ></div>
+    </div>
+  </header>
+
+  <!-- Intro text for profile page -->
+  <div data-pane="intro-text" data-intro-key="profile"></div>
+
+  <!-- Builder panes (edit profile + save to JSON) -->
+  <main class="split" id="root">
+    
+    <!-- Key/value fields -->
+    <div data-pane="builder-form"
+         data-builder-global="LETTER_BUILDER_STATE"
+         data-profile-event="profileLoaded"
+         data-title="Form Fields">
+    </div>
+
+    <!-- Checklist groups -->
+    <div data-pane="builder-checklists"
+         data-builder-global="LETTER_BUILDER_STATE"
+         data-profile-event="profileLoaded"
+         data-title="Checklist Groups">
+    </div>
+
+    <!-- Writing style list -->
+    <div data-pane="builder-styles"
+         data-builder-global="LETTER_BUILDER_STATE"
+         data-profile-event="profileLoaded"
+         data-title="Styles">
+    </div>
+
+    <!-- Mode + template + prompt + Ollama config -->
+    <div data-pane="builder-meta"
+         data-builder-global="LETTER_BUILDER_STATE"
+         data-profile-event="profileLoaded"
+         data-title="Profile">
+    </div>
+
+    <!-- Export builder state → JSON file -->
+    <div data-pane="builder-export"
+         data-builder-global="LETTER_BUILDER_STATE"
+         data-title="Export Profile"
+         data-filename="profile.json"
+         data-button-label="Download JSON"
+         data-ticker-id="profile-main">
+    </div>
+
+  </main>
+</div>
+
+<!-- Scripts (ordered so each pane can initialise properly) -->
+<script src="js/ProfileLoaderPane.js"></script>
+<script src="js/BuilderFormPane.js"></script>
+<script src="js/BuilderChecklistPane.js"></script>
+<script src="js/BuilderStylesPane.js"></script>
+<script src="js/BuilderMetaPane.js"></script>
+<script src="js/ExportPane.js"></script>
+<script src="text/intro.js"></script>
+<script src="js/IntroPane.js"></script>
+
+</body>
+</html>

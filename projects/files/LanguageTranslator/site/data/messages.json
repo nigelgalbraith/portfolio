@@ -1,0 +1,9 @@
+{
+  "messages": [
+    "Welcome to the Language Translator. Enter text and choose your target language.",
+    "Tip: You can preview translations live before exporting your result.",
+    "Your translation runs locally using LibreTranslate.",
+    "Switch between languages anytime.",
+    "Need to save your output? Use the Export panel to download your translated text."
+  ]
+}

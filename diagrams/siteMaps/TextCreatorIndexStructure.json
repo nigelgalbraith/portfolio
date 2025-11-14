@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "main_label": "HTMLPages",
+    "second_label": "JavaScript",
+    "third_label": "DataAndServices",
+    "main_title": "Text Creator – Generator Page",
+    "second_title": "Pane Scripts",
+    "third_title": "Data & Services",
+    "key_main": "HTMLPages",
+    "key_second": "JavaScript",
+    "key_third": "DataAndServices",
+    "key_links": "links",
+    "key_styles": "styles",
+    "key_classes": "classes",
+    "key_class_map": "class_map"
+  },
+
+  "HTMLPages": {
+    "GeneratorPage": "index.html"
+  },
+
+  "JavaScript": {
+    "ProfileLoaderPane": "ProfileLoaderPane.js",
+    "StatusTickerPane": "StatusTickerPane.js",
+    "IntroPane": "IntroPane.js",
+
+    "GeneratorFormPane": "GeneratorFormPane.js",
+    "GeneratorChecklistPane": "GeneratorChecklistPane.js",
+    "GeneratorPreviewPane": "GeneratorPreviewPane.js",
+    "GeneratorPiperPane": "GeneratorPiperPane.js",
+
+    "ExportPane": "ExportPane.js"
+  },
+
+  "DataAndServices": {
+    "DefaultProfileData": "default.json",
+    "MessagesData": "messages.json",
+    "IntroTextData": "introText.js",
+    "OllamaService": "Local Ollama service",
+    "PiperService": "Local Piper service"
+  },
+
+  "links": [
+    ["GeneratorPage", "ProfileLoaderPane"],
+    ["GeneratorPage", "StatusTickerPane"],
+    ["GeneratorPage", "IntroPane"],
+    ["GeneratorPage", "ExportPane"],
+
+    ["GeneratorPage", "GeneratorFormPane"],
+    ["GeneratorPage", "GeneratorChecklistPane"],
+    ["GeneratorPage", "GeneratorPreviewPane"],
+    ["GeneratorPage", "GeneratorPiperPane"],
+
+    ["ProfileLoaderPane", "DefaultProfileData"],
+    ["StatusTickerPane", "MessagesData"],
+    ["IntroPane", "IntroTextData"],
+
+    ["GeneratorPreviewPane", "OllamaService"],
+    ["GeneratorPiperPane", "PiperService"]
+  ],
+
+  "class_map": {
+    "GeneratorPage": "primary",
+
+    "ProfileLoaderPane": "secondary",
+    "StatusTickerPane": "secondary",
+    "IntroPane": "secondary",
+    "GeneratorFormPane": "secondary",
+    "GeneratorChecklistPane": "secondary",
+    "GeneratorPreviewPane": "secondary",
+    "GeneratorPiperPane": "secondary",
+    "ExportPane": "secondary",
+
+    "DefaultProfileData": "tertiary",
+    "MessagesData": "tertiary",
+    "IntroTextData": "tertiary",
+    "OllamaService": "tertiary",
+    "PiperService": "tertiary"
+  }
+}

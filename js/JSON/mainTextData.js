@@ -124,5 +124,19 @@ const MAIN_TEXT_DATA = {
       "Instead of maintaining one standard image, the scripts let you define rules per device type and apply them with a single command.",
       "Core logic is split into utility modules for logging, service setup, file permissions, JSON parsing, and more. This makes them easy to extend and maintain, with room to grow into GUI tools, remote execution, or Ansible style automation later on."
       ]
-    }
+    },
+  "textCreator": {
+    "paragraphs": [
+      "This project is a standalone text generator built to run entirely offline using Ollama and Piper. I wanted a tool that was simple, fast, and private, without relying on any external services or cloud APIs. Everything is handled locally through Docker containers, with the frontend served by Nginx and the model processing done through a JavaScript interface.",
+      "The system loads a profile file, builds dynamic form fields and checklists, and then sends the structured prompt to the LLM to generate text. It also includes a profile builder so you can design your own templates, styles, and metadata without editing the JSON manually.",
+      "A built-in text-to-speech option runs through Piper, letting the tool read the generated text out loud using a local voice model. The whole setup focuses on practicality and ease of use: clean layouts, modular panes, no frameworks, and everything bundled into a Docker compose file so it can be deployed on any machine with a single command."
+    ]
+  },
+  "languageTranslator": {
+    "paragraphs": [
+      "This project is a self hosted language translator that combines LibreTranslate with Piper text to speech. It runs entirely in Docker, with Nginx serving the frontend and proxying clean routes to the translation and voice services. Everything stays local, with no external cloud APIs.",
+      "The main menu lets you choose between Spanish and Chinese, each with a dedicated page for both directions of translation. The UI is built from small reusable panes for text entry, translation previews, toggle buttons, and audio playback. Each lane is wired with data attributes, so the same JavaScript modules can drive both languages.",
+      "LibreTranslate handles the actual translation, while three Piper instances provide natural voices for English, Spanish, and Chinese. Nginx exposes simple endpoints for /translate and the per language TTS services, keeping the browser code straightforward and easy to follow."
+    ]
+  }
 };

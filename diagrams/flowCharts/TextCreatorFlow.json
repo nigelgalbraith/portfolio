@@ -1,0 +1,13 @@
+{
+  "nodes": {
+    "LoadProfile":     { "label": "Load or Build Profile" },
+    "BuildInterface":  { "label": "Generate Form & Options" },
+    "GenerateText":  { "label": "Create Text via Ollama" },
+    "ReviewOutput":    { "label": "Review, TTS, or Export" }
+  },
+  "connections": [
+    ["LoadProfile", "BuildInterface"],
+    ["BuildInterface", "GenerateText"],
+    ["GenerateText", "ReviewOutput"]
+  ]
+}

@@ -1,0 +1,46 @@
+graph TD
+
+  subgraph HTMLPages [Chinese Translator Page]
+    ChinesePage[chinese.html]
+  end
+
+  subgraph JavaScript [Pane Scripts]
+    StatusTickerPane[StatusTickerPane.js]
+    IntroPane[IntroPane.js]
+    TextEntryPane[TextEntryPane.js]
+    TranslatePreviewPane[TranslatePreviewPane.js]
+    GeneratorPiperPane[GeneratorPiperPane.js]
+    ButtonSwitch[ButtonSwitch.js]
+  end
+
+  subgraph DataAndServices [Intro, Messages, and Services]
+    IntroTextData[intro.js]
+    MessagesData[messages.json]
+    TranslateService[LibreTranslate service]
+    PiperEnglishService[Piper English voice]
+    PiperChineseService[Piper Chinese voice]
+  end
+
+  ChinesePage --> StatusTickerPane
+  ChinesePage --> IntroPane
+  ChinesePage --> TextEntryPane
+  ChinesePage --> TranslatePreviewPane
+  ChinesePage --> GeneratorPiperPane
+  ChinesePage --> ButtonSwitch
+  IntroPane --> IntroTextData
+  StatusTickerPane --> MessagesData
+  TranslatePreviewPane --> TranslateService
+  GeneratorPiperPane --> PiperEnglishService
+  GeneratorPiperPane --> PiperChineseService
+  class ChinesePage primary
+  class StatusTickerPane secondary
+  class IntroPane secondary
+  class TextEntryPane secondary
+  class TranslatePreviewPane secondary
+  class GeneratorPiperPane secondary
+  class ButtonSwitch secondary
+  class IntroTextData tertiary
+  class MessagesData tertiary
+  class TranslateService tertiary
+  class PiperEnglishService tertiary
+  class PiperChineseService tertiary

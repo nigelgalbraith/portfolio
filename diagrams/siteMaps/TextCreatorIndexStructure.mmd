@@ -1,0 +1,52 @@
+graph TD
+
+  subgraph HTMLPages [Text Creator – Generator Page]
+    GeneratorPage[index.html]
+  end
+
+  subgraph JavaScript [Pane Scripts]
+    ProfileLoaderPane[ProfileLoaderPane.js]
+    StatusTickerPane[StatusTickerPane.js]
+    IntroPane[IntroPane.js]
+    GeneratorFormPane[GeneratorFormPane.js]
+    GeneratorChecklistPane[GeneratorChecklistPane.js]
+    GeneratorPreviewPane[GeneratorPreviewPane.js]
+    GeneratorPiperPane[GeneratorPiperPane.js]
+    ExportPane[ExportPane.js]
+  end
+
+  subgraph DataAndServices [Data & Services]
+    DefaultProfileData[default.json]
+    MessagesData[messages.json]
+    IntroTextData[introText.js]
+    OllamaService[Local Ollama service]
+    PiperService[Local Piper service]
+  end
+
+  GeneratorPage --> ProfileLoaderPane
+  GeneratorPage --> StatusTickerPane
+  GeneratorPage --> IntroPane
+  GeneratorPage --> ExportPane
+  GeneratorPage --> GeneratorFormPane
+  GeneratorPage --> GeneratorChecklistPane
+  GeneratorPage --> GeneratorPreviewPane
+  GeneratorPage --> GeneratorPiperPane
+  ProfileLoaderPane --> DefaultProfileData
+  StatusTickerPane --> MessagesData
+  IntroPane --> IntroTextData
+  GeneratorPreviewPane --> OllamaService
+  GeneratorPiperPane --> PiperService
+  class GeneratorPage primary
+  class ProfileLoaderPane secondary
+  class StatusTickerPane secondary
+  class IntroPane secondary
+  class GeneratorFormPane secondary
+  class GeneratorChecklistPane secondary
+  class GeneratorPreviewPane secondary
+  class GeneratorPiperPane secondary
+  class ExportPane secondary
+  class DefaultProfileData tertiary
+  class MessagesData tertiary
+  class IntroTextData tertiary
+  class OllamaService tertiary
+  class PiperService tertiary

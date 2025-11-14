@@ -1,0 +1,13 @@
+{
+  "nodes": {
+    "EnterText":        { "label": "Enter source text" },
+    "SendTranslate":    { "label": "Send request to Translate" },
+    "ShowTranslation":  { "label": "Show translated text" },
+    "OptionalTTS":      { "label": "Play audio with Piper" }
+  },
+  "connections": [
+    ["EnterText", "SendTranslate"],
+    ["SendTranslate", "ShowTranslation"],
+    ["ShowTranslation", "OptionalTTS"]
+  ]
+}

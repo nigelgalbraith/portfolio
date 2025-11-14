@@ -1,0 +1,70 @@
+graph TD
+
+  subgraph HTMLPages [Text Creator HTML Structure]
+    GeneratorPage[index.html]
+    ProfileBuilderPage[profile.html]
+  end
+
+  subgraph JavaScript [Pane Scripts]
+    ProfileLoaderPane[ProfileLoaderPane.js]
+    StatusTickerPane[StatusTickerPane.js]
+    IntroPane[IntroPane.js]
+    GeneratorFormPane[GeneratorFormPane.js]
+    GeneratorChecklistPane[GeneratorChecklistPane.js]
+    GeneratorPreviewPane[GeneratorPreviewPane.js]
+    GeneratorPiperPane[GeneratorPiperPane.js]
+    BuilderFormPane[BuilderFormPane.js]
+    BuilderChecklistPane[BuilderChecklistPane.js]
+    BuilderStylesPane[BuilderStylesPane.js]
+    BuilderMetaPane[BuilderMetaPane.js]
+    ExportPane[ExportPane.js]
+  end
+
+  subgraph DataAndServices [Profile, Content, and Services]
+    DefaultProfileData[default.json]
+    MessagesData[messages.json]
+    IntroTextData[introText.js]
+    OllamaService[Local Ollama service]
+    PiperService[Local Piper service]
+  end
+
+  GeneratorPage --> ProfileLoaderPane
+  GeneratorPage --> StatusTickerPane
+  GeneratorPage --> IntroPane
+  GeneratorPage --> ExportPane
+  ProfileBuilderPage --> ProfileLoaderPane
+  ProfileBuilderPage --> StatusTickerPane
+  ProfileBuilderPage --> IntroPane
+  ProfileBuilderPage --> ExportPane
+  GeneratorPage --> GeneratorFormPane
+  GeneratorPage --> GeneratorChecklistPane
+  GeneratorPage --> GeneratorPreviewPane
+  GeneratorPage --> GeneratorPiperPane
+  ProfileBuilderPage --> BuilderFormPane
+  ProfileBuilderPage --> BuilderChecklistPane
+  ProfileBuilderPage --> BuilderStylesPane
+  ProfileBuilderPage --> BuilderMetaPane
+  ProfileLoaderPane --> DefaultProfileData
+  StatusTickerPane --> MessagesData
+  IntroPane --> IntroTextData
+  GeneratorPreviewPane --> OllamaService
+  GeneratorPiperPane --> PiperService
+  class GeneratorPage primary
+  class ProfileBuilderPage primary
+  class ProfileLoaderPane secondary
+  class StatusTickerPane secondary
+  class IntroPane secondary
+  class GeneratorFormPane secondary
+  class GeneratorChecklistPane secondary
+  class GeneratorPreviewPane secondary
+  class GeneratorPiperPane secondary
+  class BuilderFormPane secondary
+  class BuilderChecklistPane secondary
+  class BuilderStylesPane secondary
+  class BuilderMetaPane secondary
+  class ExportPane secondary
+  class DefaultProfileData tertiary
+  class MessagesData tertiary
+  class IntroTextData tertiary
+  class OllamaService tertiary
+  class PiperService tertiary

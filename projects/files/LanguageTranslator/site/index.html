@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Language Translator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Main stylesheet -->
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- Simple inline favicon (same as existing pages) -->
+  <link
+    rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%2306b6d4'/><text x='50' y='62' font-size='58' text-anchor='middle' fill='%23071018'>CL</text></svg>"
+  >
+</head>
+
+<body>
+<div class="app">
+
+  <!-- Header + Navigation + Typewriter ticker -->
+  <header class="header-centered">
+    <h1>Language Translator</h1>
+
+    <div class="profile-loader-wrapper">
+      <!-- Typewriter ticker pane (same mechanism as your other pages) -->
+      <div
+        class="profile-loader-ticker"
+        data-pane="status-ticker"
+        data-messages-url="data/messages.json"
+        data-ticker-id="profile-main"
+      ></div>
+    </div>
+  </header>
+
+  <!-- Intro + choice cards -->
+  <main class="split" id="root">
+    <section class="intro-hero">
+
+    <!-- Intro Text -->
+    <div class="intro-text">
+      <div data-pane="intro-text" data-intro-key="home"></div>
+    </div> 
+
+    <!-- Cards-->
+    <div class="translator-grid">
+        <div data-pane="intro-card" data-card-key="spanish"></div>
+        <div data-pane="intro-card" data-card-key="chinese"></div>
+    </div>
+    </section>
+  </main>
+</div>
+
+<!-- Only need the panes used on this page -->
+<script src="js/StatusTickerPane.js"></script>
+<script src="text/intro.js"></script>
+<script src="text/introCard.js"></script> 
+<script src="js/IntroPane.js"></script>
+<script src="js/IntroCardPane.js"></script>
+
+</body>
+</html>

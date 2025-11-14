@@ -1,0 +1,75 @@
+services:
+
+  # ------------------------------------------------
+  # nginx webserver
+  # ------------------------------------------------
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: translate-ui-nginx:latest
+    container_name: translate-ui
+    ports:
+      - "8080:80"
+    depends_on:
+      - translate
+      - piper-en
+      - piper-es
+      - piper-zh
+    restart: unless-stopped
+
+
+  # ------------------------------------------------
+  # LibreTranslate
+  # ------------------------------------------------
+
+  translate:
+    image: libretranslate/libretranslate:latest
+    container_name: translate
+    environment:
+      - LT_LOAD_ONLY=en,es,zh
+      - LT_FRONTEND_LANGUAGE=en
+    ports:
+      - "5001:5000"
+    restart: unless-stopped
+
+  # ------------------------------------------------
+  # Piper english voice
+  # ------------------------------------------------
+
+  piper-en:
+    image: artibex/piper-http:latest
+    container_name: piper-en
+    environment:
+      - MODEL_DOWNLOAD_LINK=https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/amy/low/en_US-amy-low.onnx?download=true
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+
+  # ------------------------------------------------
+  # Piper spanish voice
+  # ------------------------------------------------
+
+  piper-es:
+    image: artibex/piper-http:latest
+    container_name: piper-es
+    environment:
+      - MODEL_DOWNLOAD_LINK=https://huggingface.co/rhasspy/piper-voices/resolve/main/es/es_AR/daniela/high/es_AR-daniela-high.onnx?download=true
+    ports:
+      - "5002:5000"
+    restart: unless-stopped
+
+  # ------------------------------------------------
+  # Piper chinese voice
+  # ------------------------------------------------
+
+  piper-zh:
+    image: artibex/piper-http:latest
+    container_name: piper-zh
+    environment:
+      - MODEL_DOWNLOAD_LINK=https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/zh/zh_CN/huayan/x_low/zh_CN-huayan-x_low.onnx?download=true
+    ports:
+      - "5003:5000"
+    restart: unless-stopped
+

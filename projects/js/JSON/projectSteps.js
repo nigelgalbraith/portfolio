@@ -489,5 +489,107 @@ thematic: [
             `
           
       }
-   ]
+   ],
+     // Step-by-step breakdown for the Text Creator project
+    textCreator: [
+      {
+        title: "Text Creator System Overview",
+        img: "TextCreatorFlow.png",
+        alt: "Text Creator site, Docker, and services overview",
+        text: "This diagram shows how the Text Creator is wired together. The browser loads static HTML, CSS, and JavaScript from Nginx. When you generate a Text, the frontend sends a request to Ollama for local LLM text generation, and Piper handles optional text-to-speech. Everything runs on your own machine via Docker, so there are no external APIs or cloud services involved."
+      },
+      {
+        title: "Generator Page Layout and Pane Hooks",
+        img: "TextCreatorIndexStructure.png",
+        alt: "HTML layout for the Text Generator page",
+        text: "The Generator page uses a clean HTML layout with data-pane attributes marking each section of the interface. The JavaScript panes—such as the form builder, checklist builder, preview, and Piper controls—locate their matching data-pane elements and build the UI at runtime. This modular structure keeps the HTML simple while allowing each pane script to handle its own logic and events independently."
+      },
+      {
+        title: "Profile Builder Page Layout and Pane Hooks",
+        img: "TextCreatorProfileStructure.png",
+        alt: "HTML layout for the Profile Builder page",
+        text: "The Profile Builder page follows the same modular pattern, using data-pane attributes to mark areas for form editing, checklists, writing styles, and profile metadata. The builder-specific pane scripts attach themselves to these regions and generate the interactive editing tools. This makes it easy to modify or extend the profile structure without touching the underlying HTML."
+      },
+      {
+        title: "Profile Loader and Status Ticker",
+        img: "TextCreatorProfileLoader.png",
+        alt: "Profile loader and status ticker area",
+        text: "At the top of the page, the Profile Loader pane lets you load a JSON profile from disk or fall back to a default. The Status Ticker pane reads short messages from a JSON file and cycles through them, giving light feedback while profiles load or Texts are generated. Both panes share a simple event system so they stay in sync with the rest of the app."
+      },
+      {
+        title: "Step 1: Load or Create a Profile",
+        img: "TextCreatorProfileBuilder.png",
+        alt: "Profile Builder screen for editing fields and options",
+        text: "Start by loading an existing profile or creating a new one in the Profile Builder page. Here you can define form fields, checklist groups, writing styles, and meta settings such as mode and prompt template. All changes are stored in memory until you export them as JSON, so it’s easy to experiment without breaking anything."
+      },
+      {
+        title: "Step 2: Fill in Text Details",
+        img: "TextCreatorForm.png",
+        alt: "Text generator form fields",
+        text: "On the Generator page, the form pane builds its inputs from the active profile. You can enter recipient details, context, role information, and any other fields the profile defines. Checklist panes sit alongside the form, letting you tick skills, strengths, or talking points that should be included in the final Text."
+      },
+      {
+        title: "Step 3: Generate and Review the Text",
+        img: "TextCreatorPreview.png",
+        alt: "Generated Text preview pane",
+        text: "When you click the generate button, the Preview pane collects values from the form and checklists, builds a structured prompt, and sends it to the Ollama endpoint. The response is rendered into the preview area, where you can read through the Text, make small edits, and regenerate if needed."
+      },
+      {
+        title: "Step 4: Listen with Text-to-Speech",
+        img: "TextCreatorPiper.png",
+        alt: "Text-to-speech controls using Piper",
+        text: "If you want to hear how the Text sounds, the Piper pane can read it aloud. It sends the current preview text to the local Piper HTTP service and plays back the audio. This helps catch awkward phrasing or pacing that might be missed when reading silently."
+      },
+      {
+        title: "Step 5: Export and Reuse Profiles",
+        img: "TextCreatorExport.png",
+        alt: "Export profile to JSON",
+        text: "Once you are happy with a profile, use the Export pane to download it as a JSON file. You can keep different profiles for emails, or more general writing. Loading a profile later restores the same form layout, checklist options, and style settings, which keeps the workflow consistent over time."
+      }
+    ],
+    // Step-by-step breakdown for the Language Translator project
+    languageTranslator: [
+      {
+        title: "Language Translator Overview",
+        img: "LanguageTranslatorFlow.png",
+        alt: "High level flow for the Language Translator",
+        text: "This project is a small translation hub that runs entirely in Docker. Nginx serves the static HTML, CSS, and JavaScript, while LibreTranslate provides machine translation and three Piper instances handle text to speech for English, Spanish, and Chinese. The browser talks only to the Nginx routes, which keeps the frontend simple and the services neatly isolated."
+      },
+      {
+        title: "Main Menu and Intro Cards",
+        img: "LanguageTranslatorHTMLStructure.png",
+        alt: "HTML structure for the Language Translator main page",
+        text: "The main Language Translator page presents an intro block and two cards one for Spanish and one for Chinese. Each card is rendered by a reusable intro card pane, which pulls its content from a shared introCard dataset. From here users can jump directly into the translator page for their chosen language."
+      },
+      {
+        title: "Spanish Translator Layout",
+        img: "SpanishTranslatorStructure.png",
+        alt: "Spanish translator HTML layout",
+        text: "The Spanish page is split into two lanes: English → Spanish and Spanish → English. Each lane uses pane scripts for text entry, translation preview, and text to speech playback. A button switch pane wraps each lane so it can be shown or hidden cleanly, but all of the wiring is driven by data attributes in the HTML."
+      },
+      {
+        title: "Chinese Translator Layout",
+        img: "ChineseTranslatorStructure.png",
+        alt: "Chinese translator HTML layout",
+        text: "The Chinese page follows the same pattern as the Spanish page. One lane handles English → Chinese, the other Chinese → English. The same text entry, preview, and Piper panes are reused with different IDs and language codes, showing how the UI modules can be reused just by changing configuration in the markup."
+      },
+      {
+        title: "Translation and TTS Flow",
+        img: "LanguageTranslatorFlow.png",
+        alt: "Translation and text to speech flow",
+        text: "When the user clicks Translate, the preview pane sends the source text and language codes to the /translate route, which Nginx forwards to LibreTranslate. For audio, the Piper panes send the relevant text to one of the TTS routes, which Nginx forwards to the matching Piper container. This keeps network calls consistent and means the UI never needs to know where the services are actually running."
+      },
+      {
+        title: "Translate Text",
+        img: "TranslatorTranslate.png",
+        alt: "Screenshot showing English to Spanish translation",
+        text: "Type your text into the entry box and click Translate. The preview pane updates using the local LibreTranslate service. You can switch direction at any time, making it easy to move between English ↔ Spanish or English ↔ Chinese depending on the page."
+      },
+      {
+        title: "Listen Using Text-to-Speech",
+        img: "TranslatorPlayback.png",
+        alt: "Screenshot showing playback controls for translated text",
+        text: "Once the translation is shown, click the speaker icon to hear it spoken aloud. Each language page uses its own Piper voice engine behind the scenes, routed through Nginx."
+      }
+    ],
 };

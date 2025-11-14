@@ -67,5 +67,23 @@ const ProjectLinks = {
         alt: "Zip",
         download: true
       }
+    ],
+    textCreator: [
+      {
+        label: "Text Creator Tool",
+        href: "files/TextCreator.zip",
+        icon: "../images/icons/optimized/zip.png",
+        alt: "Zip",
+        download: true
+      }
+    ],
+    languageTranslator: [
+      {
+        label: "Language Translator Tool",
+        href: "files/LanguageTranslator.zip",
+        icon: "../images/icons/optimized/zip.png",
+        alt: "Zip",
+        download: true
+      }
     ]
 };

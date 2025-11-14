@@ -1,0 +1,60 @@
+{
+  "mode": "llm",
+  "ollama": {
+    "model": "phi3",
+    "options": { "temperature": 0.3 }
+  },
+
+  "prompt": "You are an email-writing assistant. Write a clear and concise email using the following context.\n\nSENDER: {{sender}}\nRECIPIENT: {{recipient}}\nSUBJECT: {{subject}}\nSTYLE: {{style}}\nOPTION1: {{option1}}\nOPTION2: {{option2}}\nMESSAGE_CONTEXT:\n{{message_context}}\n\nRequirements:\n- Keep tone {{style}}.\n- Weave in OPTION1 / OPTION2 naturally.\n- 2–4 short paragraphs.\n- No placeholders.\n- End with the sender's name.",
+  
+  "styles": ["Professional", "Friendly", "Direct", "Concise"],
+
+  "form": {
+    "sender": "Jane Doe",
+    "recipient": "Recipient Name",
+    "subject": "General Inquiry",
+    "message_context": "Write the message context here...",
+    "style": "Professional"
+  },
+
+  "options": [
+    {
+      "title": "Topics",
+      "items": [
+        { "label": "Project update", "selected": true },
+        { "label": "Request for information", "selected": true },
+        { "label": "Follow-up", "selected": true },
+        { "label": "Technical explanation", "selected": true },
+        { "label": "Feedback", "selected": true }
+      ]
+    },
+    {
+      "title": "Technical Areas",
+      "items": [
+        { "label": "Automation", "selected": true },
+        { "label": "Scripting", "selected": true },
+        { "label": "System administration", "selected": true },
+        { "label": "Troubleshooting", "selected": true }
+      ]
+    },
+    {
+      "title": "Tone Adjustments",
+      "items": [
+        { "label": "Polite", "selected": true },
+        { "label": "Confident", "selected": true },
+        { "label": "Straightforward", "selected": true },
+        { "label": "Helpful", "selected": true }
+      ]
+    },
+    {
+      "title": "Context",
+      "items": [
+        { "label": "Internal communication", "selected": true },
+        { "label": "Client communication", "selected": true },
+        { "label": "General enquiry", "selected": true }
+      ]
+    }
+  ],
+
+  "template": "Subject: {{subject}}\n\nHi {{recipient}},\n\n{{option1}} {{option2}}\n\nKind regards,\n{{sender}}"
+}
