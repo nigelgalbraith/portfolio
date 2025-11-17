@@ -35,18 +35,20 @@
       ></div>
     </div>
   </header>
-
-  <!-- Intro text block -->
-  <div class="intro-text">
-    <div data-pane="intro-text" data-intro-key="spanish"></div>
-  </div> 
-
+  
   <!-- Main layout -->
   <main class="split" id="root">
+
+  <!-- Intro text block -->
+  <div  class="intro-text" 
+        data-pane="intro-text" 
+        data-intro-key="spanish">
+  </div>
 
     <!-- ButtonSwitch.js toggle visibility -->
     <!-- English → Spanish lane -->
     <div
+      class="split"
       data-pane="button-switch"
       data-mode-id="en-es"
       data-title="English → Spanish"
@@ -92,6 +94,7 @@
 
     <!-- Spanish → English lane -->
     <div
+      class="split"
       data-pane="button-switch"
       data-mode-id="es-en"
       data-title="Spanish → English"

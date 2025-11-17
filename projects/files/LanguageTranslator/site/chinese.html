@@ -36,15 +36,19 @@
     </div>
   </header>
 
-  <!-- Intro Text -->
-  <div class="intro-text">
-    <div data-pane="intro-text" data-intro-key="chinese"></div>
-  </div> 
-
+  <!-- Main layout -->
   <main class="split" id="root">
+
+
+  <!-- Intro Text -->
+  <div  class="intro-text"
+        data-pane="intro-text" 
+        data-intro-key="chinese">
+  </div> 
 
     <!-- English → Chinese lane -->
     <div
+      class="split"
       data-pane="button-switch"
       data-mode-id="en-zh"
       data-title="English → Chinese"
@@ -90,6 +94,7 @@
 
     <!-- Chinese → English lane -->
     <div
+      class="split"
       data-pane="button-switch"
       data-mode-id="zh-en"
       data-title="Chinese → English"

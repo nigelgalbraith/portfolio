@@ -5,8 +5,8 @@
     "options": { "temperature": 0.3 }
   },
 
-  "prompt": "You are an email-writing assistant. Write a clear and concise email using the following context.\n\nSENDER: {{sender}}\nRECIPIENT: {{recipient}}\nSUBJECT: {{subject}}\nSTYLE: {{style}}\nOPTION1: {{option1}}\nOPTION2: {{option2}}\nMESSAGE_CONTEXT:\n{{message_context}}\n\nRequirements:\n- Keep tone {{style}}.\n- Weave in OPTION1 / OPTION2 naturally.\n- 2–4 short paragraphs.\n- No placeholders.\n- End with the sender's name.",
-  
+  "prompt": "You are an email-writing assistant. Write a clear and concise email using the following context.\n\nSENDER: {{sender}}\nRECIPIENT: {{recipient}}\nSUBJECT: {{subject}}\nSTYLE: {{style}}\nCHECKLIST_GROUP_1: {{option1}}\nCHECKLIST_GROUP_2: {{option2}}\nMESSAGE_CONTEXT:\n{{message_context}}\n\nRequirements:\n- Keep tone {{style}}.\n- Weave in the checklist items naturally.\n- 2–4 short paragraphs.\n- No placeholders.\n- End with the sender's name.",
+
   "styles": ["Professional", "Friendly", "Direct", "Concise"],
 
   "form": {
@@ -20,6 +20,7 @@
   "options": [
     {
       "title": "Topics",
+      "slug": "option1",
       "items": [
         { "label": "Project update", "selected": true },
         { "label": "Request for information", "selected": true },
@@ -30,6 +31,7 @@
     },
     {
       "title": "Technical Areas",
+      "slug": "option2",
       "items": [
         { "label": "Automation", "selected": true },
         { "label": "Scripting", "selected": true },
@@ -39,6 +41,7 @@
     },
     {
       "title": "Tone Adjustments",
+      "slug": "option2",
       "items": [
         { "label": "Polite", "selected": true },
         { "label": "Confident", "selected": true },
@@ -48,6 +51,7 @@
     },
     {
       "title": "Context",
+      "slug": "option2",
       "items": [
         { "label": "Internal communication", "selected": true },
         { "label": "Client communication", "selected": true },
