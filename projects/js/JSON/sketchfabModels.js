@@ -13,12 +13,6 @@ const SKETCHFAB_MODELS = {
         icon: "../images/icons/optimized/SketchFabIcon.png",
         label: "View Model",
         download: false
-      },
-      {
-        href: "files/Models/Stair_Garden_Boxes.zip",
-        icon: "../images/icons/optimized/zip.png",
-        label: "Download Model",
-        download: true
       }
     ]
   },
@@ -34,12 +28,6 @@ const SKETCHFAB_MODELS = {
         icon: "../images/icons/optimized/SketchFabIcon.png",
         label: "View Model",
         download: false
-      },
-      {
-        href: "files/Models/Planter_Boxes.zip",
-        icon: "../images/icons/optimized/zip.png",
-        label: "Download Model",
-        download: true
       }
     ]
   }
