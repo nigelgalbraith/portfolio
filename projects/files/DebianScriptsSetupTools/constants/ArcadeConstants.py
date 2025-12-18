@@ -13,6 +13,7 @@ from modules.system_utils import (
     create_group,
     add_user_to_group,
     remove_paths,
+    protect_folders,
 )
 from modules.package_utils import check_package, install_packages, uninstall_packages
 
@@ -36,6 +37,7 @@ KEY_CHOWN_PATHS        = "ChownPaths"
 KEY_CHOWN_USER         = "ChownUser"     
 KEY_CHOWN_GROUP        = "ChownGroup"    
 KEY_CHOWN_RECURSIVE    = "ChownRecursive"
+KEY_PROTECTED_FOLDERS  = "ProtectedFolders"
 
 # Membership (arcade-specific)
 KEY_ARCADE_USERS       = "arcadeUsers"   
@@ -87,6 +89,10 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
                 # Membership (optional)
                 KEY_ARCADE_USERS: ["root"],
                 KEY_ARCADE_GROUPS: ["Arcade"],
+                # Protected folders
+                KEY_PROTECTED_FOLDERS: [
+                    {"path": "~/Arcade", "owner": "root", "group": "root", "permissions": "2755"}
+                ],
             },
             "retroarch": {
                 KEY_PACKAGES: [
@@ -143,6 +149,9 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
                 # Membership (optional)
                 KEY_ARCADE_USERS: ["root"],
                 KEY_ARCADE_GROUPS: ["Arcade"],
+                KEY_PROTECTED_FOLDERS: [
+                    {"path": "~/Arcade", "owner": "root", "group": "root", "permissions": "2755"}
+                ],
             }
         }
     }
@@ -193,6 +202,15 @@ SECONDARY_VALIDATION: Dict[str, Any] = {
     KEY_CHOWN_PATHS: {
         "required_job_fields": {
             "path": str,
+        },
+        "allow_empty": True,
+    },
+    KEY_PROTECTED_FOLDERS: {
+        "required_job_fields": {
+            "path": str,
+            "owner": str,
+            "group": str,
+            "permissions": str,
         },
         "allow_empty": True,
     },
@@ -314,7 +332,7 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
             copy_folder_dict: { "args": [KEY_SETTINGS_FOLDERS], "result": "settings_folders_copied" },
             chmod_paths:      { "args": [KEY_CHMOD_PATHS], "result": "chmod_ok" },
 
-                create_group: {
+            create_group: {
                     "args": [lambda j, m, c: m.get(KEY_ARCADE_GROUPS)],
                     "result": "groups_ok"
                 },
@@ -334,6 +352,7 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
                 ],
                 "result": "chown_ok"
             },
+            protect_folders: { "args": [KEY_PROTECTED_FOLDERS], "result": "protected_ok" },
         },
         "label": INSTALLED_LABEL,
         "success_key": "setup_ok",
@@ -369,6 +388,7 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
                 ],
                 "result": "chown_ok"
             },
+            protect_folders: { "args": [KEY_PROTECTED_FOLDERS], "result": "protected_ok" },
         },
         "label": INSTALLED_LABEL,
         "success_key": "setup_ok",

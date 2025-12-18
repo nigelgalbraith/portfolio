@@ -295,6 +295,35 @@ def sudo_copy_with_chown(src: Path | str, dest: Path | str, owner: str = "plex:p
         return False
 
 
+def protect_folders(entries: List[Dict[str, Any]]) -> bool:
+    """Apply chown + chmod to a list of protected folder entries."""
+    if not entries:
+        return True
+    ok = True
+    for entry in entries:
+        try:
+            path = entry.get("path")
+            if not path:
+                continue
+            owner = entry.get("owner", "root")
+            group = entry.get("group", "root")
+            perms = entry.get("permissions", "755")
+            p = Path(path)
+            if not p.exists():
+                print(f"[protect_folders] WARNING: {p} missing; skipping")
+                ok = False
+                continue
+            target = f"{owner}:{group}"
+            subprocess.run(["chown", target, str(p)], check=True)
+            os.chmod(p, int(perms, 8))
+            print(f"[protect_folders] chown {target} {p}")
+            print(f"[protect_folders] chmod {perms} {p}")
+        except Exception as e:
+            print(f"[protect_folders] ERROR: {entry.get('path','?')}: {e}")
+            ok = False
+    return ok
+
+
 def expand_path(path_str: str) -> Path:
     """Safely expand a path string."""
     return Path(os.path.expanduser(path_str)) if path_str else Path("")
