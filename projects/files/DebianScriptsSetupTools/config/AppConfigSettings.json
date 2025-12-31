@@ -16,7 +16,8 @@
   "YOUR MEDIACENTRE MODEL": {
     "Packages": "config/MediaCentre/MediaCentrePackages.json",
     "DEB": "config/MediaCentre/MediaCentreDEB.json",
-    "Services": "config/MediaCentre/MediaCentreServices.json",
+    "StartupServices": "config/MediaCentre/MediaCentreStartupServices.json",
+    "ShutdownServices": "config/MediaCentre/MediaCentreShutdownServices.json",
     "Firewall": "config/MediaCentre/MediaCentreFW.json",
     "Flatpak": "config/MediaCentre/MediaCentreFlatpak.json",
     "Networks": "config/MediaCentre/MediaCentreNetwork.json",
