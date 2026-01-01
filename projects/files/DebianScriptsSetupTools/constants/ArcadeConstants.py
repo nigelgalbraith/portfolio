@@ -77,7 +77,7 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
                 ],
                 KEY_SETTINGS_FOLDERS: [],
                 KEY_CHMOD_PATHS: [
-                    {"path": "~/Arcade", "mode": "755", "recursive": True}
+                    {"path": "~/Arcade", "mode": "755"}
                 ],
                 # Ownership (single owner & group)
                 KEY_CHOWN_USER: "root",
