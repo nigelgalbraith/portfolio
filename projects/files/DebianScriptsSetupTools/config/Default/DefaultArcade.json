@@ -19,12 +19,7 @@
           "/usr/games/mame -listxml > /var/lib/arcade/mame.xml && echo \"mame.xml export completed!\""
         ],
         "ChmodPaths": [
-          { "path": "/usr/share/arcade", 
-              "mode": "2755", 
-              "recursive": true },
-          { "path": "/var/lib/arcade",   
-              "mode": "2775", 
-              "recursive": true }
+          { "path": "/var/lib/arcade",  "mode": "2775"}
         ],
         "ChownUser": "nigel",
         "ChownGroup": "arcade",
@@ -91,12 +86,7 @@
           "bash -lc 'bash settings/retroarch/install_retroarch_launcher.sh'"
         ],
         "ChmodPaths": [
-          { "path": "/usr/share/arcade", 
-              "mode": "2755", 
-              "recursive": true },
-          { "path": "/var/lib/arcade/retroarch",   
-              "mode": "2775", 
-              "recursive": true }
+          { "path": "/var/lib/arcade/retroarch", "mode": "2775"}
         ],
         "ChownUser": "nigel",
         "ChownGroup": "arcade",
