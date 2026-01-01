@@ -58,9 +58,52 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
                     "~/.mame",
                     "~/Arcade"
                 ],
+
                 KEY_SETUP_CMDS: [
                     "/usr/games/mame -listxml > ~/Arcade/mame.xml && echo \"mame.xml export completed!\""
                 ],
+
+                KEY_SETTINGS_FILES: [
+                    {
+                        KEY_COPY_NAME: "MainConfig",
+                        KEY_SRC: "settings/mame/Desktop/Desktop-mame_template.ini",
+                        KEY_DEST: "~/.mame/mame.ini"
+                    },
+                    {
+                        KEY_COPY_NAME: "UIConfig",
+                        KEY_SRC: "settings/mame/Desktop/Desktop-ui_template.ini",
+                        KEY_DEST: "~/.mame/ui.ini"
+                    },
+                    {
+                        KEY_COPY_NAME: "PluginConfig",
+                        KEY_SRC: "settings/mame/Desktop/Desktop-plugin_template.ini",
+                        KEY_DEST: "~/.mame/plugin.ini"
+                    }
+                ],
+                KEY_SETTINGS_FOLDERS: [],
+
+                KEY_CHOWN_USER: "root",
+                KEY_CHOWN_GROUP: "Arcade",
+                KEY_CHOWN_RECURSIVE: True,
+                KEY_CHOWN_PATHS: [
+                    {"path": "~/Arcade"}
+                ],
+
+                KEY_CHMOD_PATHS: [
+                    {"path": "~/Arcade", "mode": "755", "recursive": True}
+                ],
+
+                KEY_ARCADE_USERS: ["root"],
+                KEY_ARCADE_GROUPS: ["Arcade"],
+                KEY_PROTECTED_FOLDERS: [
+                    {
+                        "path": "~/Arcade",
+                        "owner": "root",
+                        "group": "root",
+                        "permissions": "2755"
+                    }
+                ],
+
                 KEY_REMOVE_PATHS: [
                     "~/.mame/*.ini"
                 ],
@@ -70,30 +113,8 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
                 KEY_RESET_CMDS: [
                     "bash -lc 'cd ~/.mame && /usr/games/mame -createconfig'"
                 ],
-                KEY_SETTINGS_FILES: [
-                    {KEY_COPY_NAME: "MainConfig",   KEY_SRC: "settings/mame/Desktop/Desktop-mame_template.ini",   KEY_DEST: "~/.mame/mame.ini"},
-                    {KEY_COPY_NAME: "UIConfig",     KEY_SRC: "settings/mame/Desktop/Desktop-ui_template.ini",     KEY_DEST: "~/.mame/ui.ini"},
-                    {KEY_COPY_NAME: "PluginConfig", KEY_SRC: "settings/mame/Desktop/Desktop-plugin_template.ini", KEY_DEST: "~/.mame/plugin.ini"}
-                ],
-                KEY_SETTINGS_FOLDERS: [],
-                KEY_CHMOD_PATHS: [
-                    {"path": "~/Arcade", "mode": "755"}
-                ],
-                # Ownership (single owner & group)
-                KEY_CHOWN_USER: "root",
-                KEY_CHOWN_GROUP: "Arcade",
-                KEY_CHOWN_RECURSIVE: True,
-                KEY_CHOWN_PATHS: [
-                    {"path": "~/Arcade"}
-                ],
-                # Membership (optional)
-                KEY_ARCADE_USERS: ["root"],
-                KEY_ARCADE_GROUPS: ["Arcade"],
-                # Protected folders
-                KEY_PROTECTED_FOLDERS: [
-                    {"path": "~/Arcade", "owner": "root", "group": "root", "permissions": "2755"}
-                ],
             },
+
             "retroarch": {
                 KEY_PACKAGES: [
                     "retroarch",
@@ -112,6 +133,7 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
                     "libretro-bsnes-mercury-balanced",
                     "libretro-bsnes-mercury-performance"
                 ],
+
                 KEY_SETUP_DIRS: [
                     "~/.config/retroarch",
                     "~/.config/retroarch/system",
@@ -121,9 +143,46 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
                     "~/.config/retroarch/states",
                     "~/.config/retroarch/playlists"
                 ],
+
                 KEY_SETUP_CMDS: [
                     "bash -lc 'python3 settings/retroarch/generate_playlists.py --core-map Desktop/Desktop-CoreMap.json'"
                 ],
+
+                KEY_SETTINGS_FILES: [],
+                KEY_SETTINGS_FOLDERS: [
+                    {
+                        KEY_COPY_NAME: "PSX BIOS folder",
+                        KEY_SRC: "~/Arcade/Sony Playstation/bios",
+                        KEY_DEST: "~/.config/retroarch/system"
+                    },
+                    {
+                        KEY_COPY_NAME: "PS2 BIOS folder",
+                        KEY_SRC: "~/Arcade/Sony Playstation 2/bios",
+                        KEY_DEST: "~/.config/retroarch/system/pcsx2/bios"
+                    }
+                ],
+
+                KEY_CHOWN_USER: "root",
+                KEY_CHOWN_RECURSIVE: True,
+                KEY_CHOWN_PATHS: [
+                    {"path": "~/.config/retroarch"}
+                ],
+
+                KEY_CHMOD_PATHS: [
+                    {"path": "~/.config/retroarch", "mode": "755", "recursive": True}
+                ],
+
+                KEY_ARCADE_USERS: ["root"],
+                KEY_ARCADE_GROUPS: ["Arcade"],
+                KEY_PROTECTED_FOLDERS: [
+                    {
+                        "path": "~/Arcade",
+                        "owner": "root",
+                        "group": "root",
+                        "permissions": "2755"
+                    }
+                ],
+
                 KEY_REMOVE_PATHS: [
                     "~/.config/retroarch/retroarch.cfg",
                     "~/.config/retroarch/playlists/*.lpl"
@@ -132,30 +191,11 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
                     "~/.config/retroarch"
                 ],
                 KEY_RESET_CMDS: [],
-                KEY_SETTINGS_FILES: [],
-                KEY_SETTINGS_FOLDERS: [
-                    {KEY_COPY_NAME: "PSX BIOS folder", KEY_SRC: "~/Arcade/Sony Playstation/bios",     KEY_DEST: "~/.config/retroarch/system"},
-                    {KEY_COPY_NAME: "PS2 BIOS folder", KEY_SRC: "~/Arcade/Sony Playstation 2/bios",  KEY_DEST: "~/.config/retroarch/system/pcsx2/bios"}
-                ],
-                KEY_CHMOD_PATHS: [
-                    {"path": "~/.config/retroarch", "mode": "755", "recursive": True}
-                ],
-                # Ownership
-                KEY_CHOWN_USER: "root",
-                KEY_CHOWN_RECURSIVE: True,
-                KEY_CHOWN_PATHS: [
-                    {"path": "~/.config/retroarch"}
-                ],
-                # Membership (optional)
-                KEY_ARCADE_USERS: ["root"],
-                KEY_ARCADE_GROUPS: ["Arcade"],
-                KEY_PROTECTED_FOLDERS: [
-                    {"path": "~/Arcade", "owner": "root", "group": "root", "permissions": "2755"}
-                ],
             }
         }
     }
 }
+
 
 # === VALIDATION CONFIG ===
 VALIDATION_CONFIG: Dict[str, Any] = {
@@ -196,6 +236,7 @@ SECONDARY_VALIDATION: Dict[str, Any] = {
         "required_job_fields": {
             "path": str,
             "mode": str,
+            "recursive": bool, 
         },
         "allow_empty": True,
     },
@@ -330,7 +371,6 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
             run_commands:     { "args": [KEY_SETUP_CMDS], "result": "setup_ok" },
             copy_file_dict:   { "args": [KEY_SETTINGS_FILES], "result": "settings_files_copied" },
             copy_folder_dict: { "args": [KEY_SETTINGS_FOLDERS], "result": "settings_folders_copied" },
-            chmod_paths:      { "args": [KEY_CHMOD_PATHS], "result": "chmod_ok" },
 
             create_group: {
                     "args": [lambda j, m, c: m.get(KEY_ARCADE_GROUPS)],
@@ -352,6 +392,7 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
                 ],
                 "result": "chown_ok"
             },
+            chmod_paths:      { "args": [KEY_CHMOD_PATHS], "result": "chmod_ok" },
             protect_folders: { "args": [KEY_PROTECTED_FOLDERS], "result": "protected_ok" },
         },
         "label": INSTALLED_LABEL,
@@ -366,7 +407,6 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
             run_commands:     { "args": [KEY_SETUP_CMDS], "result": "setup_ok" },
             copy_file_dict:   { "args": [KEY_SETTINGS_FILES], "result": "settings_files_copied" },
             copy_folder_dict: { "args": [KEY_SETTINGS_FOLDERS], "result": "settings_folders_copied" },
-            chmod_paths:      { "args": [KEY_CHMOD_PATHS], "result": "chmod_ok" },
 
             create_group: {
                 "args": [lambda j, m, c: m.get(KEY_ARCADE_GROUPS)],
@@ -388,6 +428,7 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
                 ],
                 "result": "chown_ok"
             },
+            chmod_paths:      { "args": [KEY_CHMOD_PATHS], "result": "chmod_ok" },
             protect_folders: { "args": [KEY_PROTECTED_FOLDERS], "result": "protected_ok" },
         },
         "label": INSTALLED_LABEL,

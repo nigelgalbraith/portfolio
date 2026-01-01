@@ -19,7 +19,8 @@
           "/usr/games/mame -listxml > /var/lib/arcade/mame.xml && echo \"mame.xml export completed!\""
         ],
         "ChmodPaths": [
-          { "path": "/var/lib/arcade",  "mode": "2775"}
+          { "path": "/usr/share/arcade", "mode": "2755", "recursive": true },
+          { "path": "/var/lib/arcade/retroarch", "mode": "2775", "recursive": true }
         ],
         "ChownUser": "nigel",
         "ChownGroup": "arcade",
@@ -31,20 +32,26 @@
         "RemovePaths": [
           "/etc/mame/*.ini"
         ],
-        "ResetDirs": [ "/etc/mame" ],
+        "ResetDirs": ["/etc/mame"],
         "ResetCmds": [
           "bash -lc 'cd /etc/mame && /usr/games/mame -createconfig'"
         ],
         "SettingsFiles": [
-          { "copyName": "MainConfig",   
-              "src": "settings/mame/Desktop/Desktop-mame_template.ini",   
-              "dest": "/etc/mame/mame.ini" },
-          { "copyName": "UIConfig",     
-              "src": "settings/mame/Desktop/Desktop-ui_template.ini",     
-              "dest": "/etc/mame/ui.ini" },
-          { "copyName": "PluginConfig", 
-              "src": "settings/mame/Desktop/Desktop-plugin_template.ini", 
-              "dest": "/etc/mame/plugin.ini" }
+          {
+            "copyName": "MainConfig",
+            "src": "settings/mame/Desktop/Desktop-mame_template.ini",
+            "dest": "/etc/mame/mame.ini"
+          },
+          {
+            "copyName": "UIConfig",
+            "src": "settings/mame/Desktop/Desktop-ui_template.ini",
+            "dest": "/etc/mame/ui.ini"
+          },
+          {
+            "copyName": "PluginConfig",
+            "src": "settings/mame/Desktop/Desktop-plugin_template.ini",
+            "dest": "/etc/mame/plugin.ini"
+          }
         ],
         "SettingsFolders": [],
         "arcadeUsers": ["nigel"],
@@ -86,35 +93,42 @@
           "bash -lc 'bash settings/retroarch/install_retroarch_launcher.sh'"
         ],
         "ChmodPaths": [
-          { "path": "/var/lib/arcade/retroarch", "mode": "2775"}
+          { "path": "/usr/share/arcade", "mode": "2755", "recursive": true },
+          { "path": "/var/lib/arcade/retroarch", "mode": "2775", "recursive": true }
         ],
         "ChownUser": "nigel",
         "ChownGroup": "arcade",
         "ChownRecursive": true,
-          "ChownPaths": [
-            { "path": "/var/lib/arcade/retroarch" }
+        "ChownPaths": [
+          { "path": "/var/lib/arcade/retroarch" }
         ],
         "RemovePaths": [
           "/etc/retroarch/retroarch.cfg",
           "/var/lib/arcade/retroarch/playlists/*.lpl",
           "/home/*/.config/retroarch/retroarch.cfg"
         ],
-        "ResetDirs": [ "/etc/retroarch" ],
-        "ResetCmds": [ 
+        "ResetDirs": ["/etc/retroarch"],
+        "ResetCmds": [
           "bash -lc 'bash settings/retroarch/uninstall_retroarch_launcher.sh'"
-          ],
+        ],
         "SettingsFiles": [
-          { "copyName": "RetroArchConfig", 
-              "src": "settings/retroarch/Desktop/Desktop-template-retroarch.cfg", 
-              "dest": "/etc/retroarch/retroarch.cfg" }
+          {
+            "copyName": "RetroArchConfig",
+            "src": "settings/retroarch/Desktop/Desktop-template-retroarch.cfg",
+            "dest": "/etc/retroarch/retroarch.cfg"
+          }
         ],
         "SettingsFolders": [
-          { "copyName": "PSX BIOS folder", 
-              "src": "/usr/share/arcade/Sony Playstation/bios",    
-              "dest": "/etc/retroarch/system" },
-          { "copyName": "PS2 BIOS folder", 
-              "src": "/usr/share/arcade/Sony Playstation 2/bios", 
-              "dest": "/etc/retroarch/system/pcsx2/bios" }
+          {
+            "copyName": "PSX BIOS folder",
+            "src": "/usr/share/arcade/Sony Playstation/bios",
+            "dest": "/etc/retroarch/system"
+          },
+          {
+            "copyName": "PS2 BIOS folder",
+            "src": "/usr/share/arcade/Sony Playstation 2/bios",
+            "dest": "/etc/retroarch/system/pcsx2/bios"
+          }
         ],
         "arcadeUsers": ["nigel"],
         "arcadeGroups": ["arcade"],

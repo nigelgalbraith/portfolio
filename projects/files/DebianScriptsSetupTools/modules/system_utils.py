@@ -533,21 +533,42 @@ def convert_dict_list_to_str(
         del job[from_key]
     return jobs
 
-def chmod_paths(entries: Union[List[str], List[dict]]) -> bool:
-    """Apply chmod to paths, default 644, support dicts with mode."""
-    if not entries: return True
+
+def chmod_paths(entries, recursive: bool = False) -> bool:
+    """Apply chmod to paths; supports per-entry 'recursive' for directories."""
+    if not entries:
+        return True
     ok = True
     for item in entries:
-        path, mode = (item.get("path"), item.get("mode", "644")) if isinstance(item, dict) else (item, "644")
+        if isinstance(item, dict):
+            path = item.get("path")
+            mode = item.get("mode", "644")
+            rec = bool(item.get("recursive", recursive))
+        else:
+            path, mode, rec = item, "644", recursive
         try:
             p = Path(path)
             if not p.exists():
-                print(f"[chmod_paths] WARNING: {p} missing; skipping"); ok = False; continue
-            os.chmod(p, int(mode, 8))
-            print(f"[chmod_paths] chmod {mode} {p}")
+                print(f"[chmod_paths] WARNING: {p} missing; skipping")
+                ok = False
+                continue
+            mode_i = int(mode, 8)
+            if rec and p.is_dir():
+                for root, dirs, files in os.walk(p):
+                    os.chmod(root, mode_i)
+                    for d in dirs:
+                        os.chmod(Path(root) / d, mode_i)
+                    for f in files:
+                        os.chmod(Path(root) / f, mode_i)
+                print(f"[chmod_paths] chmod -R {mode} {p}")
+            else:
+                os.chmod(p, mode_i)
+                print(f"[chmod_paths] chmod {mode} {p}")
         except Exception as e:
-            print(f"[chmod_paths] ERROR: {path}: {e}"); ok = False
+            print(f"[chmod_paths] ERROR: {path}: {e}")
+            ok = False
     return ok
+
 
 def chown_paths(user: str, paths: list[dict], recursive: bool=False, default_group: str|None=None) -> bool:
     if not user or not paths:
@@ -644,13 +665,17 @@ def remove_paths(paths) -> bool:
         return True
     if isinstance(paths, str):
         paths = [paths]
-    trash_dir = Path.home() / ".local/share/Trash/files"
+    if os.geteuid() == 0 and os.environ.get("SUDO_USER"):
+        user_home = Path("/home") / os.environ["SUDO_USER"]
+    else:
+        user_home = Path.home()
+    trash_dir = user_home / ".local/share/Trash/files"
     trash_dir.mkdir(parents=True, exist_ok=True)
     print(f"[remove_paths] Trash directory: {trash_dir}")
     all_ok = True
     for p in paths:
         expanded = os.path.expanduser(p)
-        matches = glob.glob(expanded)  
+        matches = glob.glob(expanded)
         if not matches:
             print(f"[remove_paths] No matches for: {p}")
             all_ok = False

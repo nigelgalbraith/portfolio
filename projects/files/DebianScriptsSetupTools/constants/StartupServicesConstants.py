@@ -107,7 +107,7 @@ DETECTION_CONFIG = {
 }
 
 # === LOGGING ===
-LOG_PREFIX      = "services"
+LOG_PREFIX      = "StartUpServices"
 LOG_DIR         = Path.home() / "logs" / "services"
 LOGS_TO_KEEP    = 10
 ROTATE_LOG_NAME = f"{LOG_PREFIX}_*.log"
