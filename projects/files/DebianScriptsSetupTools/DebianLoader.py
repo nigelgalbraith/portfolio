@@ -61,14 +61,14 @@ REQUIRED_CONSTANTS = [
 
 # === AVAILABLE CONSTANTS MODULES ===
 AVAILABLE_CONSTANTS = {
-    "Package Installer utility": ("constants.PackageConstants", 1000),
-    "Deb Installer utility": ("constants.DebConstants", 1000),
-    "Flatpak Installer utility": ("constants.FlatpakConstants", 1000),
-    "ThirdParty Installer utility": ("constants.ThirdPartyConstants", 1000),
-    "Archive Installer utility": ("constants.ArchiveConstants", 1000),
-    "Docker Manager utility": ("constants.DockerConstants", 1000),
-    "DOSLoader utility": ("constants.DOSLoaderConstants", 1000),
-    "Backup utility": ("constants.BackupConstants", 1000),
+    "Package Installer utility": ("constants.PackageConstants", None),
+    "Deb Installer utility": ("constants.DebConstants", None),
+    "Flatpak Installer utility": ("constants.FlatpakConstants", None),
+    "ThirdParty Installer utility": ("constants.ThirdPartyConstants", None),
+    "Archive Installer utility": ("constants.ArchiveConstants", None),
+    "Docker Manager utility": ("constants.DockerConstants", None),
+    "DOSLoader utility": ("constants.DOSLoaderConstants", None),
+    "Backup utility": ("constants.BackupConstants", None),
     "Arcade utility": ("constants.ArcadeConstants", 0),
     "Launcher utility": ("constants.LauncherConstants", 0),
     "IPCam utility": ("constants.IPCamConstants", 0),
