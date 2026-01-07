@@ -19,7 +19,7 @@
           "/usr/games/mame -listxml > /var/lib/arcade/mame.xml && echo \"mame.xml export completed!\""
         ],
         "ChmodPaths": [
-          { "path": "/usr/share/arcade", "mode": "2755", "recursive": true },
+          { "path": "/usr/share/arcade", "mode": "3775", "recursive": true },
           { "path": "/var/lib/arcade/retroarch", "mode": "2775", "recursive": true }
         ],
         "ChownUser": "nigel",
@@ -58,10 +58,10 @@
         "arcadeGroups": ["arcade"],
         "ProtectedFolders": [
           {
-            "path": "/usr/share/arcade",
+            "path": "/mnt/plexmedia/PlexMedia/arcade",
             "owner": "root",
-            "group": "root",
-            "permissions": "755"
+            "group": "arcade",
+            "permissions": "3775"
           }
         ]
       },
@@ -108,7 +108,7 @@
 
 
         "ChmodPaths": [
-          { "path": "/usr/share/arcade", "mode": "2755", "recursive": true },
+          { "path": "/usr/share/arcade", "mode": "3775", "recursive": true },
           { "path": "/var/lib/arcade/retroarch", "mode": "2775", "recursive": true }
         ],
         "ChownUser": "nigel",
@@ -149,10 +149,10 @@
         "arcadeGroups": ["arcade"],
         "ProtectedFolders": [
           {
-            "path": "/usr/share/arcade",
+            "path": "/mnt/plexmedia/PlexMedia/arcade",
             "owner": "root",
-            "group": "root",
-            "permissions": "755"
+            "group": "arcade",
+            "permissions": "3775"
           }
         ]
       }

@@ -1,9 +1,21 @@
+# DownloadConstants.py
+
 from __future__ import annotations
 
 from pathlib import Path
 from typing import Dict, Any, List
 
-from modules.download_utils import run_downloads_from_configs, downloads_status
+from modules.download_utils import (
+    load_download_plans,
+    plan_bulk_for_downloads,
+    plan_jobs_for_downloads_quiet,
+    plan_jobs_for_downloads,
+    run_bulk_downloads,
+    run_file_downloads,
+    finalize_download_configs,
+    downloads_status,
+    filter_incomplete_configs,
+)
 from modules.system_utils import run_script_dict
 
 # === CONFIG PATHS & KEYS ===
@@ -16,7 +28,6 @@ DEFAULT_CONFIG   = "Default"
 KEY_LINKS_CONFIGS      = "LinksConfigs"
 
 # === SCRIPT RUNNER SETTINGS ===
-DOWNLOAD_SCRIPT        = "settings/downloads/download_links.py"
 LINKS_TO_JSON_SCRIPT   = "settings/downloads/links_to_json.py"
 
 # === EXAMPLE JSON ===
@@ -96,7 +107,7 @@ ACTIONS: Dict[str, Dict[str, Any]] = {
         "filter_status": False,
         "label": UNINSTALLED_LABEL,
         "prompt": "Downloads incomplete. Download missing files now? [y/n]: ",
-        "execute_state": "DOWNLOAD",
+        "execute_state": "DOWNLOAD_MISSING",
         "post_state": "CONFIG_LOADING",
     },
 
@@ -105,7 +116,7 @@ ACTIONS: Dict[str, Dict[str, Any]] = {
         "filter_status": None,
         "label": None,
         "prompt": "Re-run downloads (will skip existing files automatically)? [y/n]: ",
-        "execute_state": "DOWNLOAD",
+        "execute_state": "DOWNLOAD_RERUN",
         "post_state": "CONFIG_LOADING",
     },
 
@@ -141,15 +152,71 @@ SUB_MENU: Dict[str, str] = {
 }
 
 # === DEPENDENCIES ===
-DEPENDENCIES: List[str] = []
+DEPENDENCIES: List[str] = ["wget", "unzip", "p7zip-full"]
 
 # === PIPELINES ===
 PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
 
-    "DOWNLOAD": {
+    "DOWNLOAD_MISSING": {
         "pipeline": {
-            run_downloads_from_configs: {
-                "args": [KEY_LINKS_CONFIGS, DOWNLOAD_SCRIPT],
+            filter_incomplete_configs: {
+                "args": [KEY_LINKS_CONFIGS],
+                "result": "cfgs"
+            },
+            load_download_plans: {
+                "args": ["cfgs"],
+                "result": "plans",
+            },
+            plan_bulk_for_downloads: {
+                "args": ["plans"],
+                "result": "plans",
+            },
+            plan_jobs_for_downloads_quiet: {
+                "args": ["plans"],
+                "result": "plans",
+            },
+            run_bulk_downloads: {
+                "args": ["plans"],
+                "result": "bulk_ok",
+            },
+            run_file_downloads: {
+                "args": ["plans"],
+                "result": "jobs_ok",
+            },
+            finalize_download_configs: {
+                "args": ["plans"],
+                "result": "download_ok",
+            },
+        },
+        "label": INSTALLED_LABEL,
+        "success_key": "download_ok",
+        "post_state": "CONFIG_LOADING",
+    },
+
+    "DOWNLOAD_RERUN": {
+        "pipeline": {
+            load_download_plans: {
+                "args": [KEY_LINKS_CONFIGS],
+                "result": "plans",
+            },
+            plan_bulk_for_downloads: {
+                "args": ["plans"],
+                "result": "plans",
+            },
+            plan_jobs_for_downloads: {
+                "args": ["plans"],
+                "result": "plans",
+            },
+            run_bulk_downloads: {
+                "args": ["plans"],
+                "result": "bulk_ok",
+            },
+            run_file_downloads: {
+                "args": ["plans"],
+                "result": "jobs_ok",
+            },
+            finalize_download_configs: {
+                "args": ["plans"],
                 "result": "download_ok",
             },
         },
@@ -175,4 +242,3 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
         "post_state": "CONFIG_LOADING",
     },
 }
-

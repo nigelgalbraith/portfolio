@@ -1,0 +1,19 @@
+{
+  "title": "NASA",
+  "output_path": "/DownloadPath/to/output/",
+  "extract": false,
+  "extract_extensions": [],
+  "show_skipped": false,
+  "skipped_preview": 10,
+  "files": [
+    {
+      "url": "https://images-assets.nasa.gov/image/JSC-20160920-PH_JNB01_0002/JSC-20160920-PH_JNB01_0002~medium.jpg",
+      "check_file": "JSC-20160920-PH_JNB01_0002~medium.jpg"
+    }
+  ],
+  "bulk_zip": {
+    "url": "",
+    "archive_ext": "zip",
+    "check_files": []
+  }
+}
