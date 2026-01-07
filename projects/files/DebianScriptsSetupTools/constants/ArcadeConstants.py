@@ -8,6 +8,7 @@ from modules.system_utils import (
     copy_folder_dict,
     make_dirs,
     run_commands,
+    run_script_dict,
     chmod_paths,
     chown_paths,
     create_group,
@@ -25,6 +26,7 @@ DEFAULT_CONFIG   = "Default"
 
 # === JSON KEYS ===
 KEY_SETUP_CMDS         = "SetupCmds"
+KEY_SETUP_SCRIPTS      = "SetupScripts"
 KEY_RESET_CMDS         = "ResetCmds"
 KEY_SETTINGS_FILES     = "SettingsFiles"
 KEY_SETTINGS_FOLDERS   = "SettingsFolders"
@@ -34,14 +36,16 @@ KEY_SETUP_DIRS         = "SetupDirs"
 KEY_RESET_DIRS         = "ResetDirs"
 KEY_CHMOD_PATHS        = "ChmodPaths"
 KEY_CHOWN_PATHS        = "ChownPaths"
-KEY_CHOWN_USER         = "ChownUser"     
-KEY_CHOWN_GROUP        = "ChownGroup"    
+KEY_CHOWN_USER         = "ChownUser"
+KEY_CHOWN_GROUP        = "ChownGroup"
 KEY_CHOWN_RECURSIVE    = "ChownRecursive"
 KEY_PROTECTED_FOLDERS  = "ProtectedFolders"
+KEY_SCRIPT             = "script"
+KEY_ARGS               = "args"
 
 # Membership (arcade-specific)
-KEY_ARCADE_USERS       = "arcadeUsers"   
-KEY_ARCADE_GROUPS      = "arcadeGroups"  
+KEY_ARCADE_USERS       = "arcadeUsers"
+KEY_ARCADE_GROUPS      = "arcadeGroups"
 
 # === SUB-JSON KEYS ===
 KEY_COPY_NAME          = "copyName"
@@ -61,6 +65,13 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
 
                 KEY_SETUP_CMDS: [
                     "/usr/games/mame -listxml > ~/Arcade/mame.xml && echo \"mame.xml export completed!\""
+                ],
+
+                KEY_SETUP_SCRIPTS: [
+                    {
+                        KEY_SCRIPT: "settings/controllers/install_xbox_controller.sh",
+                        KEY_ARGS: []
+                    }
                 ],
 
                 KEY_SETTINGS_FILES: [
@@ -144,8 +155,13 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
                     "~/.config/retroarch/playlists"
                 ],
 
-                KEY_SETUP_CMDS: [
-                    "bash -lc 'python3 settings/retroarch/generate_playlists.py --core-map Desktop/Desktop-CoreMap.json'"
+                KEY_SETUP_CMDS: [],
+
+                KEY_SETUP_SCRIPTS: [
+                    {
+                        KEY_SCRIPT: "settings/retroarch/generate_playlists.py",
+                        KEY_ARGS: ["--core-map", "Desktop/Desktop-CoreMap.json"]
+                    }
                 ],
 
                 KEY_SETTINGS_FILES: [],
@@ -207,6 +223,7 @@ VALIDATION_CONFIG: Dict[str, Any] = {
         KEY_SETUP_DIRS: list,
         KEY_RESET_DIRS: list,
         KEY_SETUP_CMDS: list,
+        KEY_SETUP_SCRIPTS: list,
         KEY_RESET_CMDS: list,
         KEY_CHMOD_PATHS: list,
         KEY_CHOWN_PATHS: list,
@@ -232,11 +249,18 @@ SECONDARY_VALIDATION: Dict[str, Any] = {
         },
         "allow_empty": True,
     },
+    KEY_SETUP_SCRIPTS: {
+        "required_job_fields": {
+            KEY_SCRIPT: str,
+            KEY_ARGS: list,
+        },
+        "allow_empty": True,
+    },
     KEY_CHMOD_PATHS: {
         "required_job_fields": {
             "path": str,
             "mode": str,
-            "recursive": bool, 
+            "recursive": bool,
         },
         "allow_empty": True,
     },
@@ -296,6 +320,7 @@ PLAN_COLUMN_ORDER = [
     KEY_SETTINGS_FOLDERS,
     KEY_REMOVE_PATHS,
     KEY_SETUP_DIRS,
+    KEY_SETUP_SCRIPTS,
     KEY_SETUP_CMDS,
     KEY_CHMOD_PATHS,
     KEY_CHOWN_PATHS,
@@ -368,6 +393,7 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
         "pipeline": {
             install_packages: { "args": [KEY_PACKAGES], "result": "installed" },
             make_dirs:        { "args": [KEY_SETUP_DIRS], "result": "setup_dirs_ok" },
+            run_script_dict:  { "args": [KEY_SETUP_SCRIPTS], "result": "setup_scripts_ok" },
             run_commands:     { "args": [KEY_SETUP_CMDS], "result": "setup_ok" },
             copy_file_dict:   { "args": [KEY_SETTINGS_FILES], "result": "settings_files_copied" },
             copy_folder_dict: { "args": [KEY_SETTINGS_FOLDERS], "result": "settings_folders_copied" },
@@ -403,7 +429,7 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
     "UPDATE_SETTINGS": {
         "pipeline": {
             remove_paths:     { "args": [KEY_REMOVE_PATHS], "result": "removed" },
-            make_dirs:        { "args": [KEY_SETUP_DIRS], "result": "setup_dirs_ok" },
+            run_script_dict:  { "args": [KEY_SETUP_SCRIPTS], "result": "setup_scripts_ok" },
             run_commands:     { "args": [KEY_SETUP_CMDS], "result": "setup_ok" },
             copy_file_dict:   { "args": [KEY_SETTINGS_FILES], "result": "settings_files_copied" },
             copy_folder_dict: { "args": [KEY_SETTINGS_FOLDERS], "result": "settings_folders_copied" },

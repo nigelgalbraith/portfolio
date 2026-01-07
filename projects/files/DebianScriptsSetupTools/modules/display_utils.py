@@ -178,7 +178,11 @@ def pick_constants_interactively(choices: dict[str, tuple[str, Optional[int]]]) 
     allowed = {
         label: mod
         for label, (mod, uid) in choices.items()
-        if uid is None or uid == current_uid
+        if (
+            uid is None
+            or uid == current_uid
+            or (isinstance(uid, int) and uid >= 1000 and current_uid >= 1000)
+        )
     }
     disallowed = {
         label: (mod, uid)
@@ -187,7 +191,7 @@ def pick_constants_interactively(choices: dict[str, tuple[str, Optional[int]]]) 
     }
     if disallowed:
         disallowed_lines = [
-            f"[{'root only' if uid == 0 else f'uid {uid} only'}] {label}"
+            f"[{'root only' if uid == 0 else f'uid {uid}+ only'}] {label}"
             for label, (_, uid) in disallowed.items()
         ]
         print(

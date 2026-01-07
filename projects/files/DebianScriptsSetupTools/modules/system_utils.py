@@ -19,7 +19,6 @@ from shutil import which
 from pathlib import Path
 from typing import List, Sequence, Dict, Any, Union
 
-
 def create_user(username: str) -> bool:
     """Create a system user (nologin) if it doesn't already exist. Return True on success/no-op."""
     import pwd, subprocess
@@ -503,6 +502,31 @@ def run_commands(post_install_cmds) -> bool:
             print(f"PostInstall failed (rc={rc}): {cmd}")
             all_ok = False
     return all_ok
+
+
+def run_script_dict(scripts: List[Dict[str, Any]]) -> bool:
+    """   Run scripts defined as: { "script": "path/to/script", "args": ["--foo", "bar"] } Returns True if all scripts succeed. """
+    script_runners = {
+        ".sh":   ["bash"],
+        ".bash": ["bash"],
+        ".py":   ["python3"],
+    }
+    for entry in scripts:
+        script = entry.get("script")
+        args   = entry.get("args", [])
+        if not script:
+            raise ValueError("Script entry missing 'script' key")
+        script_path = Path(script).expanduser()
+        if not script_path.exists():
+            raise FileNotFoundError(f"Script not found: {script_path}")
+        ext = script_path.suffix.lower()
+        if ext in script_runners:
+            cmd = script_runners[ext] + [str(script_path)] + list(args)
+        else:
+            cmd = [str(script_path)] + list(args)
+        subprocess.run(cmd, check=True)
+    return True
+
 
 
 def convert_dict_list_to_str(

@@ -24,7 +24,8 @@
     "Archive": "config/MediaCentre/MediaCentreArchive.json",
     "RDP": "config/MediaCentre/MediaCentreRDP.json",
     "IPCam": "config/MediaCentre/MediaCentreIPCam.json",
-    "Arcade": "config/MediaCentre/MediaCentreArcade.json"
+    "Arcade": "config/MediaCentre/MediaCentreArcade.json",
+    "Downloads": "config/MediaCentre/MediaCentreDownload.json"
   },
   "YOUR LAPTOP MODEL": {
     "Packages": "config/Laptop/LaptopPackages.json",
@@ -52,6 +53,7 @@
     "RDP": "config/Default/DefaultRDP.json",
     "IPCam": "config/Default/DefaultIPCam.json",
     "DOSLoader": "config/Defualt/DefaultMSDOS.json",
-    "Arcade": "config/Defualt/DefaultArcade.json"
+    "Arcade": "config/Defualt/DefaultArcade.json",
+    "Downloads": "config/Defualt/DefualtDownload.json"
   }
 }

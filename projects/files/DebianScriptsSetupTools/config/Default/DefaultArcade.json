@@ -39,17 +39,17 @@
         "SettingsFiles": [
           {
             "copyName": "MainConfig",
-            "src": "settings/mame/Default/Default-mame_template.ini",
+            "src": "settings/mame/Desktop/Desktop-mame_template.ini",
             "dest": "/etc/mame/mame.ini"
           },
           {
             "copyName": "UIConfig",
-            "src": "settings/mame/Default/Default-ui_template.ini",
+            "src": "settings/mame/Desktop/Desktop-ui_template.ini",
             "dest": "/etc/mame/ui.ini"
           },
           {
             "copyName": "PluginConfig",
-            "src": "settings/mame/Default/Default-plugin_template.ini",
+            "src": "settings/mame/Desktop/Desktop-plugin_template.ini",
             "dest": "/etc/mame/plugin.ini"
           }
         ],
@@ -88,16 +88,25 @@
           "/var/lib/arcade/retroarch/states",
           "/var/lib/arcade/retroarch/playlists"
         ],
-        "SetupCmds": [
-          "bash -lc 'python3 settings/retroarch/generate_playlists.py --core-map Default/Default-CoreMap.json'",
-          "bash -lc 'bash settings/retroarch/install_retroarch_launcher.sh'",
-          "bash -lc 'python3 settings/retroarch/download_roms.py settings/retroarch/Default/Default-romConfig/Default-RomConfig-NES.json'",
-          "bash -lc 'python3 settings/retroarch/download_roms.py settings/retroarch/Default/Default-romConfig/Default-RomConfig-SNES.json'",
-          "bash -lc 'python3 settings/retroarch/download_roms.py settings/retroarch/Default/Default-romConfig/Default-RomConfig-SMS.json'",
-          "bash -lc 'python3 settings/retroarch/download_roms.py settings/retroarch/Default/Default-romConfig/Default-RomConfig-SMD.json'",
-          "bash -lc 'python3 settings/retroarch/download_roms.py settings/retroarch/Default/Default-romConfig/Default-RomConfig-S32x.json'",
-          "bash -lc 'python3 settings/retroarch/download_roms.py settings/retroarch/Default/Default-romConfig/Default-RomConfig-Nintendo64.json'"
+
+        "SetupScripts": [
+          {
+            "script": "settings/retroarch/generate_playlists.py",
+            "args": ["--core-map", "MediaCentre/MediaCentre-CoreMap.json"]
+          },
+          {
+            "script": "settings/retroarch/install_retroarch_launcher.sh",
+            "args": []
+          },
+          {
+            "script": "settings/controllers/install_xbox_controller.sh",
+            "args": []
+          }
         ],
+
+        "SetupCmds": [],
+
+
         "ChmodPaths": [
           { "path": "/usr/share/arcade", "mode": "2755", "recursive": true },
           { "path": "/var/lib/arcade/retroarch", "mode": "2775", "recursive": true }
@@ -120,7 +129,7 @@
         "SettingsFiles": [
           {
             "copyName": "RetroArchConfig",
-            "src": "settings/retroarch/Default/Default-template-retroarch.cfg",
+            "src": "settings/retroarch/Desktop/Desktop-template-retroarch.cfg",
             "dest": "/etc/retroarch/retroarch.cfg"
           }
         ],
