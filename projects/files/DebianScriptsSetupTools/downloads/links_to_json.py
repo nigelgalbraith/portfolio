@@ -20,12 +20,13 @@ import json
 # CONFIG — EDIT AS NEEDED
 # =========================
 
-INPUT_FILE = Path("input_links.txt")
-OUTPUT_FILE = Path("exampleLinks.json")
+SCRIPT_DIR = Path(__file__).resolve().parent
+INPUT_FILE = SCRIPT_DIR / "input_links.txt"
+OUTPUT_FILE = SCRIPT_DIR / "exampleLinks.json"
 
 SYSTEM_CONFIG = {
     "title": "download-title",
-    "output_path": "/path/to/output/",
+    "output_path": "/DownloadPath/to/output/",
     "extract": False,
     "extract_extensions": [],
     "show_skipped": False,
@@ -106,9 +107,16 @@ def ask_extract_settings(default_extract: bool, default_exts: list[str]) -> tupl
     return True, exts
 
 
+def ask_input_file(default: Path) -> Path:
+    """Ask for input file path; blank uses default."""
+    raw = input(f"Enter input links file [{default}]: ").strip()
+    return Path(raw) if raw else default
+
+
+
 def ask_output_file(default: Path) -> Path:
     """Ask for output file path; prevent overwriting non-default files."""
-    raw = input(f"Enter output file (e.g. test/test.json) [{default}]: ").strip()
+    raw = input(f"Enter output file [{default}]: ").strip()
     out_path = Path(raw) if raw else default
     if out_path.parent and not out_path.parent.exists():
         out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -122,32 +130,45 @@ def ask_output_file(default: Path) -> Path:
 # =========================
 
 def main() -> None:
-    # Check input file exists
-    if not INPUT_FILE.exists():
-        print(f"Input file not found: {INPUT_FILE}")
-        return
-    # Check input file has usable links
-    lines = read_non_empty_lines(INPUT_FILE)
-    if not lines:
-        print(f"No links found in {INPUT_FILE}. Nothing to do.")
-        return
-    # Ask where to write JSON output
+    # Ask for file paths
+    print("------------------")
+    print("File Configuration")
+    print("------------------")
+    input_file = ask_input_file(INPUT_FILE)
+    if not input_file.is_absolute():
+        input_file = (SCRIPT_DIR / input_file).resolve()
     try:
         output_file = ask_output_file(OUTPUT_FILE)
     except FileExistsError as e:
         print(e)
         return
+    if not output_file.is_absolute():
+        output_file = (SCRIPT_DIR / output_file).resolve()
+    # Check input file exists
+    if not input_file.exists():
+        print(f"Input file not found: {input_file}")
+        return
+    # Check input file has usable links
+    lines = read_non_empty_lines(input_file)
+    if not lines:
+        print(f"No links found in {input_file}. Nothing to do.")
+        return
+    print()
     # Ask Title and output location
+    print("----------------------")
+    print("Download Configuration")
+    print("----------------------")
     SYSTEM_CONFIG["title"] = ask_value("Enter title name", SYSTEM_CONFIG["title"])
     SYSTEM_CONFIG["output_path"] = ask_value("Enter output path", SYSTEM_CONFIG["output_path"])
-    # Ask skipped-output preferences
-    SYSTEM_CONFIG["show_skipped"] = ask_yes_no("Show skipped files preview?", SYSTEM_CONFIG["show_skipped"])
+    SYSTEM_CONFIG["show_skipped"] = ask_yes_no(
+        "Show skipped files preview?",
+        SYSTEM_CONFIG["show_skipped"]
+    )
     SYSTEM_CONFIG["skipped_preview"] = ask_int(
         "How many skipped filenames to preview (0 = none)",
         SYSTEM_CONFIG["skipped_preview"],
         min_value=0,
     )
-    # Ask user whether to extract downloads and which extensions to use
     extract, extract_exts = ask_extract_settings(
         default_extract=SYSTEM_CONFIG["extract"],
         default_exts=SYSTEM_CONFIG["extract_extensions"],

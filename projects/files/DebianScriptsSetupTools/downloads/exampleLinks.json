@@ -1,6 +1,6 @@
 {
   "title": "download-title",
-  "output_path": "/path/to/output/",
+  "output_path": "/DownloadPath/to/output/",
   "extract": false,
   "extract_extensions": [],
   "show_skipped": false,

@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import Dict, Any, List
 
 from modules.download_utils import run_downloads_from_configs, downloads_status
+from modules.system_utils import run_script_dict
 
 # === CONFIG PATHS & KEYS ===
 PRIMARY_CONFIG   = "config/AppConfigSettings.json"
@@ -16,6 +17,7 @@ KEY_LINKS_CONFIGS      = "LinksConfigs"
 
 # === SCRIPT RUNNER SETTINGS ===
 DOWNLOAD_SCRIPT        = "settings/downloads/download_links.py"
+LINKS_TO_JSON_SCRIPT   = "settings/downloads/links_to_json.py"
 
 # === EXAMPLE JSON ===
 CONFIG_EXAMPLE: Dict[str, Any] = {
@@ -107,6 +109,17 @@ ACTIONS: Dict[str, Dict[str, Any]] = {
         "post_state": "CONFIG_LOADING",
     },
 
+    "Generate Links JSON": {
+        "verb": "generate",
+        "filter_status": None,
+        "label": None,
+        "prompt": "Run links_to_json to generate a JSON config now? [y/n]: ",
+        "execute_state": "LINKS_TO_JSON",
+        "post_state": "CONFIG_LOADING",
+        "skip_sub_select": True,
+        "skip_prepare_plan": True,
+    },
+
     "Cancel": {
         "verb": None,
         "filter_status": None,
@@ -118,6 +131,7 @@ ACTIONS: Dict[str, Dict[str, Any]] = {
         "skip_prepare_plan": True,
     },
 }
+
 
 SUB_MENU: Dict[str, str] = {
     "title": "Select Download Task",
@@ -131,10 +145,11 @@ DEPENDENCIES: List[str] = []
 
 # === PIPELINES ===
 PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
+
     "DOWNLOAD": {
         "pipeline": {
             run_downloads_from_configs: {
-                "args": [KEY_LINKS_CONFIGS],
+                "args": [KEY_LINKS_CONFIGS, DOWNLOAD_SCRIPT],
                 "result": "download_ok",
             },
         },
@@ -142,4 +157,22 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
         "success_key": "download_ok",
         "post_state": "CONFIG_LOADING",
     },
+
+    "LINKS_TO_JSON": {
+        "pipeline": {
+            run_script_dict: {
+                "args": [[
+                    {
+                        "script": LINKS_TO_JSON_SCRIPT,
+                        "args": [],
+                    }
+                ]],
+                "result": "json_ok",
+            },
+        },
+        "label": "DONE",
+        "success_key": "json_ok",
+        "post_state": "CONFIG_LOADING",
+    },
 }
+
