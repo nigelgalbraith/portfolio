@@ -1,209 +1,154 @@
 #!/usr/bin/env python3
 """
-Generate a JSON config from a plain text list of URLs.
+links_to_json.py
 
-- Reads links from links.txt
-- Prompts for config settings (title, output path, extract options, skipped preview)
-- Prompts for where to save the output JSON (default: jsonLinks.json)
-  - You may specify a path like test/jsonLinks.json
-  - Parent directories are created automatically if they do not exist
-- Allows overwriting the default output file, but refuses to overwrite a non-default file if it already exists
-- Writes the generated config to the chosen JSON file
-- If input is blank, defaults are used
+Minimal generator for Downloads link configs.
+
+Flow:
+  1) Ask: Individual or Bulk
+  2) Ask: Output file name
+  3) Read URLs from input_links.txt
+  4) Write JSON to the correct folder
+
+Rules:
+  - check_file / check_files are always "" (downloader updates later)
+  - Will NOT overwrite an existing JSON file
 """
 
-from pathlib import Path
-from urllib.parse import unquote
-import json
+from __future__ import annotations
 
-# =========================
-# CONFIG — EDIT AS NEEDED
-# =========================
+import json
+from pathlib import Path
+
+
+# ============================================================
+# PATHS
+# ============================================================
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 INPUT_FILE = SCRIPT_DIR / "input_links.txt"
-OUTPUT_FILE = SCRIPT_DIR / "exampleLinks.json"
 
-SYSTEM_CONFIG = {
-    "title": "download-title",
-    "output_path": "/DownloadPath/to/output/",
-    "extract": False,
-    "extract_extensions": [],
-    "show_skipped": False,
-    "skipped_preview": 10,
-}
+INDIVIDUAL_DIR = SCRIPT_DIR / "links" / "individual"
+BULK_DIR       = SCRIPT_DIR / "links" / "bulk"
 
-BULK_ZIP_CONFIG = {
-    "bulk_zip": {
-        "url": "",
-        "archive_ext": "zip",
-        "check_files": []
-    }
-}
 
-# =========================
+# ============================================================
 # HELPERS
-# =========================
+# ============================================================
 
 def read_non_empty_lines(path: Path) -> list[str]:
-    """Return non-empty, non-whitespace lines from a text file."""
-    return [line.strip() for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
-
-def normalize_url(url: str) -> str:
-    """Remove whitespace and trailing slashes."""
-    return url.strip().rstrip("/")
-
-
-def extract_file_name(url: str) -> str | None:
-    """Return decoded filename from a URL if it has an extension."""
-    raw_name = Path(url).name
-    name = Path(unquote(raw_name)).name
-    return name if "." in name else None
+    """Return non-empty, stripped lines from a text file."""
+    return [
+        line.strip()
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
 
 
-def ask_value(prompt: str, default: str) -> str:
-    """Prompt user for a value; return default if input is empty."""
-    value = input(f"{prompt} [{default}]: ").strip()
-    return value if value else default
+def ask_mode() -> str:
+    """Ask user for individual or bulk mode."""
+    print("Select mode:")
+    print("1) Individual")
+    print("2) Bulk")
+    choice = input("Enter selection (1/2): ").strip()
+    return "bulk" if choice == "2" else "individual"
 
 
-def ask_yes_no(prompt: str, default: bool) -> bool:
-    """Prompt user for y/n; blank returns default."""
-    default_hint = "y" if default else "n"
-    value = input(f"{prompt} (y/n) [{default_hint}]: ").strip().lower()
-    if not value:
-        return default
-    return value == "y"
+def ask_filename() -> str:
+    """Ask for output filename, ensure .json extension."""
+    raw = input("Enter output file name (e.g. MediaCentre-RomLinks-MAME-1.json): ").strip()
+    name = raw if raw else "links.json"
+    if not name.lower().endswith(".json"):
+        name += ".json"
+    return name
 
 
-def ask_int(prompt: str, default: int, min_value: int = 0) -> int:
-    """Prompt user for an int; blank returns default."""
-    raw = input(f"{prompt} [{default}]: ").strip()
-    if not raw:
-        return default
-    try:
-        n = int(raw)
-        return n if n >= min_value else default
-    except ValueError:
-        return default
+def refuse_if_exists(path: Path) -> None:
+    """Abort if file already exists."""
+    if path.exists():
+        raise FileExistsError(f"Refusing to overwrite existing file: {path}")
 
 
-def ask_extract_settings(default_extract: bool, default_exts: list[str]) -> tuple[bool, list[str]]:
-    """Prompt user for extract settings."""
-    extract = ask_yes_no("Extract downloaded archives?", default_extract)
-    if not extract:
-        return False, []
-    raw_exts = input(f"Enter extensions to extract (comma separated, e.g. .ico, .png,) [{', '.join(default_exts) or 'none'}]: ").strip()
-    if not raw_exts:
-        return True, default_exts
-    exts: list[str] = []
-    for ext in raw_exts.split(","):
-        ext = ext.strip()
-        if not ext:
+# ============================================================
+# BUILDERS
+# ============================================================
+
+def build_individual_payload(urls: list[str]) -> list[dict]:
+    """Build individual download payload."""
+    seen: set[str] = set()
+    entries: list[dict] = []
+
+    for url in urls:
+        if url in seen:
             continue
-        if not ext.startswith("."):
-            ext = "." + ext
-        exts.append(ext)
-    return True, exts
+        seen.add(url)
+        entries.append({
+            "url": url,
+            "check_file": ""
+        })
+
+    return entries
 
 
-def ask_input_file(default: Path) -> Path:
-    """Ask for input file path; blank uses default."""
-    raw = input(f"Enter input links file [{default}]: ").strip()
-    return Path(raw) if raw else default
+def build_bulk_payload(urls: list[str]) -> dict:
+    """Build bulk download payload (single URL)."""
+    first_url = urls[0]
+    return {
+        "url": first_url,
+        "check_files": [""]
+    }
 
 
-
-def ask_output_file(default: Path) -> Path:
-    """Ask for output file path; prevent overwriting non-default files."""
-    raw = input(f"Enter output file [{default}]: ").strip()
-    out_path = Path(raw) if raw else default
-    if out_path.parent and not out_path.parent.exists():
-        out_path.parent.mkdir(parents=True, exist_ok=True)
-    if out_path != default and out_path.exists():
-        raise FileExistsError(f"Refusing to overwrite existing file: {out_path}")
-    return out_path
+def write_json(path: Path, data: object) -> None:
+    """Write JSON to disk."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(data, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8"
+    )
 
 
-# =========================
+# ============================================================
 # MAIN
-# =========================
+# ============================================================
 
 def main() -> None:
-    # Ask for file paths
-    print("------------------")
-    print("File Configuration")
-    print("------------------")
-    input_file = ask_input_file(INPUT_FILE)
-    if not input_file.is_absolute():
-        input_file = (SCRIPT_DIR / input_file).resolve()
+    if not INPUT_FILE.exists():
+        print(f"Input file not found: {INPUT_FILE}")
+        return
+
+    urls = read_non_empty_lines(INPUT_FILE)
+    if not urls:
+        print("No URLs found in input file.")
+        return
+
+    mode = ask_mode()
+    filename = ask_filename()
+
+    if mode == "individual":
+        out_path = INDIVIDUAL_DIR / filename
+        try:
+            refuse_if_exists(out_path)
+        except FileExistsError as e:
+            print(e)
+            return
+
+        payload = build_individual_payload(urls)
+        write_json(out_path, payload)
+        print(f"Wrote {len(payload)} individual entries -> {out_path}")
+        return
+
+    # bulk
+    out_path = BULK_DIR / filename
     try:
-        output_file = ask_output_file(OUTPUT_FILE)
+        refuse_if_exists(out_path)
     except FileExistsError as e:
         print(e)
         return
-    if not output_file.is_absolute():
-        output_file = (SCRIPT_DIR / output_file).resolve()
-    # Check input file exists
-    if not input_file.exists():
-        print(f"Input file not found: {input_file}")
-        return
-    # Check input file has usable links
-    lines = read_non_empty_lines(input_file)
-    if not lines:
-        print(f"No links found in {input_file}. Nothing to do.")
-        return
-    print()
-    # Ask Title and output location
-    print("----------------------")
-    print("Download Configuration")
-    print("----------------------")
-    SYSTEM_CONFIG["title"] = ask_value("Enter title name", SYSTEM_CONFIG["title"])
-    SYSTEM_CONFIG["output_path"] = ask_value("Enter output path", SYSTEM_CONFIG["output_path"])
-    SYSTEM_CONFIG["show_skipped"] = ask_yes_no(
-        "Show skipped files preview?",
-        SYSTEM_CONFIG["show_skipped"]
-    )
-    SYSTEM_CONFIG["skipped_preview"] = ask_int(
-        "How many skipped filenames to preview (0 = none)",
-        SYSTEM_CONFIG["skipped_preview"],
-        min_value=0,
-    )
-    extract, extract_exts = ask_extract_settings(
-        default_extract=SYSTEM_CONFIG["extract"],
-        default_exts=SYSTEM_CONFIG["extract_extensions"],
-    )
-    SYSTEM_CONFIG["extract"] = extract
-    SYSTEM_CONFIG["extract_extensions"] = extract_exts
-    # Track processed URLs and collected file entries
-    seen: set[str] = set()
-    files: list[dict] = []
-    # Read input file and build file list
-    for line in lines:
 
-        if not line.strip():
-            continue
-        url = normalize_url(line)
-        file_name = extract_file_name(url)
-        # Skip duplicates and URLs without a filename
-        if not file_name or url in seen:
-            continue
-        seen.add(url)
-        # Disable per-file checking when extraction is enabled
-        check_file = "" if extract else file_name
-        files.append({
-            "url": url,
-            "check_file": check_file
-        })
-    # Assemble final output structure
-    output = {
-        **SYSTEM_CONFIG,
-        "files": files,
-        **BULK_ZIP_CONFIG
-    }
-    # Write JSON output to disk
-    output_file.write_text(json.dumps(output, indent=2), encoding="utf-8")
-    print(f"Wrote {len(files)} file entries to {output_file}")
+    payload = build_bulk_payload(urls)
+    write_json(out_path, payload)
+    print(f"Wrote bulk config -> {out_path}")
 
 
 if __name__ == "__main__":

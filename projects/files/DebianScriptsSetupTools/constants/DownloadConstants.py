@@ -6,62 +6,122 @@ from pathlib import Path
 from typing import Dict, Any, List
 
 from modules.download_utils import (
-    load_download_plans,
-    plan_bulk_for_downloads,
-    plan_jobs_for_downloads_quiet,
-    plan_jobs_for_downloads,
-    run_bulk_downloads,
-    run_file_downloads,
-    finalize_download_configs,
-    downloads_status,
-    filter_incomplete_configs,
+    is_job_incomplete,
+    filter_downloads,
+    run_bulk_jobs,
+    run_individual_jobs,
 )
+
 from modules.system_utils import run_script_dict
 
-# === CONFIG PATHS & KEYS ===
-PRIMARY_CONFIG   = "config/AppConfigSettings.json"
-JOBS_KEY         = "Downloads"
-CONFIG_TYPE      = "downloads"
-DEFAULT_CONFIG   = "Default"
 
-# === JSON KEYS ===
-KEY_LINKS_CONFIGS      = "LinksConfigs"
+# ==================================================
+# CONFIG PATHS & KEYS
+# ==================================================
 
-# === SCRIPT RUNNER SETTINGS ===
-LINKS_TO_JSON_SCRIPT   = "settings/downloads/links_to_json.py"
+PRIMARY_CONFIG = "config/AppConfigSettings.json"
+JOBS_KEY = "Downloads"
+CONFIG_TYPE = "downloads"
+DEFAULT_CONFIG = "Default"
 
-# === EXAMPLE JSON ===
+
+# ==================================================
+# JSON KEYS (NEW STRUCTURE)
+# ==================================================
+
+KEY_INDIVIDUAL_FILES = "individual_files"
+KEY_BULK_FILES = "bulk_files"
+KEY_LINKS_CONFIGS = "LinksConfigs"
+KEY_OUTPUT_PATH = "output_path"
+KEY_EXTRACT = "extract"
+KEY_EXTRACT_EXTENSIONS = "extract_extensions"
+
+
+# ==================================================
+# SCRIPT RUNNER SETTINGS
+# ==================================================
+
+LINKS_TO_JSON_SCRIPT = "settings/downloads/links_to_json.py"
+
+
+# ==================================================
+# EXAMPLE JSON (UPDATED)
+# ==================================================
+
 CONFIG_EXAMPLE: Dict[str, Any] = {
     "YOUR MODEL HERE": {
         JOBS_KEY: {
-            "MAME": {
-                KEY_LINKS_CONFIGS: [
-                    "settings/downloads/MediaCentre-RomLinks/MediaCentre-RomLinks-MAME-BIOS.json",
-                    "settings/downloads/MediaCentre-RomLinks/MediaCentre-RomLinks-MAME-titles.json",
-                ],
+            "MAME-Roms": {
+                KEY_INDIVIDUAL_FILES: {
+                    KEY_OUTPUT_PATH: "/mnt/plexmedia/PlexMedia/arcade/MAME/roms/",
+                    KEY_EXTRACT: False,
+                    KEY_EXTRACT_EXTENSIONS: [],
+                    KEY_LINKS_CONFIGS: [
+                        "settings/downloads/MediaCentre-RomLinks/MediaCentre-RomLinks-MAME-1.json",
+                    ],
+                },
+                KEY_BULK_FILES: {
+                    KEY_OUTPUT_PATH: "",
+                    KEY_EXTRACT_EXTENSIONS: [],
+                    KEY_LINKS_CONFIGS: [],
+                },
             },
-            "Retroarch": {
-                KEY_LINKS_CONFIGS: [
-                    "settings/downloads/MediaCentre-RomLinks/MediaCentre-RomLinks-NES-1.json",
-                    "settings/downloads/MediaCentre-RomLinks/MediaCentre-RomLinks-PS1.json",
-                ],
+            "Master System-Roms": {
+                KEY_INDIVIDUAL_FILES: {
+                    KEY_OUTPUT_PATH: "",
+                    KEY_EXTRACT: False,
+                    KEY_EXTRACT_EXTENSIONS: [],
+                    KEY_LINKS_CONFIGS: [],
+                },
+                KEY_BULK_FILES: {
+                    KEY_OUTPUT_PATH: "/mnt/plexmedia/PlexMedia/arcade/Master System/roms/",
+                    KEY_EXTRACT_EXTENSIONS: ["zip"],
+                    KEY_LINKS_CONFIGS: [
+                        "settings/downloads/MediaCentre-RomLinks/MediaCentre-RomLinks-SMS-Bulk.json",
+                    ],
+                },
             },
         }
     }
 }
 
-# === VALIDATION CONFIG ===
+
+# ==================================================
+# VALIDATION CONFIG (UPDATED REQUIRED FIELDS)
+# ==================================================
+
 VALIDATION_CONFIG: Dict[str, Any] = {
     "required_job_fields": {
-        KEY_LINKS_CONFIGS: list,
+        KEY_INDIVIDUAL_FILES: dict,
+        KEY_BULK_FILES: dict,
     },
     "example_config": CONFIG_EXAMPLE,
 }
 
-# === SECONDARY VALIDATION ===
-SECONDARY_VALIDATION = {}
+SECONDARY_VALIDATION: Dict[str, Any] = {
+    KEY_INDIVIDUAL_FILES: {
+        "required_job_fields": {
+            KEY_OUTPUT_PATH: str,
+            KEY_EXTRACT: bool,
+            KEY_EXTRACT_EXTENSIONS: list,
+            KEY_LINKS_CONFIGS: list,
+        },
+        "allow_empty": True,
+    },
+    KEY_BULK_FILES: {
+        "required_job_fields": {
+            KEY_OUTPUT_PATH: str,
+            KEY_EXTRACT_EXTENSIONS: list,
+            KEY_LINKS_CONFIGS: list,
+        },
+        "allow_empty": True,
+    },
+}
 
-# === DETECTION CONFIG ===
+# ==================================================
+# DETECTION CONFIG
+# ==================================================
+
 DETECTION_CONFIG: Dict[str, Any] = {
     "primary_config": PRIMARY_CONFIG,
     "config_type": CONFIG_TYPE,
@@ -74,49 +134,60 @@ DETECTION_CONFIG: Dict[str, Any] = {
     ),
 }
 
-# === LOGGING ===
-LOG_PREFIX      = "downloads"
-LOG_DIR         = Path.home() / "logs" / "downloads"
-LOGS_TO_KEEP    = 10
+
+# ==================================================
+# LOGGING
+# ==================================================
+
+LOG_PREFIX = "downloads"
+LOG_DIR = Path.home() / "logs" / "downloads"
+LOGS_TO_KEEP = 10
 ROTATE_LOG_NAME = f"{LOG_PREFIX}_*.log"
 
-# === USER / LABELS ===
-REQUIRED_USER       = "Standard"
-INSTALLED_LABEL      = "COMPLETE"
-UNINSTALLED_LABEL    = "INCOMPLETE"
 
-# === STATUS CHECK CONFIG ===
+# ==================================================
+# USER / LABELS
+# ==================================================
+
+REQUIRED_USER = "Standard"
+INSTALLED_LABEL = "COMPLETE"
+UNINSTALLED_LABEL = "INCOMPLETE"
+
+
+# ==================================================
+# STATUS CHECK CONFIG (UPDATED)
+# ==================================================
+
 STATUS_FN_CONFIG = {
-    "fn": downloads_status,
-    "args": [KEY_LINKS_CONFIGS],
-    "labels": {True: INSTALLED_LABEL, False: UNINSTALLED_LABEL},
+    "fn": is_job_incomplete,
+    "args": [lambda j, m, c: m],
+    "labels": {True: UNINSTALLED_LABEL, False: INSTALLED_LABEL},
 }
 
-# === COLUMN ORDER ===
+# ==================================================
+# COLUMN ORDER (UPDATED)
+# ==================================================
+
 PLAN_COLUMN_ORDER = [
-    KEY_LINKS_CONFIGS,
+    KEY_INDIVIDUAL_FILES,
+    KEY_BULK_FILES,
 ]
 OPTIONAL_PLAN_COLUMNS = {}
 
-# === ACTIONS ===
+
+# ==================================================
+# ACTIONS (UPDATED: REMOVED "Re-run Downloads")
+# ==================================================
+
 ACTIONS: Dict[str, Dict[str, Any]] = {
     "_meta": {"title": f"{JOBS_KEY} Setup"},
 
     "Download Missing Files": {
         "verb": "download",
-        "filter_status": False,
+        "filter_status": True,
         "label": UNINSTALLED_LABEL,
         "prompt": "Downloads incomplete. Download missing files now? [y/n]: ",
         "execute_state": "DOWNLOAD_MISSING",
-        "post_state": "CONFIG_LOADING",
-    },
-
-    "Re-run Downloads": {
-        "verb": "download",
-        "filter_status": None,
-        "label": None,
-        "prompt": "Re-run downloads (will skip existing files automatically)? [y/n]: ",
-        "execute_state": "DOWNLOAD_RERUN",
         "post_state": "CONFIG_LOADING",
     },
 
@@ -151,79 +222,44 @@ SUB_MENU: Dict[str, str] = {
     "cancel_state": "MENU_SELECTION",
 }
 
-# === DEPENDENCIES ===
+
+# ==================================================
+# DEPENDENCIES
+# ==================================================
+
 DEPENDENCIES: List[str] = ["wget", "unzip", "p7zip-full"]
 
-# === PIPELINES ===
+
+# ==================================================
+# PIPELINES (UPDATED)
+# ==================================================
+# New flow:
+#   - run_downloads(job_meta) handles filtering + running internally
+# No more "Re-run downloads" pipeline required.
+# ==================================================
+
 PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
 
     "DOWNLOAD_MISSING": {
         "pipeline": {
-            filter_incomplete_configs: {
-                "args": [KEY_LINKS_CONFIGS],
-                "result": "cfgs"
-            },
-            load_download_plans: {
-                "args": ["cfgs"],
-                "result": "plans",
-            },
-            plan_bulk_for_downloads: {
-                "args": ["plans"],
-                "result": "plans",
-            },
-            plan_jobs_for_downloads_quiet: {
-                "args": ["plans"],
-                "result": "plans",
-            },
-            run_bulk_downloads: {
-                "args": ["plans"],
+            filter_downloads: {
+                "args": [lambda j, m, c: m],
+                "result": "filtered",
+                },
+            run_bulk_jobs: {
+                "args": ["filtered"],
                 "result": "bulk_ok",
             },
-            run_file_downloads: {
-                "args": ["plans"],
-                "result": "jobs_ok",
-            },
-            finalize_download_configs: {
-                "args": ["plans"],
-                "result": "download_ok",
+            run_individual_jobs: {
+                "args": ["filtered"],
+                "result": "ind_ok",
             },
         },
         "label": INSTALLED_LABEL,
-        "success_key": "download_ok",
+        "success_key": "ind_ok",   
         "post_state": "CONFIG_LOADING",
     },
 
-    "DOWNLOAD_RERUN": {
-        "pipeline": {
-            load_download_plans: {
-                "args": [KEY_LINKS_CONFIGS],
-                "result": "plans",
-            },
-            plan_bulk_for_downloads: {
-                "args": ["plans"],
-                "result": "plans",
-            },
-            plan_jobs_for_downloads: {
-                "args": ["plans"],
-                "result": "plans",
-            },
-            run_bulk_downloads: {
-                "args": ["plans"],
-                "result": "bulk_ok",
-            },
-            run_file_downloads: {
-                "args": ["plans"],
-                "result": "jobs_ok",
-            },
-            finalize_download_configs: {
-                "args": ["plans"],
-                "result": "download_ok",
-            },
-        },
-        "label": INSTALLED_LABEL,
-        "success_key": "download_ok",
-        "post_state": "CONFIG_LOADING",
-    },
 
     "LINKS_TO_JSON": {
         "pipeline": {

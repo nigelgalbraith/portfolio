@@ -1,10 +1,19 @@
 {
   "Default": {
     "Downloads": {
-      "Example": {
-        "LinksConfigs": [
-          "settings/downloads/Default/example-public-download.json"
-        ]
+      "TEST": {
+        "individual_files": {
+          "output_path": "",
+          "extract": false,
+          "extract_extensions": [],
+          "LinksConfigs": []
+        },
+        "bulk_files": {
+          "output_path": "",
+          "extract": false,
+          "extract_extensions": [],
+          "LinksConfigs": []
+        }
       }
     }
   }
