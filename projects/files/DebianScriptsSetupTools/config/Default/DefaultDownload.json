@@ -10,7 +10,6 @@
         },
         "bulk_files": {
           "output_path": "",
-          "extract": false,
           "extract_extensions": [],
           "LinksConfigs": []
         }
