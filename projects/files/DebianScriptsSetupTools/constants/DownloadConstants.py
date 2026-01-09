@@ -8,8 +8,7 @@ from typing import Dict, Any, List
 from modules.download_utils import (
     is_job_incomplete,
     filter_downloads,
-    run_bulk_jobs,
-    run_individual_jobs,
+    run_link_jobs,
 )
 
 from modules.system_utils import run_script_dict
@@ -26,15 +25,15 @@ DEFAULT_CONFIG = "Default"
 
 
 # ==================================================
-# JSON KEYS (NEW STRUCTURE)
+# JSON KEYS (UNIFIED LINKS)
 # ==================================================
 
-KEY_INDIVIDUAL_FILES = "individual_files"
-KEY_BULK_FILES = "bulk_files"
+KEY_LINKS = "links"
 KEY_LINKS_CONFIGS = "LinksConfigs"
 KEY_OUTPUT_PATH = "output_path"
 KEY_EXTRACT = "extract"
 KEY_EXTRACT_EXTENSIONS = "extract_extensions"
+KEY_CHECK_FILES = "check_files"  # Links config sentinel list (all links)
 
 
 # ==================================================
@@ -45,39 +44,29 @@ LINKS_TO_JSON_SCRIPT = "settings/downloads/links_to_json.py"
 
 
 # ==================================================
-# EXAMPLE JSON (UPDATED)
+# EXAMPLE JSON (UNIFIED LINKS)
 # ==================================================
 
 CONFIG_EXAMPLE: Dict[str, Any] = {
     "YOUR MODEL HERE": {
         JOBS_KEY: {
             "MAME-Roms": {
-                KEY_INDIVIDUAL_FILES: {
+                KEY_LINKS: {
                     KEY_OUTPUT_PATH: "/mnt/plexmedia/PlexMedia/arcade/MAME/roms/",
                     KEY_EXTRACT: False,
                     KEY_EXTRACT_EXTENSIONS: [],
                     KEY_LINKS_CONFIGS: [
-                        "settings/downloads/MediaCentre-RomLinks/MediaCentre-RomLinks-MAME-1.json",
+                        "settings/downloads/links/links/RomLinks-MAME-1.json",
                     ],
-                },
-                KEY_BULK_FILES: {
-                    KEY_OUTPUT_PATH: "",
-                    KEY_EXTRACT_EXTENSIONS: [],
-                    KEY_LINKS_CONFIGS: [],
                 },
             },
             "Master System-Roms": {
-                KEY_INDIVIDUAL_FILES: {
-                    KEY_OUTPUT_PATH: "",
-                    KEY_EXTRACT: False,
-                    KEY_EXTRACT_EXTENSIONS: [],
-                    KEY_LINKS_CONFIGS: [],
-                },
-                KEY_BULK_FILES: {
+                KEY_LINKS: {
                     KEY_OUTPUT_PATH: "/mnt/plexmedia/PlexMedia/arcade/Master System/roms/",
+                    KEY_EXTRACT: True,
                     KEY_EXTRACT_EXTENSIONS: ["zip"],
                     KEY_LINKS_CONFIGS: [
-                        "settings/downloads/MediaCentre-RomLinks/MediaCentre-RomLinks-SMS-Bulk.json",
+                        "settings/downloads/links/links/RomLinks-SMS.json",
                     ],
                 },
             },
@@ -92,25 +81,16 @@ CONFIG_EXAMPLE: Dict[str, Any] = {
 
 VALIDATION_CONFIG: Dict[str, Any] = {
     "required_job_fields": {
-        KEY_INDIVIDUAL_FILES: dict,
-        KEY_BULK_FILES: dict,
+        KEY_LINKS: dict,
     },
     "example_config": CONFIG_EXAMPLE,
 }
 
 SECONDARY_VALIDATION: Dict[str, Any] = {
-    KEY_INDIVIDUAL_FILES: {
+    KEY_LINKS: {
         "required_job_fields": {
             KEY_OUTPUT_PATH: str,
             KEY_EXTRACT: bool,
-            KEY_EXTRACT_EXTENSIONS: list,
-            KEY_LINKS_CONFIGS: list,
-        },
-        "allow_empty": True,
-    },
-    KEY_BULK_FILES: {
-        "required_job_fields": {
-            KEY_OUTPUT_PATH: str,
             KEY_EXTRACT_EXTENSIONS: list,
             KEY_LINKS_CONFIGS: list,
         },
@@ -155,7 +135,7 @@ UNINSTALLED_LABEL = "INCOMPLETE"
 
 
 # ==================================================
-# STATUS CHECK CONFIG (UPDATED)
+# STATUS CHECK CONFIG (UNIFIED)
 # ==================================================
 
 STATUS_FN_CONFIG = {
@@ -165,18 +145,17 @@ STATUS_FN_CONFIG = {
 }
 
 # ==================================================
-# COLUMN ORDER (UPDATED)
+# COLUMN ORDER (UNIFIED)
 # ==================================================
 
 PLAN_COLUMN_ORDER = [
-    KEY_INDIVIDUAL_FILES,
-    KEY_BULK_FILES,
+    KEY_LINKS,
 ]
 OPTIONAL_PLAN_COLUMNS = {}
 
 
 # ==================================================
-# ACTIONS (UPDATED: REMOVED "Re-run Downloads")
+# ACTIONS
 # ==================================================
 
 ACTIONS: Dict[str, Dict[str, Any]] = {
@@ -231,11 +210,11 @@ DEPENDENCIES: List[str] = ["wget", "unzip", "p7zip-full"]
 
 
 # ==================================================
-# PIPELINES (UPDATED)
+# PIPELINES (UNIFIED)
 # ==================================================
 # New flow:
-#   - run_downloads(job_meta) handles filtering + running internally
-# No more "Re-run downloads" pipeline required.
+#   - filter_downloads(job_meta) handles planning
+#   - run_link_jobs(filtered) handles execution
 # ==================================================
 
 PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
@@ -245,21 +224,16 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
             filter_downloads: {
                 "args": [lambda j, m, c: m],
                 "result": "filtered",
-                },
-            run_bulk_jobs: {
-                "args": ["filtered"],
-                "result": "bulk_ok",
             },
-            run_individual_jobs: {
+            run_link_jobs: {
                 "args": ["filtered"],
-                "result": "ind_ok",
+                "result": "links_ok",
             },
         },
         "label": INSTALLED_LABEL,
-        "success_key": "ind_ok",   
+        "success_key": "links_ok",
         "post_state": "CONFIG_LOADING",
     },
-
 
     "LINKS_TO_JSON": {
         "pipeline": {

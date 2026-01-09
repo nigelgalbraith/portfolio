@@ -2,14 +2,9 @@
   "Default": {
     "Downloads": {
       "TEST": {
-        "individual_files": {
+        "links": {
           "output_path": "",
           "extract": false,
-          "extract_extensions": [],
-          "LinksConfigs": []
-        },
-        "bulk_files": {
-          "output_path": "",
           "extract_extensions": [],
           "LinksConfigs": []
         }
