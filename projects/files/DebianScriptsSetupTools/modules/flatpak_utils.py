@@ -8,7 +8,7 @@ import subprocess
 FLATHUB_URL = "https://flathub.org/repo/flathub.flatpakrepo"
 
 def check_flatpak_status(flatpak_id: str) -> bool:
-    """Return True if the given Flatpak app ID is installed."""
+    """Return True if the given Flatpak app ID is installed, otherwise False."""
     try:
         result = subprocess.run(
             ["flatpak", "list", "--app", "--columns=application"],
@@ -21,8 +21,14 @@ def check_flatpak_status(flatpak_id: str) -> bool:
     except Exception:
         return False
 
+
 def ensure_flathub() -> bool:
-    """Ensure the Flathub remote exists; return True if present or added successfully."""
+    """
+    Ensure the Flathub Flatpak remote exists.
+
+    Returns True if Flathub is already present or was added successfully;
+    returns False if adding the remote fails.
+    """
     result = subprocess.run(["flatpak", "remote-list"], stdout=subprocess.PIPE, text=True)
     if "flathub" in result.stdout:
         return True
@@ -36,10 +42,21 @@ def ensure_flathub() -> bool:
     except subprocess.CalledProcessError:
         return False
 
+
 def install_flatpak_app(app_id, remote="flathub"):
-    """Install a Flatpak app from the given remote and return True on success."""
-    return subprocess.run(["flatpak", "install", "-y", remote, app_id]).returncode == 0
+    """Install a Flatpak app from the specified remote; return True on success."""
+    return subprocess.run(
+        ["flatpak", "install", "-y", remote, app_id],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    ).returncode == 0
+
 
 def uninstall_flatpak_app(app_id):
-    """Uninstall a Flatpak app by ID and return True on success."""
-    return subprocess.run(["flatpak", "uninstall", "-y", app_id]).returncode == 0
+    """Uninstall a Flatpak app by ID; return True on success."""
+    return subprocess.run(
+        ["flatpak", "uninstall", "-y", app_id],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    ).returncode == 0
+
