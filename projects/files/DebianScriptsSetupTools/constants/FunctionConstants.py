@@ -32,6 +32,7 @@ VALIDATION_CONFIG = {
         KEY_CHECK_FOLDERS: list,
         KEY_CHECK_FILES: list,
     },
+    "example_config": CONFIG_DOC,
 }
 
 # === SECONDARY VALIDATION  ===

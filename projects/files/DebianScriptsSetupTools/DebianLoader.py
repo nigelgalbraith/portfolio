@@ -297,34 +297,63 @@ class StateMachine:
         self.state = State.JSON_TOPLEVEL_CHECK
 
 
-    def validate_json_toplevel(self) -> None:
-        """Validate that top-level config is a JSON object."""
-        data = self.job_data
-        ok = isinstance(data, dict)
-        results = {"Top-level JSON structure (object)": ok}
+    def validate_json_toplevel(
+        self,
+        jobs_key: str,
+        example_config: Optional[str] = None,
+    ) -> None:
+        """Validate that the model section and its Jobs key are JSON objects."""
+        model = self.model
+        entry = self.job_data.get(model)
+        ok_model = isinstance(entry, dict)
+        jobs = entry.get(jobs_key) if ok_model else None
+        ok_jobs = isinstance(jobs, dict)
+        results = {
+            f"Model section '{model}' (object)": ok_model,
+            f"'{jobs_key}' section (object)": ok_jobs,
+        }
+        model_mismatch = self.detected_model != self.model
+        model_missing = isinstance(self.job_data, dict) and model not in self.job_data
+        jobs_missing = ok_model and jobs_key not in entry
         summary = format_status_summary(
             results,
             label="Validation",
             labels={True: "Correct", False: "Incorrect"}
         )
-        out_lines = []
-        out_lines.extend(summary.splitlines())
-        if not ok:
-            self.finalize_msg = "Invalid config: top-level must be a JSON object."
+        out_lines = summary.splitlines()
+        if model_mismatch:
+            out_lines.append(
+                f"[WARN] Detected model '{self.detected_model}' does not match effective model '{self.model}'"
+            )
+        if model_missing:
+            out_lines.append(f"[WARN] Config does not contain a '{model}' section")
+        if ok_model and jobs_missing:
+            out_lines.append(f"[WARN] Model '{model}' does not contain a '{jobs_key}' section")
+
+        if not all(results.values()):
+            self.finalize_msg = (
+                f"Invalid config: expected a JSON object for model '{model}' "
+                f"with a '{jobs_key}' object inside."
+            )
             out_lines.append(self.finalize_msg)
-            out_lines.append("Example structure:")
-            ex = load_doc_example(self.c.CONFIG_DOC)
-            if isinstance(ex, dict) and ex:
-                out_lines.extend(json.dumps(ex, indent=2, ensure_ascii=False).splitlines())
-            else:
-                out_lines.append(f"(No EXAMPLE found in doc: {self.c.CONFIG_DOC})")
-            log_and_print("\n  ==> Validating Top-level JSON")
+            if example_config:
+                out_lines.append("")
+                out_lines.append("Example structure:")
+                out_lines.append("------------------")
+                ex = load_doc_example(example_config)
+                if isinstance(ex, dict) and ex:
+                    out_lines.extend(json.dumps(ex, indent=2, ensure_ascii=False).splitlines())
+                else:
+                    out_lines.append(f"(No EXAMPLE found in doc: {example_config})")
+            log_and_print(f"\n  ==> Validating Model Section '{model}'")
+            log_and_print(f"  ==> Validating Job key Section '{jobs_key}'")
             log_and_print(wrap_in_box(out_lines, indent=2, pad=1))
             self.state = State.FINALIZE
             return
-        log_and_print("\n  ==> Validating Top-level JSON")
+        log_and_print(f"\n  ==> Validating Model Section '{model}'")
+        log_and_print(f"  ==> Validating Job key Section '{jobs_key}'")
         log_and_print(wrap_in_box(out_lines, indent=2, pad=1))
-        self.state = State.JSON_MODEL_SECTION_CHECK
+        self.state = State.JSON_REQUIRED_KEYS_CHECK
 
 
     def validate_json_model_jobkey_section(self, jobs_key: str) -> None:
@@ -359,12 +388,6 @@ class StateMachine:
                 f"with a '{jobs_key}' object inside."
             )
             out_lines.append(self.finalize_msg)
-            out_lines.append("Example structure:")
-            ex = load_doc_example(self.c.CONFIG_DOC)
-            if isinstance(ex, dict) and ex:
-                out_lines.extend(json.dumps(ex, indent=2, ensure_ascii=False).splitlines())
-            else:
-                out_lines.append(f"(No EXAMPLE found in doc: {self.c.CONFIG_DOC})")
             log_and_print(f"\n  ==> Validating Model Section '{model}'")
             log_and_print(f"  ==> Validating Job key Section '{jobs_key}'")
             log_and_print(wrap_in_box(out_lines, indent=2, pad=1))
@@ -385,17 +408,21 @@ class StateMachine:
             out_lines = []
             self.finalize_msg = f"Invalid config: '{model}/{section_key}' must be a non-empty object."
             out_lines.append(self.finalize_msg)
-            out_lines.append("Example structure:")
-            ex = load_doc_example(self.c.CONFIG_DOC)
-            if isinstance(ex, dict) and ex:
-                out_lines.extend(json.dumps(ex, indent=2, ensure_ascii=False).splitlines())
-            else:
-                out_lines.append(f"(No EXAMPLE found in doc: {self.c.CONFIG_DOC})")
+            example_doc = (validation_config or {}).get("example_config")
+            if example_doc:
+                out_lines.append("")
+                out_lines.append("Example structure:")
+                out_lines.append("------------------")
+                ex = load_doc_example(example_doc)
+                if isinstance(ex, dict) and ex:
+                    out_lines.extend(json.dumps(ex, indent=2, ensure_ascii=False).splitlines())
+                else:
+                    out_lines.append(f"(No EXAMPLE found in doc: {example_doc})")
             log_and_print("\n  ==> Checking Required Job Keys")
             log_and_print(wrap_in_box(out_lines, indent=2, pad=1))
             self.state = State.FINALIZE
             return
-        required_fields = validation_config.get("required_job_fields", {})
+        required_fields = (validation_config or {}).get("required_job_fields", {})
         if not required_fields:
             self.state = State.SECONDARY_VALIDATION
             return
@@ -414,12 +441,16 @@ class StateMachine:
         if not all(results.values()):
             self.finalize_msg = "Invalid config: some required fields are missing/invalid."
             out_lines.append(self.finalize_msg)
-            out_lines.append("Example structure:")
-            ex = load_doc_example(self.c.CONFIG_DOC)
-            if isinstance(ex, dict) and ex:
-                out_lines.extend(json.dumps(ex, indent=2, ensure_ascii=False).splitlines())
-            else:
-                out_lines.append(f"(No EXAMPLE found in doc: {self.c.CONFIG_DOC})")
+            example_doc = (validation_config or {}).get("example_config")
+            if example_doc:
+                out_lines.append("")
+                out_lines.append("Example structure:")
+                out_lines.append("------------------")
+                ex = load_doc_example(example_doc)
+                if isinstance(ex, dict) and ex:
+                    out_lines.extend(json.dumps(ex, indent=2, ensure_ascii=False).splitlines())
+                else:
+                    out_lines.append(f"(No EXAMPLE found in doc: {example_doc})")
             log_and_print("\n  ==> Checking Required Job Keys")
             log_and_print(wrap_in_box(out_lines, indent=2, pad=1))
             self.state = State.FINALIZE
@@ -444,7 +475,7 @@ class StateMachine:
             return
         results_map: Dict[str, bool] = {}
         for subkey, rules in secondary_validation.items():
-            if subkey == "config_example" or not isinstance(rules, dict):
+            if subkey == "example_config" or not isinstance(rules, dict):
                 continue
             required = rules.get("required_job_fields") or {}
             allow_empty = bool(rules.get("allow_empty", False))
@@ -485,12 +516,6 @@ class StateMachine:
         if not results_map or not all(results_map.values()):
             self.finalize_msg = "Secondary validation failed."
             out_lines.append(self.finalize_msg)
-            out_lines.append("Example structure:")
-            ex = load_doc_example(self.c.CONFIG_DOC)
-            if isinstance(ex, dict) and ex:
-                out_lines.extend(json.dumps(ex, indent=2, ensure_ascii=False).splitlines())
-            else:
-                out_lines.append(f"(No EXAMPLE found in doc: {self.c.CONFIG_DOC})")
             log_and_print("\n  ==> Checking Secondary Keys")
             log_and_print(wrap_in_box(out_lines, indent=2, pad=1))
             self.state = State.FINALIZE
@@ -765,7 +790,7 @@ class StateMachine:
             State.DEP_CHECK:                lambda: self.dep_check(self.c.DEPENDENCIES),
             State.DEP_INSTALL:              lambda: self.dep_install(),
             State.MODEL_DETECTION:          lambda: self.detect_model(self.c.DETECTION_CONFIG, self.c.REQUIRED_USER),
-            State.JSON_TOPLEVEL_CHECK:      lambda: self.validate_json_toplevel(),
+            State.JSON_TOPLEVEL_CHECK:      lambda: self.validate_json_toplevel(self.c.JOBS_KEY, self.c.CONFIG_DOC),
             State.JSON_MODEL_SECTION_CHECK: lambda: self.validate_json_model_jobkey_section(self.c.JOBS_KEY),
             State.JSON_REQUIRED_KEYS_CHECK: lambda: self.validate_json_required_keys(self.c.VALIDATION_CONFIG, self.c.JOBS_KEY, dict),
             State.SECONDARY_VALIDATION:     lambda: self.validate_secondary_keys(self.c.SECONDARY_VALIDATION, self.c.JOBS_KEY),

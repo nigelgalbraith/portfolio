@@ -95,6 +95,7 @@ VALIDATION_CONFIG: Dict[str, Any] = {
         KEY_DEFAULT_DM: dict,
         KEY_KIOSK_DM: dict,
     },
+    "example_config": CONFIG_DOC,
 }
 
 # === SECONDARY VALIDATION  ===
@@ -134,6 +135,7 @@ SECONDARY_VALIDATION: Dict[str, Any] = {
         "required_job_fields": {"package": str, "service": str},
         "allow_empty": False
     },
+    "example_config": CONFIG_DOC,
 }
 
 # === DETECTION CONFIG ===

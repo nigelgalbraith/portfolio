@@ -24,6 +24,7 @@ VALIDATION_CONFIG = {
     "required_job_fields": {
         KEY_REMOTE: str,
     },
+    "example_config": CONFIG_DOC, 
 }
 
 # === SECONDARY VALIDATION  ===

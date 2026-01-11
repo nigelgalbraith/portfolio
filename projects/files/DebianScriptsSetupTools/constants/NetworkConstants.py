@@ -33,6 +33,7 @@ VALIDATION_CONFIG = {
         KEY_GATEWAY: str,
         KEY_DNS: str,
     },
+    "example_config": CONFIG_DOC,  
 }
 
 # === SECONDARY VALIDATION  ===

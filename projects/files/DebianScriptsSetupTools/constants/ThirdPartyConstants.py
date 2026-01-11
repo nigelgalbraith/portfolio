@@ -32,6 +32,7 @@ VALIDATION_CONFIG = {
         KEY_COMPONENT: str,
         KEY_KEYRING_DIR: str,
     },
+    "example_config": CONFIG_DOC,
 }
 
 # === SECONDARY VALIDATION  ===

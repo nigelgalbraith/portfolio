@@ -41,6 +41,7 @@ VALIDATION_CONFIG = {
         KEY_STRIP_TOP: bool,
         KEY_LAUNCH_CMD: str,
     },
+    "example_config": CONFIG_DOC,
 }
 
 # === SECONDARY VALIDATION  ===

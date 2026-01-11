@@ -33,6 +33,7 @@ VALIDATION_CONFIG = {
         KEY_ZIP_ARCHIVES: list,
         KEY_CHECK_PATH: str,
     },
+    "example_config": CONFIG_DOC,
 }
 
 # === SECONDARY VALIDATION ===
@@ -61,6 +62,7 @@ SECONDARY_VALIDATION = {
         },
         "allow_empty": True,
     },
+    "example_config": CONFIG_DOC,
 }
 
 # === DETECTION CONFIG ===

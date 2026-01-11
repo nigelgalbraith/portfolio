@@ -51,6 +51,7 @@ VALIDATION_CONFIG: Dict[str, Any] = {
     "required_job_fields": {
         KEY_LINKS: dict,
     },
+    "example_config": CONFIG_DOC,
 }
 
 SECONDARY_VALIDATION: Dict[str, Any] = {
@@ -63,6 +64,7 @@ SECONDARY_VALIDATION: Dict[str, Any] = {
         },
         "allow_empty": True,
     },
+    "example_config": CONFIG_DOC,
 }
 
 # ==================================================

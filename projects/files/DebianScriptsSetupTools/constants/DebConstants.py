@@ -33,6 +33,7 @@ VALIDATION_CONFIG: Dict[str, Any] = {
         KEY_ENABLE_SERVICE: (bool, type(None)),
         KEY_DOWNLOAD_DIR: str,
     },
+    "example_config": CONFIG_DOC,
 }
 
 # === SECONDARY VALIDATION  ===

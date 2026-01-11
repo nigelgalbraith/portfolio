@@ -68,6 +68,7 @@ SECONDARY_VALIDATION = {
         },
         "allow_empty": True,
     },
+    "example_config": CONFIG_DOC,
 }
 
 # === DETECTION CONFIG ===

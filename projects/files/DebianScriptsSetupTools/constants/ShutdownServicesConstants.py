@@ -47,6 +47,7 @@ VALIDATION_CONFIG = {
         KEY_SERVICE_DEST: str,
         KEY_LOG_PATH: str,
     },
+    "example_config": CONFIG_DOC,
 }
 
 # === SECONDARY VALIDATION CONFIG ===

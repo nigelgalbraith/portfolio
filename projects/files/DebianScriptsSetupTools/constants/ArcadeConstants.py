@@ -70,6 +70,7 @@ VALIDATION_CONFIG: Dict[str, Any] = {
         KEY_CHMOD_PATHS: list,
         KEY_CHOWN_PATHS: list,
     },
+    "example_config": CONFIG_DOC,
 }
 
 # === SECONDARY VALIDATION ===
@@ -120,6 +121,7 @@ SECONDARY_VALIDATION: Dict[str, Any] = {
         },
         "allow_empty": True,
     },
+    "example_config": CONFIG_DOC,
 }
 
 # === DETECTION CONFIG ===

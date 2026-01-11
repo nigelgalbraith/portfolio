@@ -45,6 +45,7 @@ VALIDATION_CONFIG = {
         KEY_SSL_KEY_DIR: str,
         KEY_XRDP_DIR: str,
     },
+    "example_config": CONFIG_DOC,
 }
 
 # === SECONDARY VALIDATION  ===

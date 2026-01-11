@@ -78,6 +78,7 @@ SECONDARY_VALIDATION = {
             "Description": str,
         },
     },
+    "example_config": CONFIG_DOC,
 }
 
 # === SECONDARY VALIDATION ===
@@ -89,6 +90,7 @@ SECONDARY_VALIDATION = {
             "URL": str,
         },
     },
+    "example_config": CONFIG_DOC,
 }
 
 # === DETECTION CONFIG ===

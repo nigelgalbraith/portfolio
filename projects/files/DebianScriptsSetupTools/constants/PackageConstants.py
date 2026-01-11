@@ -14,6 +14,7 @@ CONFIG_DOC       = "doc/PackagesDoc.json"
 # === VALIDATION ===
 VALIDATION_CONFIG = {
     "required_job_fields": {},
+    "example_config": CONFIG_DOC,
 }
 
 # === SECONDARY VALIDATION  ===

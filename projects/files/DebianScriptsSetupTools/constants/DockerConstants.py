@@ -37,6 +37,7 @@ VALIDATION_CONFIG = {
         KEY_IMAGE: str,
         KEY_LOCATION: str,
     },
+    "example_config": CONFIG_DOC,
 }
 
 SECONDARY_VALIDATION = {}
