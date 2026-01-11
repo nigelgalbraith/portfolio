@@ -319,8 +319,8 @@ def display_config_doc(doc_path: str) -> bool:
     return True
 
 
-def load_doc_example(doc_path: str) -> Optional[dict]:
-    """Load and return the EXAMPLE section from a config doc JSON."""
+def load_doc_example(doc_path: str) -> Optional[dict[str, Any]]:
+    """Load and return the EXAMPLE + DESCRIPTION sections from a config doc JSON."""
     path = Path(doc_path)
     if not path.is_file():
         return None
@@ -329,6 +329,11 @@ def load_doc_example(doc_path: str) -> Optional[dict]:
     except Exception:
         return None
     example = data.get("EXAMPLE")
-    return example if isinstance(example, dict) else None
-
+    description = data.get("DESCRIPTION")
+    if not isinstance(example, dict) and not isinstance(description, dict):
+        return None
+    return {
+        "EXAMPLE": example if isinstance(example, dict) else None,
+        "DESCRIPTION": description if isinstance(description, dict) else None,
+    }
 
