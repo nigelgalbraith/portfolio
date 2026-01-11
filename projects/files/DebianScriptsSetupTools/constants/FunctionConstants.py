@@ -24,18 +24,6 @@ KEY_MODULE_FOLDER  = "ModuleFolder"
 KEY_CHECK_FOLDERS  = "CheckFolders"
 KEY_CHECK_FILES    = "CheckFiles"
 
-# Example JSON structure
-CONFIG_EXAMPLE = {
-    "Default": {
-        JOBS_KEY: {
-            "json_utils.py": {
-                KEY_MODULE_FOLDER: "$HOME/Documents/DebianScripts/modules",
-                KEY_CHECK_FOLDERS: ["$HOME/Documents/DebianScripts/constants"],
-                KEY_CHECK_FILES: ["$HOME/Documents/DebianScripts/DebianLoader.py"],
-            }
-        }
-    }
-}
 
 # === VALIDATION CONFIG ===
 VALIDATION_CONFIG = {
@@ -44,7 +32,6 @@ VALIDATION_CONFIG = {
         KEY_CHECK_FOLDERS: list,
         KEY_CHECK_FILES: list,
     },
-    "example_config": CONFIG_EXAMPLE,
 }
 
 # === SECONDARY VALIDATION  ===
@@ -56,7 +43,6 @@ DETECTION_CONFIG = {
     "config_type": CONFIG_TYPE,
     "jobs_key": JOBS_KEY,
     "default_config": DEFAULT_CONFIG,
-    "config_example": CONFIG_EXAMPLE,
     "default_config_note": (
         "No model-specific config was found. Using the 'Default' section instead."
     ),

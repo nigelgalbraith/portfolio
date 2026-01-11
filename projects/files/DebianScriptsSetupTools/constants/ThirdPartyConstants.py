@@ -21,20 +21,6 @@ KEY_COMPONENT       = "component"
 KEY_KEYRING_DIR     = "keyring_dir"
 KEY_KEYRING_NAME    = "keyring_name"  
 
-# === EXAMPLE JSON ===
-CONFIG_EXAMPLE = {
-    "Default": {
-        JOBS_KEY: {
-            "brave-browser": {
-                KEY_REPO_URL: "https://brave-browser-apt-release.s3.brave.com/",
-                KEY_REPO_KEY: "https://brave-browser-apt-release.s3.brave.com/brave-core.asc",
-                KEY_CODENAME: "jammy",
-                KEY_COMPONENT: "main",
-                KEY_KEYRING_DIR: "/usr/share/keyrings",
-            }
-        }
-    }
-}
 
 # === VALIDATION CONFIG ===
 VALIDATION_CONFIG = {
@@ -46,7 +32,6 @@ VALIDATION_CONFIG = {
         KEY_COMPONENT: str,
         KEY_KEYRING_DIR: str,
     },
-    "example_config": CONFIG_EXAMPLE,
 }
 
 # === SECONDARY VALIDATION  ===
@@ -58,7 +43,6 @@ DETECTION_CONFIG = {
     "config_type": CONFIG_TYPE,
     "jobs_key": JOBS_KEY,
     "default_config": DEFAULT_CONFIG,
-    "config_example": CONFIG_EXAMPLE,
     "default_config_note": (
         "No model-specific config was found. Using the 'Default' section instead."
     ),

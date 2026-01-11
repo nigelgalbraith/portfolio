@@ -44,38 +44,6 @@ LINKS_TO_JSON_SCRIPT = "settings/downloads/links_to_json.py"
 
 
 # ==================================================
-# EXAMPLE JSON (UNIFIED LINKS)
-# ==================================================
-
-CONFIG_EXAMPLE: Dict[str, Any] = {
-    "YOUR MODEL HERE": {
-        JOBS_KEY: {
-            "MAME-Roms": {
-                KEY_LINKS: {
-                    KEY_OUTPUT_PATH: "/mnt/plexmedia/PlexMedia/arcade/MAME/roms/",
-                    KEY_EXTRACT: False,
-                    KEY_EXTRACT_EXTENSIONS: [],
-                    KEY_LINKS_CONFIGS: [
-                        "settings/downloads/links/links/RomLinks-MAME-1.json",
-                    ],
-                },
-            },
-            "Master System-Roms": {
-                KEY_LINKS: {
-                    KEY_OUTPUT_PATH: "/mnt/plexmedia/PlexMedia/arcade/Master System/roms/",
-                    KEY_EXTRACT: True,
-                    KEY_EXTRACT_EXTENSIONS: ["zip"],
-                    KEY_LINKS_CONFIGS: [
-                        "settings/downloads/links/links/RomLinks-SMS.json",
-                    ],
-                },
-            },
-        }
-    }
-}
-
-
-# ==================================================
 # VALIDATION CONFIG (UPDATED REQUIRED FIELDS)
 # ==================================================
 
@@ -83,7 +51,6 @@ VALIDATION_CONFIG: Dict[str, Any] = {
     "required_job_fields": {
         KEY_LINKS: dict,
     },
-    "example_config": CONFIG_EXAMPLE,
 }
 
 SECONDARY_VALIDATION: Dict[str, Any] = {
@@ -107,7 +74,6 @@ DETECTION_CONFIG: Dict[str, Any] = {
     "config_type": CONFIG_TYPE,
     "jobs_key": JOBS_KEY,
     "default_config": DEFAULT_CONFIG,
-    "config_example": CONFIG_EXAMPLE,
     "default_config_note": (
         "No model-specific Downloads config was found. "
         "Using the 'Default' section instead. "

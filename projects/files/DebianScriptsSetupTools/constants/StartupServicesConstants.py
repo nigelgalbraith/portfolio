@@ -36,49 +36,6 @@ KEY_LOGROTATE    = "LogrotateCfg"
 KEY_CONFIG_SRC   = "ConfigSrc"      
 KEY_CONFIG_DEST  = "ConfigDest"     
 
-# === EXAMPLE JSON (your snippet) ===
-CONFIG_EXAMPLE = {
-    "YOUR_MODEL_NUMBER": {
-        JOBS_KEY: {
-            "YourService1": {
-                KEY_ORDER: 1,
-                KEY_NAME: "your_service_1",
-                KEY_SCRIPT_SRC: "Services/YourService1/your_service_1-template.sh",
-                KEY_SCRIPT_DEST: "/usr/local/bin/your_service_1.sh",
-                KEY_SERVICE_SRC: "Services/YourService1/your_service_1-template.service",
-                KEY_SERVICE_DEST: "/etc/systemd/system/your_service_1.service",
-                KEY_SERVICE_NAME: "your_service_1.service",
-                KEY_LOG_PATH: "/var/log/your_service_1.log",
-                KEY_LOGROTATE: "Services/YourService1/your_service_1.logrotate",
-            },
-            "YourService2": {
-                KEY_ORDER: 2,
-                KEY_NAME: "your_service_2",
-                KEY_SCRIPT_SRC: "Services/YourService2/your_service_2-template.py",
-                KEY_SCRIPT_DEST: "/usr/local/bin/your_service_2.py",
-                KEY_CONFIG_SRC: "Services/YourService2/your_service_2_config-template.json",
-                KEY_CONFIG_DEST: "/etc/your_service_2_config.json",
-                KEY_SERVICE_SRC: "Services/YourService2/your_service_2-template.service",
-                KEY_SERVICE_DEST: "/etc/systemd/system/your_service_2.service",
-                KEY_SERVICE_NAME: "your_service_2.service",
-                KEY_LOG_PATH: "/var/log/your_service_2.log",
-                KEY_LOGROTATE: "Services/YourService2/your_service_2.logrotate",
-            },
-            "YourService3": {
-                KEY_ORDER: 3,
-                KEY_NAME: "your_service_3",
-                KEY_SCRIPT_SRC: "Services/YourService3/your_service_3-template.sh",
-                KEY_SCRIPT_DEST: "/usr/local/bin/your_service_3.sh",
-                KEY_SERVICE_SRC: "Services/YourService3/your_service_3-template.service",
-                KEY_SERVICE_DEST: "/etc/systemd/system/your_service_3.service",
-                KEY_SERVICE_NAME: "your_service_3.service",
-                KEY_LOG_PATH: "/var/log/your_service_3.log",
-                KEY_LOGROTATE: "Services/YourService3/your_service_3.logrotate",
-            },
-        }
-    }
-}
-
 
 # === VALIDATION CONFIG ===
 VALIDATION_CONFIG = {
@@ -90,7 +47,6 @@ VALIDATION_CONFIG = {
         KEY_SERVICE_DEST: str,
         KEY_LOG_PATH: str,
     },
-    "example_config": CONFIG_EXAMPLE,
 }
 
 # === SECONDARY VALIDATION CONFIG ===
@@ -102,7 +58,6 @@ DETECTION_CONFIG = {
     "config_type": CONFIG_TYPE,
     "jobs_key": JOBS_KEY,
     "default_config": DEFAULT_CONFIG,
-    "config_example": CONFIG_EXAMPLE,
     "default_config_note": (
         "No model-specific config was found. Using the 'Default' section instead."
     ),

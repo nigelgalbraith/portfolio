@@ -1,35 +1,41 @@
 {
   "FIXED_FIELDS": [
-    "DEB",
-    "DownloadURL",
-    "EnableService",
-    "download_dir"
+    "<MODEL_ID>.DEB",
+    "<MODEL_ID>.DEB.DownloadURL",
+    "<MODEL_ID>.DEB.download_dir",
+    "<MODEL_ID>.DEB.EnableService"
   ],
   "EDITABLE_FIELDS": [
     "<MODEL_ID>",
-    "<PACKAGE_NAME>",
-    "<values for the keys above>"
+    "<MODEL_ID>.DEB.<VALUES>",
+    "<MODEL_ID>.DEB.<VALUES>.DownloadURL.<VALUES>",
+    "<MODEL_ID>.DEB.<VALUES>.download_dir.<VALUES>",
+    "<MODEL_ID>.DEB.<VALUES>.EnableService.<VALUES>"
   ],
   "EXAMPLE": {
     "<MODEL_ID>": {
       "DEB": {
-        "example-package": {
-          "DownloadURL": "https://example.com/file",
+        "github-desktop": {
+          "DownloadURL": "https://github.com/shiftkey/desktop/releases/download/release-3.2.1-linux1/GitHubDesktop-linux-3.2.1-linux1.deb",
           "EnableService": false,
-          "download_dir": "/path/to/value"
+          "download_dir": "/tmp/deb_downloads"
+        }
+      }
+    },
+    "DESKTOP_EXAMPLE": {
+      "DEB": {
+        "plexmediaserver": {
+          "DownloadURL": "https://downloads.plex.tv/plex-media-server-new/latest/debian/plexmediaserver_amd64.deb",
+          "EnableService": true,
+          "download_dir": "/tmp/deb_downloads"
         }
       }
     }
   },
   "DESCRIPTION": {
-    "<MODEL_ID>": {
-      "DEB": {
-        "<PACKAGE_NAME>": {
-          "DownloadURL": "Describe what 'DownloadURL' is used for.",
-          "EnableService": "Describe what 'EnableService' is used for.",
-          "download_dir": "Describe what 'download_dir' is used for."
-        }
-      }
-    }
+    "<MODEL_ID>.DEB.<VALUES>": "A direct .deb install job.",
+    "<MODEL_ID>.DEB.<VALUES>.DownloadURL.<VALUES>": "Direct URL to a .deb file that will be downloaded and installed.",
+    "<MODEL_ID>.DEB.<VALUES>.download_dir.<VALUES>": "Temporary directory used to store the downloaded .deb before installation.",
+    "<MODEL_ID>.DEB.<VALUES>.EnableService.<VALUES>": "If true, attempt to enable/start the service after install."
   }
 }

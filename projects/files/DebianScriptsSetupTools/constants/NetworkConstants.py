@@ -24,21 +24,6 @@ KEY_ADDRESS    = "Address"
 KEY_GATEWAY    = "Gateway"
 KEY_DNS        = "DNS"
 
-# Example JSON structure
-CONFIG_EXAMPLE = {
-    "Default": {
-        JOBS_KEY: {
-            "MyNetwork": {
-                KEY_CONN_NAME: "MyNetwork",
-                KEY_INTERFACE: "eth0",
-                KEY_ADDRESS: "192.168.1.10/24",
-                KEY_GATEWAY: "192.168.1.1",
-                KEY_DNS: "192.168.1.1"
-            }
-        }
-    }
-}
-
 # === VALIDATION CONFIG ===
 VALIDATION_CONFIG = {
     "required_job_fields": {
@@ -48,7 +33,6 @@ VALIDATION_CONFIG = {
         KEY_GATEWAY: str,
         KEY_DNS: str,
     },
-    "example_config": CONFIG_EXAMPLE,
 }
 
 # === SECONDARY VALIDATION  ===
@@ -60,7 +44,6 @@ DETECTION_CONFIG = {
     "config_type": CONFIG_TYPE,
     "jobs_key": JOBS_KEY,
     "default_config": DEFAULT_CONFIG,
-    "config_example": CONFIG_EXAMPLE,
     "default_config_note": (
         "No model-specific config was found. Using the 'Default' section instead."
     ),

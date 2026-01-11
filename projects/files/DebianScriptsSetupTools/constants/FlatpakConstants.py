@@ -19,22 +19,11 @@ CONFIG_DOC       = "doc/FlatpakDoc.json"
 # === JSON KEYS ===
 KEY_REMOTE = "remote"
 
-# === EXAMPLE JSON===
-CONFIG_EXAMPLE = {
-    "Default": {
-        JOBS_KEY: {
-            "org.videolan.VLC": {KEY_REMOTE: "flathub"},
-            "org.audacityteam.Audacity": {KEY_REMOTE: "flathub"},
-        }
-    }
-}
-
 # === VALIDATION CONFIG ===
 VALIDATION_CONFIG = {
     "required_job_fields": {
         KEY_REMOTE: str,
     },
-    "example_config": CONFIG_EXAMPLE,
 }
 
 # === SECONDARY VALIDATION  ===
@@ -46,7 +35,6 @@ DETECTION_CONFIG = {
     "config_type": CONFIG_TYPE,
     "jobs_key": JOBS_KEY,
     "default_config": DEFAULT_CONFIG,
-    "config_example": CONFIG_EXAMPLE,
     "default_config_note": (
         "No model-specific config was found. Using the 'Default' section instead."
     ),

@@ -49,49 +49,6 @@ KEY_INSTRUCTIONS       = "Instructions"
 KEY_CAMERAS            = "Cameras"
 KEY_TMPDIR             = "TmpDir"
 
-# === GENERIC EXAMPLE ===
-CONFIG_EXAMPLE = {
-    "YOUR_MODEL_NUMBER": {
-        JOBS_KEY: {
-            "xteve": {
-                KEY_SERVICE_URL: "http://127.0.0.1:34400",
-                KEY_PLAYLIST_FILE: "/etc/xteve/cameras.m3u",
-                KEY_USERNAME: "xteve",
-                KEY_CAM_DIR: [  "/etc/xteve",
-                                "/var/lib/xteve",
-                                "/var/log/xteve",
-                                "tmp/xteve"],
-                KEY_EPG_FILE: "/etc/xteve/cameras.xml",
-                KEY_RESTART_SERVICE: True,
-                KEY_SERVICE_TEMPLATE: "Services/IPCam/xteve-template.service",
-                KEY_SERVICE_DEST: "/etc/systemd/system/xteve.service",
-                KEY_BINARY_NAME: "xteve",
-                KEY_DOWNLOAD_URL: "https://github.com/xteve-project/xTeVe-Downloads/blob/master/xteve_linux_amd64.zip?raw=true",
-                KEY_INSTALL_DIR: "/opt/xteve",
-                KEY_SYMLINK_PATH: "/usr/local/bin/xteve",
-                KEY_TMPDIR: "/tmp/ipcam_downloads",
-                KEY_INSTRUCTIONS: [
-                  "echo \"Open http://<server-ip>:34400/web in your browser.\"",
-                  "echo \"For 'M3U Playlist Path', enter: /etc/xteve/cameras.m3u\"",
-                  "echo \"For 'XMLTV File', enter: /etc/xteve/cameras.xml\"",
-                  "echo \"Complete the setup wizard and save.\"",
-                  "echo \"After setup, add Plex or kodi DVR and point it to:",
-                  "echo \"http://<server-ip>:34400/m3u/xteve.m3u\"",
-                  "echo \"Use local or remote locations shown in xteve web interface\""
-                ],
-                KEY_CAMERAS: [
-                    {
-                        "Name": "Camera 1",
-                        "URL": "http://192.168.1.10:554/video",
-                        "Description": "Front entrance – wide angle view"
-                    }
-                ],
-            }
-        }
-    }
-}
-
-
 # === VALIDATION CONFIG ===
 VALIDATION_CONFIG = {
     "required_job_fields": {
@@ -109,7 +66,6 @@ VALIDATION_CONFIG = {
         KEY_TMPDIR: str,
         KEY_CAMERAS: list,
     },
-    "example_config": CONFIG_EXAMPLE,
 }
 
 # Validate Cameras list entries
@@ -122,7 +78,6 @@ SECONDARY_VALIDATION = {
             "Description": str,
         },
     },
-    "config_example": CONFIG_EXAMPLE,
 }
 
 # === SECONDARY VALIDATION ===
@@ -134,7 +89,6 @@ SECONDARY_VALIDATION = {
             "URL": str,
         },
     },
-    "config_example": CONFIG_EXAMPLE,
 }
 
 # === DETECTION CONFIG ===
@@ -143,7 +97,6 @@ DETECTION_CONFIG = {
     "config_type": CONFIG_TYPE,
     "jobs_key": JOBS_KEY,
     "default_config": DEFAULT_CONFIG,
-    "config_example": CONFIG_EXAMPLE,
     "default_config_note": (
         "No model-specific IPCam config was found. Using the 'default' section instead."
     ),

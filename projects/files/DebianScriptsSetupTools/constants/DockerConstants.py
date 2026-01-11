@@ -30,22 +30,6 @@ KEY_LOCATION   = "Location"
 KEY_DOWNLOAD   = "Download"
 KEY_TMPDIR     = "TmpDir"  
 
-# === EXAMPLE CONFIG  ===
-CONFIG_EXAMPLE = {
-    "YOUR_MODEL_NUMBER": {
-        JOBS_KEY: {
-            "example_service": {
-                KEY_NAME: "webrcade",
-                KEY_IMAGE: "webrcade/webrcade",
-                KEY_PORT: "8080:80",
-                KEY_LOCATION: "~/projects/webArcade/webrcade-master/",
-                KEY_DOWNLOAD: "https://codeload.github.com/webrcade/webrcade/zip/refs/heads/master",
-                KEY_TMPDIR: "/tmp/docker_downloads"
-            }
-        }
-    }
-}
-
 # === VALIDATION CONFIG ===
 VALIDATION_CONFIG = {
     "required_job_fields": {
@@ -53,7 +37,6 @@ VALIDATION_CONFIG = {
         KEY_IMAGE: str,
         KEY_LOCATION: str,
     },
-    "example_config": CONFIG_EXAMPLE,
 }
 
 SECONDARY_VALIDATION = {}
@@ -64,7 +47,6 @@ DETECTION_CONFIG = {
     "config_type": CONFIG_TYPE,
     "jobs_key": JOBS_KEY,
     "default_config": DEFAULT_CONFIG,
-    "config_example": CONFIG_EXAMPLE,
     "default_config_note": (
         "No model-specific docker config was found. Using the 'default' section instead."
     ),

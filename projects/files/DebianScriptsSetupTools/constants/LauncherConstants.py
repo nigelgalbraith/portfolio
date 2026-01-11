@@ -74,82 +74,6 @@ KEY_COPY_NAME          = "copyName"
 KEY_SRC                = "src"
 KEY_DEST               = "dest"
 
-# === EXAMPLE JSON ===
-CONFIG_EXAMPLE: Dict[str, Any] = {
-    "YOUR MODEL HERE": {
-        JOBS_KEY: {
-            "flex-launcher": {
-                KEY_DOWNLOAD_URL: "https://github.com/complexlogic/flex-launcher/releases/download/v2.2/flex-launcher_2.2_amd64.deb",
-                KEY_DOWNLOAD_DIR: "/tmp",  
-                KEY_USERS: ["launcher"],
-                KEY_USER_GROUPS: ["audio", "video", "arcade"],
-
-                KEY_SETTINGS_FILES: [
-                    {
-                        KEY_COPY_NAME: "FlexINI",
-                        KEY_SRC:  "settings/flex/Desktop/Desktop-Flex-Template-config.ini",
-                        KEY_DEST: "/home/launcher/.config/flex-launcher/config.ini"
-                    }
-                ],
-                KEY_SETTINGS_FOLDERS: [],
-
-                KEY_SETTINGS_CHMOD_PATHS: [
-                    {"path": "/home/launcher/.config/flex-launcher/config.ini", "mode": "644"}
-                ],
-                KEY_SETTINGS_CHOWN_PATHS: [
-                    {"path": "/home/launcher/.config/flex-launcher/config.ini"}
-                ],
-
-                KEY_REMOVE_PATHS: [
-                    "/home/launcher/.config/flex-launcher/config.ini",
-                    "/home/launcher/.dmrc"  
-                ],
-
-                KEY_SETUP_DIRS: [
-                    "/home/launcher/.config",
-                    "/home/launcher/.config/openbox",
-                    "/home/launcher/.config/flex-launcher",
-                    "/etc/lightdm/lightdm.conf.d"
-                ],
-
-                KEY_KIOSK_FILES: [
-                    {
-                        KEY_COPY_NAME: "LightDM autologin",
-                        KEY_SRC:  "settings/flex/Desktop/Desktop-LightDM-50-launcher.conf",
-                        KEY_DEST: "/etc/lightdm/lightdm.conf.d/50-launcher.conf"
-                    },
-                    {
-                        KEY_COPY_NAME: "Openbox autostart",
-                        KEY_SRC:  "settings/flex/Desktop/Desktop-Flex-autostart.sh",
-                        KEY_DEST: "/home/launcher/.config/openbox/autostart"
-                    }
-                ],
-
-                KEY_CHMOD_PATHS: [
-                    {"path": "/home/launcher/.config/openbox/autostart", "mode": "755"}
-                ],
-                KEY_CHOWN_PATHS: [
-                    {"path": "/home/launcher"},
-                    {"path": "/home/launcher/.config"},
-                    {"path": "/home/launcher/.cache"}
-                ],
-                KEY_CHOWN_RECURSIVE: True,
-                KEY_DEFAULT_DM: {"package": "gdm3", "service": "gdm"},
-                KEY_KIOSK_DM:   {"package": "lightdm", "service": "lightdm"},
-
-                KEY_ADDITIONAL_PKGS: [
-                    "chromium",
-                    "dbus-user-session",
-                    "dbus-x11",
-                    "lightdm-gtk-greeter",
-                    "lightdm-gtk-greeter-settings",
-                    "libsdl2-image-2.0-0"
-                ],
-            }
-        }
-    }
-}
-
 # === VALIDATION CONFIG ===
 VALIDATION_CONFIG: Dict[str, Any] = {
     "required_job_fields": {
@@ -171,7 +95,6 @@ VALIDATION_CONFIG: Dict[str, Any] = {
         KEY_DEFAULT_DM: dict,
         KEY_KIOSK_DM: dict,
     },
-    "example_config": CONFIG_EXAMPLE,
 }
 
 # === SECONDARY VALIDATION  ===
@@ -219,7 +142,6 @@ DETECTION_CONFIG: Dict[str, Any] = {
     "config_type": CONFIG_TYPE,
     "jobs_key": JOBS_KEY,
     "default_config": DEFAULT_CONFIG,
-    "config_example": CONFIG_EXAMPLE,
     "default_config_note": (
         "No model-specific config was found. "
         "Using the 'Default' section instead. "

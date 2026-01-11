@@ -238,10 +238,59 @@ def confirm(
         print(
             f"Invalid input. Please enter one of: {', '.join(valid_yes + valid_no)}."
         )
+def display_description(description: dict[str, Any]) -> None:
+    """Display DESCRIPTION as a collapsed dot-path hierarchy."""
+    print("\nDESCRIPTION")
+    print("-----------")
+    if not isinstance(description, dict):
+        print("[ERROR] DESCRIPTION is not a dict.")
+        return
+    DESC_KEY = "__DESC__"
+    tree: dict[str, Any] = {}
+    for key, text in description.items():
+        if not isinstance(key, str):
+            continue
+        parts = key.split(".")
+        node = tree
+        for part in parts:
+            node = node.setdefault(part, {})
+        node[DESC_KEY] = str(text)
+    stack: list[tuple[dict[str, Any], list[str], int, int, bool]] = [
+        (tree, sorted(tree.keys()), 0, 0, False)
+    ]
+    while stack:
+        node, keys, idx, depth, printed_desc = stack[-1]
+        if not printed_desc and DESC_KEY in node:
+            stack[-1] = (node, keys, idx, depth, True)
+            print(f"{'  ' * (depth + 1)}{node[DESC_KEY]}")
+            continue
+        if idx >= len(keys):
+            stack.pop()
+            continue
+        k = keys[idx]
+        stack[-1] = (node, keys, idx + 1, depth, printed_desc)
+        if k == DESC_KEY:
+            continue
+        indent = "  " * depth
+        arrow = "↳ " if depth > 0 else ""
+        print(f"{indent}{arrow}{k}")
+        child = node.get(k)
+        if isinstance(child, dict):
+            stack.append((child, sorted(child.keys()), 0, depth + 1, False))
+
+
+def display_example(example: Any) -> None:
+    """Display EXAMPLE exactly as stored in the doc."""
+    print("\nEXAMPLE")
+    print("-------")
+    if example is None:
+        print("[WARN] No EXAMPLE section found.")
+        return
+    print(json.dumps(example, indent=2, ensure_ascii=False))
 
 
 def display_config_doc(doc_path: str) -> bool:
-    """Print a config documentation JSON grouped by top-level keys."""
+    """Pipeline entry: load config doc and display DESCRIPTION + EXAMPLE."""
     path = Path(doc_path)
     if not path.is_file():
         print(f"[ERROR] Config doc not found: {path}")
@@ -254,19 +303,32 @@ def display_config_doc(doc_path: str) -> bool:
     print()
     print(f"Config Help: {path.name}")
     print("-" * (13 + len(path.name)))
-    for key, value in data.items():
-        print(f"\n{key}")
-        print("-" * len(key))
-        if isinstance(value, (dict, list)):
-            print(json.dumps(value, indent=2, ensure_ascii=False))
-        else:
-            print(value)
+    if "EXAMPLE" in data:
+        display_example(data["EXAMPLE"])
+    else:
+        print("\nEXAMPLE")
+        print("-------")
+        print("[WARN] No EXAMPLE section found.")
+    if "DESCRIPTION" in data:
+        display_description(data["DESCRIPTION"])
+    else:
+        print("\nDESCRIPTION")
+        print("-----------")
+        print("[WARN] No DESCRIPTION section found.")
     print()
     return True
 
 
-
-
-
+def load_doc_example(doc_path: str) -> Optional[dict]:
+    """Load and return the EXAMPLE section from a config doc JSON."""
+    path = Path(doc_path)
+    if not path.is_file():
+        return None
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    example = data.get("EXAMPLE")
+    return example if isinstance(example, dict) else None
 
 

@@ -30,24 +30,6 @@ KEY_LAUNCH_CMD     = "LaunchCmd"
 KEY_POST_INSTALL   = "PostInstall"
 KEY_DOWNLOAD_PATH  = "DownloadPath"
 
-# Example JSON structure
-CONFIG_EXAMPLE = {
-    "Default": {
-        JOBS_KEY: {
-            "ExampleGame": {
-                KEY_NAME: "Example Game",
-                KEY_DOWNLOAD_URL: "http://example.com/game.zip",
-                KEY_EXTRACT_TO: "~/dosgames/example",
-                KEY_CHECK_PATH: "~/dosgames/example",
-                KEY_STRIP_TOP: True,
-                KEY_LAUNCH_CMD: (
-                    'dosbox -c "mount c ~/dosgames/example" -c "c:" -c "game.exe"'
-                ),
-                KEY_POST_INSTALL: [],
-            }
-        }
-    }
-}
 
 # === VALIDATION CONFIG ===
 VALIDATION_CONFIG = {
@@ -59,7 +41,6 @@ VALIDATION_CONFIG = {
         KEY_STRIP_TOP: bool,
         KEY_LAUNCH_CMD: str,
     },
-    "example_config": CONFIG_EXAMPLE,
 }
 
 # === SECONDARY VALIDATION  ===
@@ -71,7 +52,6 @@ DETECTION_CONFIG = {
     "config_type": CONFIG_TYPE,
     "jobs_key": JOBS_KEY,
     "default_config": DEFAULT_CONFIG,
-    "config_example": CONFIG_EXAMPLE,
     "default_config_note": (
         "No model-specific config was found. Using the 'Default' section instead."
     ),

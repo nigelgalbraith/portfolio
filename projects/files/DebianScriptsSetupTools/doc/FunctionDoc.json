@@ -1,35 +1,45 @@
 {
   "FIXED_FIELDS": [
-    "Functions",
-    "ModuleFolder",
-    "CheckFolders",
-    "CheckFiles"
+    "<MODEL_ID>.Functions",
+    "<MODEL_ID>.Functions.ModuleFolder",
+    "<MODEL_ID>.Functions.CheckFolders",
+    "<MODEL_ID>.Functions.CheckFiles"
   ],
   "EDITABLE_FIELDS": [
     "<MODEL_ID>",
-    "<MODULE_FILE>",
-    "<values for the keys above>"
+    "<MODEL_ID>.Functions.<VALUES>",
+    "<MODEL_ID>.Functions.<VALUES>.ModuleFolder",
+    "<MODEL_ID>.Functions.<VALUES>.CheckFolders.<VALUES>",
+    "<MODEL_ID>.Functions.<VALUES>.CheckFiles.<VALUES>"
   ],
   "EXAMPLE": {
     "<MODEL_ID>": {
       "Functions": {
-        "json_utils.py": {
-          "ModuleFolder": "/path/to/value",
-          "CheckFolders": [],
-          "CheckFiles": []
+        "package_utils.py": {
+          "ModuleFolder": "$HOME/Documents/GitHub/DebianScripts/modules",
+          "CheckFolders": [
+            "$HOME/Documents/GitHub/DebianScripts/constants"
+          ],
+          "CheckFiles": [
+            "$HOME/Documents/GitHub/DebianScripts/DebianLoader.py"
+          ]
+        },
+        "firewall_utils.py": {
+            "ModuleFolder": "$HOME/Documents/GitHub/DebianScripts/modules",
+            "CheckFolders": [
+              "$HOME/Documents/GitHub/DebianScripts/constants"
+            ],
+            "CheckFiles": [
+              "$HOME/Documents/GitHub/DebianScripts/DebianLoader.py"
+            ]
         }
       }
     }
   },
   "DESCRIPTION": {
-    "<MODEL_ID>": {
-      "Functions": {
-        "<MODULE_FILE>": {
-          "ModuleFolder": "Describe what 'ModuleFolder' is used for.",
-          "CheckFolders": "Describe what 'CheckFolders' is used for.",
-          "CheckFiles": "Describe what 'CheckFiles' is used for."
-        }
-      }
-    }
+    "<MODEL_ID>.Functions.<VALUES>": "A python module definition.",
+    "<MODEL_ID>.Functions.<VALUES>.ModuleFolder.<VALUES>": "Folder that contains your python modules (the place to scan/load functions from).",
+    "<MODEL_ID>.Functions.<VALUES>.CheckFolders.<VALUES>": "Folders that must exist for this module scan to be considered ready (sanity checks).",
+    "<MODEL_ID>.Functions.<VALUES>.CheckFiles.<VALUES>": "Files that must exist for this module scan to be considered ready (sanity checks)."
   }
 }

@@ -1,35 +1,52 @@
 {
   "FIXED_FIELDS": [
-    "Docker",
-    "Name",
-    "Image",
-    "Location"
+    "<MODEL_ID>.Docker",
+    "<MODEL_ID>.Docker.<VALUES>.Name",
+    "<MODEL_ID>.Docker.<VALUES>.Image",
+    "<MODEL_ID>.Docker.<VALUES>.Port",
+    "<MODEL_ID>.Docker.<VALUES>.Location",
+    "<MODEL_ID>.Docker.<VALUES>.Download",
+    "<MODEL_ID>.Docker.<VALUES>.TmpDir"
   ],
   "EDITABLE_FIELDS": [
     "<MODEL_ID>",
-    "<CONTAINER_NAME>",
-    "<values for the keys above>"
+    "<MODEL_ID>.Docker.<VALUES>",
+    "<MODEL_ID>.Docker.<VALUES>.Name.<VALUES>",
+    "<MODEL_ID>.Docker.<VALUES>.Image.<VALUES>",
+    "<MODEL_ID>.Docker.<VALUES>.Port.<VALUES>",
+    "<MODEL_ID>.Docker.<VALUES>.Location.<VALUES>",
+    "<MODEL_ID>.Docker.<VALUES>.Download.<VALUES>",
+    "<MODEL_ID>.Docker.<VALUES>.TmpDir.<VALUES>"
   ],
   "EXAMPLE": {
     "<MODEL_ID>": {
       "Docker": {
-        "example_container": {
-          "Name": "value",
-          "Image": "value",
-          "Location": "/path/to/value"
+        "webrcade": {
+          "Name": "webrcade",
+          "Image": "webrcade/webrcade",
+          "Port": "8080:80",
+          "Location": "~/projects/webArcade/webrcade-master/",
+          "Download": "https://codeload.github.com/webrcade/webrcade/zip/refs/heads/master",
+          "TmpDir": "/tmp/docker_downloads"
+        },
+        "example-app": {
+          "Name": "example-app",
+          "Image": "example/image",
+          "Port": "9090:80",
+          "Location": "~/projects/example-app/",
+          "Download": "https://example.com/example-app.zip",
+          "TmpDir": "/tmp/docker_downloads"
         }
       }
     }
   },
   "DESCRIPTION": {
-    "<MODEL_ID>": {
-      "Docker": {
-        "<CONTAINER_NAME>": {
-          "Name": "Describe what 'Name' is used for.",
-          "Image": "Describe what 'Image' is used for.",
-          "Location": "Describe what 'Location' is used for."
-        }
-      }
-    }
+    "<MODEL_ID>.Docker.<VALUES>": "A Docker workload definition.",
+    "<MODEL_ID>.Docker.<VALUES>.Name.<VALUES>": "Logical name for the Docker workload.",
+    "<MODEL_ID>.Docker.<VALUES>.Image.<VALUES>": "Docker image name to pull/run.",
+    "<MODEL_ID>.Docker.<VALUES>.Port.<VALUES>": "Port mapping in HOST:CONTAINER format.",
+    "<MODEL_ID>.Docker.<VALUES>.Location.<VALUES>": "Local directory where Docker assets live.",
+    "<MODEL_ID>.Docker.<VALUES>.Download.<VALUES>": "Optional URL to download Docker assets.",
+    "<MODEL_ID>.Docker.<VALUES>.TmpDir.<VALUES>": "Temporary directory used for Docker downloads."
   }
 }

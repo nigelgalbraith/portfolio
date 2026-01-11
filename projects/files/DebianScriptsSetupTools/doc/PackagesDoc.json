@@ -1,26 +1,21 @@
 {
   "FIXED_FIELDS": [
-    "Packages"
+    "<MODEL_ID>.Packages"
   ],
   "EDITABLE_FIELDS": [
-    "<MODEL_ID>",
-    "<PACKAGE_NAME>",
-    "<add/remove package keys>"
-  ],
+    "<MODEL_ID>", 
+    "<MODEL_ID>.Packages.<VALUES>"],
   "EXAMPLE": {
     "<MODEL_ID>": {
       "Packages": {
         "vlc": {},
         "audacity": {},
-        "firefox-esr": {}
+        "curl": {},
+        "remmina": {}
       }
     }
   },
   "DESCRIPTION": {
-    "<MODEL_ID>": {
-      "Packages": {
-        "<PACKAGE_NAME>": "Add a package name as a key. In the real config, the value stays {}."
-      }
-    }
+    "<MODEL_ID>.Packages.<VALUES>": "Add an APT package name as the key. The value stays {}. Remove the key to stop managing that package."
   }
 }

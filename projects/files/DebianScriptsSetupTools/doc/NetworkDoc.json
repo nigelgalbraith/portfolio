@@ -1,41 +1,47 @@
 {
   "FIXED_FIELDS": [
-    "Networks",
-    "ConnectionName",
-    "Interface",
-    "Address",
-    "Gateway",
-    "DNS"
+    "<MODEL_ID>.Networks",
+    "<MODEL_ID>.Networks.<VALUES>.ConnectionName",
+    "<MODEL_ID>.Networks.<VALUES>.Interface",
+    "<MODEL_ID>.Networks.<VALUES>.Address",
+    "<MODEL_ID>.Networks.<VALUES>.Gateway",
+    "<MODEL_ID>.Networks.<VALUES>.DNS"
   ],
   "EDITABLE_FIELDS": [
     "<MODEL_ID>",
-    "<NETWORK_PROFILE>",
-    "<values for the keys above>"
+    "<MODEL_ID>.Networks.<VALUES>",
+    "<MODEL_ID>.Networks.<VALUES>.ConnectionName.<VALUES>",
+    "<MODEL_ID>.Networks.<VALUES>.Interface.<VALUES>",
+    "<MODEL_ID>.Networks.<VALUES>.Address.<VALUES>",
+    "<MODEL_ID>.Networks.<VALUES>.Gateway.<VALUES>",
+    "<MODEL_ID>.Networks.<VALUES>.DNS.<VALUES>"
   ],
   "EXAMPLE": {
     "<MODEL_ID>": {
       "Networks": {
-        "OfficeLAN": {
-          "ConnectionName": "value",
-          "Interface": "value",
-          "Address": "value",
-          "Gateway": "value",
-          "DNS": "value"
+        "WiFi-1": {
+          "ConnectionName": "WiFi-1",
+          "Interface": "wlp2s0",
+          "Address": "192.168.4.50/24",
+          "Gateway": "192.168.4.1",
+          "DNS": "192.169.4.1"
+        },
+        "WiFi-2": {
+          "ConnectionName": "WiFi-2",
+          "Interface": "wlp2s0",
+          "Address": "192.168.10.50/24",
+          "Gateway": "192.168.10.1",
+          "DNS": "192.169.10.1"
         }
       }
     }
   },
   "DESCRIPTION": {
-    "<MODEL_ID>": {
-      "Networks": {
-        "<NETWORK_PROFILE>": {
-          "ConnectionName": "Describe what 'ConnectionName' is used for.",
-          "Interface": "Describe what 'Interface' is used for.",
-          "Address": "Describe what 'Address' is used for.",
-          "Gateway": "Describe what 'Gateway' is used for.",
-          "DNS": "Describe what 'DNS' is used for."
-        }
-      }
-    }
+    "<MODEL_ID>.Networks.<VALUES>": "A NetworkManager connection profile.",
+    "<MODEL_ID>.Networks.<VALUES>.ConnectionName.<VALUES>": "The NetworkManager connection profile name.",
+    "<MODEL_ID>.Networks.<VALUES>.Interface.<VALUES>": "Network interface name (e.g. wlp2s0, eth0).",
+    "<MODEL_ID>.Networks.<VALUES>.Address.<VALUES>": "Static IP address in CIDR format.",
+    "<MODEL_ID>.Networks.<VALUES>.Gateway.<VALUES>": "Default gateway IPv4 address.",
+    "<MODEL_ID>.Networks.<VALUES>.DNS.<VALUES>": "DNS server IPv4 address."
   }
 }

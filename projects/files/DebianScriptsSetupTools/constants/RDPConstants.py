@@ -31,26 +31,6 @@ KEY_SSL_CERT_DIR = "SslCertDir"
 KEY_SSL_KEY_DIR  = "SslKeyDir"
 KEY_XRDP_DIR     = "XrdpDir"
 
-# === Example JSON ===
-CONFIG_EXAMPLE = {
-    "YOUR MODEL NUMBER": {
-        JOBS_KEY: {
-            "xrdp": {
-                KEY_SERVICE_NAME: "xrdp",
-                KEY_USER_NAME: "xrdp",
-                KEY_SESSION_CMD: "startxfce4",
-                KEY_XSESSION: ".xsession",
-                KEY_SKEL_DIR: "/etc/skel",
-                KEY_HOME_BASE: "/home",
-                KEY_GROUPS: ["ssl-cert"],
-                KEY_SSL_CERT_DIR: "/etc/ssl/certs",
-                KEY_SSL_KEY_DIR: "/etc/ssl/private",
-                KEY_XRDP_DIR: "/etc/xrdp"
-            }
-        }
-    }
-}
-
 # === VALIDATION CONFIG ===
 VALIDATION_CONFIG = {
     "required_job_fields": {
@@ -65,7 +45,6 @@ VALIDATION_CONFIG = {
         KEY_SSL_KEY_DIR: str,
         KEY_XRDP_DIR: str,
     },
-    "example_config": CONFIG_EXAMPLE,
 }
 
 # === SECONDARY VALIDATION  ===
@@ -77,7 +56,6 @@ DETECTION_CONFIG = {
     "config_type": CONFIG_TYPE,
     "jobs_key": JOBS_KEY,
     "default_config": DEFAULT_CONFIG,
-    "config_example": CONFIG_EXAMPLE,
     "default_config_note": (
         "No model-specific config was found. Using the 'Default' section instead."
     ),

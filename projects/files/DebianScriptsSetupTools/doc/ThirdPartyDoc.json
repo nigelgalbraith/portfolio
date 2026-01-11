@@ -1,44 +1,67 @@
 {
   "FIXED_FIELDS": [
-    "ThirdParty",
-    "repo_name",
-    "url",
-    "key",
-    "codename",
-    "component",
-    "keyring_dir"
+    "<MODEL_ID>.ThirdParty",
+    "<MODEL_ID>.ThirdParty.<VALUES>.name",
+    "<MODEL_ID>.ThirdParty.<VALUES>.type",
+    "<MODEL_ID>.ThirdParty.<VALUES>.repo_name",
+    "<MODEL_ID>.ThirdParty.<VALUES>.url",
+    "<MODEL_ID>.ThirdParty.<VALUES>.key",
+    "<MODEL_ID>.ThirdParty.<VALUES>.codename",
+    "<MODEL_ID>.ThirdParty.<VALUES>.component",
+    "<MODEL_ID>.ThirdParty.<VALUES>.keyring_dir",
+    "<MODEL_ID>.ThirdParty.<VALUES>.keyring_name"
   ],
   "EDITABLE_FIELDS": [
     "<MODEL_ID>",
-    "<PACKAGE_NAME>",
-    "<values for the keys above>"
+    "<MODEL_ID>.ThirdParty.<VALUES>",
+    "<MODEL_ID>.ThirdParty.<VALUES>.name.<VALUES>",
+    "<MODEL_ID>.ThirdParty.<VALUES>.type.<VALUES>",
+    "<MODEL_ID>.ThirdParty.<VALUES>.repo_name.<VALUES>",
+    "<MODEL_ID>.ThirdParty.<VALUES>.url.<VALUES>",
+    "<MODEL_ID>.ThirdParty.<VALUES>.key.<VALUES>",
+    "<MODEL_ID>.ThirdParty.<VALUES>.codename.<VALUES>",
+    "<MODEL_ID>.ThirdParty.<VALUES>.component.<VALUES>",
+    "<MODEL_ID>.ThirdParty.<VALUES>.keyring_dir.<VALUES>",
+    "<MODEL_ID>.ThirdParty.<VALUES>.keyring_name.<VALUES>"
   ],
   "EXAMPLE": {
     "<MODEL_ID>": {
       "ThirdParty": {
-        "example-package": {
-          "repo_name": "value",
-          "url": "https://example.com/file",
-          "key": "value",
-          "codename": "value",
-          "component": "value",
-          "keyring_dir": "/path/to/value"
+        "docker-ce": {
+          "name": "Docker Engine",
+          "type": "apt-repo",
+          "repo_name": "docker",
+          "url": "https://download.docker.com/linux/debian",
+          "key": "https://download.docker.com/linux/debian/gpg",
+          "codename": "bookworm",
+          "component": "stable",
+          "keyring_dir": "/usr/share/keyrings",
+          "keyring_name": "docker"
+        },
+        "containerd.io": {
+          "name": "Container Runtime",
+          "type": "apt-repo",
+          "repo_name": "docker",
+          "url": "https://download.docker.com/linux/debian",
+          "key": "https://download.docker.com/linux/debian/gpg",
+          "codename": "bookworm",
+          "component": "stable",
+          "keyring_dir": "/usr/share/keyrings",
+          "keyring_name": "docker"
         }
       }
     }
   },
   "DESCRIPTION": {
-    "<MODEL_ID>": {
-      "ThirdParty": {
-        "<PACKAGE_NAME>": {
-          "repo_name": "Describe what 'repo_name' is used for.",
-          "url": "Describe what 'url' is used for.",
-          "key": "Describe what 'key' is used for.",
-          "codename": "Describe what 'codename' is used for.",
-          "component": "Describe what 'component' is used for.",
-          "keyring_dir": "Describe what 'keyring_dir' is used for."
-        }
-      }
-    }
+    "<MODEL_ID>.ThirdParty.<VALUES>": "A third-party install source definition.",
+    "<MODEL_ID>.ThirdParty.<VALUES>.name.<VALUES>": "Human-readable name of the repository.",
+    "<MODEL_ID>.ThirdParty.<VALUES>.type.<VALUES>": "Installation type (e.g. apt-repo).",
+    "<MODEL_ID>.ThirdParty.<VALUES>.repo_name.<VALUES>": "Short identifier for the repository.",
+    "<MODEL_ID>.ThirdParty.<VALUES>.url.<VALUES>": "Base URL of the APT repository.",
+    "<MODEL_ID>.ThirdParty.<VALUES>.key.<VALUES>": "URL to the repository GPG key.",
+    "<MODEL_ID>.ThirdParty.<VALUES>.codename.<VALUES>": "Debian release codename.",
+    "<MODEL_ID>.ThirdParty.<VALUES>.component.<VALUES>": "Repository component (e.g. stable).",
+    "<MODEL_ID>.ThirdParty.<VALUES>.keyring_dir.<VALUES>": "Directory where the GPG keyring is stored.",
+    "<MODEL_ID>.ThirdParty.<VALUES>.keyring_name.<VALUES>": "Keyring file base name."
   }
 }

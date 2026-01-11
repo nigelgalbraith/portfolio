@@ -33,24 +33,6 @@ KEY_POST_UNINSTALL   = "PostUninstall"
 KEY_TRASH_PATHS      = "TrashPaths"      
 KEY_DOWNLOAD_PATH    = "DownloadPath"
 
-# Example JSON structure (for help/error display)
-CONFIG_EXAMPLE = {
-    "Default": {
-        JOBS_KEY: {
-            "MyTool": {
-                KEY_DOWNLOAD_URL: "https://example.com/mytool.tar.gz",
-                KEY_EXTRACT_TO: "~/Applications/MyTool",
-                KEY_STRIP_TOP_LEVEL: True,
-                KEY_CHECK_PATH: "~/Applications/MyTool/bin/mytool",
-                KEY_POST_INSTALL: ["chmod +x ~/Applications/MyTool/bin/mytool"],
-                KEY_ENABLE_SERVICE: None,
-                KEY_POST_UNINSTALL: [],
-                KEY_TRASH_PATHS: ["~/Applications/MyTool/cache"],
-                KEY_DOWNLOAD_PATH: "/tmp/archive_downloads/MyTool"
-            }
-        }
-    }
-}
 
 # === VALIDATION CONFIG ===
 VALIDATION_CONFIG = {
@@ -60,7 +42,6 @@ VALIDATION_CONFIG = {
         KEY_STRIP_TOP_LEVEL: bool,
         KEY_DOWNLOAD_PATH: str,
     },
-    "example_config": CONFIG_EXAMPLE,
 }
 
 # === SECONDARY VALIDATION  ===
@@ -72,7 +53,6 @@ DETECTION_CONFIG = {
     "config_type": CONFIG_TYPE,
     "jobs_key": JOBS_KEY,
     "default_config": DEFAULT_CONFIG,
-    "config_example": CONFIG_EXAMPLE,
     "default_config_note": (
         "No model-specific config was found. Using the 'Default' section instead."
     ),

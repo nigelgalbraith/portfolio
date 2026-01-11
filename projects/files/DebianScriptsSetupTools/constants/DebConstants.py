@@ -25,18 +25,6 @@ KEY_DOWNLOAD_URL   = "DownloadURL"
 KEY_ENABLE_SERVICE = "EnableService"
 KEY_DOWNLOAD_DIR   = "download_dir"
 
-# === EXAMPLE JSON ===
-CONFIG_EXAMPLE: Dict[str, Any] = {
-    "YOUR MODEL HERE": {
-        JOBS_KEY: {
-            "vlc": {
-                KEY_DOWNLOAD_URL: "http://example.com/vlc.deb",
-                KEY_ENABLE_SERVICE: False,
-                KEY_DOWNLOAD_DIR: "/tmp/deb_downloads",
-            }
-        }
-    }
-}
 
 # === VALIDATION CONFIG ===
 VALIDATION_CONFIG: Dict[str, Any] = {
@@ -45,7 +33,6 @@ VALIDATION_CONFIG: Dict[str, Any] = {
         KEY_ENABLE_SERVICE: (bool, type(None)),
         KEY_DOWNLOAD_DIR: str,
     },
-    "example_config": CONFIG_EXAMPLE,
 }
 
 # === SECONDARY VALIDATION  ===
@@ -57,7 +44,6 @@ DETECTION_CONFIG: Dict[str, Any] = {
     "config_type": CONFIG_TYPE,
     "jobs_key": JOBS_KEY,
     "default_config": DEFAULT_CONFIG,
-    "config_example": CONFIG_EXAMPLE,
     "default_config_note": (
         "No model-specific config was found. "
         "Using the 'Default' section instead. "

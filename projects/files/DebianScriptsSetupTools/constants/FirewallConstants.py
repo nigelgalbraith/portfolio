@@ -33,22 +33,6 @@ KEY_START_PORT   = "StartPort"
 KEY_END_PORT     = "EndPort"
 KEY_RULE_NAME    = "RuleName"
 
-# === EXAMPLE JSON ===
-CONFIG_EXAMPLE = {
-    "Default": {
-        JOBS_KEY: {
-            "default-firewall": {
-                KEY_APPLICATIONS: ["OpenSSH"],
-                KEY_SINGLE_PORTS: [
-                    {KEY_RULE_NAME: "SSH", KEY_PORT: 22, KEY_PROTOCOL: "tcp", KEY_IPS: ["192.168.1.0/24"]}
-                ],
-                KEY_PORT_RANGES: [
-                    {KEY_RULE_NAME: "Plex", KEY_START_PORT: 5000, KEY_END_PORT: 6000, KEY_PROTOCOL: "udp", KEY_IPS: ["10.0.0.0/8"]}
-                ],
-            }
-        }
-    }
-}
 
 # === VALIDATION CONFIG ===
 VALIDATION_CONFIG = {
@@ -57,7 +41,6 @@ VALIDATION_CONFIG = {
         KEY_SINGLE_PORTS: list,
         KEY_PORT_RANGES: list,
     },
-    "example_config": CONFIG_EXAMPLE,
 }
 
 # === SECONDARY VALIDATION  ===
@@ -85,7 +68,6 @@ SECONDARY_VALIDATION = {
         },
         "allow_empty": True,
     },
-    "config_example": CONFIG_EXAMPLE,
 }
 
 # === DETECTION CONFIG ===
@@ -94,7 +76,6 @@ DETECTION_CONFIG = {
     "config_type": CONFIG_TYPE,
     "jobs_key": JOBS_KEY,
     "default_config": DEFAULT_CONFIG,
-    "config_example": CONFIG_EXAMPLE,
     "default_config_note": (
         "No model-specific config was found. Using the 'Default' section instead."
     ),

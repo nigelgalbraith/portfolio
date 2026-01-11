@@ -11,20 +11,9 @@ CONFIG_TYPE      = "package"
 DEFAULT_CONFIG   = "Default"
 CONFIG_DOC       = "doc/PackagesDoc.json"
 
-# === EXAMPLE JSON ===
-CONFIG_EXAMPLE = { 
-    "YOUR MODEL NUMBER": {
-        JOBS_KEY: {
-            "vlc": {},
-            "audacity": {}
-        }
-    }
-}
-
 # === VALIDATION ===
 VALIDATION_CONFIG = {
     "required_job_fields": {},
-    "example_config": CONFIG_EXAMPLE,
 }
 
 # === SECONDARY VALIDATION  ===
@@ -36,7 +25,6 @@ DETECTION_CONFIG = {
     "config_type": CONFIG_TYPE,
     "jobs_key": JOBS_KEY,
     "default_config": DEFAULT_CONFIG,
-    "config_example": CONFIG_EXAMPLE,
     "default_config_note": (
         "No model-specific config was found. Using the 'Default' section instead."
     ),

@@ -24,30 +24,6 @@ SUBKEY_DEST         = "dest"
 SUBKEY_ZIP_NAME     = "zipName"
 SUBKEY_OUTPUT       = "output"
 
-# === EXAMPLE CONFIG ===
-CONFIG_EXAMPLE = {
-    "Default": {
-        JOBS_KEY: {
-            "HomeBackup": {
-                KEY_SOURCE_FOLDERS: [
-                    { "copyName": "Documents", "src": "/home/user/Documents", "dest": "/mnt/backup/Documents" },
-                    { "copyName": "Pictures", "src": "/home/user/Pictures", "dest": "/mnt/backup/Pictures" }
-                ],
-                KEY_SOURCE_FILES: [
-                    { "copyName": "BashRC", "src": "/home/user/.bashrc", "dest": "/mnt/backup/.bashrc" }
-                ],
-                KEY_ZIP_ARCHIVES: [
-                    {
-                        "zipName": "HomeBackupArchive",
-                        "src": "/mnt/backup",
-                        "output": "/mnt/backup/home_backup.zip"
-                    }
-                ],
-                KEY_CHECK_PATH: "/mnt/backup"
-            }
-        }
-    }
-}
 
 # === VALIDATION CONFIG ===
 VALIDATION_CONFIG = {
@@ -57,7 +33,6 @@ VALIDATION_CONFIG = {
         KEY_ZIP_ARCHIVES: list,
         KEY_CHECK_PATH: str,
     },
-    "example_config": CONFIG_EXAMPLE,
 }
 
 # === SECONDARY VALIDATION ===
@@ -94,7 +69,6 @@ DETECTION_CONFIG = {
     "config_type": CONFIG_TYPE,
     "jobs_key": JOBS_KEY,
     "default_config": DEFAULT_CONFIG,
-    "config_example": CONFIG_EXAMPLE,
     "default_config_note": (
         "No model-specific config was found. Using the 'Default' section instead."
     ),
