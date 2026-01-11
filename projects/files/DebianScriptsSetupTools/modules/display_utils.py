@@ -241,51 +241,30 @@ def confirm(
 
 
 def display_config_doc(doc_path: str) -> bool:
-    """Display a config help doc from a JSON file."""
+    """Print a config documentation JSON grouped by top-level keys."""
     path = Path(doc_path)
     if not path.is_file():
         print(f"[ERROR] Config doc not found: {path}")
         return False
     try:
-        data: Dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
+        data: dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
     except Exception as e:
         print(f"[ERROR] Failed to read config doc '{path}': {e!r}")
         return False
-    tool = str(data.get("tool", "Config")).strip()
-    summary = str(data.get("summary", "")).strip()
-    title = f"{tool} Config Help"
-    print(f"\n{title}")
-    print("-" * len(title))
-    if summary:
-        print(f"\n{summary}")
-    structure = data.get("structure", [])
-    if isinstance(structure, list) and structure:
-        print("\nStructure:")
-        for item in structure:
-            if not isinstance(item, dict):
-                continue
-            level = item.get("level", "?")
-            name = str(item.get("name", "")).strip() or "<NAME>"
-            desc = str(item.get("description", "")).rstrip()
-            print(f"\n  Level {level}: {name}")
-            if desc:
-                for line in desc.splitlines():
-                    print(f"    {line}")
-    notes = data.get("notes", [])
-    if isinstance(notes, list) and notes:
-        print("\nNotes:")
-        for n in notes:
-            n = str(n).strip()
-            if n:
-                print(f"  - {n}")
-    example = data.get("example")
-    if isinstance(example, dict) and example:
-        print("\nExample:")
-        pretty = json.dumps(example, indent=2, ensure_ascii=False)
-        for line in pretty.splitlines():
-            print(f"  {line}")
+    print()
+    print(f"Config Help: {path.name}")
+    print("-" * (13 + len(path.name)))
+    for key, value in data.items():
+        print(f"\n{key}")
+        print("-" * len(key))
+        if isinstance(value, (dict, list)):
+            print(json.dumps(value, indent=2, ensure_ascii=False))
+        else:
+            print(value)
     print()
     return True
+
+
 
 
 

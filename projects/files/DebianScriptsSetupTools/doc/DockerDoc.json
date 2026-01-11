@@ -1,36 +1,33 @@
 {
-  "tool": "Docker",
-  "summary": "Defines Docker containers to build, run, stop, or remove.",
-  "structure": [
-    {
-      "level": 1,
-      "name": "<MODEL_ID>",
-      "description": "Machine or hardware model identifier."
-    },
-    {
-      "level": 2,
-      "name": "Docker",
-      "description": "Fixed job key for Docker configuration."
-    },
-    {
-      "level": 3,
-      "name": "<CONTAINER_NAME>",
-      "description": "Logical name for a Docker container."
-    }
+  "FIXED_FIELDS": [
+    "Docker",
+    "Name",
+    "Image",
+    "Location"
   ],
-  "notes": [
-    "Containers may be built from downloaded source archives.",
-    "Image names and ports must be valid Docker values.",
-    "Docker must be installed and running."
+  "EDITABLE_FIELDS": [
+    "<MODEL_ID>",
+    "<CONTAINER_NAME>",
+    "<values for the keys above>"
   ],
-  "example": {
+  "EXAMPLE": {
     "<MODEL_ID>": {
       "Docker": {
-        "example_service": {
-          "Name": "example",
-          "Image": "example/image",
-          "Port": "8080:80",
-          "Location": "~/docker/example"
+        "example_container": {
+          "Name": "value",
+          "Image": "value",
+          "Location": "/path/to/value"
+        }
+      }
+    }
+  },
+  "DESCRIPTION": {
+    "<MODEL_ID>": {
+      "Docker": {
+        "<CONTAINER_NAME>": {
+          "Name": "Describe what 'Name' is used for.",
+          "Image": "Describe what 'Image' is used for.",
+          "Location": "Describe what 'Location' is used for."
         }
       }
     }

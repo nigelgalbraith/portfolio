@@ -1,37 +1,39 @@
 {
-  "tool": "Networks",
-  "summary": "Defines network connection profiles for static or DHCP configuration.",
-  "structure": [
-    {
-      "level": 1,
-      "name": "<MODEL_ID>",
-      "description": "Machine or hardware model identifier."
-    },
-    {
-      "level": 2,
-      "name": "Networks",
-      "description": "Fixed job key for network configuration."
-    },
-    {
-      "level": 3,
-      "name": "<NETWORK_NAME>",
-      "description": "Logical name for a network connection profile."
-    }
+  "FIXED_FIELDS": [
+    "Networks",
+    "ConnectionName",
+    "Interface",
+    "Address",
+    "Gateway",
+    "DNS"
   ],
-  "notes": [
-    "Static and DHCP actions reuse the same config entries.",
-    "All required network fields must be present.",
-    "NetworkManager must be installed."
+  "EDITABLE_FIELDS": [
+    "<MODEL_ID>",
+    "<NETWORK_PROFILE>",
+    "<values for the keys above>"
   ],
-  "example": {
+  "EXAMPLE": {
     "<MODEL_ID>": {
       "Networks": {
         "OfficeLAN": {
-          "ConnectionName": "OfficeLAN",
-          "Interface": "eth0",
-          "Address": "192.168.1.10/24",
-          "Gateway": "192.168.1.1",
-          "DNS": "192.168.1.1"
+          "ConnectionName": "value",
+          "Interface": "value",
+          "Address": "value",
+          "Gateway": "value",
+          "DNS": "value"
+        }
+      }
+    }
+  },
+  "DESCRIPTION": {
+    "<MODEL_ID>": {
+      "Networks": {
+        "<NETWORK_PROFILE>": {
+          "ConnectionName": "Describe what 'ConnectionName' is used for.",
+          "Interface": "Describe what 'Interface' is used for.",
+          "Address": "Describe what 'Address' is used for.",
+          "Gateway": "Describe what 'Gateway' is used for.",
+          "DNS": "Describe what 'DNS' is used for."
         }
       }
     }

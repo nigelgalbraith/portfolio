@@ -1,34 +1,54 @@
 {
-  "tool": "RDP",
-  "summary": "Defines Remote Desktop (XRDP) service configuration.",
-  "structure": [
-    {
-      "level": 1,
-      "name": "<MODEL_ID>",
-      "description": "Machine or hardware model identifier."
-    },
-    {
-      "level": 2,
-      "name": "RDP",
-      "description": "Fixed job key for RDP configuration."
-    },
-    {
-      "level": 3,
-      "name": "<SERVICE_NAME>",
-      "description": "RDP service package name."
-    }
+  "FIXED_FIELDS": [
+    "RDP",
+    "ServiceName",
+    "UserName",
+    "SessionCmd",
+    "XsessionFile",
+    "SkeletonDir",
+    "UserHomeBase",
+    "Groups",
+    "SslCertDir",
+    "SslKeyDir",
+    "XrdpDir"
   ],
-  "notes": [
-    "XRDP service and user configuration are automated.",
-    "Certificates and groups must be correctly configured."
+  "EDITABLE_FIELDS": [
+    "<MODEL_ID>",
+    "<RDP_JOB>",
+    "<values for the keys above>"
   ],
-  "example": {
+  "EXAMPLE": {
     "<MODEL_ID>": {
       "RDP": {
-        "xrdp": {
-          "ServiceName": "xrdp",
-          "UserName": "xrdp",
-          "SessionCmd": "startxfce4"
+        "default_rdp": {
+          "ServiceName": "value",
+          "UserName": "value",
+          "SessionCmd": "value",
+          "XsessionFile": "/path/to/value",
+          "SkeletonDir": "/path/to/value",
+          "UserHomeBase": "/path/to/value",
+          "Groups": [],
+          "SslCertDir": "/path/to/value",
+          "SslKeyDir": "/path/to/value",
+          "XrdpDir": "/path/to/value"
+        }
+      }
+    }
+  },
+  "DESCRIPTION": {
+    "<MODEL_ID>": {
+      "RDP": {
+        "<RDP_JOB>": {
+          "ServiceName": "Describe what 'ServiceName' is used for.",
+          "UserName": "Describe what 'UserName' is used for.",
+          "SessionCmd": "Describe what 'SessionCmd' is used for.",
+          "XsessionFile": "Describe what 'XsessionFile' is used for.",
+          "SkeletonDir": "Describe what 'SkeletonDir' is used for.",
+          "UserHomeBase": "Describe what 'UserHomeBase' is used for.",
+          "Groups": "Describe what 'Groups' is used for.",
+          "SslCertDir": "Describe what 'SslCertDir' is used for.",
+          "SslKeyDir": "Describe what 'SslKeyDir' is used for.",
+          "XrdpDir": "Describe what 'XrdpDir' is used for."
         }
       }
     }

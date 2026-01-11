@@ -1,35 +1,36 @@
 {
-  "tool": "Backup",
-  "summary": "Defines backup jobs for folders, files, and zip archives.",
-  "structure": [
-    {
-      "level": 1,
-      "name": "<MODEL_ID>",
-      "description": "Machine or environment identifier."
-    },
-    {
-      "level": 2,
-      "name": "Backup",
-      "description": "Fixed job key for backup jobs."
-    },
-    {
-      "level": 3,
-      "name": "<BACKUP_JOB>",
-      "description": "Logical backup job name."
-    }
+  "FIXED_FIELDS": [
+    "Backup",
+    "CopyFolders",
+    "CopyFiles",
+    "ZipArchives",
+    "CheckPath"
   ],
-  "notes": [
-    "Supports folder copies, file copies, and zip archives.",
-    "Jobs can be run individually or together."
+  "EDITABLE_FIELDS": [
+    "<MODEL_ID>",
+    "<BACKUP_JOB>",
+    "<values for the keys above>"
   ],
-  "example": {
-    "Default": {
+  "EXAMPLE": {
+    "<MODEL_ID>": {
       "Backup": {
-        "HomeBackup": {
-          "CopyFolders": [
-            { "copyName": "Docs", "src": "/home/user/Documents", "dest": "/mnt/backup/Documents" }
-          ],
-          "CheckPath": "/mnt/backup"
+        "example_backup": {
+          "CopyFolders": [],
+          "CopyFiles": [],
+          "ZipArchives": [],
+          "CheckPath": "/path/to/value"
+        }
+      }
+    }
+  },
+  "DESCRIPTION": {
+    "<MODEL_ID>": {
+      "Backup": {
+        "<BACKUP_JOB>": {
+          "CopyFolders": "Describe what 'CopyFolders' is used for.",
+          "CopyFiles": "Describe what 'CopyFiles' is used for.",
+          "ZipArchives": "Describe what 'ZipArchives' is used for.",
+          "CheckPath": "Describe what 'CheckPath' is used for."
         }
       }
     }

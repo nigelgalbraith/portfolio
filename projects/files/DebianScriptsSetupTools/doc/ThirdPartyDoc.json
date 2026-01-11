@@ -1,38 +1,42 @@
 {
-  "tool": "ThirdParty",
-  "summary": "Defines third-party APT repositories and packages.",
-  "structure": [
-    {
-      "level": 1,
-      "name": "<MODEL_ID>",
-      "description": "Machine or hardware model identifier."
-    },
-    {
-      "level": 2,
-      "name": "ThirdParty",
-      "description": "Fixed job key for third-party repositories."
-    },
-    {
-      "level": 3,
-      "name": "<PACKAGE_NAME>",
-      "description": "APT package provided by a third-party repository."
-    }
+  "FIXED_FIELDS": [
+    "ThirdParty",
+    "repo_name",
+    "url",
+    "key",
+    "codename",
+    "component",
+    "keyring_dir"
   ],
-  "notes": [
-    "Repositories are added before package installation.",
-    "Keyrings are stored in a secure directory.",
-    "Removal can optionally leave packages installed."
+  "EDITABLE_FIELDS": [
+    "<MODEL_ID>",
+    "<PACKAGE_NAME>",
+    "<values for the keys above>"
   ],
-  "example": {
-    "Default": {
+  "EXAMPLE": {
+    "<MODEL_ID>": {
       "ThirdParty": {
-        "brave-browser": {
-          "repo_name": "brave-browser",
-          "url": "https://brave-browser-apt-release.s3.brave.com/",
-          "key": "https://brave-browser-apt-release.s3.brave.com/brave-core.asc",
-          "codename": "jammy",
-          "component": "main",
-          "keyring_dir": "/usr/share/keyrings"
+        "example-package": {
+          "repo_name": "value",
+          "url": "https://example.com/file",
+          "key": "value",
+          "codename": "value",
+          "component": "value",
+          "keyring_dir": "/path/to/value"
+        }
+      }
+    }
+  },
+  "DESCRIPTION": {
+    "<MODEL_ID>": {
+      "ThirdParty": {
+        "<PACKAGE_NAME>": {
+          "repo_name": "Describe what 'repo_name' is used for.",
+          "url": "Describe what 'url' is used for.",
+          "key": "Describe what 'key' is used for.",
+          "codename": "Describe what 'codename' is used for.",
+          "component": "Describe what 'component' is used for.",
+          "keyring_dir": "Describe what 'keyring_dir' is used for."
         }
       }
     }

@@ -1,33 +1,57 @@
 {
-  "tool": "Arcade",
-  "summary": "Defines arcade and emulator setup tasks such as MAME and RetroArch.",
-  "structure": [
-    {
-      "level": 1,
-      "name": "<MODEL_ID>",
-      "description": "Machine or environment identifier."
-    },
-    {
-      "level": 2,
-      "name": "Arcade",
-      "description": "Fixed job key for arcade configuration."
-    },
-    {
-      "level": 3,
-      "name": "<ARCADE_TASK>",
-      "description": "Logical arcade setup task (e.g. mame, retroarch)."
-    }
+  "FIXED_FIELDS": [
+    "Arcade",
+    "Packages",
+    "SettingsFiles",
+    "SettingsFolders",
+    "RemovePaths",
+    "SetupDirs",
+    "ResetDirs",
+    "SetupCmds",
+    "SetupScripts",
+    "ResetCmds",
+    "ChmodPaths",
+    "ChownPaths"
   ],
-  "notes": [
-    "Tasks may install packages, copy settings, and run scripts.",
-    "Reset operations remove generated configuration files.",
-    "Used for kiosk or dedicated arcade systems."
+  "EDITABLE_FIELDS": [
+    "<MODEL_ID>",
+    "<ARCADE_JOB>",
+    "<values for the keys above>"
   ],
-  "example": {
+  "EXAMPLE": {
     "<MODEL_ID>": {
       "Arcade": {
         "mame": {
-          "Packages": ["mame"]
+          "Packages": [],
+          "SettingsFiles": [],
+          "SettingsFolders": [],
+          "RemovePaths": [],
+          "SetupDirs": [],
+          "ResetDirs": [],
+          "SetupCmds": [],
+          "SetupScripts": [],
+          "ResetCmds": [],
+          "ChmodPaths": [],
+          "ChownPaths": []
+        }
+      }
+    }
+  },
+  "DESCRIPTION": {
+    "<MODEL_ID>": {
+      "Arcade": {
+        "<ARCADE_JOB>": {
+          "Packages": "Describe what 'Packages' is used for.",
+          "SettingsFiles": "Describe what 'SettingsFiles' is used for.",
+          "SettingsFolders": "Describe what 'SettingsFolders' is used for.",
+          "RemovePaths": "Describe what 'RemovePaths' is used for.",
+          "SetupDirs": "Describe what 'SetupDirs' is used for.",
+          "ResetDirs": "Describe what 'ResetDirs' is used for.",
+          "SetupCmds": "Describe what 'SetupCmds' is used for.",
+          "SetupScripts": "Describe what 'SetupScripts' is used for.",
+          "ResetCmds": "Describe what 'ResetCmds' is used for.",
+          "ChmodPaths": "Describe what 'ChmodPaths' is used for.",
+          "ChownPaths": "Describe what 'ChownPaths' is used for."
         }
       }
     }

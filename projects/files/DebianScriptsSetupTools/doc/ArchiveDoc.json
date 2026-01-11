@@ -1,35 +1,36 @@
 {
-  "tool": "Archive",
-  "summary": "Defines applications distributed as downloadable archives.",
-  "structure": [
-    {
-      "level": 1,
-      "name": "<MODEL_ID>",
-      "description": "Machine or hardware model identifier."
-    },
-    {
-      "level": 2,
-      "name": "Archive",
-      "description": "Fixed job key for archive-based installs."
-    },
-    {
-      "level": 3,
-      "name": "<APP_NAME>",
-      "description": "Logical name for the archive application."
-    }
+  "FIXED_FIELDS": [
+    "Archive",
+    "DownloadURL",
+    "ExtractTo",
+    "StripTopLevel",
+    "DownloadPath"
   ],
-  "notes": [
-    "Archives are downloaded and extracted to a target directory.",
-    "Optional post-install and cleanup commands are supported."
+  "EDITABLE_FIELDS": [
+    "<MODEL_ID>",
+    "<APP_NAME>",
+    "<values for the keys above>"
   ],
-  "example": {
-    "Default": {
+  "EXAMPLE": {
+    "<MODEL_ID>": {
       "Archive": {
-        "MyTool": {
-          "DownloadURL": "https://example.com/tool.tar.gz",
-          "ExtractTo": "~/Applications/MyTool",
-          "StripTopLevel": true,
-          "CheckPath": "~/Applications/MyTool/bin/tool"
+        "example_app": {
+          "DownloadURL": "https://example.com/file",
+          "ExtractTo": "/path/to/value",
+          "StripTopLevel": false,
+          "DownloadPath": "/path/to/value"
+        }
+      }
+    }
+  },
+  "DESCRIPTION": {
+    "<MODEL_ID>": {
+      "Archive": {
+        "<APP_NAME>": {
+          "DownloadURL": "Describe what 'DownloadURL' is used for.",
+          "ExtractTo": "Describe what 'ExtractTo' is used for.",
+          "StripTopLevel": "Describe what 'StripTopLevel' is used for.",
+          "DownloadPath": "Describe what 'DownloadPath' is used for."
         }
       }
     }

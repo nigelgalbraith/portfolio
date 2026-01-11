@@ -1,36 +1,42 @@
 {
-  "tool": "DOSLoader",
-  "summary": "Defines DOS games to be installed and launched via DOSBox.",
-  "structure": [
-    {
-      "level": 1,
-      "name": "<MODEL_ID>",
-      "description": "Machine or environment identifier."
-    },
-    {
-      "level": 2,
-      "name": "DOSLoader",
-      "description": "Fixed job key for DOS game entries."
-    },
-    {
-      "level": 3,
-      "name": "<GAME_ID>",
-      "description": "Logical identifier for the DOS game."
-    }
+  "FIXED_FIELDS": [
+    "DOSLoader",
+    "Name",
+    "DownloadURL",
+    "ExtractTo",
+    "CheckPath",
+    "StripTopLevel",
+    "LaunchCmd"
   ],
-  "notes": [
-    "Games are installed from archives.",
-    "Launch commands are executed via DOSBox.",
-    "Removal deletes extracted game files."
+  "EDITABLE_FIELDS": [
+    "<MODEL_ID>",
+    "<GAME_ID>",
+    "<values for the keys above>"
   ],
-  "example": {
-    "Default": {
+  "EXAMPLE": {
+    "<MODEL_ID>": {
       "DOSLoader": {
-        "ExampleGame": {
-          "Name": "Example Game",
-          "DownloadURL": "https://example.com/game.zip",
-          "ExtractTo": "~/dosgames/example",
-          "LaunchCmd": "dosbox -c \"mount c ~/dosgames/example\""
+        "example_game": {
+          "Name": "value",
+          "DownloadURL": "https://example.com/file",
+          "ExtractTo": "/path/to/value",
+          "CheckPath": "/path/to/value",
+          "StripTopLevel": false,
+          "LaunchCmd": "value"
+        }
+      }
+    }
+  },
+  "DESCRIPTION": {
+    "<MODEL_ID>": {
+      "DOSLoader": {
+        "<GAME_ID>": {
+          "Name": "Describe what 'Name' is used for.",
+          "DownloadURL": "Describe what 'DownloadURL' is used for.",
+          "ExtractTo": "Describe what 'ExtractTo' is used for.",
+          "CheckPath": "Describe what 'CheckPath' is used for.",
+          "StripTopLevel": "Describe what 'StripTopLevel' is used for.",
+          "LaunchCmd": "Describe what 'LaunchCmd' is used for."
         }
       }
     }

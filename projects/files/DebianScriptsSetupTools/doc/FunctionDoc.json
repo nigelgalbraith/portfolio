@@ -1,35 +1,33 @@
 {
-  "tool": "Functions",
-  "summary": "Defines Python modules to analyze for function usage and documentation.",
-  "structure": [
-    {
-      "level": 1,
-      "name": "<MODEL_ID>",
-      "description": "Machine or environment identifier."
-    },
-    {
-      "level": 2,
-      "name": "Functions",
-      "description": "Fixed job key for function analysis."
-    },
-    {
-      "level": 3,
-      "name": "<MODULE_FILE>",
-      "description": "Python module filename to analyze (e.g. utils.py)."
-    }
+  "FIXED_FIELDS": [
+    "Functions",
+    "ModuleFolder",
+    "CheckFolders",
+    "CheckFiles"
   ],
-  "notes": [
-    "Used for static analysis only.",
-    "No code is executed.",
-    "Folders and files are scanned for function usage."
+  "EDITABLE_FIELDS": [
+    "<MODEL_ID>",
+    "<MODULE_FILE>",
+    "<values for the keys above>"
   ],
-  "example": {
-    "Default": {
+  "EXAMPLE": {
+    "<MODEL_ID>": {
       "Functions": {
         "json_utils.py": {
-          "ModuleFolder": "$HOME/project/modules",
-          "CheckFolders": ["$HOME/project/constants"],
-          "CheckFiles": ["$HOME/project/main.py"]
+          "ModuleFolder": "/path/to/value",
+          "CheckFolders": [],
+          "CheckFiles": []
+        }
+      }
+    }
+  },
+  "DESCRIPTION": {
+    "<MODEL_ID>": {
+      "Functions": {
+        "<MODULE_FILE>": {
+          "ModuleFolder": "Describe what 'ModuleFolder' is used for.",
+          "CheckFolders": "Describe what 'CheckFolders' is used for.",
+          "CheckFiles": "Describe what 'CheckFiles' is used for."
         }
       }
     }

@@ -1,34 +1,69 @@
 {
-  "tool": "Launcher",
-  "summary": "Defines kiosk or launcher environments for auto-login systems.",
-  "structure": [
-    {
-      "level": 1,
-      "name": "<MODEL_ID>",
-      "description": "Machine or environment identifier."
-    },
-    {
-      "level": 2,
-      "name": "Launcher",
-      "description": "Fixed job key for launcher configuration."
-    },
-    {
-      "level": 3,
-      "name": "<LAUNCHER_JOB>",
-      "description": "Logical launcher configuration job."
-    }
+  "FIXED_FIELDS": [
+    "Launcher",
+    "DownloadURL",
+    "download_dir",
+    "SettingsFiles",
+    "SettingsFolders",
+    "SettingsChmodPaths",
+    "SettingsChownPaths",
+    "RemovePaths",
+    "SetupDirs",
+    "KioskFiles",
+    "DefaultDM",
+    "KioskDM",
+    "AdditionalPackages",
+    "ChmodPaths",
+    "ChownPaths",
+    "ChownRecursive"
   ],
-  "notes": [
-    "Used to configure kiosk or single-purpose systems.",
-    "Manages users, display managers, and startup files.",
-    "Requires root privileges."
+  "EDITABLE_FIELDS": [
+    "<MODEL_ID>",
+    "<LAUNCHER_JOB>",
+    "<values for the keys above>"
   ],
-  "example": {
+  "EXAMPLE": {
     "<MODEL_ID>": {
       "Launcher": {
-        "flex-launcher": {
-          "DownloadURL": "https://example.com/launcher.deb",
-          "SetupDirs": ["/home/launcher/.config"]
+        "kiosk_launcher": {
+          "DownloadURL": "https://example.com/file",
+          "download_dir": "/path/to/value",
+          "SettingsFiles": [],
+          "SettingsFolders": [],
+          "SettingsChmodPaths": [],
+          "SettingsChownPaths": [],
+          "RemovePaths": [],
+          "SetupDirs": [],
+          "KioskFiles": [],
+          "DefaultDM": "value",
+          "KioskDM": "value",
+          "AdditionalPackages": [],
+          "ChmodPaths": [],
+          "ChownPaths": [],
+          "ChownRecursive": false
+        }
+      }
+    }
+  },
+  "DESCRIPTION": {
+    "<MODEL_ID>": {
+      "Launcher": {
+        "<LAUNCHER_JOB>": {
+          "DownloadURL": "Describe what 'DownloadURL' is used for.",
+          "download_dir": "Describe what 'download_dir' is used for.",
+          "SettingsFiles": "Describe what 'SettingsFiles' is used for.",
+          "SettingsFolders": "Describe what 'SettingsFolders' is used for.",
+          "SettingsChmodPaths": "Describe what 'SettingsChmodPaths' is used for.",
+          "SettingsChownPaths": "Describe what 'SettingsChownPaths' is used for.",
+          "RemovePaths": "Describe what 'RemovePaths' is used for.",
+          "SetupDirs": "Describe what 'SetupDirs' is used for.",
+          "KioskFiles": "Describe what 'KioskFiles' is used for.",
+          "DefaultDM": "Describe what 'DefaultDM' is used for.",
+          "KioskDM": "Describe what 'KioskDM' is used for.",
+          "AdditionalPackages": "Describe what 'AdditionalPackages' is used for.",
+          "ChmodPaths": "Describe what 'ChmodPaths' is used for.",
+          "ChownPaths": "Describe what 'ChownPaths' is used for.",
+          "ChownRecursive": "Describe what 'ChownRecursive' is used for."
         }
       }
     }

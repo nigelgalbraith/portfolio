@@ -1,34 +1,63 @@
 {
-  "tool": "IPCam",
-  "summary": "Defines IPTV / camera aggregation services such as xTeVe.",
-  "structure": [
-    {
-      "level": 1,
-      "name": "<MODEL_ID>",
-      "description": "Machine or environment identifier."
-    },
-    {
-      "level": 2,
-      "name": "IPCam",
-      "description": "Fixed job key for IPCam configuration."
-    },
-    {
-      "level": 3,
-      "name": "<IPCAM_SERVICE>",
-      "description": "Logical name for an IPCam service."
-    }
+  "FIXED_FIELDS": [
+    "IPCam",
+    "ServiceURL",
+    "PlaylistFile",
+    "userName",
+    "EPGFile",
+    "RestartService",
+    "ServiceTemplate",
+    "ServiceDest",
+    "BinaryName",
+    "DownloadURL",
+    "InstallDir",
+    "SymlinkPath",
+    "TmpDir",
+    "Cameras"
   ],
-  "notes": [
-    "Services are installed from downloadable archives.",
-    "Camera lists define playlist and EPG generation.",
-    "Used for IPTV or camera aggregation."
+  "EDITABLE_FIELDS": [
+    "<MODEL_ID>",
+    "<IPCAM_JOB>",
+    "<values for the keys above>"
   ],
-  "example": {
+  "EXAMPLE": {
     "<MODEL_ID>": {
       "IPCam": {
         "xteve": {
-          "ServiceURL": "http://127.0.0.1:34400",
+          "ServiceURL": "value",
+          "PlaylistFile": "/path/to/value",
+          "userName": "value",
+          "EPGFile": "/path/to/value",
+          "RestartService": false,
+          "ServiceTemplate": "/path/to/value",
+          "ServiceDest": "/path/to/value",
+          "BinaryName": "value",
+          "DownloadURL": "https://example.com/file",
+          "InstallDir": "/path/to/value",
+          "SymlinkPath": "/path/to/value",
+          "TmpDir": "/path/to/value",
           "Cameras": []
+        }
+      }
+    }
+  },
+  "DESCRIPTION": {
+    "<MODEL_ID>": {
+      "IPCam": {
+        "<IPCAM_JOB>": {
+          "ServiceURL": "Describe what 'ServiceURL' is used for.",
+          "PlaylistFile": "Describe what 'PlaylistFile' is used for.",
+          "userName": "Describe what 'userName' is used for.",
+          "EPGFile": "Describe what 'EPGFile' is used for.",
+          "RestartService": "Describe what 'RestartService' is used for.",
+          "ServiceTemplate": "Describe what 'ServiceTemplate' is used for.",
+          "ServiceDest": "Describe what 'ServiceDest' is used for.",
+          "BinaryName": "Describe what 'BinaryName' is used for.",
+          "DownloadURL": "Describe what 'DownloadURL' is used for.",
+          "InstallDir": "Describe what 'InstallDir' is used for.",
+          "SymlinkPath": "Describe what 'SymlinkPath' is used for.",
+          "TmpDir": "Describe what 'TmpDir' is used for.",
+          "Cameras": "Describe what 'Cameras' is used for."
         }
       }
     }

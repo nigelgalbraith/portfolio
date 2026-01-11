@@ -1,33 +1,27 @@
 {
-  "tool": "Flatpak",
-  "summary": "Defines Flatpak applications to be installed or removed for a machine model.",
-  "structure": [
-    {
-      "level": 1,
-      "name": "<MODEL_ID>",
-      "description": "Machine or hardware model identifier. Must match the detected system model."
-    },
-    {
-      "level": 2,
-      "name": "Flatpak",
-      "description": "Fixed job key for Flatpak configuration. Do not rename."
-    },
-    {
-      "level": 3,
-      "name": "<FLATPAK_APP_ID>",
-      "description": "Flatpak application ID (e.g. org.videolan.VLC)."
-    }
+  "FIXED_FIELDS": [
+    "Flatpak",
+    "remote"
   ],
-  "notes": [
-    "Each Flatpak app entry must define a 'remote'.",
-    "Most applications use the 'flathub' remote.",
-    "Only add or remove application IDs."
+  "EDITABLE_FIELDS": [
+    "<MODEL_ID>",
+    "<FLATPAK_APP_ID>",
+    "<values for the keys above>"
   ],
-  "example": {
+  "EXAMPLE": {
     "<MODEL_ID>": {
       "Flatpak": {
         "org.videolan.VLC": {
           "remote": "flathub"
+        }
+      }
+    }
+  },
+  "DESCRIPTION": {
+    "<MODEL_ID>": {
+      "Flatpak": {
+        "<FLATPAK_APP_ID>": {
+          "remote": "Describe what 'remote' is used for."
         }
       }
     }

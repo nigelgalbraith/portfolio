@@ -1,35 +1,33 @@
 {
-  "tool": "DEB",
-  "summary": "Defines Debian package files to download and install manually.",
-  "structure": [
-    {
-      "level": 1,
-      "name": "<MODEL_ID>",
-      "description": "Machine or hardware model identifier."
-    },
-    {
-      "level": 2,
-      "name": "DEB",
-      "description": "Fixed job key for Debian package installs."
-    },
-    {
-      "level": 3,
-      "name": "<PACKAGE_NAME>",
-      "description": "Logical name for the Debian package."
-    }
+  "FIXED_FIELDS": [
+    "DEB",
+    "DownloadURL",
+    "EnableService",
+    "download_dir"
   ],
-  "notes": [
-    "Used for .deb files not available in repositories.",
-    "DownloadURL is required.",
-    "Optional service can be enabled after install."
+  "EDITABLE_FIELDS": [
+    "<MODEL_ID>",
+    "<PACKAGE_NAME>",
+    "<values for the keys above>"
   ],
-  "example": {
+  "EXAMPLE": {
     "<MODEL_ID>": {
       "DEB": {
         "example-package": {
-          "DownloadURL": "https://example.com/example.deb",
+          "DownloadURL": "https://example.com/file",
           "EnableService": false,
-          "download_dir": "/tmp/deb_downloads"
+          "download_dir": "/path/to/value"
+        }
+      }
+    }
+  },
+  "DESCRIPTION": {
+    "<MODEL_ID>": {
+      "DEB": {
+        "<PACKAGE_NAME>": {
+          "DownloadURL": "Describe what 'DownloadURL' is used for.",
+          "EnableService": "Describe what 'EnableService' is used for.",
+          "download_dir": "Describe what 'download_dir' is used for."
         }
       }
     }

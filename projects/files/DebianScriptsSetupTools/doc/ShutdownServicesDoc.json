@@ -1,35 +1,42 @@
 {
-  "tool": "ShutdownServices",
-  "summary": "Defines system services that should be managed during shutdown.",
-  "structure": [
-    {
-      "level": 1,
-      "name": "<MODEL_ID>",
-      "description": "Machine or hardware model identifier."
-    },
-    {
-      "level": 2,
-      "name": "ShutdownServices",
-      "description": "Fixed job key for shutdown service configuration."
-    },
-    {
-      "level": 3,
-      "name": "<SERVICE_JOB>",
-      "description": "Logical name for a shutdown service."
-    }
+  "FIXED_FIELDS": [
+    "ShutdownServices",
+    "ServiceName",
+    "ScriptSrc",
+    "ScriptDest",
+    "ServiceSrc",
+    "ServiceDest",
+    "LogPath"
   ],
-  "notes": [
-    "Uses the same structure as StartupServices.",
-    "Services are stopped or disabled on shutdown.",
-    "Systemd is required."
+  "EDITABLE_FIELDS": [
+    "<MODEL_ID>",
+    "<SERVICE_JOB>",
+    "<values for the keys above>"
   ],
-  "example": {
+  "EXAMPLE": {
     "<MODEL_ID>": {
       "ShutdownServices": {
-        "ExampleService": {
-          "ServiceName": "example.service",
-          "ScriptSrc": "Services/Example/example.sh",
-          "ScriptDest": "/usr/local/bin/example.sh"
+        "example_service": {
+          "ServiceName": "value",
+          "ScriptSrc": "/path/to/value",
+          "ScriptDest": "/path/to/value",
+          "ServiceSrc": "/path/to/value",
+          "ServiceDest": "/path/to/value",
+          "LogPath": "/path/to/value"
+        }
+      }
+    }
+  },
+  "DESCRIPTION": {
+    "<MODEL_ID>": {
+      "ShutdownServices": {
+        "<SERVICE_JOB>": {
+          "ServiceName": "Describe what 'ServiceName' is used for.",
+          "ScriptSrc": "Describe what 'ScriptSrc' is used for.",
+          "ScriptDest": "Describe what 'ScriptDest' is used for.",
+          "ServiceSrc": "Describe what 'ServiceSrc' is used for.",
+          "ServiceDest": "Describe what 'ServiceDest' is used for.",
+          "LogPath": "Describe what 'LogPath' is used for."
         }
       }
     }
