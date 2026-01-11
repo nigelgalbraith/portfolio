@@ -1,0 +1,39 @@
+{
+  "tool": "Networks",
+  "summary": "Defines network connection profiles for static or DHCP configuration.",
+  "structure": [
+    {
+      "level": 1,
+      "name": "<MODEL_ID>",
+      "description": "Machine or hardware model identifier."
+    },
+    {
+      "level": 2,
+      "name": "Networks",
+      "description": "Fixed job key for network configuration."
+    },
+    {
+      "level": 3,
+      "name": "<NETWORK_NAME>",
+      "description": "Logical name for a network connection profile."
+    }
+  ],
+  "notes": [
+    "Static and DHCP actions reuse the same config entries.",
+    "All required network fields must be present.",
+    "NetworkManager must be installed."
+  ],
+  "example": {
+    "<MODEL_ID>": {
+      "Networks": {
+        "OfficeLAN": {
+          "ConnectionName": "OfficeLAN",
+          "Interface": "eth0",
+          "Address": "192.168.1.10/24",
+          "Gateway": "192.168.1.1",
+          "DNS": "192.168.1.1"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "tool": "Docker",
+  "summary": "Defines Docker containers to build, run, stop, or remove.",
+  "structure": [
+    {
+      "level": 1,
+      "name": "<MODEL_ID>",
+      "description": "Machine or hardware model identifier."
+    },
+    {
+      "level": 2,
+      "name": "Docker",
+      "description": "Fixed job key for Docker configuration."
+    },
+    {
+      "level": 3,
+      "name": "<CONTAINER_NAME>",
+      "description": "Logical name for a Docker container."
+    }
+  ],
+  "notes": [
+    "Containers may be built from downloaded source archives.",
+    "Image names and ports must be valid Docker values.",
+    "Docker must be installed and running."
+  ],
+  "example": {
+    "<MODEL_ID>": {
+      "Docker": {
+        "example_service": {
+          "Name": "example",
+          "Image": "example/image",
+          "Port": "8080:80",
+          "Location": "~/docker/example"
+        }
+      }
+    }
+  }
+}

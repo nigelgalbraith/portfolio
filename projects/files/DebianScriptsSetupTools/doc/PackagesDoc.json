@@ -1,0 +1,38 @@
+{
+  "tool": "Packages",
+  "summary": "Defines which packages should be installed for a specific machine model.",
+  "structure": [
+    {
+      "level": 1,
+      "name": "<MODEL_ID>",
+      "required": true,
+      "description": "Machine or hardware model identifier. Must match the system model exactly."
+    },
+    {
+      "level": 2,
+      "name": "Packages",
+      "required": true,
+      "description": "Fixed job key for the Packages tool. Do not rename or remove."
+    },
+    {
+      "level": 3,
+      "name": "<PACKAGE_NAME>",
+      "required": false,
+      "description": "Name of a package to install. Add or remove entries here."
+    }
+  ],
+  "notes": [
+    "Only add or remove package names.",
+    "Do not rename 'Packages'.",
+    "Package entries must be valid package identifiers for the system."
+  ],
+  "example": {
+    "<MODEL_ID>": {
+      "Packages": {
+        "vlc": {},
+        "audacity": {},
+        "firefox-esr": {}
+      }
+    }
+  }
+}

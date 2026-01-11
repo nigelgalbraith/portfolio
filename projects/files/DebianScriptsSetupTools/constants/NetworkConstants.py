@@ -8,11 +8,14 @@ from modules.network_utils import (
     ensure_dhcp_connection,     
     is_connected,               
 )
+from modules.display_utils import display_config_doc
+
 # === CONFIG PATHS & KEYS ===
 PRIMARY_CONFIG   = "config/AppConfigSettings.json"
 JOBS_KEY         = "Networks"
 CONFIG_TYPE      = "network"
 DEFAULT_CONFIG   = "Default"
+CONFIG_DOC       = "doc/NetworkDoc.json"
 
 # === JSON KEYS ===
 KEY_CONN_NAME  = "ConnectionName"
@@ -100,6 +103,17 @@ ACTIONS = {
         "execute_state": "UNINSTALL",
         "post_state": "CONFIG_LOADING",
     },
+    "Show config help": {
+        "verb": "help",
+        "filter_status": None,
+        "label": None,
+        "prompt": "Show config help now? [y/n]: ",
+        "execute_state": "SHOW_CONFIG_DOC",
+        "post_state": "CONFIG_LOADING",
+        "skip_sub_select": True,
+        "skip_prepare_plan": True,
+        "skip_confirm": True,
+    },
     "Cancel": {
         "verb": None,
         "filter_status": None,
@@ -172,6 +186,17 @@ PIPELINE_STATES = {
         },
         "label": UNINSTALLED_LABEL,
         "success_key": "applied",
+        "post_state": "CONFIG_LOADING",
+    },
+    "SHOW_CONFIG_DOC": {
+        "pipeline": {
+            display_config_doc: {
+                "args": [CONFIG_DOC],
+                "result": "ok",
+            },
+        },
+        "label": "DONE",
+        "success_key": "ok",
         "post_state": "CONFIG_LOADING",
     },
 }

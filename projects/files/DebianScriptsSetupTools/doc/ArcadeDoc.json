@@ -1,0 +1,35 @@
+{
+  "tool": "Arcade",
+  "summary": "Defines arcade and emulator setup tasks such as MAME and RetroArch.",
+  "structure": [
+    {
+      "level": 1,
+      "name": "<MODEL_ID>",
+      "description": "Machine or environment identifier."
+    },
+    {
+      "level": 2,
+      "name": "Arcade",
+      "description": "Fixed job key for arcade configuration."
+    },
+    {
+      "level": 3,
+      "name": "<ARCADE_TASK>",
+      "description": "Logical arcade setup task (e.g. mame, retroarch)."
+    }
+  ],
+  "notes": [
+    "Tasks may install packages, copy settings, and run scripts.",
+    "Reset operations remove generated configuration files.",
+    "Used for kiosk or dedicated arcade systems."
+  ],
+  "example": {
+    "<MODEL_ID>": {
+      "Arcade": {
+        "mame": {
+          "Packages": ["mame"]
+        }
+      }
+    }
+  }
+}

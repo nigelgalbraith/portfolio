@@ -1,0 +1,37 @@
+{
+  "tool": "Firewall",
+  "summary": "Defines UFW firewall rules to be applied for a machine model.",
+  "structure": [
+    {
+      "level": 1,
+      "name": "<MODEL_ID>",
+      "description": "Machine or hardware model identifier."
+    },
+    {
+      "level": 2,
+      "name": "Firewall",
+      "description": "Fixed job key for firewall configuration. Do not rename."
+    },
+    {
+      "level": 3,
+      "name": "<FIREWALL_JOB>",
+      "description": "Logical name for a firewall rule set."
+    }
+  ],
+  "notes": [
+    "Firewall rules are applied as a group.",
+    "Applications, single ports, and port ranges are optional sections.",
+    "UFW must be installed."
+  ],
+  "example": {
+    "<MODEL_ID>": {
+      "Firewall": {
+        "default-firewall": {
+          "Applications": ["OpenSSH"],
+          "SinglePorts": [],
+          "PortRanges": []
+        }
+      }
+    }
+  }
+}

@@ -3,12 +3,14 @@
 from pathlib import Path
 from modules.package_utils import check_package, install_packages, uninstall_packages
 from modules.apt_repo_utils import add_apt_repository, remove_apt_repo_and_keyring
+from modules.display_utils import display_config_doc
 
 # === CONFIG PATHS & KEYS ===
 PRIMARY_CONFIG   = "config/AppConfigSettings.json"
 JOBS_KEY         = "ThirdParty"
 CONFIG_TYPE      = "third-party"
 DEFAULT_CONFIG   = "Default"
+CONFIG_DOC       = "doc/ThirdPartyDoc.json"
 
 # === JSON KEYS ===
 KEY_REPO_URL        = "url"
@@ -110,6 +112,17 @@ ACTIONS = {
         "skip_prepare_plan": False,
         "filter_jobs": None,
     },
+    "Show config help": {
+        "verb": "help",
+        "filter_status": None,
+        "label": None,
+        "prompt": "Show config help now? [y/n]: ",
+        "execute_state": "SHOW_CONFIG_DOC",
+        "post_state": "CONFIG_LOADING",
+        "skip_sub_select": True,
+        "skip_prepare_plan": True,
+        "skip_confirm": True,
+    },
     "Cancel": {
         "verb": None,
         "filter_status": None,
@@ -187,6 +200,17 @@ PIPELINE_STATES = {
         },
         "label": "REMOVED",
         "success_key": "removed",
+        "post_state": "CONFIG_LOADING",
+    },
+    "SHOW_CONFIG_DOC": {
+        "pipeline": {
+            display_config_doc: {
+                "args": [CONFIG_DOC],
+                "result": "ok",
+            },
+        },
+        "label": "DONE",
+        "success_key": "ok",
         "post_state": "CONFIG_LOADING",
     },
 }

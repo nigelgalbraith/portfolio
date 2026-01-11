@@ -43,6 +43,19 @@ def load_module_functions(module_folder: str, job: str) -> Dict:
     }
 
 
+def load_module_function_docs(module_folder: str, job: str) -> Dict[str, str]:
+    '''Load top-level functions from a module file and return {name: docstring}.'''
+    import ast
+    module_path = Path(os.path.expandvars(os.path.expanduser(module_folder))) / job
+    tree = ast.parse(module_path.read_text(encoding="utf-8", errors="replace"))
+    docs: Dict[str, str] = {}
+    for n in tree.body:
+        if isinstance(n, ast.FunctionDef):
+            doc = ast.get_docstring(n) or ""
+            docs[n.name] = doc.strip()
+    return docs
+
+
 def scan_function_usage(module_functions: dict, check_folders, check_files, module_folder):
     """
     Scan external and internal sources for function usage.
@@ -165,4 +178,30 @@ def print_usage_summary(job: str, scan_result: dict) -> None:
         print("\n[UNUSED]")
         for func_name in sorted(unused):
             print(f"  {func_name}")
+
+
+def print_functions_summary(job: str, fn_docs: Dict[str, str]) -> None:
+    """Print module functions with aligned multi-line docstrings."""
+    title = f"Functions for module: {job}"
+    print(f"\n{title}")
+    print("-" * len(title))
+    print()
+    if not fn_docs:
+        print("  (no top-level functions found)")
+        return
+    name_width = max(len(name) for name in fn_docs)
+    prefix = " " * (name_width + 3)  
+    for name in sorted(fn_docs):
+        doc = fn_docs[name] or "(no docstring)"
+        lines = doc.splitlines()
+        print(f"{name.ljust(name_width)} : {lines[0]}")
+        for line in lines[1:]:
+            print(f"{prefix}{line}")
+        print()
+
+
+
+
+
+
 

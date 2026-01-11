@@ -23,13 +23,14 @@ from modules.camera_utils import (
     ensure_dummy_xmltv,
     find_extracted_binary,
 )
-
+from modules.display_utils import display_config_doc
 
 # === CONFIG PATHS & KEYS ===
 PRIMARY_CONFIG   = "config/AppConfigSettings.json"
 JOBS_KEY         = "IPCam"
 CONFIG_TYPE      = "ipcam"
 DEFAULT_CONFIG   = "default"
+CONFIG_DOC       = "doc/IPCamDoc.json"
 
 # === JSON KEYS ===
 KEY_SERVICE_URL        = "ServiceURL"
@@ -193,6 +194,17 @@ ACTIONS = {
         "execute_state": "RESTART",
         "post_state": "CONFIG_LOADING",
     },
+    "Show config help": {
+        "verb": "help",
+        "filter_status": None,
+        "label": None,
+        "prompt": "Show config help now? [y/n]: ",
+        "execute_state": "SHOW_CONFIG_DOC",
+        "post_state": "CONFIG_LOADING",
+        "skip_sub_select": True,
+        "skip_prepare_plan": True,
+        "skip_confirm": True,
+    },
     "Cancel": {
         "verb": None,
         "filter_status": None,
@@ -339,6 +351,17 @@ PIPELINE_STATES = {
             },
         },
         "label": "RESTARTED",
+        "success_key": "ok",
+        "post_state": "CONFIG_LOADING",
+    },
+    "SHOW_CONFIG_DOC": {
+        "pipeline": {
+            display_config_doc: {
+                "args": [CONFIG_DOC],
+                "result": "ok",
+            },
+        },
+        "label": "DONE",
         "success_key": "ok",
         "post_state": "CONFIG_LOADING",
     },

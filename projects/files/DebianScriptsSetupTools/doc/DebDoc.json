@@ -1,0 +1,37 @@
+{
+  "tool": "DEB",
+  "summary": "Defines Debian package files to download and install manually.",
+  "structure": [
+    {
+      "level": 1,
+      "name": "<MODEL_ID>",
+      "description": "Machine or hardware model identifier."
+    },
+    {
+      "level": 2,
+      "name": "DEB",
+      "description": "Fixed job key for Debian package installs."
+    },
+    {
+      "level": 3,
+      "name": "<PACKAGE_NAME>",
+      "description": "Logical name for the Debian package."
+    }
+  ],
+  "notes": [
+    "Used for .deb files not available in repositories.",
+    "DownloadURL is required.",
+    "Optional service can be enabled after install."
+  ],
+  "example": {
+    "<MODEL_ID>": {
+      "DEB": {
+        "example-package": {
+          "DownloadURL": "https://example.com/example.deb",
+          "EnableService": false,
+          "download_dir": "/tmp/deb_downloads"
+        }
+      }
+    }
+  }
+}

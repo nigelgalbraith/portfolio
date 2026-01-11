@@ -1,0 +1,37 @@
+{
+  "tool": "ShutdownServices",
+  "summary": "Defines system services that should be managed during shutdown.",
+  "structure": [
+    {
+      "level": 1,
+      "name": "<MODEL_ID>",
+      "description": "Machine or hardware model identifier."
+    },
+    {
+      "level": 2,
+      "name": "ShutdownServices",
+      "description": "Fixed job key for shutdown service configuration."
+    },
+    {
+      "level": 3,
+      "name": "<SERVICE_JOB>",
+      "description": "Logical name for a shutdown service."
+    }
+  ],
+  "notes": [
+    "Uses the same structure as StartupServices.",
+    "Services are stopped or disabled on shutdown.",
+    "Systemd is required."
+  ],
+  "example": {
+    "<MODEL_ID>": {
+      "ShutdownServices": {
+        "ExampleService": {
+          "ServiceName": "example.service",
+          "ScriptSrc": "Services/Example/example.sh",
+          "ScriptDest": "/usr/local/bin/example.sh"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "tool": "IPCam",
+  "summary": "Defines IPTV / camera aggregation services such as xTeVe.",
+  "structure": [
+    {
+      "level": 1,
+      "name": "<MODEL_ID>",
+      "description": "Machine or environment identifier."
+    },
+    {
+      "level": 2,
+      "name": "IPCam",
+      "description": "Fixed job key for IPCam configuration."
+    },
+    {
+      "level": 3,
+      "name": "<IPCAM_SERVICE>",
+      "description": "Logical name for an IPCam service."
+    }
+  ],
+  "notes": [
+    "Services are installed from downloadable archives.",
+    "Camera lists define playlist and EPG generation.",
+    "Used for IPTV or camera aggregation."
+  ],
+  "example": {
+    "<MODEL_ID>": {
+      "IPCam": {
+        "xteve": {
+          "ServiceURL": "http://127.0.0.1:34400",
+          "Cameras": []
+        }
+      }
+    }
+  }
+}

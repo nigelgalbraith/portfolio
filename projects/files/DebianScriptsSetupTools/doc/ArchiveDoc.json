@@ -1,0 +1,37 @@
+{
+  "tool": "Archive",
+  "summary": "Defines applications distributed as downloadable archives.",
+  "structure": [
+    {
+      "level": 1,
+      "name": "<MODEL_ID>",
+      "description": "Machine or hardware model identifier."
+    },
+    {
+      "level": 2,
+      "name": "Archive",
+      "description": "Fixed job key for archive-based installs."
+    },
+    {
+      "level": 3,
+      "name": "<APP_NAME>",
+      "description": "Logical name for the archive application."
+    }
+  ],
+  "notes": [
+    "Archives are downloaded and extracted to a target directory.",
+    "Optional post-install and cleanup commands are supported."
+  ],
+  "example": {
+    "Default": {
+      "Archive": {
+        "MyTool": {
+          "DownloadURL": "https://example.com/tool.tar.gz",
+          "ExtractTo": "~/Applications/MyTool",
+          "StripTopLevel": true,
+          "CheckPath": "~/Applications/MyTool/bin/tool"
+        }
+      }
+    }
+  }
+}

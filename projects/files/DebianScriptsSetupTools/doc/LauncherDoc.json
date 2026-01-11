@@ -1,0 +1,36 @@
+{
+  "tool": "Launcher",
+  "summary": "Defines kiosk or launcher environments for auto-login systems.",
+  "structure": [
+    {
+      "level": 1,
+      "name": "<MODEL_ID>",
+      "description": "Machine or environment identifier."
+    },
+    {
+      "level": 2,
+      "name": "Launcher",
+      "description": "Fixed job key for launcher configuration."
+    },
+    {
+      "level": 3,
+      "name": "<LAUNCHER_JOB>",
+      "description": "Logical launcher configuration job."
+    }
+  ],
+  "notes": [
+    "Used to configure kiosk or single-purpose systems.",
+    "Manages users, display managers, and startup files.",
+    "Requires root privileges."
+  ],
+  "example": {
+    "<MODEL_ID>": {
+      "Launcher": {
+        "flex-launcher": {
+          "DownloadURL": "https://example.com/launcher.deb",
+          "SetupDirs": ["/home/launcher/.config"]
+        }
+      }
+    }
+  }
+}

@@ -10,12 +10,14 @@ from modules.rdp_utils import (
     uninstall_rdp,
     regenerate_xrdp_keys,
 )
+from modules.display_utils import display_config_doc
 
 # === CONFIG PATHS & KEYS ===
 PRIMARY_CONFIG   = "config/AppConfigSettings.json"
 JOBS_KEY         = "RDP"
 CONFIG_TYPE      = "rdp"
 DEFAULT_CONFIG   = "Default"
+CONFIG_DOC       = "doc/RDPDoc.json"
 
 # === JSON FIELD KEYS ===
 KEY_SERVICE_NAME = "ServiceName"
@@ -129,6 +131,17 @@ ACTIONS = {
         "skip_prepare_plan": False,
         "filter_jobs": None,
     },
+    "Show config help": {
+        "verb": "help",
+        "filter_status": None,
+        "label": None,
+        "prompt": "Show config help now? [y/n]: ",
+        "execute_state": "SHOW_CONFIG_DOC",
+        "post_state": "CONFIG_LOADING",
+        "skip_sub_select": True,
+        "skip_prepare_plan": True,
+        "skip_confirm": True,
+    },
     "Cancel": {
         "verb": None,
         "filter_status": None,
@@ -215,6 +228,17 @@ PIPELINE_STATES = {
         },
         "label": "RENEWED",
         "success_key": "renewed",
+        "post_state": "CONFIG_LOADING",
+    },
+    "SHOW_CONFIG_DOC": {
+        "pipeline": {
+            display_config_doc: {
+                "args": [CONFIG_DOC],
+                "result": "ok",
+            },
+        },
+        "label": "DONE",
+        "success_key": "ok",
         "post_state": "CONFIG_LOADING",
     },
 }

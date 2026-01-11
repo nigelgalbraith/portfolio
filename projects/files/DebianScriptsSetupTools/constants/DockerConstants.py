@@ -13,12 +13,14 @@ from modules.docker_utils import (
 )
 from modules.archive_utils import download_archive_file, install_archive_file, handle_cleanup
 from modules.system_utils import expand_path
+from modules.display_utils import display_config_doc
 
 # === CONFIG PATHS & KEYS ===
 PRIMARY_CONFIG   = "config/AppConfigSettings.json"
 JOBS_KEY         = "Docker"
 CONFIG_TYPE      = "docker"
 DEFAULT_CONFIG   = "default"
+CONFIG_DOC       = "doc/DockerDoc.json"
 
 # === JSON KEYS ===
 KEY_NAME       = "Name"
@@ -136,6 +138,17 @@ ACTIONS = {
         "prompt": "Build image from source? [y/n]: ",
         "execute_state": "BUILD",
         "post_state": "CONFIG_LOADING",
+    },
+    "Show config help": {
+        "verb": "help",
+        "filter_status": None,
+        "label": None,
+        "prompt": "Show config help now? [y/n]: ",
+        "execute_state": "SHOW_CONFIG_DOC",
+        "post_state": "CONFIG_LOADING",
+        "skip_sub_select": True,
+        "skip_prepare_plan": True,
+        "skip_confirm": True,
     },
     "Cancel": {
         "verb": None,
@@ -272,6 +285,17 @@ PIPELINE_STATES = {
             },
         },
         "label": "BUILT",
+        "success_key": "ok",
+        "post_state": "CONFIG_LOADING",
+    },
+    "SHOW_CONFIG_DOC": {
+        "pipeline": {
+            display_config_doc: {
+                "args": [CONFIG_DOC],
+                "result": "ok",
+            },
+        },
+        "label": "DONE",
         "success_key": "ok",
         "post_state": "CONFIG_LOADING",
     },

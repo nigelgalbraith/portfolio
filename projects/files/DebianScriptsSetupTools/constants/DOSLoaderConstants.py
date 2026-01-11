@@ -11,12 +11,14 @@ from modules.archive_utils import (
 )
 
 from modules.system_utils import run_commands, remove_paths
+from modules.display_utils import display_config_doc
 
 # === CONFIG PATHS & KEYS ===
 PRIMARY_CONFIG   = "config/AppConfigSettings.json"
 JOBS_KEY         = "DOSLoader"
 CONFIG_TYPE      = "dosloader"
 DEFAULT_CONFIG   = "Default"
+CONFIG_DOC       = "doc/DosLoaderDoc.json"
 
 # === JSON KEYS ===
 KEY_NAME           = "Name"
@@ -120,6 +122,17 @@ ACTIONS = {
         "execute_state": "RUN",
         "post_state": "MENU_SELECTION",
     },
+    "Show config help": {
+        "verb": "help",
+        "filter_status": None,
+        "label": None,
+        "prompt": "Show config help now? [y/n]: ",
+        "execute_state": "SHOW_CONFIG_DOC",
+        "post_state": "CONFIG_LOADING",
+        "skip_sub_select": True,
+        "skip_prepare_plan": True,
+        "skip_confirm": True,
+    },
     "Cancel": {
         "verb": None,
         "filter_status": None,
@@ -200,5 +213,16 @@ PIPELINE_STATES = {
         "label": INSTALLED_LABEL,
         "success_key": "ran",
         "post_state": "MENU_SELECTION",
-    }
+    },
+    "SHOW_CONFIG_DOC": {
+        "pipeline": {
+            display_config_doc: {
+                "args": [CONFIG_DOC],
+                "result": "ok",
+            },
+        },
+        "label": "DONE",
+        "success_key": "ok",
+        "post_state": "CONFIG_LOADING",
+    },
 }

@@ -11,12 +11,14 @@ from modules.package_utils import (
 )
 from modules.service_utils import start_service_standard
 from modules.archive_utils import handle_cleanup
+from modules.display_utils import display_config_doc
 
 # === CONFIG PATHS & KEYS ===
 PRIMARY_CONFIG   = "config/AppConfigSettings.json"
 JOBS_KEY         = "DEB"
 CONFIG_TYPE      = "deb"
 DEFAULT_CONFIG   = "Default"
+CONFIG_DOC       = "doc/DebDoc.json"
 
 # === JSON KEYS ===
 KEY_DOWNLOAD_URL   = "DownloadURL"
@@ -103,6 +105,17 @@ ACTIONS: Dict[str, Dict[str, Any]] = {
         "execute_state": "UNINSTALL",
         "post_state": "CONFIG_LOADING",
     },
+    "Show config help": {
+        "verb": "help",
+        "filter_status": None,
+        "label": None,
+        "prompt": "Show config help now? [y/n]: ",
+        "execute_state": "SHOW_CONFIG_DOC",
+        "post_state": "CONFIG_LOADING",
+        "skip_sub_select": True,
+        "skip_prepare_plan": True,
+        "skip_confirm": True,
+    },
     "Cancel": {
         "verb": None,
         "filter_status": None,
@@ -163,6 +176,17 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
         },
         "label": UNINSTALLED_LABEL,
         "success_key": "uninstalled",
+        "post_state": "CONFIG_LOADING",
+    },
+    "SHOW_CONFIG_DOC": {
+        "pipeline": {
+            display_config_doc: {
+                "args": [CONFIG_DOC],
+                "result": "ok",
+            },
+        },
+        "label": "DONE",
+        "success_key": "ok",
         "post_state": "CONFIG_LOADING",
     },
 }

@@ -14,12 +14,14 @@ from modules.service_utils import (
     remove_path_optional,
 )
 from modules.logger_utils import install_logrotate_config
+from modules.display_utils import display_config_doc
 
 # === CONFIG PATHS & KEYS ===
 PRIMARY_CONFIG   = "config/AppConfigSettings.json"
 JOBS_KEY         = "ShutdownServices"
 CONFIG_TYPE      = "ShutdownServices"
 DEFAULT_CONFIG   = "Default"
+CONFIG_DOC       = "doc/ShutdownServicesDoc.json"
 
 # === JSON KEYS ===
 KEY_ORDER        = "Order"
@@ -152,6 +154,17 @@ ACTIONS = {
         "execute_state": "RESTART",
         "post_state": "CONFIG_LOADING",
     },
+    "Show config help": {
+        "verb": "help",
+        "filter_status": None,
+        "label": None,
+        "prompt": "Show config help now? [y/n]: ",
+        "execute_state": "SHOW_CONFIG_DOC",
+        "post_state": "CONFIG_LOADING",
+        "skip_sub_select": True,
+        "skip_prepare_plan": True,
+        "skip_confirm": True,
+    },
     "Cancel": {
         "verb": None,
         "filter_status": None,
@@ -250,6 +263,17 @@ PIPELINE_STATES = {
             },
         },
         "label": "RESTARTED",
+        "success_key": "ok",
+        "post_state": "CONFIG_LOADING",
+    },
+    "SHOW_CONFIG_DOC": {
+        "pipeline": {
+            display_config_doc: {
+                "args": [CONFIG_DOC],
+                "result": "ok",
+            },
+        },
+        "label": "DONE",
         "success_key": "ok",
         "post_state": "CONFIG_LOADING",
     },

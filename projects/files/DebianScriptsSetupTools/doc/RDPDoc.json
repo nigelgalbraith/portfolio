@@ -1,0 +1,36 @@
+{
+  "tool": "RDP",
+  "summary": "Defines Remote Desktop (XRDP) service configuration.",
+  "structure": [
+    {
+      "level": 1,
+      "name": "<MODEL_ID>",
+      "description": "Machine or hardware model identifier."
+    },
+    {
+      "level": 2,
+      "name": "RDP",
+      "description": "Fixed job key for RDP configuration."
+    },
+    {
+      "level": 3,
+      "name": "<SERVICE_NAME>",
+      "description": "RDP service package name."
+    }
+  ],
+  "notes": [
+    "XRDP service and user configuration are automated.",
+    "Certificates and groups must be correctly configured."
+  ],
+  "example": {
+    "<MODEL_ID>": {
+      "RDP": {
+        "xrdp": {
+          "ServiceName": "xrdp",
+          "UserName": "xrdp",
+          "SessionCmd": "startxfce4"
+        }
+      }
+    }
+  }
+}

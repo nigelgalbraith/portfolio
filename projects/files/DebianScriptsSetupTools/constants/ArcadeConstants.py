@@ -17,12 +17,14 @@ from modules.system_utils import (
     protect_folders,
 )
 from modules.package_utils import check_package, install_packages, uninstall_packages
+from modules.display_utils import display_config_doc
 
 # === CONFIG PATHS & KEYS ===
 PRIMARY_CONFIG   = "config/AppConfigSettings.json"
 JOBS_KEY         = "Arcade"
 CONFIG_TYPE      = "mame"
 DEFAULT_CONFIG   = "Default"
+CONFIG_DOC       = "doc/ArcadeDoc.json"
 
 # === JSON KEYS ===
 KEY_SETUP_CMDS         = "SetupCmds"
@@ -365,6 +367,17 @@ ACTIONS: Dict[str, Dict[str, Any]] = {
         "execute_state": "RESET",
         "post_state": "CONFIG_LOADING",
     },
+    "Show config help": {
+        "verb": "help",
+        "filter_status": None,
+        "label": None,
+        "prompt": "Show config help now? [y/n]: ",
+        "execute_state": "SHOW_CONFIG_DOC",
+        "post_state": "CONFIG_LOADING",
+        "skip_sub_select": True,
+        "skip_prepare_plan": True,
+        "skip_confirm": True,
+    },
     "Cancel": {
         "verb": None,
         "filter_status": None,
@@ -482,6 +495,18 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
         },
         "label": UNINSTALLED_LABEL,
         "success_key": "uninstalled",
+        "post_state": "CONFIG_LOADING",
+    },
+
+    "SHOW_CONFIG_DOC": {
+        "pipeline": {
+            display_config_doc: {
+                "args": [CONFIG_DOC],
+                "result": "ok",
+            },
+        },
+        "label": "DONE",
+        "success_key": "ok",
         "post_state": "CONFIG_LOADING",
     },
 }

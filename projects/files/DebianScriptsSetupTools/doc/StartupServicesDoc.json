@@ -1,0 +1,37 @@
+{
+  "tool": "StartupServices",
+  "summary": "Defines system services that should be installed and enabled at startup.",
+  "structure": [
+    {
+      "level": 1,
+      "name": "<MODEL_ID>",
+      "description": "Machine or hardware model identifier."
+    },
+    {
+      "level": 2,
+      "name": "StartupServices",
+      "description": "Fixed job key for startup service configuration."
+    },
+    {
+      "level": 3,
+      "name": "<SERVICE_JOB>",
+      "description": "Logical name for a startup service."
+    }
+  ],
+  "notes": [
+    "Services are installed in the defined order.",
+    "Templates are copied before services are enabled.",
+    "Systemd is required."
+  ],
+  "example": {
+    "<MODEL_ID>": {
+      "StartupServices": {
+        "ExampleService": {
+          "ServiceName": "example.service",
+          "ScriptSrc": "Services/Example/example.sh",
+          "ScriptDest": "/usr/local/bin/example.sh"
+        }
+      }
+    }
+  }
+}

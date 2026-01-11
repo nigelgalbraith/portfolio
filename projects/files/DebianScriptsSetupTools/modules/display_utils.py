@@ -4,8 +4,10 @@ display_utils.py
 """
 
 from typing import Dict, Any, Optional
+from pathlib import Path
 import os
 import getpass
+import json
 
 # ===== CONSTANTS =====
 MAX_COL_WIDTH = 20
@@ -236,3 +238,56 @@ def confirm(
         print(
             f"Invalid input. Please enter one of: {', '.join(valid_yes + valid_no)}."
         )
+
+
+def display_config_doc(doc_path: str) -> bool:
+    """Display a config help doc from a JSON file."""
+    path = Path(doc_path)
+    if not path.is_file():
+        print(f"[ERROR] Config doc not found: {path}")
+        return False
+    try:
+        data: Dict[str, Any] = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as e:
+        print(f"[ERROR] Failed to read config doc '{path}': {e!r}")
+        return False
+    tool = str(data.get("tool", "Config")).strip()
+    summary = str(data.get("summary", "")).strip()
+    title = f"{tool} Config Help"
+    print(f"\n{title}")
+    print("-" * len(title))
+    if summary:
+        print(f"\n{summary}")
+    structure = data.get("structure", [])
+    if isinstance(structure, list) and structure:
+        print("\nStructure:")
+        for item in structure:
+            if not isinstance(item, dict):
+                continue
+            level = item.get("level", "?")
+            name = str(item.get("name", "")).strip() or "<NAME>"
+            desc = str(item.get("description", "")).rstrip()
+            print(f"\n  Level {level}: {name}")
+            if desc:
+                for line in desc.splitlines():
+                    print(f"    {line}")
+    notes = data.get("notes", [])
+    if isinstance(notes, list) and notes:
+        print("\nNotes:")
+        for n in notes:
+            n = str(n).strip()
+            if n:
+                print(f"  - {n}")
+    example = data.get("example")
+    if isinstance(example, dict) and example:
+        print("\nExample:")
+        pretty = json.dumps(example, indent=2, ensure_ascii=False)
+        for line in pretty.splitlines():
+            print(f"  {line}")
+    print()
+    return True
+
+
+
+
+

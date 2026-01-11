@@ -1,0 +1,40 @@
+{
+  "tool": "ThirdParty",
+  "summary": "Defines third-party APT repositories and packages.",
+  "structure": [
+    {
+      "level": 1,
+      "name": "<MODEL_ID>",
+      "description": "Machine or hardware model identifier."
+    },
+    {
+      "level": 2,
+      "name": "ThirdParty",
+      "description": "Fixed job key for third-party repositories."
+    },
+    {
+      "level": 3,
+      "name": "<PACKAGE_NAME>",
+      "description": "APT package provided by a third-party repository."
+    }
+  ],
+  "notes": [
+    "Repositories are added before package installation.",
+    "Keyrings are stored in a secure directory.",
+    "Removal can optionally leave packages installed."
+  ],
+  "example": {
+    "Default": {
+      "ThirdParty": {
+        "brave-browser": {
+          "repo_name": "brave-browser",
+          "url": "https://brave-browser-apt-release.s3.brave.com/",
+          "key": "https://brave-browser-apt-release.s3.brave.com/brave-core.asc",
+          "codename": "jammy",
+          "component": "main",
+          "keyring_dir": "/usr/share/keyrings"
+        }
+      }
+    }
+  }
+}

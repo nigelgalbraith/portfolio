@@ -1,0 +1,37 @@
+{
+  "tool": "Functions",
+  "summary": "Defines Python modules to analyze for function usage and documentation.",
+  "structure": [
+    {
+      "level": 1,
+      "name": "<MODEL_ID>",
+      "description": "Machine or environment identifier."
+    },
+    {
+      "level": 2,
+      "name": "Functions",
+      "description": "Fixed job key for function analysis."
+    },
+    {
+      "level": 3,
+      "name": "<MODULE_FILE>",
+      "description": "Python module filename to analyze (e.g. utils.py)."
+    }
+  ],
+  "notes": [
+    "Used for static analysis only.",
+    "No code is executed.",
+    "Folders and files are scanned for function usage."
+  ],
+  "example": {
+    "Default": {
+      "Functions": {
+        "json_utils.py": {
+          "ModuleFolder": "$HOME/project/modules",
+          "CheckFolders": ["$HOME/project/constants"],
+          "CheckFiles": ["$HOME/project/main.py"]
+        }
+      }
+    }
+  }
+}

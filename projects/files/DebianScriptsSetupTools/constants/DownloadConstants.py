@@ -12,7 +12,7 @@ from modules.download_utils import (
 )
 
 from modules.system_utils import run_script_dict
-
+from modules.display_utils import display_config_doc
 
 # ==================================================
 # CONFIG PATHS & KEYS
@@ -22,7 +22,7 @@ PRIMARY_CONFIG = "config/AppConfigSettings.json"
 JOBS_KEY = "Downloads"
 CONFIG_TYPE = "downloads"
 DEFAULT_CONFIG = "Default"
-
+CONFIG_DOC       = "doc/DownloadDoc.json"
 
 # ==================================================
 # JSON KEYS (UNIFIED LINKS)
@@ -181,6 +181,18 @@ ACTIONS: Dict[str, Dict[str, Any]] = {
         "skip_prepare_plan": True,
     },
 
+    "Show config help": {
+        "verb": "help",
+        "filter_status": None,
+        "label": None,
+        "prompt": "Show config help now? [y/n]: ",
+        "execute_state": "SHOW_CONFIG_DOC",
+        "post_state": "CONFIG_LOADING",
+        "skip_sub_select": True,
+        "skip_prepare_plan": True,
+        "skip_confirm": True,
+    },
+
     "Cancel": {
         "verb": None,
         "filter_status": None,
@@ -249,6 +261,18 @@ PIPELINE_STATES: Dict[str, Dict[str, Any]] = {
         },
         "label": "DONE",
         "success_key": "json_ok",
+        "post_state": "CONFIG_LOADING",
+    },
+
+    "SHOW_CONFIG_DOC": {
+        "pipeline": {
+            display_config_doc: {
+                "args": [CONFIG_DOC],
+                "result": "ok",
+            },
+        },
+        "label": "DONE",
+        "success_key": "ok",
         "post_state": "CONFIG_LOADING",
     },
 }

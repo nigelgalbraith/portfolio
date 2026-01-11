@@ -1,0 +1,37 @@
+{
+  "tool": "Backup",
+  "summary": "Defines backup jobs for folders, files, and zip archives.",
+  "structure": [
+    {
+      "level": 1,
+      "name": "<MODEL_ID>",
+      "description": "Machine or environment identifier."
+    },
+    {
+      "level": 2,
+      "name": "Backup",
+      "description": "Fixed job key for backup jobs."
+    },
+    {
+      "level": 3,
+      "name": "<BACKUP_JOB>",
+      "description": "Logical backup job name."
+    }
+  ],
+  "notes": [
+    "Supports folder copies, file copies, and zip archives.",
+    "Jobs can be run individually or together."
+  ],
+  "example": {
+    "Default": {
+      "Backup": {
+        "HomeBackup": {
+          "CopyFolders": [
+            { "copyName": "Docs", "src": "/home/user/Documents", "dest": "/mnt/backup/Documents" }
+          ],
+          "CheckPath": "/mnt/backup"
+        }
+      }
+    }
+  }
+}

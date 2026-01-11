@@ -1,0 +1,38 @@
+{
+  "tool": "Downloads",
+  "summary": "Defines structured download jobs for files and archives.",
+  "structure": [
+    {
+      "level": 1,
+      "name": "<MODEL_ID>",
+      "description": "Machine or environment identifier."
+    },
+    {
+      "level": 2,
+      "name": "Downloads",
+      "description": "Fixed job key for download tasks."
+    },
+    {
+      "level": 3,
+      "name": "<JOB_NAME>",
+      "description": "Logical name for a download task."
+    }
+  ],
+  "notes": [
+    "Jobs define output paths and extraction behavior.",
+    "Links are loaded from external JSON link lists."
+  ],
+  "example": {
+    "<MODEL_ID>": {
+      "Downloads": {
+        "ExampleFiles": {
+          "links": {
+            "output_path": "/mnt/data/files",
+            "extract": false,
+            "links_configs": ["settings/downloads/links/example.json"]
+          }
+        }
+      }
+    }
+  }
+}

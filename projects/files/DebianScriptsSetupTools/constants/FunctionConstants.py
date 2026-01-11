@@ -4,16 +4,20 @@ from pathlib import Path
 from modules.function_utils import (
     job_is_ready,
     load_module_functions,
+    load_module_function_docs,
     scan_function_usage,
     detect_usage,
     print_usage_summary,
+    print_functions_summary,
 )
+from modules.display_utils import display_config_doc
 
 # === CONFIG PATHS & KEYS ===
 PRIMARY_CONFIG   = "config/AppConfigSettings.json"
 JOBS_KEY         = "Functions"
 CONFIG_TYPE      = "function_usage"
 DEFAULT_CONFIG   = "Default"
+CONFIG_DOC       = "doc/FunctionDoc.json"
 
 # === JSON KEYS (per job) ===
 KEY_MODULE_FOLDER  = "ModuleFolder"
@@ -87,6 +91,27 @@ ACTIONS = {
         "execute_state": "ANALYZE",
         "post_state": "CONFIG_LOADING",
     },
+    f"Show {JOBS_KEY}": {
+        "verb": "show",
+        "filter_status": None,
+        "label": None,
+        "prompt": "\nShow module functions + docstrings now? [y/n]: ",
+        "execute_state": "SHOW_FUNCTIONS",
+        "post_state": "CONFIG_LOADING",
+    },
+
+    "Show config help": {
+        "verb": "help",
+        "filter_status": None,
+        "label": None,
+        "prompt": "Show config help now? [y/n]: ",
+        "execute_state": "SHOW_CONFIG_DOC",
+        "post_state": "CONFIG_LOADING",
+        "skip_sub_select": True,
+        "skip_prepare_plan": True,
+        "skip_confirm": True,
+    },
+
     "Cancel": {
         "verb": None,
         "filter_status": None,
@@ -115,10 +140,16 @@ PLAN_COLUMNS_ANALYZE = [
     KEY_CHECK_FILES,
 ]
 
+
+PLAN_COLUMNS_SHOW = [
+    KEY_MODULE_FOLDER,
+]
+
 PLAN_COLUMN_ORDER = PLAN_COLUMNS_ANALYZE
 
 OPTIONAL_PLAN_COLUMNS = {
     f"Analyze {JOBS_KEY}": PLAN_COLUMNS_ANALYZE,
+    f"Show {JOBS_KEY}": PLAN_COLUMNS_SHOW,
 }
 
 # === PIPELINES ===
@@ -142,6 +173,31 @@ PIPELINE_STATES = {
             },
         },
         "success_key": "used",
-    }
-}
+    },
 
+    "SHOW_FUNCTIONS": {
+        "pipeline": {
+            load_module_function_docs: {
+                "args": [KEY_MODULE_FOLDER, "job"],
+                "result": "fn_docs",
+            },
+            print_functions_summary: {
+                "args": ["job", "fn_docs"],
+                "result": "ok",
+            },
+        },
+        "success_key": "ok",
+    },
+    
+     "SHOW_CONFIG_DOC": {
+        "pipeline": {
+            display_config_doc: {
+                "args": [CONFIG_DOC],
+                "result": "ok",
+            },
+        },
+        "label": "DONE",
+        "success_key": "ok",
+        "post_state": "CONFIG_LOADING",
+    },
+}

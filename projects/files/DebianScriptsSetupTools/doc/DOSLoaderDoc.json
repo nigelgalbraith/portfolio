@@ -1,0 +1,38 @@
+{
+  "tool": "DOSLoader",
+  "summary": "Defines DOS games to be installed and launched via DOSBox.",
+  "structure": [
+    {
+      "level": 1,
+      "name": "<MODEL_ID>",
+      "description": "Machine or environment identifier."
+    },
+    {
+      "level": 2,
+      "name": "DOSLoader",
+      "description": "Fixed job key for DOS game entries."
+    },
+    {
+      "level": 3,
+      "name": "<GAME_ID>",
+      "description": "Logical identifier for the DOS game."
+    }
+  ],
+  "notes": [
+    "Games are installed from archives.",
+    "Launch commands are executed via DOSBox.",
+    "Removal deletes extracted game files."
+  ],
+  "example": {
+    "Default": {
+      "DOSLoader": {
+        "ExampleGame": {
+          "Name": "Example Game",
+          "DownloadURL": "https://example.com/game.zip",
+          "ExtractTo": "~/dosgames/example",
+          "LaunchCmd": "dosbox -c \"mount c ~/dosgames/example\""
+        }
+      }
+    }
+  }
+}
