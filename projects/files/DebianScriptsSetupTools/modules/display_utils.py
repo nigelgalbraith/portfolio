@@ -3,6 +3,8 @@
 display_utils.py
 """
 
+from io import StringIO
+from contextlib import redirect_stdout
 from typing import Dict, Any, Optional
 from pathlib import Path
 import os
@@ -27,21 +29,30 @@ def wrap_in_box(val: Any, title: str | None = None, indent: int = 2, pad: int = 
     return "\n".join(out)
 
 
-def format_status_summary(status_dict: Dict[str, Any], label: str = "Item", count_keys: Optional[list] = None, labels: Optional[Dict[Any, str]] = None) -> str:
+def format_status_summary(
+    status_dict: Dict[str, Any],
+    label: str = "Item",
+    count_keys: Optional[list] = None,
+    labels: Optional[Dict[Any, str]] = None
+) -> str:
     """Return a formatted summary of statuses in a dictionary."""
     labels = labels or {True: "INSTALLED", False: "NOT INSTALLED"}
-    max_item_len = max([len(label)] + [len(str(item)) for item in status_dict.keys()])
+    non_spacer_items = [(k, v) for k, v in status_dict.items() if str(k).strip() != ""]
+    max_item_len = max([len(label)] + [len(str(item)) for item, _ in non_spacer_items], default=len(label))
     col_width = max_item_len + 4
-    lines = []
+    lines: list[str] = []
     title = f"{label} Status Summary"
     lines.append(f"\n{title}\n" + "-" * len(title))
     lines.append(f"{label:<{col_width}}Status")
     lines.append(f"{'-' * len(label):<{col_width}}------")
     for item, status in status_dict.items():
+        if str(item).strip() == "":
+            lines.append("")
+            continue
         display_status = labels.get(status, str(status))
         lines.append(f"{item:<{col_width}}{display_status}")
     counts: Dict[str, int] = {}
-    for status in status_dict.values():
+    for _, status in non_spacer_items:
         display_status = labels.get(status, str(status))
         counts[display_status] = counts.get(display_status, 0) + 1
     lines.append("\nSummary:\n--------")
@@ -238,6 +249,8 @@ def confirm(
         print(
             f"Invalid input. Please enter one of: {', '.join(valid_yes + valid_no)}."
         )
+
+        
 def display_description(description: dict[str, Any]) -> None:
     """Display DESCRIPTION as a collapsed dot-path hierarchy."""
     print("\nDESCRIPTION")
@@ -319,21 +332,27 @@ def display_config_doc(doc_path: str) -> bool:
     return True
 
 
-def load_doc_example(doc_path: str) -> Optional[dict[str, Any]]:
-    """Load and return the EXAMPLE + DESCRIPTION sections from a config doc JSON."""
+def format_config_help(doc_path: str) -> list[str]:
+    """Return formatted lines for DESCRIPTION + EXAMPLE from a config doc JSON."""
     path = Path(doc_path)
     if not path.is_file():
-        return None
+        return [f"[WARN] No config help found at: {doc_path}"]
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
-        return None
-    example = data.get("EXAMPLE")
-    description = data.get("DESCRIPTION")
-    if not isinstance(example, dict) and not isinstance(description, dict):
-        return None
-    return {
-        "EXAMPLE": example if isinstance(example, dict) else None,
-        "DESCRIPTION": description if isinstance(description, dict) else None,
-    }
+    except Exception as e:
+        return [f"[WARN] Failed to read config help '{doc_path}': {e!r}"]
+    lines: list[str] = []
+    lines.append(f"Config Help: {path.name}")
+    lines.append("-" * (13 + len(path.name)))
+    buf = StringIO()
+    with redirect_stdout(buf):
+        display_example(data.get("EXAMPLE"))
+        display_description(data.get("DESCRIPTION"))
+    captured = buf.getvalue().splitlines()
+    while captured and captured[0].strip() == "":
+        captured.pop(0)
+
+    lines.extend(captured)
+    return lines
+
 
