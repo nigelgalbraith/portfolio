@@ -1,14 +1,20 @@
 #!/usr/bin/env python3
 """
 docker_utils.py
+
+Small wrapper utilities for checking, building, and controlling Docker containers/images.
 """
 
 import subprocess
 from pathlib import Path
 
+# ---------------------------------------------------------------------
+# HELPERS
+# ---------------------------------------------------------------------
+
 
 def docker_image_exists(image_name: str) -> bool:
-    """Return True if a Docker image exists locally."""
+    """Return True if the Docker image `image_name` exists locally."""
     try:
         result = subprocess.run(
             ["docker", "images", "-q", image_name],
@@ -23,7 +29,7 @@ def docker_image_exists(image_name: str) -> bool:
 
 
 def docker_container_running(name: str) -> bool:
-    """Return True if a Docker container is currently running."""
+    """Return True if the Docker container `name` is currently running."""
     try:
         result = subprocess.run(
             ["docker", "ps", "-q", "-f", f"name={name}"],
@@ -38,7 +44,7 @@ def docker_container_running(name: str) -> bool:
 
 
 def docker_container_exists(name: str) -> bool:
-    """Return True if a Docker container exists (running or stopped)."""
+    """Return True if the Docker container `name` exists (running or stopped)."""
     try:
         result = subprocess.run(
             ["docker", "ps", "-aq", "-f", f"name={name}"],
@@ -51,10 +57,20 @@ def docker_container_exists(name: str) -> bool:
         print(f"[ERROR] Could not check existence for '{name}': {e}")
         return False
 
+# ---------------------------------------------------------------------
+# BUILD / RUN CONTROL
+# ---------------------------------------------------------------------
+
 
 def build_docker_container(container_name: str, docker_container_loc: str, image_name: str) -> bool:
-    """Build a Docker image from a directory containing a Dockerfile.
-    Ensures the build directory exists before running docker build."""
+    """
+    Build a Docker image from a directory containing a Dockerfile.
+
+    Ensures the build directory exists before running `docker build` inside it.
+
+    Example:
+        build_docker_container("myapp", "./docker", "myapp:latest")
+    """
     try:
         target = Path(docker_container_loc).expanduser().resolve()
         target.mkdir(parents=True, exist_ok=True) 
@@ -75,7 +91,12 @@ def build_docker_container(container_name: str, docker_container_loc: str, image
 
 
 def start_container(container_name: str, port_mapping: str, image_name: str) -> bool:
-    """Start a Docker container (recreates if a stopped container with same name exists)."""
+    """
+    Start a Docker container, replacing any stopped container with the same name.
+
+    Example:
+        start_container("myapp", "8080:80", "myapp:latest")
+    """
     try:
         if docker_container_running(container_name):
             print(f"[OK]    Container '{container_name}' already running.")
@@ -101,7 +122,12 @@ def start_container(container_name: str, port_mapping: str, image_name: str) -> 
 
 
 def stop_container(container_name: str) -> bool:
-    """Stop a running Docker container (idempotent)."""
+    """
+    Stop a running Docker container (idempotent).
+
+    Example:
+        stop_container("myapp")
+    """
     try:
         if docker_container_running(container_name):
             print(f"[STOP]  Stopping '{container_name}' ...")
@@ -120,7 +146,12 @@ def stop_container(container_name: str) -> bool:
 
 
 def remove_container(container_name: str) -> bool:
-    """Remove a stopped Docker container (idempotent)."""
+    """
+    Remove a Docker container if it exists (idempotent).
+
+    Example:
+        remove_container("myapp")
+    """
     try:
         if docker_container_exists(container_name):
             print(f"[RM]    Removing container '{container_name}' ...")
@@ -139,7 +170,12 @@ def remove_container(container_name: str) -> bool:
 
 
 def status_container(container_name: str) -> bool:
-    """Print the status of a Docker container; always return True for pipeline success."""
+    """
+    Print the status of a Docker container and return True on success.
+
+    Example:
+        status_container("myapp")
+    """
     try:
         if docker_container_running(container_name):
             print(f"[STATUS] '{container_name}': RUNNING")

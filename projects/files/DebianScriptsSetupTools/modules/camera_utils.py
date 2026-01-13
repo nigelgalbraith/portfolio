@@ -1,14 +1,58 @@
 #!/usr/bin/env python3
 """
 camera_utils.py
+
+Small utilities for generating camera playlist/XMLTV files and locating extracted binaries.
 """
 
 from pathlib import Path
 import subprocess
 import os
 
+# ---------------------------------------------------------------------
+# HELPERS
+# ---------------------------------------------------------------------
+
+
+def find_extracted_binary(root: Path, binary_name: str) -> Path | None:
+    """
+    Search an extracted directory tree for a target binary.
+
+    First attempts an exact name match via rglob(binary_name); if not found, falls back
+    to a case-insensitive prefix match (useful for version-suffixed binaries).
+
+    Example:
+        bin_path = find_extracted_binary(Path("/tmp/extract"), "ffmpeg")
+    """
+    candidate = None
+    found = False
+    for p in root.rglob(binary_name):
+        if (not found) and p.is_file():
+            candidate = p
+            found = True
+    if not found:
+        lower_prefix = binary_name.lower()
+        for p in root.rglob("*"):
+            if (not found) and p.is_file() and p.name.lower().startswith(lower_prefix):
+                candidate = p
+                found = True
+    return candidate
+
+# ---------------------------------------------------------------------
+# FILE GENERATORS
+# ---------------------------------------------------------------------
+
+
 def write_m3u(cameras, m3u_path: Path) -> bool:
-    """Write an M3U playlist file with camera entries (Name + optional Description)."""
+    """
+    Write an M3U playlist file containing camera stream URLs.
+
+    Each entry is written as an EXTINF line using "Name" and optional "Description",
+    followed by the camera "URL".
+
+    Example:
+        write_m3u(cameras, Path("/etc/tvheadend/iptv/cameras.m3u"))
+    """
     try:
         lines = ["#EXTM3U"]
         for cam in cameras:
@@ -42,7 +86,12 @@ def write_m3u(cameras, m3u_path: Path) -> bool:
 
 
 def remove_m3u(m3u_path: Path) -> bool:
-    """Remove an M3U playlist file."""
+    """
+    Remove an M3U playlist file (using sudo if it lives under /etc).
+
+    Example:
+        remove_m3u(Path("/etc/tvheadend/iptv/cameras.m3u"))
+    """
     try:
         m3u_path = Path(m3u_path)
         if not m3u_path.exists():
@@ -59,7 +108,15 @@ def remove_m3u(m3u_path: Path) -> bool:
 
 
 def ensure_dummy_xmltv(path: Path, cameras: list[dict]) -> None:
-    """Ensure a dummy XMLTV file exists with channels for each camera (Name + optional Description)."""
+    """
+    Ensure an XMLTV file exists with one <channel> entry per camera.
+
+    Creates the file only if it does not already exist; channel display names use
+    camera "Name" plus optional "Description".
+
+    Example:
+        ensure_dummy_xmltv(Path("/var/lib/tvheadend/xmltv.xml"), cameras)
+    """
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
         if not path.exists():
@@ -83,20 +140,3 @@ def ensure_dummy_xmltv(path: Path, cameras: list[dict]) -> None:
             print(f"XMLTV already exists at: {path}")
     except Exception as e:
         print(f"WARNING: Could not create dummy XMLTV file: {e}")
-
-
-def find_extracted_binary(root: Path, binary_name: str) -> Path | None:
-    """Locate a binary inside an extracted archive by exact or prefix match."""
-    candidate = None
-    found = False
-    for p in root.rglob(binary_name):
-        if (not found) and p.is_file():
-            candidate = p
-            found = True
-    if not found:
-        lower_prefix = binary_name.lower()
-        for p in root.rglob("*"):
-            if (not found) and p.is_file() and p.name.lower().startswith(lower_prefix):
-                candidate = p
-                found = True
-    return candidate

@@ -1,12 +1,54 @@
-# modules/state_machine_utils.py
+#!/usr/bin/env python3
+"""
+state_machine_utils.py
+
+Small utilities used by the installer state machine: constants loading, CLI parsing,
+argument resolution, and step conditions.
+"""
+
 from __future__ import annotations
 import argparse
 import importlib
-from typing import Any, Dict
+from typing import Any, Dict, List, Optional
+
+# ---------------------------------------------------------------------
+# SMALL HELPERS
+# ---------------------------------------------------------------------
+
+
+def status_candidates(job_status: Dict[str, bool], want: Optional[bool]) -> List[str]:
+    """
+    Return job names filtered by desired status without changing the original order.
+
+    want:
+      - None  -> all jobs
+      - True  -> only installed/ok jobs
+      - False -> only not-installed/fail jobs
+
+    Example:
+        targets = status_candidates(status_map, want=True)
+    """
+    if want is None:
+        return list(job_status.keys())
+    if want is True:
+        return [j for j, ok in job_status.items() if ok]
+    return [j for j, ok in job_status.items() if not ok]
+
+
+# ---------------------------------------------------------------------
+# CONSTANTS / CLI
+# ---------------------------------------------------------------------
 
 
 def load_constants_from_module(module_path: str, required: list[str]):
-    """Import constants module and return a namespace-like object."""
+    """
+    Import a constants module and return a namespace-like object of uppercase attributes.
+
+    Validates that all names in `required` exist in the imported module.
+
+    Example:
+        consts = load_constants_from_module("constants.DebConstants", ["ACTIONS", "JOBS"])
+    """
     mod = importlib.import_module(module_path)
     consts = {name: getattr(mod, name) for name in dir(mod) if name.isupper()}
     missing = [n for n in required if n not in consts]
@@ -18,46 +60,29 @@ def load_constants_from_module(module_path: str, required: list[str]):
 
 
 def parse_args_early() -> argparse.Namespace:
+    """
+    Parse only the --constants flag early, before full constants-dependent parsing.
+
+    Example:
+        early = parse_args_early()
+        consts = load_constants_from_module(early.constants, required=[...])
+    """
     p = argparse.ArgumentParser(add_help=False)
     p.add_argument("--constants", help="Python module path for constants (e.g. constants.DebConstants)")
     return p.parse_known_args()[0]
 
 
-def resolve_arg(spec: Any, job: str, meta: Dict[str, Any], ctx: Dict[str, Any]) -> Any:
-    """Resolve a pipeline arg: callable → ctx → meta (supports dotted) → 'job' → literal."""
-    if callable(spec):
-        return spec(job, meta, ctx)
-    if isinstance(spec, str):
-        if spec in ctx:
-            return ctx[spec]
-        key = spec.split(".", 1)[-1]
-        if key in meta:
-            return meta[key]
-        if spec == "job":
-            return job
-    return spec
-
-
-def check_when(cond: Any, job: str, meta: Dict[str, Any], ctx: Dict[str, Any]) -> bool:
-    """Evaluate a step's 'when' condition (callable or arg spec or truthy literal)."""
-    if cond is None:
-        return True
-    if callable(cond):
-        return bool(cond(job, meta, ctx))
-    return bool(resolve_arg(cond, job, meta, ctx))
-
-
-def status_candidates(job_status: Dict[str, bool], want: Optional[bool]) -> List[str]:
-    """Return job names filtered by desired status without changing original order."""
-    if want is None:
-        return list(job_status.keys())
-    if want is True:
-        return [j for j, ok in job_status.items() if ok]
-    return [j for j, ok in job_status.items() if not ok]
-
-
 def parse_args(consts: Any) -> argparse.Namespace:
-    """Parse CLI flags for non-interactive operation."""
+    """
+    Parse CLI flags for non-interactive state machine operation.
+
+    Builds --action choices dynamically from consts.ACTIONS (excluding '_meta').
+
+    Example:
+        args = parse_args(consts)
+        if args.status:
+            ...
+    """
     p = argparse.ArgumentParser(description="Installer state machine")
     p.add_argument("--yes", "-y", action="store_true", help="Auto-confirm prompts (non-interactive).")
 
@@ -73,3 +98,55 @@ def parse_args(consts: Any) -> argparse.Namespace:
     p.add_argument("--constants", default="constants.DebConstants",
                    help="Python module path for constants (e.g. constants.DebConstants)")
     return p.parse_args()
+
+# ---------------------------------------------------------------------
+# ARG RESOLUTION / CONDITIONS
+# ---------------------------------------------------------------------
+
+
+def resolve_arg(spec: Any, job: str, meta: Dict[str, Any], ctx: Dict[str, Any]) -> Any:
+    """
+    Resolve a pipeline arg spec into a concrete value.
+
+    Resolution order:
+      1) callable(spec) -> spec(job, meta, ctx)
+      2) ctx lookup (string key)
+      3) meta lookup (supports dotted key form; uses last segment)
+      4) literal "job" -> job name
+      5) fallback -> original spec
+
+    Example:
+        value = resolve_arg("paths.output", job, meta, ctx)
+    """
+    if callable(spec):
+        return spec(job, meta, ctx)
+    if isinstance(spec, str):
+        if spec in ctx:
+            return ctx[spec]
+        key = spec.split(".", 1)[-1]
+        if key in meta:
+            return meta[key]
+        if spec == "job":
+            return job
+    return spec
+
+
+def check_when(cond: Any, job: str, meta: Dict[str, Any], ctx: Dict[str, Any]) -> bool:
+    """
+    Evaluate a step's `when` condition and return True if the step should run.
+
+    Supported forms:
+      - None: always run
+      - callable: cond(job, meta, ctx) -> truthy
+      - string/arg spec: resolved via resolve_arg() then cast to bool
+      - literal: bool(literal)
+
+    Example:
+        if check_when(step.get("when"), job, meta, ctx):
+            ...
+    """
+    if cond is None:
+        return True
+    if callable(cond):
+        return bool(cond(job, meta, ctx))
+    return bool(resolve_arg(cond, job, meta, ctx))

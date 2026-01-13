@@ -19,12 +19,76 @@ from shutil import which
 from pathlib import Path
 from typing import List, Sequence, Dict, Any, Union
 
+  
+# ----------------------------------------------------------------------------
+# SMALL HELPERS / STATUS
+# ----------------------------------------------------------------------------
+
+def check_account(expected_user="standard"):
+    """Return True if script is run by the expected user type ("standard" vs "root")."""
+    is_root = os.geteuid() == 0
+    expected_user = expected_user.lower()
+    if expected_user == "standard" and is_root:
+        print("Please run this script as a standard (non-root) user.")
+        return False
+    elif expected_user == "root" and not is_root:
+        print("Please run this script as root.")
+        return False
+    return True
+
+
+def get_model():
+    """Return the system product model name or 'default' if detection fails."""
+    try:
+        output = subprocess.check_output(["sudo", "dmidecode", "-s", "system-product-name"])
+        return output.decode().strip().replace(" ", "")
+    except subprocess.CalledProcessError:
+        return "default"
+
+
+def expand_path(path_str: str) -> Path:
+    """Safely expand a path string (supports ~)."""
+    return Path(os.path.expanduser(path_str)) if path_str else Path("")
+
+
+def check_folder_path(path: str) -> bool:
+    """Return True if a folder path exists (supports env vars + ~)."""
+    return Path(os.path.expandvars(path)).expanduser().exists()
+
+
+# ----------------------------------------------------------------------------
+# USER / GROUP MANAGEMENT
+# ----------------------------------------------------------------------------
+
+def create_group(groups) -> bool:
+    """Create one or more groups if they don't already exist."""
+    if not groups:
+        return True
+    if isinstance(groups, str):
+        groups = [groups]
+
+    ok = True
+    for group in groups:
+        print(f"[create_group] Ensuring group '{group}' exists...")
+        result = subprocess.run(["getent", "group", group], stdout=subprocess.DEVNULL)
+        if result.returncode != 0:
+            res = subprocess.run(["groupadd", group], check=False)
+            if res.returncode == 0:
+                print(f"[create_group] Group '{group}' created.")
+            else:
+                print(f"[create_group] Failed to create '{group}'.")
+                ok = False
+        else:
+            print(f"[create_group] Group '{group}' already exists.")
+    return ok
+
+
 def create_user(username: str) -> bool:
-    """Create a system user (nologin) if it doesn't already exist. Return True on success/no-op."""
+    """Create a system user (nologin) if missing. Return True on success/no-op."""
     import pwd, subprocess
     if not username or not isinstance(username, str):
         print("[create_user] No username provided, skipping.")
-        return True 
+        return True
     try:
         pwd.getpwnam(username)
         print(f"[create_user] User '{username}' already exists.")
@@ -45,7 +109,7 @@ def create_user(username: str) -> bool:
 
 
 def create_user_login(username: str, groups: list[str] | None = None) -> bool:
-    """Create a normal login user (/bin/bash) if it doesn't already exist. Return True on success/no-op."""
+    """Create a normal login user (/bin/bash) if missing. Return True on success/no-op."""
     import pwd, subprocess
     if not username or not isinstance(username, str):
         print("[create_user_login] No username provided, skipping.")
@@ -67,6 +131,47 @@ def create_user_login(username: str, groups: list[str] | None = None) -> bool:
     except subprocess.CalledProcessError as e:
         print(f"[create_user_login] Failed to create user '{username}': {e}")
         return False
+
+
+def ensure_user_exists(username: str) -> bool:
+    """Ensure a local user exists, creating it if necessary."""
+    try:
+        subprocess.run(["id", username], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return True
+    except subprocess.CalledProcessError:
+        try:
+            subprocess.run(
+                ["sudo", "adduser", "--disabled-password", "--gecos", "", username],
+                check=True
+            )
+            return True
+        except subprocess.CalledProcessError:
+            return False
+
+
+def remove_user(username: str, remove_home: bool = True) -> bool:
+    """Remove a system user. If remove_home=True, remove home/mail too. Return True on success/no-op."""
+    import pwd, subprocess
+    if not username or not isinstance(username, str):
+        print("[remove_user] No username provided, skipping.")
+        return True
+    try:
+        pwd.getpwnam(username)
+    except KeyError:
+        print(f"[remove_user] User '{username}' does not exist, nothing to do.")
+        return True
+    try:
+        cmd = ["userdel"]
+        if remove_home:
+            cmd.append("-r")
+        cmd.append(username)
+        subprocess.run(cmd, check=True)
+        print(f"[remove_user] User '{username}' removed successfully.")
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"[remove_user] Failed to remove user '{username}': {e}")
+        return False
+
 
 def kill_user_session(username: str) -> bool:
     """Kill all processes and sessions for a given user."""
@@ -92,32 +197,8 @@ def kill_user_session(username: str) -> bool:
         return False
 
 
-def remove_user(username: str, remove_home: bool = True) -> bool:
-    """Remove a system user.  If remove_home is True, the home directory and mail spool are removed too. Returns True on success/no-op."""
-    import pwd, subprocess
-    if not username or not isinstance(username, str):
-        print("[remove_user] No username provided, skipping.")
-        return True
-    try:
-        pwd.getpwnam(username)
-    except KeyError:
-        print(f"[remove_user] User '{username}' does not exist, nothing to do.")
-        return True
-    try:
-        cmd = ["userdel"]
-        if remove_home:
-            cmd.append("-r")
-        cmd.append(username)
-        subprocess.run(cmd, check=True)
-        print(f"[remove_user] User '{username}' removed successfully.")
-        return True
-    except subprocess.CalledProcessError as e:
-        print(f"[remove_user] Failed to remove user '{username}': {e}")
-        return False
-
-
 def ensure_user_in_group(user: str, group: str) -> bool:
-    """Return True if a user is in a system group."""
+    """Return True if a user is already in a system group."""
     try:
         out = subprocess.run(
             ["id", "-nG", user],
@@ -137,27 +218,86 @@ def ensure_user_in_group(user: str, group: str) -> bool:
         return False
 
 
-def check_account(expected_user="standard"):
-    """Return True if script is run by the expected user type."""
-    is_root = os.geteuid() == 0
-    expected_user = expected_user.lower()
-    if expected_user == "standard" and is_root:
-        print("Please run this script as a standard (non-root) user.")
-        return False
-    elif expected_user == "root" and not is_root:
-        print("Please run this script as root.")
-        return False
-    return True
+def add_user_to_group(users, groups) -> bool:
+    """Add one or more users to one or more system groups."""
+    if not users or not groups:
+        print("[add_user_to_group] No users or groups provided, skipping.")
+        return True
+    if isinstance(users, str):
+        users = [users]
+    if isinstance(groups, str):
+        groups = [groups]
+
+    ok = True
+    for user in users:
+        try:
+            group_str = ",".join(groups)
+            print(f"[add_user_to_group] Adding user '{user}' to group(s): {group_str}...")
+            res = subprocess.run(["usermod", "-aG", group_str, user], check=False)
+            if res.returncode == 0:
+                print(f"[add_user_to_group] User '{user}' added to group(s): {group_str}.")
+            else:
+                print(f"[add_user_to_group] Failed to add user '{user}' to group(s): {group_str}.")
+                ok = False
+        except Exception as e:
+            print(f"[add_user_to_group] Exception for '{user}': {e}")
+            ok = False
+    return ok
 
 
-def get_model():
-    """Return the system product model name or 'default' if detection fails."""
+def add_users_to_group(users: list[str], group: str) -> bool:
+    """Add each user in `users` to `group` (idempotent)."""
+    if not users or not group:
+        print("[add_users_to_group] No users or group")
+        return True
+    ok = True
+    for u in users:
+        try:
+            add_user_to_group(u, [group])
+        except Exception as e:
+            print(f"[add_users_to_group] ERROR {u}->{group}: {e}")
+            ok = False
+    return ok
+
+
+def configure_group_access(user: str, group: str) -> None:
+    """Ensure a user is in a system group, creating the group if needed."""
+    grp_exists = subprocess.run(["getent", "group", group], stdout=subprocess.DEVNULL).returncode == 0
+    if not grp_exists:
+        subprocess.run(["sudo", "groupadd", group], check=True)
+    out = subprocess.run(["id", "-nG", user], capture_output=True, text=True, check=True)
+    groups = out.stdout.strip().split()
+    if group in groups:
+        return
+    subprocess.run(["sudo", "usermod", "-aG", group, user], check=True)
+
+
+def create_sudo_user() -> bool:
+    """Interactive: create a new user and add them to the sudo group."""
     try:
-        output = subprocess.check_output(["sudo", "dmidecode", "-s", "system-product-name"])
-        return output.decode().strip().replace(" ", "")
-    except subprocess.CalledProcessError:
-        return "default"
+        username = input("Enter a username to create: ").strip()
+        if not username:
+            print("No username entered.")
+            return False
+        result = subprocess.run(["id", username], capture_output=True)
+        if result.returncode == 0:
+            print(f"User '{username}' already exists.")
+            return False
+        subprocess.run(["sudo", "adduser", username], check=True)
+        subprocess.run(["sudo", "usermod", "-aG", "sudo", username], check=True)
+        print(f"User '{username}' created and added to the sudo group.")
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"ERROR: Failed to create user: {e}")
+        return False
+    except Exception as e:
+        print(f"EXCEPTION: {e}")
+        return False
 
+
+# ----------------------------------------------------------------------------
+# TRASH / SAFE REMOVE
+# ----------------------------------------------------------------------------
 
 def sudo_remove_path(path: Path | str) -> bool:
     """Move a file or directory to trash using sudo instead of deleting."""
@@ -213,210 +353,56 @@ def move_to_trash(path: str | Path) -> bool:
         return False
 
 
-def secure_logs_for_user(path: Path, username: str):
-    """Recursively set ownership and secure permissions on logs for a user."""
-    try:
-        subprocess.run(["chown", "-R", f"{username}:{username}", str(path)], check=True)
-        subprocess.run(["find", str(path), "-type", "d", "-exec", "chmod", "700", "{}", "+"], check=True)
-        subprocess.run(["find", str(path), "-type", "f", "-exec", "chmod", "600", "{}", "+"], check=True)
-    except subprocess.CalledProcessError as e:
-        print(f"Error applying permissions: {e}")
-
-
-def add_user_to_group(users, groups) -> bool:
-    """Add one or more users to one or more system groups."""
-    if not users or not groups:
-        print("[add_user_to_group] No users or groups provided, skipping.")
+def remove_paths(paths) -> bool:
+    """Move files/folders to the user's trash; supports ~ and globs (*)."""
+    if not paths:
+        print("[remove_paths] No paths provided, nothing to do.")
         return True
-    if isinstance(users, str):
-        users = [users]
-    if isinstance(groups, str):
-        groups = [groups]
-
-    ok = True
-    for user in users:
-        try:
-            group_str = ",".join(groups)
-            print(f"[add_user_to_group] Adding user '{user}' to group(s): {group_str}...")
-            res = subprocess.run(["usermod", "-aG", group_str, user], check=False)
-            if res.returncode == 0:
-                print(f"[add_user_to_group] User '{user}' added to group(s): {group_str}.")
-            else:
-                print(f"[add_user_to_group] Failed to add user '{user}' to group(s): {group_str}.")
-                ok = False
-        except Exception as e:
-            print(f"[add_user_to_group] Exception for '{user}': {e}")
-            ok = False
-    return ok
-
-
-def add_users_to_group(users: list[str], group: str) -> bool:
-    """Add each user in `users` to `group` (idempotent)."""
-    if not users or not group:
-        print("[add_users_to_group] No users or group")
-        return True
-    ok = True
-    for u in users:
-        try:
-            add_user_to_group(u, [group])
-        except Exception as e:
-            print(f"[add_users_to_group] ERROR {u}->{group}: {e}")
-            ok = False
-    return ok
-
-
-def sudo_copy_with_chown(src: Path | str, dest: Path | str, owner: str = "plex:plex") -> bool:
-    """Copy files or directories with sudo and set ownership."""
-    try:
-        src = Path(src).expanduser()
-        dest = Path(dest).expanduser()
-        dest_dir = dest.parent
-        subprocess.run(["sudo", "mkdir", "-p", str(dest_dir)], check=True)
-        if dest.exists():
-            trash_root = Path.home() / ".local/share/Trash/plugins"
-            trash_root.mkdir(parents=True, exist_ok=True)
-            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            trash_name = f"{dest.name}_{timestamp}"
-            trash_path = trash_root / trash_name
-            subprocess.run(["sudo", "mv", str(dest), str(trash_path)], check=True)
-            print(f"[sudo_copy_with_chown] INFO: Moved existing '{dest}' to '{trash_path}'")
-        if src.is_dir():
-            subprocess.run(["sudo", "cp", "-a", str(src) + "/.", str(dest)], check=True)
-        else:
-            subprocess.run(["sudo", "cp", "-a", str(src), str(dest)], check=True)
-        subprocess.run(["sudo", "chown", "-R", owner, str(dest)], check=False)
-        return True
-    except subprocess.CalledProcessError as e:
-        print(f"[sudo_copy_with_chown] ERROR: {e}")
-        return False
-    except Exception as e:
-        print(f"[sudo_copy_with_chown] EXCEPTION: {e}")
-        return False
-
-
-def protect_folders(entries: List[Dict[str, Any]]) -> bool:
-    """Apply chown + chmod to a list of protected folder entries."""
-    if not entries:
-        return True
-    ok = True
-    for entry in entries:
-        try:
-            path = entry.get("path")
-            if not path:
-                continue
-            owner = entry.get("owner", "root")
-            group = entry.get("group", "root")
-            perms = entry.get("permissions", "755")
-            p = Path(path)
-            if not p.exists():
-                print(f"[protect_folders] WARNING: {p} missing; skipping")
-                ok = False
-                continue
-            target = f"{owner}:{group}"
-            subprocess.run(["chown", target, str(p)], check=True)
-            os.chmod(p, int(perms, 8))
-            print(f"[protect_folders] chown {target} {p}")
-            print(f"[protect_folders] chmod {perms} {p}")
-        except Exception as e:
-            print(f"[protect_folders] ERROR: {entry.get('path','?')}: {e}")
-            ok = False
-    return ok
-
-
-def expand_path(path_str: str) -> Path:
-    """Safely expand a path string."""
-    return Path(os.path.expanduser(path_str)) if path_str else Path("")
-
-
-def create_sudo_user() -> bool:
-    """Create a new user and add them to the sudo group."""
-    try:
-        username = input("Enter a username to create: ").strip()
-        if not username:
-            print("No username entered.")
-            return False
-        result = subprocess.run(["id", username], capture_output=True)
-        if result.returncode == 0:
-            print(f"User '{username}' already exists.")
-            return False
-        subprocess.run(["sudo", "adduser", username], check=True)
-        subprocess.run(["sudo", "usermod", "-aG", "sudo", username], check=True)
-        print(f"User '{username}' created and added to the sudo group.")
-        return True
-    except subprocess.CalledProcessError as e:
-        print(f"ERROR: Failed to create user: {e}")
-        return False
-    except Exception as e:
-        print(f"EXCEPTION: {e}")
-        return False
-
-
-def configure_group_access(user: str, group: str) -> None:
-    """Ensure a user is in a system group, creating the group if needed."""
-    grp_exists = subprocess.run(["getent", "group", group], stdout=subprocess.DEVNULL).returncode == 0
-    if not grp_exists:
-        subprocess.run(["sudo", "groupadd", group], check=True)
-    out = subprocess.run(["id", "-nG", user], capture_output=True, text=True, check=True)
-    groups = out.stdout.strip().split()
-    if group in groups:
-        return
-    subprocess.run(["sudo", "usermod", "-aG", group, user], check=True)
-
-
-def ensure_user_exists(username: str) -> bool:
-    """Ensure a local user exists, creating it if necessary."""
-    try:
-        subprocess.run(["id", username], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        return True
-    except subprocess.CalledProcessError:
-        try:
-            subprocess.run(
-                ["sudo", "adduser", "--disabled-password", "--gecos", "", username],
-                check=True
-            )
-            return True
-        except subprocess.CalledProcessError:
-            return False
-
-
-def reload_systemd() -> bool:
-    """Reload systemd to apply changes."""
-    try:
-        subprocess.run(["systemctl", "daemon-reload"], check=True)
-        return True
-    except subprocess.CalledProcessError as e:
-        print(f"Error reloading systemd: {e}")
-        return False
-    except Exception as e:
-        print(f"Unexpected error: {e}")
-        return False
-
-
-def fix_permissions(user: str, paths: List[str]) -> bool:
-    """Ensure given directories exist and are owned by the specified user (recursively)."""
-    if not user or not paths:
-        print("[fix_permissions] No user or paths provided, skipping.")
-        return True
+    if isinstance(paths, str):
+        paths = [paths]
+    if os.geteuid() == 0 and os.environ.get("SUDO_USER"):
+        user_home = Path("/home") / os.environ["SUDO_USER"]
+    else:
+        user_home = Path.home()
+    trash_dir = user_home / ".local/share/Trash/files"
+    trash_dir.mkdir(parents=True, exist_ok=True)
+    print(f"[remove_paths] Trash directory: {trash_dir}")
+    all_ok = True
     for p in paths:
-        if not p:
+        expanded = os.path.expanduser(p)
+        matches = glob.glob(expanded)
+        if not matches:
+            print(f"[remove_paths] No matches for: {p}")
+            all_ok = False
             continue
-        try:
-            if not os.path.exists(p):
-                os.makedirs(p, exist_ok=True)
-                print(f"[fix_permissions] Created missing directory {p}")
-            subprocess.run(
-                ["chown", "-R", f"{user}:{user}", p],
-                check=True
-            )
-            print(f"[fix_permissions] Set ownership of {p} to {user}:{user}")
-        except Exception as e:
-            print(f"[fix_permissions] Failed for {p}: {e}")
-            return False
-    return True
+        for match in matches:
+            path_obj = Path(match)
+            if path_obj.exists():
+                try:
+                    dest = trash_dir / path_obj.name
+                    counter = 1
+                    while dest.exists():
+                        dest = trash_dir / f"{path_obj.stem}_{counter}{path_obj.suffix}"
+                        counter += 1
+                    print(f"[remove_paths] Moving {path_obj} -> {dest}")
+                    shutil.move(str(path_obj), str(dest))
+                    print(f"[remove_paths] Success: {path_obj} moved to trash.")
+                except Exception as e:
+                    print(f"[remove_paths] ERROR moving {path_obj}: {e}")
+                    all_ok = False
+            else:
+                print(f"[remove_paths] Path does not exist (even after glob): {path_obj}")
+                all_ok = False
+    print(f"[remove_paths] Completed. all_ok = {all_ok}")
+    return all_ok
 
+
+# ----------------------------------------------------------------------------
+# COPY / PERMISSIONS / FILE OPS
+# ----------------------------------------------------------------------------
 
 def copy_file(src: str | Path, dest: str | Path) -> bool:
-    """Copy src to dest, overwriting."""
+    """Copy src to dest, overwriting (creates parents if needed)."""
     try:
         src_p = Path(src).expanduser().resolve()
         dest_p = Path(dest).expanduser().resolve()
@@ -487,75 +473,92 @@ def copy_folder_dict(mapping: Any) -> bool:
     return all(results)
 
 
-def run_commands(post_install_cmds) -> bool:
-    """Run post-install shell commands and return True only if all succeed."""
-    if isinstance(post_install_cmds, str):
-        cmds = [os.path.expanduser(post_install_cmds)]
-    elif isinstance(post_install_cmds, list):
-        cmds = [os.path.expanduser(c) for c in post_install_cmds if isinstance(c, str)]
-    else:
-        cmds = []
-    all_ok = True
-    for cmd in cmds:
-        rc = os.system(cmd)
-        if rc != 0:
-            print(f"PostInstall failed (rc={rc}): {cmd}")
-            all_ok = False
-    return all_ok
-
-
-def run_script_dict(scripts: List[Dict[str, Any]]) -> bool:
-    """   Run scripts defined as: { "script": "path/to/script", "args": ["--foo", "bar"] } Returns True if all scripts succeed. """
-    script_runners = {
-        ".sh":   ["bash"],
-        ".bash": ["bash"],
-        ".py":   ["python3"],
-    }
-    for entry in scripts:
-        script = entry.get("script")
-        args   = entry.get("args", [])
-        if not script:
-            raise ValueError("Script entry missing 'script' key")
-        script_path = Path(script).expanduser()
-        if not script_path.exists():
-            raise FileNotFoundError(f"Script not found: {script_path}")
-        ext = script_path.suffix.lower()
-        if ext in script_runners:
-            cmd = script_runners[ext] + [str(script_path)] + list(args)
+def sudo_copy_with_chown(src: Path | str, dest: Path | str, owner: str = "plex:plex") -> bool:
+    """Copy files or directories with sudo and set ownership."""
+    try:
+        src = Path(src).expanduser()
+        dest = Path(dest).expanduser()
+        dest_dir = dest.parent
+        subprocess.run(["sudo", "mkdir", "-p", str(dest_dir)], check=True)
+        if dest.exists():
+            trash_root = Path.home() / ".local/share/Trash/plugins"
+            trash_root.mkdir(parents=True, exist_ok=True)
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            trash_name = f"{dest.name}_{timestamp}"
+            trash_path = trash_root / trash_name
+            subprocess.run(["sudo", "mv", str(dest), str(trash_path)], check=True)
+            print(f"[sudo_copy_with_chown] INFO: Moved existing '{dest}' to '{trash_path}'")
+        if src.is_dir():
+            subprocess.run(["sudo", "cp", "-a", str(src) + "/.", str(dest)], check=True)
         else:
-            cmd = [str(script_path)] + list(args)
-        subprocess.run(cmd, check=True)
+            subprocess.run(["sudo", "cp", "-a", str(src), str(dest)], check=True)
+        subprocess.run(["sudo", "chown", "-R", owner, str(dest)], check=False)
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"[sudo_copy_with_chown] ERROR: {e}")
+        return False
+    except Exception as e:
+        print(f"[sudo_copy_with_chown] EXCEPTION: {e}")
+        return False
+
+
+def fix_permissions(user: str, paths: List[str]) -> bool:
+    """Ensure directories exist and are owned by the specified user (recursively)."""
+    if not user or not paths:
+        print("[fix_permissions] No user or paths provided, skipping.")
+        return True
+    for p in paths:
+        if not p:
+            continue
+        try:
+            if not os.path.exists(p):
+                os.makedirs(p, exist_ok=True)
+                print(f"[fix_permissions] Created missing directory {p}")
+            subprocess.run(["chown", "-R", f"{user}:{user}", p], check=True)
+            print(f"[fix_permissions] Set ownership of {p} to {user}:{user}")
+        except Exception as e:
+            print(f"[fix_permissions] Failed for {p}: {e}")
+            return False
     return True
 
 
+def secure_logs_for_user(path: Path, username: str):
+    """Recursively set ownership and secure permissions on logs for a user."""
+    try:
+        subprocess.run(["chown", "-R", f"{username}:{username}", str(path)], check=True)
+        subprocess.run(["find", str(path), "-type", "d", "-exec", "chmod", "700", "{}", "+"], check=True)
+        subprocess.run(["find", str(path), "-type", "f", "-exec", "chmod", "600", "{}", "+"], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Error applying permissions: {e}")
 
-def convert_dict_list_to_str(
-    jobs: list[dict[str, Any]],
-    from_key: str = "new_line_list",
-    to_key: str = "new_line",
-    sep: str | None = None,  
-) -> list[dict[str, Any]]:
-    """Join job[from_key] into a string at job[to_key], using per-job job['sep']. If 'sep' is not present in a job, use the function arg `sep` if provided; otherwise raise. """
-    for job in jobs:
-        if from_key not in job:
-            continue
-        parts = job[from_key]
-        if not isinstance(parts, list) or not all(isinstance(p, str) for p in parts):
-            raise ValueError(f"{from_key} must be a list[str] in PatternJob '{job.get('patternName','?')}'")
-        job_sep = job.get("sep", sep)
-        if job_sep is None:
-            raise ValueError(f"Missing 'sep' in PatternJob '{job.get('patternName','?')}'. Pass it in the JSON.")
 
-        if parts:
-            first, *rest = parts
-            if " " in first:
-                key, first_val = first.split(maxsplit=1)
-                joined = job_sep.join([first_val] + rest) if rest or first_val else first_val
-                job[to_key] = f"{key} {joined}"
-            else:
-                job[to_key] = job_sep.join(parts)
-        del job[from_key]
-    return jobs
+def protect_folders(entries: List[Dict[str, Any]]) -> bool:
+    """Apply chown + chmod to a list of protected folder entries."""
+    if not entries:
+        return True
+    ok = True
+    for entry in entries:
+        try:
+            path = entry.get("path")
+            if not path:
+                continue
+            owner = entry.get("owner", "root")
+            group = entry.get("group", "root")
+            perms = entry.get("permissions", "755")
+            p = Path(path)
+            if not p.exists():
+                print(f"[protect_folders] WARNING: {p} missing; skipping")
+                ok = False
+                continue
+            target = f"{owner}:{group}"
+            subprocess.run(["chown", target, str(p)], check=True)
+            os.chmod(p, int(perms, 8))
+            print(f"[protect_folders] chown {target} {p}")
+            print(f"[protect_folders] chmod {perms} {p}")
+        except Exception as e:
+            print(f"[protect_folders] ERROR: {entry.get('path','?')}: {e}")
+            ok = False
+    return ok
 
 
 def chmod_paths(entries, recursive: bool = False) -> bool:
@@ -595,6 +598,7 @@ def chmod_paths(entries, recursive: bool = False) -> bool:
 
 
 def chown_paths(user: str, paths: list[dict], recursive: bool=False, default_group: str|None=None) -> bool:
+    """Apply chown to paths; supports per-entry group + per-entry recursion."""
     if not user or not paths:
         return True
     ok = True
@@ -603,7 +607,7 @@ def chown_paths(user: str, paths: list[dict], recursive: bool=False, default_gro
         if not p:
             continue
         owner = user
-        group = item.get("group", default_group or user) 
+        group = item.get("group", default_group or user)
         rec = item.get("recursive", recursive) and Path(p).is_dir()
         try:
             target = f"{owner}:{group}"
@@ -631,31 +635,99 @@ def make_dirs(dirs: list[str]) -> bool:
         return False
 
 
-def create_group(groups) -> bool:
-    """Create one or more groups if they don't already exist."""
-    if not groups:
-        return True
-    if isinstance(groups, str):
-        groups = [groups]
+# ----------------------------------------------------------------------------
+# COMMAND / SCRIPT RUNNERS
+# ----------------------------------------------------------------------------
 
-    ok = True
-    for group in groups:
-        print(f"[create_group] Ensuring group '{group}' exists...")
-        result = subprocess.run(["getent", "group", group], stdout=subprocess.DEVNULL)
-        if result.returncode != 0:
-            res = subprocess.run(["groupadd", group], check=False)
-            if res.returncode == 0:
-                print(f"[create_group] Group '{group}' created.")
-            else:
-                print(f"[create_group] Failed to create '{group}'.")
-                ok = False
+def run_commands(post_install_cmds) -> bool:
+    """Run post-install shell commands and return True only if all succeed."""
+    if isinstance(post_install_cmds, str):
+        cmds = [os.path.expanduser(post_install_cmds)]
+    elif isinstance(post_install_cmds, list):
+        cmds = [os.path.expanduser(c) for c in post_install_cmds if isinstance(c, str)]
+    else:
+        cmds = []
+    all_ok = True
+    for cmd in cmds:
+        rc = os.system(cmd)
+        if rc != 0:
+            print(f"PostInstall failed (rc={rc}): {cmd}")
+            all_ok = False
+    return all_ok
+
+
+def run_script_dict(scripts: List[Dict[str, Any]]) -> bool:
+    """Run script dict entries: {'script': 'path', 'args': [...]} and return True if all succeed."""
+    script_runners = {
+        ".sh":   ["bash"],
+        ".bash": ["bash"],
+        ".py":   ["python3"],
+    }
+    for entry in scripts:
+        script = entry.get("script")
+        args   = entry.get("args", [])
+        if not script:
+            raise ValueError("Script entry missing 'script' key")
+        script_path = Path(script).expanduser()
+        if not script_path.exists():
+            raise FileNotFoundError(f"Script not found: {script_path}")
+        ext = script_path.suffix.lower()
+        if ext in script_runners:
+            cmd = script_runners[ext] + [str(script_path)] + list(args)
         else:
-            print(f"[create_group] Group '{group}' already exists.")
-    return ok
+            cmd = [str(script_path)] + list(args)
+        subprocess.run(cmd, check=True)
+    return True
+
+
+def convert_dict_list_to_str(
+    jobs: list[dict[str, Any]],
+    from_key: str = "new_line_list",
+    to_key: str = "new_line",
+    sep: str | None = None,
+) -> list[dict[str, Any]]:
+    """Join job[from_key] into job[to_key] using job['sep'] or fallback sep; raise if missing."""
+    for job in jobs:
+        if from_key not in job:
+            continue
+        parts = job[from_key]
+        if not isinstance(parts, list) or not all(isinstance(p, str) for p in parts):
+            raise ValueError(f"{from_key} must be a list[str] in PatternJob '{job.get('patternName','?')}'")
+        job_sep = job.get("sep", sep)
+        if job_sep is None:
+            raise ValueError(f"Missing 'sep' in PatternJob '{job.get('patternName','?')}'. Pass it in the JSON.")
+
+        if parts:
+            first, *rest = parts
+            if " " in first:
+                key, first_val = first.split(maxsplit=1)
+                joined = job_sep.join([first_val] + rest) if rest or first_val else first_val
+                job[to_key] = f"{key} {joined}"
+            else:
+                job[to_key] = job_sep.join(parts)
+        del job[from_key]
+    return jobs
+
+
+# ----------------------------------------------------------------------------
+# SYSTEM / DISPLAY / SYSTEMD
+# ----------------------------------------------------------------------------
+
+def reload_systemd() -> bool:
+    """Reload systemd to apply changes."""
+    try:
+        subprocess.run(["systemctl", "daemon-reload"], check=True)
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"Error reloading systemd: {e}")
+        return False
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return False
 
 
 def set_default_display_manager(dm_package: str, dm_service: str) -> bool:
-    """   Set the system's default display manager (by package path), create/refresh the display-manager alias to the given service unit,and ensure the boot target is graphical.  """
+    """Set default display manager + refresh display-manager.service alias and set graphical target."""
     try:
         default_file = Path("/etc/X11/default-display-manager")
         alias_link   = Path("/etc/systemd/system/display-manager.service")
@@ -680,58 +752,3 @@ def set_default_display_manager(dm_package: str, dm_service: str) -> bool:
     except Exception as e:
         print(f"[ERROR] set_default_display_manager({dm_package}, {dm_service}) failed: {e}")
         return False
-
-
-def remove_paths(paths) -> bool:
-    """Move files/folders to the user's trash; supports ~ and globs (*)."""
-    if not paths:
-        print("[remove_paths] No paths provided, nothing to do.")
-        return True
-    if isinstance(paths, str):
-        paths = [paths]
-    if os.geteuid() == 0 and os.environ.get("SUDO_USER"):
-        user_home = Path("/home") / os.environ["SUDO_USER"]
-    else:
-        user_home = Path.home()
-    trash_dir = user_home / ".local/share/Trash/files"
-    trash_dir.mkdir(parents=True, exist_ok=True)
-    print(f"[remove_paths] Trash directory: {trash_dir}")
-    all_ok = True
-    for p in paths:
-        expanded = os.path.expanduser(p)
-        matches = glob.glob(expanded)
-        if not matches:
-            print(f"[remove_paths] No matches for: {p}")
-            all_ok = False
-            continue
-        for match in matches:
-            path_obj = Path(match)
-            if path_obj.exists():
-                try:
-                    dest = trash_dir / path_obj.name
-                    counter = 1
-                    while dest.exists():
-                        dest = trash_dir / f"{path_obj.stem}_{counter}{path_obj.suffix}"
-                        counter += 1
-                    print(f"[remove_paths] Moving {path_obj} -> {dest}")
-                    shutil.move(str(path_obj), str(dest))
-                    print(f"[remove_paths] Success: {path_obj} moved to trash.")
-                except Exception as e:
-                    print(f"[remove_paths] ERROR moving {path_obj}: {e}")
-                    all_ok = False
-            else:
-                print(f"[remove_paths] Path does not exist (even after glob): {path_obj}")
-                all_ok = False
-    print(f"[remove_paths] Completed. all_ok = {all_ok}")
-    return all_ok
-
-
-def check_folder_path(path: str) -> bool:
-    """Check if a folder path exists."""
-    return Path(os.path.expandvars(path)).expanduser().exists()
-
-
-
-
-
-

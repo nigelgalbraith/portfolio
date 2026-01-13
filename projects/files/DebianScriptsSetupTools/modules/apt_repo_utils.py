@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """
 apt_repo_utils.py
+
+Utilities for managing APT repository list files and associated GPG keyrings.
 """
 
 import subprocess
@@ -8,12 +10,20 @@ from pathlib import Path
 import json
 from typing import Optional
 
+# ---------------------------------------------------------------------
+# CONSTANTS
+# ---------------------------------------------------------------------
+
 APT_SOURCES_DIR = Path("/etc/apt/sources.list.d")
 APT_KEYRINGS_DIR = Path("/usr/share/keyrings")
 
+# ---------------------------------------------------------------------
+# HELPERS
+# ---------------------------------------------------------------------
+
 
 def conflicting_repo_entry_exists(url: str, keyring: str) -> bool:
-    """  Check if any APT source list entry uses the given URL with a mismatched keyring. """
+    """Return True if any APT source list line contains `url` but references a different keyring."""
     for list_file in APT_SOURCES_DIR.glob("*.list"):
         try:
             with open(list_file, "r", encoding="utf-8") as f:
@@ -24,30 +34,9 @@ def conflicting_repo_entry_exists(url: str, keyring: str) -> bool:
             continue
     return False
 
-
-def remove_apt_repo_and_keyring(
-    name: str,
-    keyring_dir: Optional[str] = None,
-    keyring_name: Optional[str] = None,
-) -> bool:
-    """Remove an APT repo list and its keyring if no longer referenced."""
-    key_dir = Path(keyring_dir) if keyring_dir else APT_KEYRINGS_DIR
-    kr_name = keyring_name or name
-    repo_file = APT_SOURCES_DIR / f"{name}.list"
-    keyring_file = key_dir / f"{kr_name}.gpg"
-    removed = False
-    if repo_file.exists():
-        if subprocess.run(["sudo", "rm", str(repo_file)], check=False).returncode == 0:
-            removed = True
-    if keyring_file.exists():
-        still_referenced = any(
-            keyring_file.name in p.read_text(errors="ignore")
-            for p in APT_SOURCES_DIR.glob("*.list")
-        )
-        if not still_referenced:
-            if subprocess.run(["sudo", "rm", str(keyring_file)], check=False).returncode == 0:
-                removed = True
-    return removed
+# ---------------------------------------------------------------------
+# PUBLIC REPO OPERATIONS
+# ---------------------------------------------------------------------
 
 
 def add_apt_repository(
@@ -59,7 +48,21 @@ def add_apt_repository(
     keyring_dir: Optional[str] = None,
     keyring_name: Optional[str] = None,
 ) -> bool:
-    """Add an APT repository and import its GPG key(s) if missing."""
+    """
+    Add an APT repository list file and import its GPG key(s) into a keyring if needed.
+
+    Creates `{name}.list` under the APT sources directory and ensures `{keyring_name}.gpg`
+    exists under the keyrings directory, downloading and dearmoring keys when missing.
+
+    Example:
+        add_apt_repository(
+            "docker",
+            "https://download.docker.com/linux/ubuntu",
+            "https://download.docker.com/linux/ubuntu/gpg",
+            "noble",
+            "stable",
+        )
+    """
     key_dir = Path(keyring_dir) if keyring_dir else APT_KEYRINGS_DIR
     kr_name = keyring_name or name
     repo_file = APT_SOURCES_DIR / f"{name}.list"
@@ -87,3 +90,35 @@ def add_apt_repository(
     except Exception:
         return False
 
+
+def remove_apt_repo_and_keyring(
+    name: str,
+    keyring_dir: Optional[str] = None,
+    keyring_name: Optional[str] = None,
+) -> bool:
+    """
+    Remove an APT repo list file and delete its keyring if it is no longer referenced.
+
+    This deletes `{name}.list` and then checks whether the keyring file still appears in any
+    remaining `.list` files; if not referenced, the keyring is removed as well.
+
+    Example:
+        remove_apt_repo_and_keyring("docker")
+    """
+    key_dir = Path(keyring_dir) if keyring_dir else APT_KEYRINGS_DIR
+    kr_name = keyring_name or name
+    repo_file = APT_SOURCES_DIR / f"{name}.list"
+    keyring_file = key_dir / f"{kr_name}.gpg"
+    removed = False
+    if repo_file.exists():
+        if subprocess.run(["sudo", "rm", str(repo_file)], check=False).returncode == 0:
+            removed = True
+    if keyring_file.exists():
+        still_referenced = any(
+            keyring_file.name in p.read_text(errors="ignore")
+            for p in APT_SOURCES_DIR.glob("*.list")
+        )
+        if not still_referenced:
+            if subprocess.run(["sudo", "rm", str(keyring_file)], check=False).returncode == 0:
+                removed = True
+    return removed

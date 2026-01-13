@@ -2,13 +2,20 @@
 # -*- coding: utf-8 -*-
 """
 service_utils.py
+
+Systemd helper functions for installing unit files, enabling/disabling services, and restarts.
 """
 
 from pathlib import Path
 import subprocess
 
+# ---------------------------------------------------------------------
+# HELPERS / STATUS
+# ---------------------------------------------------------------------
+
+
 def check_service_status(service_name: str) -> bool:
-    """Return True if a systemd service is enabled."""
+    """Return True if the systemd service is enabled, otherwise False."""
     try:
         result = subprocess.run(
             ["systemctl", "is-enabled", service_name],
@@ -22,8 +29,33 @@ def check_service_status(service_name: str) -> bool:
         return False
 
 
+def remove_path(path: str | Path) -> bool:
+    """Delete a file or symlink at `path` and return True on success."""
+    try:
+        Path(path).unlink(missing_ok=True)
+        return True
+    except Exception:
+        return False
+
+
+def remove_path_optional(path: str | Path | None) -> bool:
+    """Delete a file/symlink at `path`, but skip (True) if `path` is not provided."""
+    if not path:
+        print("[SKIP] No config to remove (optional).")
+        return True
+    try:
+        Path(path).unlink(missing_ok=True)
+        return True
+    except Exception:
+        return False
+
+# ---------------------------------------------------------------------
+# FILE / TEMPLATE OPERATIONS
+# ---------------------------------------------------------------------
+
+
 def copy_template(src: str | Path, dest: str | Path) -> bool:
-    """Copy a file to dest and make it executable."""
+    """Copy a file to `dest` and mark it executable; return True on success."""
     try:
         subprocess.run(["cp", str(src), str(dest)], check=True)
         subprocess.run(["chmod", "+x", str(dest)], check=True)
@@ -33,7 +65,11 @@ def copy_template(src: str | Path, dest: str | Path) -> bool:
 
 
 def copy_template_optional(src: str | Path | None, dest: str | Path | None) -> bool:
-    """Copy a file to dest and make it executable, but skip if src/dest is missing."""
+    """
+    Copy a file to `dest` and mark it executable, but skip if `src` or `dest` is missing.
+
+    Returns True when skipped, False if a copy was attempted and failed.
+    """
     if not src or not dest:
         print("[SKIP] No config to copy (optional).")
         return True
@@ -48,7 +84,7 @@ def copy_template_optional(src: str | Path | None, dest: str | Path | None) -> b
 
 
 def create_service(src: str | Path, dest: str | Path) -> bool:
-    """Copy and register a systemd service unit file."""
+    """Copy and register a systemd service unit file (daemon-reload); return True on success."""
     try:
         subprocess.run(["cp", str(src), str(dest)], check=True)
         subprocess.run(["systemctl", "daemon-reload"], check=True)
@@ -56,9 +92,13 @@ def create_service(src: str | Path, dest: str | Path) -> bool:
     except subprocess.CalledProcessError:
         return False
 
+# ---------------------------------------------------------------------
+# SYSTEMD OPERATIONS
+# ---------------------------------------------------------------------
+
 
 def enable_and_start_service(service_name: str) -> bool:
-    """Enable and start a systemd service."""
+    """Enable and start a systemd service; return True on success."""
     try:
         subprocess.run(["systemctl", "enable", service_name], check=True)
         subprocess.run(["systemctl", "start", service_name], check=True)
@@ -68,7 +108,7 @@ def enable_and_start_service(service_name: str) -> bool:
 
 
 def stop_and_disable_service(service_name: str) -> bool:
-    """Stop and disable a systemd service."""
+    """Stop and disable a systemd service; return True on success."""
     try:
         subprocess.run(["systemctl", "stop", service_name], check=True)
         subprocess.run(["systemctl", "disable", service_name], check=True)
@@ -77,29 +117,13 @@ def stop_and_disable_service(service_name: str) -> bool:
         return False
 
 
-def remove_path(path: str | Path) -> bool:
-    """Delete a file or symlink at the given path."""
-    try:
-        Path(path).unlink(missing_ok=True)
-        return True
-    except Exception:
-        return False
-
-
-def remove_path_optional(path: str | Path | None) -> bool:
-    """Delete a file or symlink at the given path, but skip if not provided."""
-    if not path:
-        print("[SKIP] No config to remove (optional).")
-        return True
-    try:
-        Path(path).unlink(missing_ok=True)
-        return True
-    except Exception:
-        return False
-
-
 def restart_service(service_name: str) -> bool:
-    """Restart (or start if inactive) a systemd service, with basic logging."""
+    """
+    Restart (or start if inactive) a systemd service, printing stdout/stderr on failure.
+
+    Example:
+        restart_service("ssh")
+    """
     print(f"\n[INFO] Attempting to restart service: {service_name}")
     try:
         result = subprocess.run(
@@ -122,7 +146,11 @@ def restart_service(service_name: str) -> bool:
 
 
 def start_service_standard(service: str) -> bool:
-    """Enable and start a systemd service unconditionally."""
+    """
+    Enable and start a systemd service unconditionally; return True on success.
+
+    If `service` is blank, returns True (no-op).
+    """
     if not service:
         return True
     try:
@@ -132,9 +160,18 @@ def start_service_standard(service: str) -> bool:
     except subprocess.CalledProcessError:
         return False
 
+# ---------------------------------------------------------------------
+# PIPELINE / HIGHER-LEVEL HELPERS
+# ---------------------------------------------------------------------
+
 
 def ensure_service_installed(service_name: str, template_path: Path) -> bool:
-    """Ensure a systemd unit exists, else copy template and enable it."""
+    """
+    Ensure a systemd unit exists; if missing, copy a template, daemon-reload, enable, and start.
+
+    Example:
+        ensure_service_installed("myapp", Path("./templates/myapp.service"))
+    """
     unit_name = service_name if service_name.endswith(".service") else f"{service_name}.service"
     unit_path = Path("/etc/systemd/system") / unit_name
     if unit_path.exists():
@@ -152,7 +189,16 @@ def ensure_service_installed(service_name: str, template_path: Path) -> bool:
 
 
 def restart_services_in_order(job_name, meta):
-    """Restart all services in ascending order based on their 'Order' field."""
+    """
+    Restart services in ascending order using each entry's 'Order' field.
+
+    Expects `meta` to be a dict of service configs with keys:
+      - ServiceName
+      - Order (int, optional; defaults to 0)
+
+    Example:
+        restart_services_in_order("Services", {"ssh": {"ServiceName":"ssh","Order":1}})
+    """
     import subprocess
     try:
         if not isinstance(meta, dict):
@@ -175,6 +221,3 @@ def restart_services_in_order(job_name, meta):
     except Exception as e:
         print(f"[FATAL] restart_services_in_order failed: {e}")
         return False
-
-
-

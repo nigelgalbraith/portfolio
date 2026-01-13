@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """
 archive_utils.py
+
+Helpers for downloading, extracting, installing, and cleaning up archive files.
 """
 
 from __future__ import annotations
@@ -12,11 +14,19 @@ from pathlib import Path
 from typing import Optional, Iterable, List
 from zipfile import ZipFile
 
+# ---------------------------------------------------------------------
+# CONSTANTS
+# ---------------------------------------------------------------------
+
 ARCHIVE_EXTENSIONS = (".tar.gz", ".tgz", ".tar.xz", ".tar.bz2", ".zip")
+
+# ---------------------------------------------------------------------
+# HELPERS
+# ---------------------------------------------------------------------
 
 
 def check_archive_status(check_path: str | None, extract_to: str | None) -> bool:
-    """Return True if a file exists at check_path or a non-empty dir exists at extract_to."""
+    """Return True if `check_path` exists as a file or `extract_to` exists as a non-empty directory."""
     for path in (check_path, extract_to):
         if not path:
             continue
@@ -29,7 +39,7 @@ def check_archive_status(check_path: str | None, extract_to: str | None) -> bool
 
 
 def guess_ext_from_url(url: str) -> str:
-    """Guess the archive extension from a URL."""
+    """Return the matching archive extension for a URL, or an empty string if none match."""
     lower = url.lower()
     for ext in ARCHIVE_EXTENSIONS:
         if lower.endswith(ext):
@@ -37,21 +47,26 @@ def guess_ext_from_url(url: str) -> str:
     return ""
 
 
-def download_archive_file(name: str, url: str, download_dir: Path) -> Optional[Path]:
-    """Download an archive with wget to download_dir and return the resulting Path or None."""
+def _strip_top_level_dir(extract_to: Path) -> None:
+    """Flatten a single top-level directory after extraction into `extract_to`."""
     try:
-        download_dir = Path(download_dir).expanduser()
-        download_dir.mkdir(parents=True, exist_ok=True)
-        ext = guess_ext_from_url(url) or ".zip"
-        target = download_dir / f"{name}{ext}"
-        subprocess.run(["wget", "-O", str(target), url], check=True)
-        return target if target.exists() else None
+        items = [p for p in Path(extract_to).iterdir()]
+        if len(items) != 1 or not items[0].is_dir():
+            return
+        top = items[0]
+        for child in top.iterdir():
+            shutil.move(str(child), str(Path(extract_to) / child.name))
+        shutil.rmtree(top)
     except Exception:
-        return None
+        pass
+
+# ---------------------------------------------------------------------
+# DOWNLOAD
+# ---------------------------------------------------------------------
 
 
 def download_archive_file(name: str, url: str, download_dir: str | Path) -> Optional[Path]:
-    """Download an archive to download_dir using wget."""
+    """Download an archive with wget into `download_dir` and return the resulting file path (or None)."""
     try:
         download_dir = Path(download_dir).expanduser().resolve()
         download_dir.mkdir(parents=True, exist_ok=True)
@@ -63,9 +78,21 @@ def download_archive_file(name: str, url: str, download_dir: str | Path) -> Opti
         print(f"Unexpected error downloading {url}: {e}")
         return None
 
+# ---------------------------------------------------------------------
+# INSTALL / UNINSTALL
+# ---------------------------------------------------------------------
+
 
 def install_archive_file(archive_path: Path | str, extract_to: Path | str, strip_top_level: bool = False) -> bool:
-    """Extract an archive into extract_to; supports .tar.* and .zip; return True on success."""
+    """
+    Extract an archive into `extract_to` and optionally flatten a single top-level folder.
+
+    Supports tar-based archives (e.g. .tar.gz/.tgz/.tar.xz/.tar.bz2) and .zip files. When
+    `strip_top_level=True`, a single extracted top directory is removed and its contents moved up.
+
+    Example:
+        install_archive_file("/tmp/tool.tgz", "/opt/tool", strip_top_level=True)
+    """
     try:
         archive_path = Path(archive_path).expanduser()
         extract_to = Path(extract_to).expanduser()
@@ -94,22 +121,8 @@ def install_archive_file(archive_path: Path | str, extract_to: Path | str, strip
         return False
 
 
-def _strip_top_level_dir(extract_to: Path) -> None:
-    """Flatten a single top-level directory after extraction."""
-    try:
-        items = [p for p in Path(extract_to).iterdir()]
-        if len(items) != 1 or not items[0].is_dir():
-            return
-        top = items[0]
-        for child in top.iterdir():
-            shutil.move(str(child), str(Path(extract_to) / child.name))
-        shutil.rmtree(top)
-    except Exception:
-        pass
-
-
 def uninstall_archive_install(target_path: Path | str) -> bool:
-    """Remove the installed archive content (file or directory) and return True on success."""
+    """Remove an installed archive target (file or directory) and return True if something was removed."""
     try:
         p = Path(target_path)
         if p.is_dir():
@@ -122,9 +135,18 @@ def uninstall_archive_install(target_path: Path | str) -> bool:
     except Exception:
         return False
 
+# ---------------------------------------------------------------------
+# LINKS / CLEANUP
+# ---------------------------------------------------------------------
+
 
 def create_symlink(target: Path | str, link_path: Path | str) -> bool:
-    """Create or update a symlink and return True on success."""
+    """
+    Create or replace a symlink at `link_path` pointing to `target`.
+
+    Example:
+        create_symlink("/opt/tool/bin/tool", "/usr/local/bin/tool")
+    """
     try:
         target = Path(os.path.expanduser(str(target)))
         link_path = Path(os.path.expanduser(str(link_path)))
@@ -137,7 +159,6 @@ def create_symlink(target: Path | str, link_path: Path | str) -> bool:
         return False
 
 
-
 def handle_cleanup(archive_path: Path) -> bool:
     """Delete a temporary archive file and return True on success."""
     try:
@@ -146,9 +167,21 @@ def handle_cleanup(archive_path: Path) -> bool:
     except Exception:
         return False
 
+# ---------------------------------------------------------------------
+# ARCHIVE CREATION
+# ---------------------------------------------------------------------
+
 
 def create_zip_archive(zips):
-    """Create one or more zip archives from a list of (src, output) tuples."""
+    """
+    Create one or more zip archives from (src, output) tuples.
+
+    If `zips` is a single tuple, it is treated as a one-item list. Each source directory is
+    walked recursively and file paths are stored relative to the source root.
+
+    Example:
+        create_zip_archive(("/home/me/project", "/tmp/project.zip"))
+    """
     if isinstance(zips, tuple):
         zips = [zips]
     for src, output in zips:
@@ -163,4 +196,3 @@ def create_zip_archive(zips):
                     zipf.write(p, p.relative_to(src_path))
         print(f"[create_zip_archive] Created: {out_path}")
     return True
-

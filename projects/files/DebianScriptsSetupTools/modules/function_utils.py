@@ -4,21 +4,22 @@ import os
 from pathlib import Path
 from typing import Dict
 
-# ============================================================================
-# INTERNAL HELPERS
-# ============================================================================
+# ---------------------------------------------------------------------
+# HELPERS
+# ---------------------------------------------------------------------
+
 
 def _expand(path: str) -> Path:
-    """Expand ~ and env vars and resolve path."""
+    """Expand ~ and environment variables in `path`, then resolve to an absolute Path."""
     return Path(os.path.expandvars(os.path.expanduser(path))).resolve()
 
+# ---------------------------------------------------------------------
+# STATUS
+# ---------------------------------------------------------------------
 
-# ============================================================================
-# STATUS FUNCTION
-# ============================================================================
 
 def job_is_ready(module_folder: str) -> bool:
-    """Return True if module folder contains at least one .py file."""
+    """Return True if `module_folder` exists and contains at least one top-level .py file."""
     if not module_folder:
         return False
     folder = Path(os.path.expandvars(os.path.expanduser(module_folder)))
@@ -26,13 +27,51 @@ def job_is_ready(module_folder: str) -> bool:
         return False
     return any(p.suffix == ".py" for p in folder.iterdir() if p.is_file())
 
+# ---------------------------------------------------------------------
+# SOURCE COLLECTION
+# ---------------------------------------------------------------------
 
-# ============================================================================
-# PIPELINE FUNCTIONS
-# ============================================================================
+
+def collect_usage_sources(check_folders, check_files, module_folder):
+    """
+    Collect Python sources to scan for function usage.
+
+    Returns:
+        (external_sources, internal_sources) as de-duplicated Path lists.
+    """
+    external = []
+    internal = []
+    for folder in check_folders or []:
+        d = _expand(folder)
+        if d.is_dir():
+            external.extend(
+                p for p in d.rglob("*.py")
+                if p.is_file() and p.name != "__init__.py"
+            )
+    for file in check_files or []:
+        p = _expand(file)
+        if p.is_file() and p.suffix == ".py":
+            external.append(p)
+    mod_dir = _expand(module_folder)
+    if mod_dir.is_dir():
+        internal.extend(
+            p for p in mod_dir.rglob("*.py")
+            if p.is_file() and p.name != "__init__.py"
+        )
+    return list(dict.fromkeys(external)), list(dict.fromkeys(internal))
+
+# ---------------------------------------------------------------------
+# MODULE PARSING
+# ---------------------------------------------------------------------
+
 
 def load_module_functions(module_folder: str, job: str) -> Dict:
-    """Load top-level functions from a module file."""
+    """
+    Parse a module file and return its top-level function AST nodes keyed by name.
+
+    Example:
+        fns = load_module_functions("./modules", "display_utils.py")
+    """
     import ast
     module_path = Path(os.path.expandvars(os.path.expanduser(module_folder))) / job
     tree = ast.parse(module_path.read_text(encoding="utf-8", errors="replace"))
@@ -44,7 +83,12 @@ def load_module_functions(module_folder: str, job: str) -> Dict:
 
 
 def load_module_function_docs(module_folder: str, job: str) -> Dict[str, str]:
-    '''Load top-level functions from a module file and return {name: docstring}.'''
+    """
+    Parse a module file and return {function_name: docstring} for top-level functions.
+
+    Example:
+        docs = load_module_function_docs("./modules", "display_utils.py")
+    """
     import ast
     module_path = Path(os.path.expandvars(os.path.expanduser(module_folder))) / job
     tree = ast.parse(module_path.read_text(encoding="utf-8", errors="replace"))
@@ -55,24 +99,31 @@ def load_module_function_docs(module_folder: str, job: str) -> Dict[str, str]:
             docs[n.name] = doc.strip()
     return docs
 
+# ---------------------------------------------------------------------
+# USAGE SCANNING
+# ---------------------------------------------------------------------
+
 
 def scan_function_usage(module_functions: dict, check_folders, check_files, module_folder):
     """
-    Scan external and internal sources for function usage.
+    Scan external and internal sources for references to functions defined in a module.
 
-    External usage:
+    External usage sources include:
       - constants
       - DebianLoader
       - other modules
 
-    Internal usage:
-      - calls or references within the module itself
+    Internal usage sources include:
+      - calls or references within the module folder itself
 
     Returns:
       {
         "usage": {fn_name: {(file, line, usage_type), ...}},
         "sources": [file1, file2, ...]
       }
+
+    Example:
+        scan = scan_function_usage(fns, ["./"], [], "./modules")
     """
     import ast
     external_sources, internal_sources = collect_usage_sources(check_folders, check_files, module_folder)
@@ -100,42 +151,14 @@ def scan_function_usage(module_functions: dict, check_folders, check_files, modu
 
 
 def detect_usage(scan_result: dict) -> bool:
-    """Return True if any function is used."""
+    """Return True if any function has at least one recorded usage location."""
     usage = scan_result["usage"]
     return any(locations for locations in usage.values())
 
-
-# ============================================================================
-# SOURCE COLLECTION
-# ============================================================================
-
-def collect_usage_sources(check_folders, check_files, module_folder):
-    """Return (external_sources, internal_sources) as Path lists."""
-    external = []
-    internal = []
-    for folder in check_folders or []:
-        d = _expand(folder)
-        if d.is_dir():
-            external.extend(
-                p for p in d.rglob("*.py")
-                if p.is_file() and p.name != "__init__.py"
-            )
-    for file in check_files or []:
-        p = _expand(file)
-        if p.is_file() and p.suffix == ".py":
-            external.append(p)
-    mod_dir = _expand(module_folder)
-    if mod_dir.is_dir():
-        internal.extend(
-            p for p in mod_dir.rglob("*.py")
-            if p.is_file() and p.name != "__init__.py"
-        )
-    return list(dict.fromkeys(external)), list(dict.fromkeys(internal))
-
-
-# ============================================================================
+# ---------------------------------------------------------------------
 # OUTPUT
-# ============================================================================
+# ---------------------------------------------------------------------
+
 
 def print_usage_summary(job: str, scan_result: dict) -> None:
     """
@@ -190,7 +213,7 @@ def print_functions_summary(job: str, fn_docs: Dict[str, str]) -> None:
         print("  (no top-level functions found)")
         return
     name_width = max(len(name) for name in fn_docs)
-    prefix = " " * (name_width + 3)  
+    prefix = " " * (name_width + 3)
     for name in sorted(fn_docs):
         doc = fn_docs[name] or "(no docstring)"
         lines = doc.splitlines()
@@ -198,10 +221,3 @@ def print_functions_summary(job: str, fn_docs: Dict[str, str]) -> None:
         for line in lines[1:]:
             print(f"{prefix}{line}")
         print()
-
-
-
-
-
-
-

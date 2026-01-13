@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """
 display_utils.py
+
+Console formatting, table printing, and interactive prompts for CLI utilities.
 """
 
 from io import StringIO
@@ -11,12 +13,101 @@ import os
 import getpass
 import json
 
-# ===== CONSTANTS =====
+# ---------------------------------------------------------------------
+# CONSTANTS
+# ---------------------------------------------------------------------
+
 MAX_COL_WIDTH = 20
+
+# ---------------------------------------------------------------------
+# HELPERS
+# ---------------------------------------------------------------------
+
+
+def dict_to_lines(d: dict) -> list[str]:
+    """Convert a dict into a readable list of lines (keys with nested values indented)."""
+    lines: list[str] = []
+    for k, v in d.items():
+        lines.append(str(k))
+        if isinstance(v, dict):
+            for sk, sv in v.items():
+                lines.append(f"  {sk}: {sv}")
+        elif isinstance(v, list):
+            lines.extend(f"  - {x}" for x in v)
+        else:
+            lines.append(f"  {v}")
+    return lines
+
+
+def format_value_lines(val):
+    """Return a list of display lines for a value (supports dicts and lists for multi-line cells)."""
+    if isinstance(val, dict):
+        return dict_to_lines(val)
+    if isinstance(val, list):
+        out = []
+        for v in val:
+            if isinstance(v, dict):
+                out.extend(dict_to_lines(v))
+            else:
+                out.append(str(v))
+        return out
+    return [str(val)]
+
+
+def value_display_len(v):
+    """Return the maximum display line length needed to render a value (including dict/list values)."""
+    if isinstance(v, dict):
+        return max((len(line) for line in dict_to_lines(v)), default=0)
+    if isinstance(v, list):
+        max_len = 0
+        for x in v:
+            if isinstance(x, dict):
+                max_len = max(max_len, *(len(l) for l in dict_to_lines(x)))
+            else:
+                max_len = max(max_len, len(str(x)))
+        return max_len
+    return len(str(v))
+
+
+def compute_col_widths(items, field_names, pad=2):
+    """Compute padded column widths for dict-table output, capped at MAX_COL_WIDTH."""
+    widths = []
+    for field in field_names:
+        max_len = max(
+            value_display_len(item.get(field, "")) for item in items
+        ) if items else 0
+        width = max(len(field), max_len) + pad
+        widths.append(min(width, MAX_COL_WIDTH))
+    return widths
+
+
+def truncate_to_width(s, width):
+    """Return `s` truncated to `width` characters using an ellipsis when needed."""
+    s = str(s)
+    if len(s) > width:
+        return s[: max(0, width - 3)] + "..."
+    return s
+
+
+def build_header(label, field_names, col_widths):
+    """Print a section header and aligned column headings for a dict-table."""
+    print(f"\n{label.upper()}:")
+    print(
+        "  " + "  ".join(f"{name:<{col_widths[i]}}" for i, name in enumerate(field_names))
+    )
+    print("  " + "  ".join("-" * w for w in col_widths))
 
 
 def wrap_in_box(val: Any, title: str | None = None, indent: int = 2, pad: int = 1) -> str:
-    """Return a string with val wrapped in an ASCII box. Indentation and padding configurable."""
+    """
+    Return a string with `val` wrapped in an ASCII box.
+
+    `val` is rendered into one or more lines, then boxed with optional title, indentation,
+    and padding.
+
+    Example:
+        print(wrap_in_box(["Line 1", "Line 2"], title="Notice"))
+    """
     lines = format_value_lines(val)
     if title:
         lines.insert(0, f"[ {title} ]")
@@ -28,6 +119,50 @@ def wrap_in_box(val: Any, title: str | None = None, indent: int = 2, pad: int = 
     out = [prefix + border] + [f"{prefix}|{l}| " for l in inner_lines] + [prefix + border]
     return "\n".join(out)
 
+# ---------------------------------------------------------------------
+# DISPLAY / PRINTING
+# ---------------------------------------------------------------------
+
+
+def print_dict_table(items, field_names, label):
+    """
+    Print a table for a list of dicts using multi-line cells where needed.
+
+    Column widths are computed dynamically based on displayed content and capped
+    at MAX_COL_WIDTH.
+
+    Example:
+        print_dict_table([{"Name": "A", "Status": True}], ["Name", "Status"], "Packages")
+    """
+    if not items:
+        print(f"\n{label.upper()}: (None)")
+        return
+    col_widths = compute_col_widths(items, field_names)
+    build_header(label, field_names, col_widths)
+    for item in items:
+        blocks = []
+        for i, field in enumerate(field_names):
+            raw_lines = format_value_lines(item.get(field, ""))
+            cell_lines = [
+                f"{truncate_to_width(line, col_widths[i]):<{col_widths[i]}}"
+                for line in raw_lines
+            ]
+            blocks.append(cell_lines)
+        max_lines = max(len(b) for b in blocks)
+        for j in range(max_lines):
+            row_parts = [
+                blocks[i][j] if j < len(blocks[i]) else " " * col_widths[i]
+                for i in range(len(field_names))
+            ]
+            print("  " + "  ".join(row_parts))
+
+
+def print_list_section(items, label):
+    """Print a labeled bullet list section for a list of strings."""
+    print(f"\n{label.upper()}:")
+    for item in items:
+        print(f"  - {item}")
+
 
 def format_status_summary(
     status_dict: Dict[str, Any],
@@ -35,7 +170,12 @@ def format_status_summary(
     count_keys: Optional[list] = None,
     labels: Optional[Dict[Any, str]] = None
 ) -> str:
-    """Return a formatted summary of statuses in a dictionary."""
+    """
+    Return a formatted status table + counts summary for a dict of {item: status}.
+
+    Example:
+        print(format_status_summary({"curl": True, "wget": False}, label="Package"))
+    """
     labels = labels or {True: "INSTALLED", False: "NOT INSTALLED"}
     non_spacer_items = [(k, v) for k, v in status_dict.items() if str(k).strip() != ""]
     max_item_len = max([len(label)] + [len(str(item)) for item, _ in non_spacer_items], default=len(label))
@@ -63,114 +203,99 @@ def format_status_summary(
     return "\n".join(lines)
 
 
-def dict_to_lines(d: dict) -> list[str]:
-    """Expand a dict as 'key' then its value(s) on new lines below."""
-    lines: list[str] = []
-    for k, v in d.items():
-        lines.append(str(k))
-        if isinstance(v, dict):
-            for sk, sv in v.items():
-                lines.append(f"  {sk}: {sv}")
-        elif isinstance(v, list):
-            lines.extend(f"  - {x}" for x in v)
-        else:
-            lines.append(f"  {v}")
-    return lines
-
-
-def format_value_lines(val):
-    """Return list of lines for a cell value, handling lists and dicts."""
-    if isinstance(val, dict):
-        return dict_to_lines(val)
-    if isinstance(val, list):
-        out = []
-        for v in val:
-            if isinstance(v, dict):
-                out.extend(dict_to_lines(v))
-            else:
-                out.append(str(v))
-        return out
-    return [str(val)]
-
-
-def value_display_len(v):
-    """Return display length for a value."""
-    if isinstance(v, dict):
-        return max((len(line) for line in dict_to_lines(v)), default=0)
-    if isinstance(v, list):
-        max_len = 0
-        for x in v:
-            if isinstance(x, dict):
-                max_len = max(max_len, *(len(l) for l in dict_to_lines(x)))
-            else:
-                max_len = max(max_len, len(str(x)))
-        return max_len
-    return len(str(v))
-
-
-def compute_col_widths(items, field_names, pad=2):
-    """Compute column widths with padding, capped at MAX_COL_WIDTH."""
-    widths = []
-    for field in field_names:
-        max_len = max(
-            value_display_len(item.get(field, "")) for item in items
-        ) if items else 0
-        width = max(len(field), max_len) + pad
-        widths.append(min(width, MAX_COL_WIDTH))
-    return widths
-
-
-def truncate_to_width(s, width):
-    """Truncate string to width with ellipsis if needed."""
-    s = str(s)
-    if len(s) > width:
-        return s[: max(0, width - 3)] + "..."
-    return s
-
-
-def build_header(label, field_names, col_widths):
-    """Build header and separator lines."""
-    print(f"\n{label.upper()}:")
-    print(
-        "  " + "  ".join(f"{name:<{col_widths[i]}}" for i, name in enumerate(field_names))
-    )
-    print("  " + "  ".join("-" * w for w in col_widths))
-
-
-def print_dict_table(items, field_names, label):
-    """Print a table for a list of dicts with dynamic column widths."""
-    if not items:
-        print(f"\n{label.upper()}: (None)")
+def display_example(example: Any) -> None:
+    """Print the EXAMPLE section exactly as stored in the config doc JSON."""
+    print("\nEXAMPLE")
+    print("-------")
+    if example is None:
+        print("[WARN] No EXAMPLE section found.")
         return
-    col_widths = compute_col_widths(items, field_names)
-    build_header(label, field_names, col_widths)
-    for item in items:
-        blocks = []
-        for i, field in enumerate(field_names):
-            raw_lines = format_value_lines(item.get(field, ""))
-            cell_lines = [
-                f"{truncate_to_width(line, col_widths[i]):<{col_widths[i]}}"
-                for line in raw_lines
-            ]
-            blocks.append(cell_lines)
-        max_lines = max(len(b) for b in blocks)
-        for j in range(max_lines):
-            row_parts = [
-                blocks[i][j] if j < len(blocks[i]) else " " * col_widths[i]
-                for i in range(len(field_names))
-            ]
-            print("  " + "  ".join(row_parts))
+    print(json.dumps(example, indent=2, ensure_ascii=False))
 
 
-def print_list_section(items, label):
-    """Print a list of strings under a label with bullet points."""
-    print(f"\n{label.upper()}:")
-    for item in items:
-        print(f"  - {item}")
+def display_description(description: dict[str, Any]) -> None:
+    """
+    Print DESCRIPTION as a collapsed dot-path hierarchy.
+
+    Keys like "A.B.C" are displayed as a tree with nested nodes, and the leaf text
+    is printed as the description under that node.
+    """
+    print("\nDESCRIPTION")
+    print("-----------")
+    if not isinstance(description, dict):
+        print("[ERROR] DESCRIPTION is not a dict.")
+        return
+    DESC_KEY = "__DESC__"
+    tree: dict[str, Any] = {}
+    for key, text in description.items():
+        if not isinstance(key, str):
+            continue
+        parts = key.split(".")
+        node = tree
+        for part in parts:
+            node = node.setdefault(part, {})
+        node[DESC_KEY] = str(text)
+    stack: list[tuple[dict[str, Any], list[str], int, int, bool]] = [
+        (tree, sorted(tree.keys()), 0, 0, False)
+    ]
+    while stack:
+        node, keys, idx, depth, printed_desc = stack[-1]
+        if not printed_desc and DESC_KEY in node:
+            stack[-1] = (node, keys, idx, depth, True)
+            print(f"{'  ' * (depth + 1)}{node[DESC_KEY]}")
+            continue
+        if idx >= len(keys):
+            stack.pop()
+            continue
+        k = keys[idx]
+        stack[-1] = (node, keys, idx + 1, depth, printed_desc)
+        if k == DESC_KEY:
+            continue
+        indent = "  " * depth
+        arrow = "↳ " if depth > 0 else ""
+        print(f"{indent}{arrow}{k}")
+        child = node.get(k)
+        if isinstance(child, dict):
+            stack.append((child, sorted(child.keys()), 0, depth + 1, False))
+
+# ---------------------------------------------------------------------
+# INTERACTIVE INPUT
+# ---------------------------------------------------------------------
+
+
+def confirm(
+    prompt: str = "Proceed? [y/n]: ",
+    *,
+    valid_yes: tuple[str, ...] = ("y", "yes"),
+    valid_no: tuple[str, ...] = ("n", "no"),
+) -> bool:
+    """
+    Prompt repeatedly for a yes/no answer and return True/False for valid input.
+
+    Example:
+        if confirm("Install packages? [y/n]: "):
+            ...
+    """
+    yes = tuple(s.lower() for s in valid_yes)
+    no = tuple(s.lower() for s in valid_no)
+    while True:
+        resp = input(prompt).strip().lower()
+        if resp in yes:
+            return True
+        if resp in no:
+            return False
+        print(
+            f"Invalid input. Please enter one of: {', '.join(valid_yes + valid_no)}."
+        )
 
 
 def select_from_list(title: str, options: list[str]) -> str | None:
-    """Render a simple chooser and return the selected option or None."""
+    """
+    Render a numbered menu and return the selected option (or None on invalid input).
+
+    Example:
+        choice = select_from_list("Pick one", ["A", "B"])
+    """
     if not options:
         return None
     print(f"\n{title}:")
@@ -184,7 +309,15 @@ def select_from_list(title: str, options: list[str]) -> str | None:
 
 
 def pick_constants_interactively(choices: dict[str, tuple[str, Optional[int]]]) -> str:
-    """Show a simple menu to choose constants module, filtered by allowed UID."""
+    """
+    Prompt the user to select a constants module, filtering choices by allowed UID rules.
+
+    Items with a UID restriction are hidden unless the current user matches the required UID,
+    or both are non-root users (>= 1000) per the existing rule.
+
+    Example:
+        mod = pick_constants_interactively({"Laptop": ("constants_laptop", None)})
+    """
     current_uid = os.geteuid()
     current_user = getpass.getuser()
 
@@ -230,80 +363,18 @@ def pick_constants_interactively(choices: dict[str, tuple[str, Optional[int]]]) 
         raise SystemExit("Exited by user.")
     return allowed[selection]
 
-
-def confirm(
-    prompt: str = "Proceed? [y/n]: ",
-    *,
-    valid_yes: tuple[str, ...] = ("y", "yes"),
-    valid_no: tuple[str, ...] = ("n", "no"),
-) -> bool:
-    """Prompt user for a yes/no answer until valid input is provided."""
-    yes = tuple(s.lower() for s in valid_yes)
-    no = tuple(s.lower() for s in valid_no)
-    while True:
-        resp = input(prompt).strip().lower()
-        if resp in yes:
-            return True
-        if resp in no:
-            return False
-        print(
-            f"Invalid input. Please enter one of: {', '.join(valid_yes + valid_no)}."
-        )
-
-        
-def display_description(description: dict[str, Any]) -> None:
-    """Display DESCRIPTION as a collapsed dot-path hierarchy."""
-    print("\nDESCRIPTION")
-    print("-----------")
-    if not isinstance(description, dict):
-        print("[ERROR] DESCRIPTION is not a dict.")
-        return
-    DESC_KEY = "__DESC__"
-    tree: dict[str, Any] = {}
-    for key, text in description.items():
-        if not isinstance(key, str):
-            continue
-        parts = key.split(".")
-        node = tree
-        for part in parts:
-            node = node.setdefault(part, {})
-        node[DESC_KEY] = str(text)
-    stack: list[tuple[dict[str, Any], list[str], int, int, bool]] = [
-        (tree, sorted(tree.keys()), 0, 0, False)
-    ]
-    while stack:
-        node, keys, idx, depth, printed_desc = stack[-1]
-        if not printed_desc and DESC_KEY in node:
-            stack[-1] = (node, keys, idx, depth, True)
-            print(f"{'  ' * (depth + 1)}{node[DESC_KEY]}")
-            continue
-        if idx >= len(keys):
-            stack.pop()
-            continue
-        k = keys[idx]
-        stack[-1] = (node, keys, idx + 1, depth, printed_desc)
-        if k == DESC_KEY:
-            continue
-        indent = "  " * depth
-        arrow = "↳ " if depth > 0 else ""
-        print(f"{indent}{arrow}{k}")
-        child = node.get(k)
-        if isinstance(child, dict):
-            stack.append((child, sorted(child.keys()), 0, depth + 1, False))
-
-
-def display_example(example: Any) -> None:
-    """Display EXAMPLE exactly as stored in the doc."""
-    print("\nEXAMPLE")
-    print("-------")
-    if example is None:
-        print("[WARN] No EXAMPLE section found.")
-        return
-    print(json.dumps(example, indent=2, ensure_ascii=False))
+# ---------------------------------------------------------------------
+# CONFIG DOC HELPERS
+# ---------------------------------------------------------------------
 
 
 def display_config_doc(doc_path: str) -> bool:
-    """Pipeline entry: load config doc and display DESCRIPTION + EXAMPLE."""
+    """
+    Load a config help JSON doc and print its EXAMPLE and DESCRIPTION sections.
+
+    Example:
+        display_config_doc("/path/to/ConfigHelp.json")
+    """
     path = Path(doc_path)
     if not path.is_file():
         print(f"[ERROR] Config doc not found: {path}")
@@ -333,7 +404,15 @@ def display_config_doc(doc_path: str) -> bool:
 
 
 def format_config_help(doc_path: str) -> list[str]:
-    """Return formatted lines for DESCRIPTION + EXAMPLE from a config doc JSON."""
+    """
+    Return formatted output lines for a config help JSON doc.
+
+    This captures the printed output of display_example() and display_description()
+    and returns it as a list of strings for later display/logging.
+
+    Example:
+        lines = format_config_help("/path/to/ConfigHelp.json")
+    """
     path = Path(doc_path)
     if not path.is_file():
         return [f"[WARN] No config help found at: {doc_path}"]
@@ -354,5 +433,3 @@ def format_config_help(doc_path: str) -> list[str]:
 
     lines.extend(captured)
     return lines
-
-

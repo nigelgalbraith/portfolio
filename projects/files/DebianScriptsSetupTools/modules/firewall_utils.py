@@ -1,15 +1,25 @@
 #!/usr/bin/env python3
 """
 firewall_utils.py
-All functions return True/False while still logging command outputs.
+
+UFW helper functions that execute commands, print outputs, and return success booleans.
 """
 
 import subprocess
 from typing import Union, List
 
+# ---------------------------------------------------------------------
+# HELPERS
+# ---------------------------------------------------------------------
+
 
 def allow_application(apps: Union[str, List[str]]) -> List[bool]:
-    """Allow one or more UFW app profiles. Prints output, returns list of booleans."""
+    """
+    Allow one or more UFW application profiles and return per-app success flags.
+
+    Example:
+        allow_application(["OpenSSH", "Nginx Full"])
+    """
     apps = apps if isinstance(apps, (list, tuple)) else [apps]
     out = subprocess.run(["ufw", "app", "list"], capture_output=True, text=True)
     available = out.stdout
@@ -28,7 +38,12 @@ def allow_application(apps: Union[str, List[str]]) -> List[bool]:
 
 
 def allow_port(ports: Union[int, List[int]], proto: str) -> List[bool]:
-    """Allow one or more ports for a protocol. Prints output, returns list of booleans."""
+    """
+    Allow one or more ports for a protocol and return per-port success flags.
+
+    Example:
+        allow_port([80, 443], "tcp")
+    """
     ports = ports if isinstance(ports, (list, tuple)) else [ports]
     results: List[bool] = []
     for port in ports:
@@ -41,7 +56,12 @@ def allow_port(ports: Union[int, List[int]], proto: str) -> List[bool]:
 
 
 def allow_port_for_ip(rule_name: str, ports: Union[int, List[int]], proto: str, ips: Union[str, List[str]]) -> List[bool]:
-    """Allow one or more ports from one or more IPs. Prints grouped output, returns list of booleans."""
+    """
+    Allow one or more ports from one or more source IPs and return per-rule success flags.
+
+    Example:
+        allow_port_for_ip("Admin SSH", 22, "tcp", ["192.168.1.10"])
+    """
     ports = ports if isinstance(ports, (list, tuple)) else [ports]
     ips   = ips if isinstance(ips, (list, tuple)) else [ips]
     results: List[bool] = []
@@ -61,23 +81,13 @@ def allow_port_for_ip(rule_name: str, ports: Union[int, List[int]], proto: str, 
     return results
 
 
-def apply_singleports(singleports):
-    """Apply each SinglePorts rule dict via allow_port_for_ip."""
-    results = []
-    for sp in singleports or []:
-        results.extend(
-            allow_port_for_ip(
-                sp["RuleName"],
-                sp["Port"],
-                sp["Protocol"],
-                sp["IPs"]
-            )
-        )
-    return all(results)
-
-
 def allow_port_range_for_ip(rule_name: str, start: int, end: int, proto: str, ips: Union[str, List[str]]) -> List[bool]:
-    """Allow a range of ports from one or more IPs. Prints grouped output, returns list of booleans."""
+    """
+    Allow a port range from one or more source IPs and return per-IP success flags.
+
+    Example:
+        allow_port_range_for_ip("App Range", 5000, 5100, "tcp", "10.0.0.5")
+    """
     ips = ips if isinstance(ips, (list, tuple)) else [ips]
     results: List[bool] = []
 
@@ -95,9 +105,38 @@ def allow_port_range_for_ip(rule_name: str, start: int, end: int, proto: str, ip
         results.append(res.returncode == 0)
     return results
 
+# ---------------------------------------------------------------------
+# APPLY BATCH RULES
+# ---------------------------------------------------------------------
+
+
+def apply_singleports(singleports):
+    """
+    Apply each SinglePorts rule dict using allow_port_for_ip() and return True if all succeed.
+
+    Example:
+        apply_singleports([{"RuleName":"SSH","Port":22,"Protocol":"tcp","IPs":["10.0.0.5"]}])
+    """
+    results = []
+    for sp in singleports or []:
+        results.extend(
+            allow_port_for_ip(
+                sp["RuleName"],
+                sp["Port"],
+                sp["Protocol"],
+                sp["IPs"]
+            )
+        )
+    return all(results)
+
 
 def apply_portranges(portranges):
-    """Apply each PortRanges rule dict via allow_port_range_for_ip."""
+    """
+    Apply each PortRanges rule dict using allow_port_range_for_ip() and return True if all succeed.
+
+    Example:
+        apply_portranges([{"RuleName":"Range","StartPort":5000,"EndPort":5100,"Protocol":"tcp","IPs":["10.0.0.5"]}])
+    """
     results = []
     for pr in portranges or []:
         results.extend(
@@ -111,9 +150,13 @@ def apply_portranges(portranges):
         )
     return all(results)
 
+# ---------------------------------------------------------------------
+# UFW LIFECYCLE / STATUS
+# ---------------------------------------------------------------------
+
 
 def reset_ufw() -> bool:
-    """Reset UFW rules non-interactively. Prints output, returns True/False."""
+    """Reset UFW rules non-interactively and return True on success."""
     result = subprocess.run(["ufw", "--force", "reset"], capture_output=True, text=True)
     print(result.stdout.strip())
     if result.stderr:
@@ -122,7 +165,12 @@ def reset_ufw() -> bool:
 
 
 def enable_ufw() -> bool:
-    """Enable UFW and logging. Prints output, returns True/False."""
+    """
+    Enable UFW and turn logging on; return True only if both commands succeed.
+
+    Example:
+        enable_ufw()
+    """
     res1 = subprocess.run(["ufw", "--force", "enable"], capture_output=True, text=True)
     print(res1.stdout.strip())
     if res1.stderr:
@@ -134,8 +182,17 @@ def enable_ufw() -> bool:
     return res1.returncode == 0 and res2.returncode == 0
 
 
+def enable_logging_ufw() -> bool:
+    """Enable UFW logging and return True on success."""
+    result = subprocess.run(["ufw", "logging", "on"], capture_output=True, text=True)
+    print(result.stdout.strip())
+    if result.stderr:
+        print(result.stderr.strip())
+    return result.returncode == 0
+
+
 def reload_ufw() -> bool:
-    """Reload UFW rules. Prints output, returns True/False."""
+    """Reload UFW rules and return True on success."""
     result = subprocess.run(["ufw", "reload"], capture_output=True, text=True)
     print(result.stdout.strip())
     if result.stderr:
@@ -144,7 +201,7 @@ def reload_ufw() -> bool:
 
 
 def disable_ufw() -> bool:
-    """Disable UFW. Prints output, returns True/False."""
+    """Disable UFW and return True on success."""
     result = subprocess.run(["ufw", "disable"], capture_output=True, text=True)
     print(result.stdout.strip())
     if result.stderr:
@@ -153,26 +210,17 @@ def disable_ufw() -> bool:
 
 
 def status_ufw() -> bool:
-    """Return True if UFW is active, False otherwise. No printing."""
+    """Return True if UFW is active, otherwise False (no printing)."""
     result = subprocess.run(["ufw", "status"], capture_output=True, text=True)
     out = result.stdout.strip()
     return "active" in out.lower()
 
 
 def status_ufw_display() -> bool:
-    """Return True if UFW is active, False otherwise. Prints status text too."""
+    """Return True if UFW is active, otherwise False (prints status output)."""
     result = subprocess.run(["ufw", "status"], capture_output=True, text=True)
     out = result.stdout.strip()
     print(out)
     if result.stderr:
         print(result.stderr.strip())
     return "active" in out.lower()
-
-
-def enable_logging_ufw() -> bool:
-    """Enable UFW logging. Prints output, returns True/False."""
-    result = subprocess.run(["ufw", "logging", "on"], capture_output=True, text=True)
-    print(result.stdout.strip())
-    if result.stderr:
-        print(result.stderr.strip())
-    return result.returncode == 0
