@@ -2,14 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Letter Generator</title>
+  <title>Text Generator</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   
   <!-- Main stylesheet -->
   <link rel="stylesheet" href="css/style.css" />
 
   <!-- Simple inline favicon -->
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%2306b6d4'/><text x='50' y='62' font-size='58' text-anchor='middle' fill='%23071018'>CL</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%2306b6d4'/><text x='50' y='62' font-size='58' text-anchor='middle' fill='%23071018'>TG</text></svg>">
 </head>
 
 <body>
@@ -17,7 +17,7 @@
 
   <!-- Header + Navigation + Profile Loader -->
   <header class="header-centered">
-    <h1>Letter Generator</h1>
+    <h1>Text Generator</h1>
 
     <nav class="nav">
       <div class="nav-links">
@@ -30,11 +30,10 @@
       <!-- Load button pane -->
       <div
         data-pane="profile-loader"
-        data-profile-global="LETTER_PROFILE"
+        data-state-key="TEXT_PROFILE"
         data-default-profile="data/default.json"
-        data-profile-event="profileLoaded"
         data-button-label="Load Profile"
-        data-accept="application/json"
+        data-accept=".json,application/json"
         data-ticker-id="profile-main"
       ></div>
 
@@ -59,17 +58,21 @@
 
     <!-- Form fields generated from profile.form -->
     <div data-pane="generator-form"
-         data-profile-event="profileLoaded"
-         data-profile-global="LETTER_PROFILE"
+         data-state-key="TEXT_PROFILE"
          data-title="Details"
          data-default-styles="Professional,Friendly,Direct,Concise">
     </div>
 
     <!-- Checklist groups from profile.options -->
     <div data-pane="generator-checklists"
-         data-profile-event="profileLoaded"
-         data-profile-global="LETTER_PROFILE"
+         data-state-key="TEXT_PROFILE"
          data-default-title="Options">
+    </div>
+
+    <!-- Subject + example blocks -->
+    <div data-pane="generator-snippets"
+         data-state-key="TEXT_PROFILE"
+         data-default-title="Snippets">
     </div>
 
     <!-- Preview + Generate + Copy + PDF -->
@@ -77,8 +80,9 @@
          data-ollama-url="http://localhost:11434/api/generate"
          data-form-selector='[data-pane="generator-form"]'
          data-checklists-selector='[data-pane="generator-checklists"]'
-         data-profile-global="LETTER_PROFILE"
-         data-letter-id="generator-letter"
+         data-snippets-selector='[data-pane="generator-snippets"]'
+         data-state-key="TEXT_PROFILE"
+         data-text-id="generator-text"
          data-ticker-id="profile-main">
     </div>
 
@@ -86,32 +90,40 @@
     <div data-pane="generator-piper"
          data-piper-base="/piper"
          data-voice-id="en_US-amy-low"
-         data-target-selector="#generator-letter"
+         data-target-selector="#generator-text"
          data-ticker-id="profile-main">
     </div>
 
     <!-- Export profile as JSON -->
-    <div data-pane="builder-export"
-         data-builder-global="LETTER_PROFILE"
-         data-title="Export Profile"
-         data-filename="profile.json"
-         data-button-label="Download JSON"
-         data-ticker-id="profile-main">
+    <div
+      data-pane="builder-export"
+      data-state-key="TEXT_PROFILE"
+      data-title="Export Profile"
+      data-filename="profile.json"
+      data-button-label="Download JSON"
+      data-ticker-id="profile-main">
     </div>
 
   </main>
 </div>
 
 <!-- Pane scripts -->
-<script src="js/StatusTickerPane.js"></script>
-<script src="js/ProfileLoaderPane.js"></script>
-<script src="js/GeneratorFormPane.js"></script>
-<script src="js/GeneratorChecklistPane.js"></script>
-<script src="js/GeneratorPreviewPane.js"></script>
-<script src="js/GeneratorPiperPane.js"></script>
-<script src="js/ExportPane.js"></script>
+<script src="js/PanesCore.js"></script>
+<script src="js/Common/StatusTickerPane.js"></script>
+<script src="js/Common/ProfileLoaderPane.js"></script>
+<script src="js/Generator/GeneratorFormPane.js"></script>
+<script src="js/Generator/GeneratorChecklistPane.js"></script>
+<script src="js/Generator/GeneratorSnippetsPane.js"></script>
+<script src="js/Generator/GeneratorPreviewPane.js"></script>
+<script src="js/Generator/GeneratorPiperPane.js"></script>
+<script src="js/Common/ExportPane.js"></script>
 <script src="text/intro.js"></script>
-<script src="js/IntroPane.js"></script>
+<script src="js/Common/IntroPane.js"></script>
+
+<script>
+  // Instantiate all panes declared in the page.
+  window.Panes && window.Panes.bootstrap();
+</script>
 
 </body>
 </html>

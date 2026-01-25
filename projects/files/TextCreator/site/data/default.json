@@ -1,13 +1,21 @@
 {
   "mode": "llm",
+
   "ollama": {
     "model": "phi3",
-    "options": { "temperature": 0.3 }
+    "options": {
+      "temperature": 0.3
+    }
   },
 
-  "prompt": "You are an email-writing assistant. Write a clear and concise email using the following context.\n\nSENDER: {{sender}}\nRECIPIENT: {{recipient}}\nSUBJECT: {{subject}}\nSTYLE: {{style}}\nCHECKLIST_GROUP_1: {{option1}}\nCHECKLIST_GROUP_2: {{option2}}\nMESSAGE_CONTEXT:\n{{message_context}}\n\nRequirements:\n- Keep tone {{style}}.\n- Weave in the checklist items naturally.\n- 2–4 short paragraphs.\n- No placeholders.\n- End with the sender's name.",
+  "prompt": "You are a writing assistant. Generate clear, well-structured text using the context provided.\n\nSENDER: {{sender}}\nRECIPIENT: {{recipient}}\nSUBJECT: {{subject}}\nSTYLE: {{style}}\n\nCHECKLISTS_JSON:\n{{options_json}}\n\nSUPPORTING CONTEXT (subject: example):\n{{snippets}}\n\nMESSAGE CONTEXT:\n{{message_context}}\n\nGuidelines:\n- Maintain the requested style.\n- Incorporate checklist items and supporting context naturally when relevant.\n- Write 2–4 concise paragraphs unless the context clearly requires otherwise.\n- Do not include placeholders or meta commentary.\n- End with the sender's name if appropriate.",
 
-  "styles": ["Professional", "Friendly", "Direct", "Concise"],
+  "styles": [
+    "Professional",
+    "Friendly",
+    "Direct",
+    "Concise"
+  ],
 
   "form": {
     "sender": "Jane Doe",
@@ -20,7 +28,7 @@
   "options": [
     {
       "title": "Topics",
-      "slug": "option1",
+      "slug": "topics",
       "items": [
         { "label": "Project update", "selected": true },
         { "label": "Request for information", "selected": true },
@@ -31,7 +39,7 @@
     },
     {
       "title": "Technical Areas",
-      "slug": "option2",
+      "slug": "technical_areas",
       "items": [
         { "label": "Automation", "selected": true },
         { "label": "Scripting", "selected": true },
@@ -41,7 +49,7 @@
     },
     {
       "title": "Tone Adjustments",
-      "slug": "option2",
+      "slug": "tone",
       "items": [
         { "label": "Polite", "selected": true },
         { "label": "Confident", "selected": true },
@@ -51,14 +59,22 @@
     },
     {
       "title": "Context",
-      "slug": "option2",
+      "slug": "context",
       "items": [
         { "label": "Internal communication", "selected": true },
-        { "label": "Client communication", "selected": true },
+        { "label": "External communication", "selected": true },
         { "label": "General enquiry", "selected": true }
       ]
     }
   ],
 
-  "template": "Subject: {{subject}}\n\nHi {{recipient}},\n\n{{option1}} {{option2}}\n\nKind regards,\n{{sender}}"
+  "snippets": [
+    {
+      "subject": "Relevant Example",
+      "text": "Describe a relevant capability, followed by a brief example of how or where it was applied.",
+      "selected": true
+    }
+  ],
+
+  "template": "Subject: {{subject}}\n\nHi {{recipient}},\n\n{{snippets}}\n\n{{message_context}}\n\nKind regards,\n{{sender}}"
 }

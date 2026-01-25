@@ -15,7 +15,7 @@
 //
 //   window.INTRO_TEXT = {
 //     main: `
-//       <h1>Welcome to the Letter Generator</h1>
+//       <h1>Welcome to the Text Generator</h1>
 //       <p>This tool lets you build reusable profiles ...</p>
 //     `,
 //     about: `
@@ -76,15 +76,20 @@
     container.innerHTML = window.INTRO_TEXT[key];
   }
 
-  /**
-   * Scan all <div data-pane="intro-text"> on DOM ready
-   * and initialize each one independently.
-   */
-  document.addEventListener('DOMContentLoaded', function () {
-    var panes = document.querySelectorAll('[data-pane="intro-text"]');
-    for (var i = 0; i < panes.length; i++) {
-      initOne(panes[i]);
-    }
-  });
+  // Register with PanesCore (preferred). Falls back to DOMContentLoaded.
+  if (window.Panes && window.Panes.register) {
+    window.Panes.register('intro-text', function (container, api) {
+      container.classList.add('pane-intro-text');
+      initOne(container, api);
+      return null;
+    });
+  } else {
+    document.addEventListener('DOMContentLoaded', function () {
+      var panes = document.querySelectorAll('[data-pane="intro-text"]');
+      for (var i = 0; i < panes.length; i++) {
+        initOne(panes[i]);
+      }
+    });
+  }
 
 })();

@@ -5,24 +5,24 @@ window.INTRO_TEXT = {
       <p>This app generates written text based on your saved profile. You enter your information once, and reuse it anytime you need new output.</p>
 
       <ul>
-        <li>Background and personal details</li>
-        <li>Skills, strengths, and experience</li>
-        <li>Context for the request (job, message, purpose)</li>
+        <li>Personal details</li>
+        <li>Specific catergories</li>
+        <li>Context for the request</li>
       </ul>
 
       <p>The app combines your profile with the context to produce editable output such as letters, messages, bios, or any other text which you can preview, copy, or export.</p>
   `,
 
   profile: `
-      <p>This page is where you set up your profile. It stores the information the generator uses when creating text. You can include:</p>
+      <p>This page is where you set up your profile. It stores the information the generator uses when creating text.</p>
 
       <ul>
-        <li>Your background and experience</li>
-        <li>Skills and strengths</li>
+        <li>Personal details</li>
+        <li>Specific catergories</li>
         <li>Interests or focus areas</li>
         <li>Any details you want reused in writing</li>
       </ul>
 
-      <p>Once saved, the profile can be reused for any future letter or written output without typing everything again.</p>
+      <p>Once saved, the profile can be reused for any future text or written output without typing everything again.</p>
   `
 };

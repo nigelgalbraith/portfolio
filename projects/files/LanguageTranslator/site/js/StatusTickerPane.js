@@ -1,5 +1,5 @@
 // js/StatusTickerPane.js
-// Pane: Animated typewriter status ticker (standalone).
+// Pane: Animated typewriter status ticker (scoped).
 // -----------------------------------------------------------------------------
 // HOW TO USE:
 //   <div
@@ -8,20 +8,13 @@
 //     data-ticker-id="profile-main"
 //   ></div>
 //
-// NOTES:
-//   • It loads ticker messages from data-messages-url (or defaults).
-//   • It listens for CustomEvents on window:
-//       - 'ticker:temporary'  → show a temporary message, then resume loop
-//       - 'ticker:setMessages' → replace base message list
-//   • Both events accept an optional `tickerId` in detail to target a specific
-//     ticker when you have more than one.
+// Emits/Consumes (scoped via PanesCore api.events):
+//   - 'ticker:temporary'   detail: { tickerId?, text, ms?, color? }
+//   - 'ticker:setMessages' detail: { tickerId?, messages: [] }
 // -----------------------------------------------------------------------------
 
 (function () {
-
-  // ---------------------------------------------------------------------------
-  // DEFAULT MESSAGES + TIMING CONSTANTS
-  // ---------------------------------------------------------------------------
+  'use strict';
 
   var DEFAULT_TICKER_MESSAGES = [
     'Tip: Load a profile JSON to get started.',
@@ -36,6 +29,7 @@
 
   function loadTickerMessages(url) {
     if (!url) return Promise.resolve(DEFAULT_TICKER_MESSAGES.slice());
+
     return fetch(url)
       .then(function (res) { return res.json(); })
       .then(function (data) {
@@ -47,10 +41,6 @@
         return DEFAULT_TICKER_MESSAGES.slice();
       });
   }
-
-  // ---------------------------------------------------------------------------
-  // TYPEWRITER TICKER CLASS
-  // ---------------------------------------------------------------------------
 
   function StatusTicker(el, messages, opts) {
     this.el = el;
@@ -78,6 +68,7 @@
   StatusTicker.prototype._type = async function (text) {
     var el = this.el;
     el.textContent = '';
+
     for (var i = 0; i < text.length; i++) {
       if (this._interrupt || this._stop) return;
       el.textContent += text.charAt(i);
@@ -145,13 +136,13 @@
     });
   };
 
-  // ---------------------------------------------------------------------------
-  // INIT ONE TICKER PANE
-  // ---------------------------------------------------------------------------
+  function initOne(container, api) {
+    if (!api || !api.events || !api.state) {
+      throw new Error('StatusTickerPane: missing Panes api');
+    }
 
-  function initTickerPane(container) {
     var ds = container.dataset || {};
-    var messagesUrl = ds.messagesUrl || 'messages.json';
+    var messagesUrl = ds.messagesUrl || null;
     var tickerId = ds.tickerId || 'default';
 
     var status = document.createElement('div');
@@ -161,56 +152,80 @@
     container.appendChild(status);
 
     var ticker = null;
+    var offTemp = null;
+    var offSet = null;
 
-    loadTickerMessages(messagesUrl).then(function (msgs) {
-      ticker = new StatusTicker(status, msgs, {});
-      status.classList.add('show');
-      ticker.start();
-    });
+    function applyColor(color) {
+      status.style.color = color ? String(color) : '';
+    }
 
-    // Temporary message: ticker:temporary
-    window.addEventListener('ticker:temporary', function (ev) {
-      var detail = ev.detail || {};
+    function handleTemporary(ev) {
+      var detail = (ev && ev.detail) ? ev.detail : {};
       if (detail.tickerId && detail.tickerId !== tickerId) return;
 
       var text = String(detail.text || '');
-      var ms   = detail.ms;
-      var color = detail.color;
-
       if (!text) return;
 
-      if (color) {
-        status.style.color = color;
-      } else {
-        status.style.color = '';
-      }
+      applyColor(detail.color);
 
       if (ticker) {
-        ticker.showTemporary(text, ms);
+        ticker.showTemporary(text, detail.ms);
       } else {
-        // If ticker not ready yet, just set text
         status.textContent = text;
       }
-    });
 
-    // Replace base messages: ticker:setMessages
-    window.addEventListener('ticker:setMessages', function (ev) {
-      var detail = ev.detail || {};
+      // If the temp message ends and loop resumes, reset color back to default
+      // (only if no newer temp message arrived)
+      var seq = ticker ? ticker._tempSeq : 0;
+      var ms = detail.ms || TEMP_MESSAGE_MS;
+
+      setTimeout(function () {
+        if (!ticker) return;
+        if (ticker._tempSeq !== seq) return; // newer temp happened
+        applyColor(''); // back to default
+      }, ms + 50);
+    }
+
+    function handleSetMessages(ev) {
+      var detail = (ev && ev.detail) ? ev.detail : {};
       if (detail.tickerId && detail.tickerId !== tickerId) return;
 
       var msgs = detail.messages;
       if (!Array.isArray(msgs)) return;
 
-      if (ticker) {
-        ticker.setMessages(msgs);
-      }
+      if (ticker) ticker.setMessages(msgs);
+    }
+
+    // Subscribe immediately (even before messages load)
+    offTemp = api.events.on('ticker:temporary', handleTemporary);
+    offSet = api.events.on('ticker:setMessages', handleSetMessages);
+
+    // Load messages and start
+    loadTickerMessages(messagesUrl).then(function (msgs) {
+      ticker = new StatusTicker(status, msgs, {});
+      status.classList.add('show');
+      applyColor(''); // ensure base loop starts "normal"
+      ticker.start();
     });
+
+    return {
+      destroy: function () {
+        try {
+          if (ticker) ticker.stop();
+        } catch (e) {}
+
+        if (offTemp) offTemp();
+        if (offSet) offSet();
+      }
+    };
   }
 
-  document.addEventListener('DOMContentLoaded', function () {
-    var panes = document.querySelectorAll('[data-pane="status-ticker"]');
-    for (var i = 0; i < panes.length; i++) {
-      initTickerPane(panes[i]);
-    }
+  if (!window.Panes || !window.Panes.register) {
+    throw new Error('StatusTickerPane requires PanesCore (Panes.register not found).');
+  }
+
+  window.Panes.register('status-ticker', function (container, api) {
+    container.classList.add('pane-status-ticker');
+    return initOne(container, api);
   });
 })();

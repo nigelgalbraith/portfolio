@@ -4,29 +4,24 @@
   <meta charset="utf-8" />
   <title>Spanish Translator</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  
-  <!-- Main stylesheet -->
-  <link rel="stylesheet" href="css/style.css" />
 
-  <!-- Simple inline favicon -->
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%2306b6d4'/><text x='50' y='62' font-size='58' text-anchor='middle' fill='%23071018'>CL</text></svg>">
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%2306b6d4'/><text x='50' y='62' font-size='58' text-anchor='middle' fill='%23071018'>LT</text></svg>">
 </head>
 
 <body>
 <div class="app">
 
-  <!-- Header + Navigation + Ticker -->
   <header class="header-centered">
     <h1>Spanish Translator</h1>
 
-  <nav class="nav">
-    <div class="nav-links">
-      <a href="index.html">Back to Main Menu</a>
-    </div>
-  </nav>
+    <nav class="nav">
+      <div class="nav-links">
+        <a href="index.html">Back to Main Menu</a>
+      </div>
+    </nav>
 
     <div class="profile-loader-wrapper">
-      <!-- Typewriter ticker pane -->
       <div
         class="profile-loader-ticker"
         data-pane="status-ticker"
@@ -35,113 +30,104 @@
       ></div>
     </div>
   </header>
-  
-  <!-- Main layout -->
+
   <main class="split" id="root">
 
-  <!-- Intro text block -->
-  <div  class="intro-text" 
-        data-pane="intro-text" 
-        data-intro-key="spanish">
-  </div>
+    <div class="intro-text"
+         data-pane="intro-text"
+         data-intro-key="spanish"></div>
 
-    <!-- ButtonSwitch.js toggle visibility -->
+    <!-- ONE switch controller for the lanes below -->
+    <div
+      data-pane="button-switch"
+      data-lane-selector='[data-lane="translate-lane"]'
+      data-ticker-id="profile-main">
+    </div>
+
     <!-- English → Spanish lane -->
     <div
       class="split"
-      data-pane="button-switch"
-      data-mode-id="en-es"
+      data-lane="translate-lane"
       data-title="English → Spanish"
       data-ticker-id="profile-main">
 
-      <!-- English text entry -->
       <div
         data-pane="text-entry"
         data-title="English"
         data-textarea-id="english-text-es"
-        data-placeholder="Type English text here..."
-      ></div>
+        data-placeholder="Type English text here..."></div>
 
-      <!-- Piper TTS: English -->
-      <div data-pane="generator-piper"
-           data-piper-base="/piper/english/"
-           data-voice-id="en_US-amy-low"
-           data-target-selector="#english-text-es"
-           data-ticker-id="profile-main">
-      </div>
+      <div
+        data-pane="generator-piper"
+        data-piper-base="/piper/english/"
+        data-voice-id="en_US-amy-low"
+        data-target-selector="#english-text-es"
+        data-ticker-id="profile-main"></div>
 
-      <!-- Spanish translation preview -->
-      <div data-pane="translator-preview"
-           data-translate-url="/translate"
-           data-source-selector="#english-text-es"
-           data-target-id="spanish-text-es"
-           data-source-lang="en"
-           data-target-lang="es"
-           data-title="Spanish Translation"
-           data-button-label="Translate"
-           data-target-placeholder="Translated Spanish will appear here…"
-           data-ticker-id="profile-main">
-      </div>
+      <div
+        data-pane="translator-preview"
+        data-translate-url="/translate"
+        data-source-selector="#english-text-es"
+        data-target-id="spanish-text-es"
+        data-source-lang="en"
+        data-target-lang="es"
+        data-title="Spanish Translation"
+        data-button-label="Translate"
+        data-target-placeholder="Translated Spanish will appear here…"
+        data-ticker-id="profile-main"></div>
 
-      <!-- Piper TTS: Spanish -->
-      <div data-pane="generator-piper"
-           data-piper-base="/piper/spanish/"
-           data-voice-id="es_AR-daniela-high"
-           data-target-selector="#spanish-text-es"
-           data-ticker-id="profile-main">
-      </div>
+      <div
+        data-pane="generator-piper"
+        data-piper-base="/piper/spanish/"
+        data-voice-id="es_AR-daniela-high"
+        data-target-selector="#spanish-text-es"
+        data-ticker-id="profile-main"></div>
     </div>
 
     <!-- Spanish → English lane -->
     <div
       class="split"
-      data-pane="button-switch"
-      data-mode-id="es-en"
+      data-lane="translate-lane"
       data-title="Spanish → English"
       data-ticker-id="profile-main">
 
-      <!-- Spanish text entry -->
       <div
         data-pane="text-entry"
         data-title="Spanish"
         data-textarea-id="spanish-text-en"
-        data-placeholder="Type Spanish text here..."
-      ></div>
+        data-placeholder="Type Spanish text here..."></div>
 
-      <!-- Piper TTS: Spanish -->
-      <div data-pane="generator-piper"
-           data-piper-base="/piper/spanish/"
-           data-voice-id="es_AR-daniela-high"
-           data-target-selector="#spanish-text-en"
-           data-ticker-id="profile-main">
-      </div>
+      <div
+        data-pane="generator-piper"
+        data-piper-base="/piper/spanish/"
+        data-voice-id="es_AR-daniela-high"
+        data-target-selector="#spanish-text-en"
+        data-ticker-id="profile-main"></div>
 
-      <!-- English translation preview -->
-      <div data-pane="translator-preview"
-           data-translate-url="/translate"
-           data-source-selector="#spanish-text-en"
-           data-target-id="english-text-en"
-           data-source-lang="es"
-           data-target-lang="en"
-           data-title="English Translation"
-           data-button-label="Translate"
-           data-target-placeholder="Translated English will appear here…"
-           data-ticker-id="profile-main">
-      </div>
+      <div
+        data-pane="translator-preview"
+        data-translate-url="/translate"
+        data-source-selector="#spanish-text-en"
+        data-target-id="english-text-en"
+        data-source-lang="es"
+        data-target-lang="en"
+        data-title="English Translation"
+        data-button-label="Translate"
+        data-target-placeholder="Translated English will appear here…"
+        data-ticker-id="profile-main"></div>
 
-      <!-- Piper TTS: English -->
-      <div data-pane="generator-piper"
-           data-piper-base="/piper/english/"
-           data-voice-id="en_US-amy-low"
-           data-target-selector="#english-text-en"
-           data-ticker-id="profile-main">
-      </div>
+      <div
+        data-pane="generator-piper"
+        data-piper-base="/piper/english/"
+        data-voice-id="en_US-amy-low"
+        data-target-selector="#english-text-en"
+        data-ticker-id="profile-main"></div>
     </div>
 
   </main>
 </div>
 
-<!-- Pane scripts -->
+<script src="js/PanesCore.js"></script>
 <script src="js/StatusTickerPane.js"></script>
 <script src="js/TextEntryPane.js"></script>
 <script src="js/TranslatePreviewPane.js"></script>
@@ -149,6 +135,10 @@
 <script src="text/intro.js"></script>
 <script src="js/IntroPane.js"></script>
 <script src="js/ButtonSwitch.js"></script>
+
+<script>
+  window.Panes.bootstrap(document);
+</script>
 
 </body>
 </html>
