@@ -22,8 +22,14 @@
           "dataanalysis-web"
         ],
         "Tests": [
-          {"label": "heathcheck", "path": "~/Documents/GitHub/DebianScripts/tests/common/healthcheck.py"},
-          {"label": "api-heathcheck", "path": "~/Documents/GitHub/DebianScripts/tests/dataanalysis-tool/routes/api_health.py"}
+          {"label": "heathcheck", "path": "~/Documents/GitHub/DebianScripts/settings/tests/common/healthcheck.py"},
+          {"label": "api-heathcheck", "path": "~/Documents/GitHub/DebianScripts/settings/tests/dataanalysis-tool/routes/api_health.py"},
+          {"label": "openapi", "path": "~/Documents/GitHub/DebianScripts/settings/tests/dataanalysis-tool/routes/api_openapi_json.py"},
+          {"label": "docs", "path": "~/Documents/GitHub/DebianScripts/settings/tests/dataanalysis-tool/routes/api_docs.py"},
+          {"label": "pages", "path": "~/Documents/GitHub/DebianScripts/settings/tests/dataanalysis-tool/routes/api_pages.py"},
+          {"label": "databases", "path": "~/Documents/GitHub/DebianScripts/settings/tests/dataanalysis-tool/routes/api_databases.py"},
+          {"label": "tables", "path": "~/Documents/GitHub/DebianScripts/settings/tests/dataanalysis-tool/routes/api_tables.py"},
+          {"label": "columns", "path": "~/Documents/GitHub/DebianScripts/settings/tests/dataanalysis-tool/routes/api_columns.py"}
         ]
       },
       "language-translator": {
@@ -40,7 +46,7 @@
           "piper-zh"
         ],
         "Tests": [
-          {"label": "heathcheck", "path": "~/Documents/GitHub/DebianScripts/tests/common/healthcheck.py"}
+          {"label": "heathcheck", "path": "~/Documents/GitHub/DebianScripts/settings/tests/common/healthcheck.py"}
         ]
       },
       "text-creator": {
@@ -56,7 +62,7 @@
           "piper"
         ],
         "Tests": [
-          {"label": "heathcheck", "path": "~/Documents/GitHub/DebianScripts/tests/common/healthcheck.py"}
+          {"label": "heathcheck", "path": "~/Documents/GitHub/DebianScripts/settings/tests/common/healthcheck.py"}
         ]
       }
     }
