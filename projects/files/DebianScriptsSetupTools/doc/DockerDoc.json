@@ -9,7 +9,10 @@
     "<MODEL_ID>.Docker.<VALUES>.TmpDir",
     "<MODEL_ID>.Docker.<VALUES>.ComposeFile",
     "<MODEL_ID>.Docker.<VALUES>.ComposeDir",
-    "<MODEL_ID>.Docker.<VALUES>.ComposeContainers"
+    "<MODEL_ID>.Docker.<VALUES>.ComposeContainers",
+    "<MODEL_ID>.Docker.<VALUES>.Tests",
+    "<MODEL_ID>.Docker.<VALUES>.Tests.<VALUES>.label",
+    "<MODEL_ID>.Docker.<VALUES>.Tests.<VALUES>.path"
   ],
   "EDITABLE_FIELDS": [
     "<MODEL_ID>",
@@ -22,7 +25,10 @@
     "<MODEL_ID>.Docker.<VALUES>.TmpDir.<VALUES>",
     "<MODEL_ID>.Docker.<VALUES>.ComposeFile.<VALUES>",
     "<MODEL_ID>.Docker.<VALUES>.ComposeDir.<VALUES>",
-    "<MODEL_ID>.Docker.<VALUES>.ComposeContainers.<VALUES>"
+    "<MODEL_ID>.Docker.<VALUES>.ComposeContainers.<VALUES>",
+    "<MODEL_ID>.Docker.<VALUES>.Tests.<VALUES>",
+    "<MODEL_ID>.Docker.<VALUES>.Tests.<VALUES>.label.<VALUES>",
+    "<MODEL_ID>.Docker.<VALUES>.Tests.<VALUES>.path.<VALUES>"
   ],
   "EXAMPLE": {
     "<MODEL_ID>": {
@@ -33,7 +39,13 @@
           "Image": "webrcade/webrcade",
           "Port": "8080:80",
           "Download": "https://codeload.github.com/webrcade/webrcade/zip/refs/heads/master",
-          "TmpDir": "/tmp/docker_downloads"
+          "TmpDir": "/tmp/docker_downloads",
+          "Tests": [
+            {
+              "label": "http-healthcheck",
+              "path": "~/Documents/GitHub/DebianScripts/tests/common/healthcheck.py"
+            }
+          ]
         },
         "paperless-compose": {
           "Name": "paperless-compose",
@@ -44,6 +56,12 @@
             "paperless-webserver",
             "paperless-db",
             "paperless-broker"
+          ],
+          "Tests": [
+            {
+              "label": "http-healthcheck",
+              "path": "~/Documents/GitHub/DebianScripts/tests/common/healthcheck.py"
+            }
           ]
         }
       }
@@ -59,6 +77,9 @@
     "<MODEL_ID>.Docker.<VALUES>.TmpDir.<VALUES>": "Temporary directory used for Docker downloads. Only needed when Download is provided.",
     "<MODEL_ID>.Docker.<VALUES>.ComposeFile.<VALUES>": "Path to a docker-compose.yml (or any compose file). If provided, this job uses docker compose up/down/build.",
     "<MODEL_ID>.Docker.<VALUES>.ComposeDir.<VALUES>": "Optional working directory for compose commands. If omitted, the directory containing ComposeFile is used.",
-    "<MODEL_ID>.Docker.<VALUES>.ComposeContainers.<VALUES>": "List of container names that belong to the compose workload. Used for status checks (all must be running)."
+    "<MODEL_ID>.Docker.<VALUES>.ComposeContainers.<VALUES>": "List of container names that belong to the compose workload. Used for status checks (all must be running).",
+    "<MODEL_ID>.Docker.<VALUES>.Tests.<VALUES>": "Optional list of smoke tests to run for this workload. Each test entry has a label and a path to an executable script (or a directory to run with pytest).",
+    "<MODEL_ID>.Docker.<VALUES>.Tests.<VALUES>.label.<VALUES>": "Human-readable name for the test shown in output logs.",
+    "<MODEL_ID>.Docker.<VALUES>.Tests.<VALUES>.path.<VALUES>": "Filesystem path to the test script (must be executable) or a directory (runs `pytest .` in that directory)."
   }
 }
