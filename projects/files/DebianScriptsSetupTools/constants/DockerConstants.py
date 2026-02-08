@@ -7,9 +7,12 @@ from modules.docker_utils import (
     build_docker_container,
     start_container,
     stop_container,
-    remove_container,
     status_container,
-    docker_container_exists,
+    compose_build,
+    compose_up,
+    compose_down,
+    status_compose,
+    docker_workload_running,
 )
 from modules.archive_utils import download_archive_file, install_archive_file, handle_cleanup
 from modules.system_utils import expand_path
@@ -23,18 +26,20 @@ DEFAULT_CONFIG   = "default"
 CONFIG_DOC       = "doc/DockerDoc.json"
 
 # === JSON KEYS ===
-KEY_NAME       = "Name"
-KEY_IMAGE      = "Image"
-KEY_PORT       = "Port"
-KEY_LOCATION   = "Location"
-KEY_DOWNLOAD   = "Download"
-KEY_TMPDIR     = "TmpDir"  
+KEY_NAME               = "Name"
+KEY_IMAGE              = "Image"
+KEY_PORT               = "Port"
+KEY_LOCATION           = "Location"
+KEY_DOWNLOAD           = "Download"
+KEY_TMPDIR             = "TmpDir"
+KEY_COMPOSE_FILE       = "ComposeFile"
+KEY_COMPOSE_DIR        = "ComposeDir"
+KEY_COMPOSE_CONTAINERS = "ComposeContainers"
 
 # === VALIDATION CONFIG ===
 VALIDATION_CONFIG = {
     "required_job_fields": {
         KEY_NAME: str,
-        KEY_IMAGE: str,
         KEY_LOCATION: str,
     },
     "example_config": CONFIG_DOC,
@@ -66,10 +71,15 @@ UNINSTALLED_LABEL = "STOPPED"
 
 # === STATUS CHECK CONFIG ===
 STATUS_FN_CONFIG = {
-    "fn": lambda job: docker_container_exists(job),
-    "args": ["job"],
+    "fn": docker_workload_running,
+    "args": [
+        "job",
+        (lambda job, meta, ctx: meta),
+        KEY_COMPOSE_CONTAINERS
+    ],
     "labels": {True: INSTALLED_LABEL, False: UNINSTALLED_LABEL},
 }
+
 
 # === MENU / ACTIONS ===
 ACTIONS = {
@@ -88,14 +98,6 @@ ACTIONS = {
         "label": UNINSTALLED_LABEL,
         "prompt": "Proceed with stop? [y/n]: ",
         "execute_state": "STOP",
-        "post_state": "CONFIG_LOADING",
-    },
-    f"Remove {JOBS_KEY}": {
-        "verb": "remove",
-        "filter_status": True,
-        "label": "REMOVED",
-        "prompt": "Proceed with remove? [y/n]: ",
-        "execute_state": "REMOVE",
         "post_state": "CONFIG_LOADING",
     },
     f"Show status of {JOBS_KEY}": {
@@ -161,6 +163,9 @@ PLAN_COLUMN_ORDER = [
     KEY_LOCATION,
     KEY_DOWNLOAD,
     KEY_TMPDIR,
+    KEY_COMPOSE_FILE,
+    KEY_COMPOSE_DIR,
+    KEY_COMPOSE_CONTAINERS,
 ]
 
 OPTIONAL_PLAN_COLUMNS = {}
@@ -169,26 +174,35 @@ OPTIONAL_PLAN_COLUMNS = {}
 PIPELINE_STATES = {
     "START": {
         "pipeline": {
+            # --- Compose start ---
+            compose_up: {
+                "args": [f"meta.{KEY_COMPOSE_FILE}", f"meta.{KEY_COMPOSE_DIR}"],
+                "when": (lambda job, meta, ctx: bool(meta.get(KEY_COMPOSE_FILE))),
+                "result": "ok",
+            },
+            # --- Single container start ---
             docker_image_exists: {
                 "args": [lambda job, meta, ctx: meta.get(KEY_IMAGE, "")],
+                "when": (lambda job, meta, ctx: not bool(meta.get(KEY_COMPOSE_FILE))),
                 "result": "has_image",
             },
             (lambda path: (expand_path(path).mkdir(parents=True, exist_ok=True) or True)): {
                 "args": [f"meta.{KEY_LOCATION}"],
-                "when": f"meta.{KEY_LOCATION}",
+                "when": (lambda job, meta, ctx: (not bool(meta.get(KEY_COMPOSE_FILE))) and bool(meta.get(KEY_LOCATION))),
                 "result": "_",
             },
             build_docker_container: {
                 "args": [
                     f"meta.{KEY_NAME}",
-                    lambda job, meta, ctx: str(expand_path(meta.get(KEY_LOCATION, ""))),
+                    (lambda job, meta, ctx: str(expand_path(meta.get(KEY_LOCATION, "")))),
                     f"meta.{KEY_IMAGE}",
                 ],
-                "when": "not has_image and meta.Location",
+                "when": (lambda job, meta, ctx: (not bool(meta.get(KEY_COMPOSE_FILE))) and (not bool(ctx.get("has_image"))) and bool(meta.get(KEY_LOCATION))),
                 "result": "_",
             },
             start_container: {
                 "args": [f"meta.{KEY_NAME}", f"meta.{KEY_PORT}", f"meta.{KEY_IMAGE}"],
+                "when": (lambda job, meta, ctx: not bool(meta.get(KEY_COMPOSE_FILE))),
                 "result": "ok",
             },
         },
@@ -198,8 +212,16 @@ PIPELINE_STATES = {
     },
     "STOP": {
         "pipeline": {
+            # Compose stop
+            compose_down: {
+                "args": [f"meta.{KEY_COMPOSE_FILE}", f"meta.{KEY_COMPOSE_DIR}"],
+                "when": (lambda job, meta, ctx: bool(meta.get(KEY_COMPOSE_FILE))),
+                "result": "ok",
+            },
+            # Single container stop
             stop_container: {
                 "args": [f"meta.{KEY_NAME}"],
+                "when": (lambda job, meta, ctx: not bool(meta.get(KEY_COMPOSE_FILE))),
                 "result": "ok",
             },
         },
@@ -207,22 +229,16 @@ PIPELINE_STATES = {
         "success_key": "ok",
         "post_state": "CONFIG_LOADING",
     },
-
-    "REMOVE": {
-        "pipeline": {
-            remove_container: {
-                "args": [f"meta.{KEY_NAME}"],
-                "result": "ok",
-            },
-        },
-        "label": "REMOVED",
-        "success_key": "ok",
-        "post_state": "CONFIG_LOADING",
-    },
     "STATUS": {
         "pipeline": {
+            status_compose: {
+                "args": ["job", f"meta.{KEY_COMPOSE_CONTAINERS}"],
+                "when": (lambda job, meta, ctx: bool(meta.get(KEY_COMPOSE_FILE))),
+                "result": "ok",
+            },
             status_container: {
                 "args": [f"meta.{KEY_NAME}"],
+                "when": (lambda job, meta, ctx: not bool(meta.get(KEY_COMPOSE_FILE))),
                 "result": "ok",
             },
         },
@@ -232,23 +248,28 @@ PIPELINE_STATES = {
     },
     "DOWNLOAD": {
         "pipeline": {
+            (lambda job: (print(f"[SKIP]  '{job}': no Download/TmpDir configured.") or False)): {
+                "args": ["job"],
+                "when": (lambda job, meta, ctx: (not meta.get(KEY_DOWNLOAD)) or (not meta.get(KEY_TMPDIR))),
+                "result": "ok",
+            },
             download_archive_file: {
                 "args": [f"meta.{KEY_NAME}", f"meta.{KEY_DOWNLOAD}", f"meta.{KEY_TMPDIR}"],
-                "when": f"meta.{KEY_DOWNLOAD} and meta.{KEY_TMPDIR}",
+                "when": (lambda job, meta, ctx: bool(meta.get(KEY_DOWNLOAD)) and bool(meta.get(KEY_TMPDIR))),
                 "result": "archive",
             },
             install_archive_file: {
                 "args": [
-                    lambda job, meta, ctx: ctx.get("archive"),
+                    (lambda job, meta, ctx: ctx.get("archive")),
                     f"meta.{KEY_LOCATION}",
-                    True, 
+                    True,
                 ],
-                "when": "archive and meta.Location",
+                "when": (lambda job, meta, ctx: bool(ctx.get("archive")) and bool(meta.get(KEY_LOCATION))),
                 "result": "ok",
             },
             handle_cleanup: {
-                "args": [lambda job, meta, ctx: ctx.get("archive")],
-                "when": "archive",
+                "args": [(lambda job, meta, ctx: ctx.get("archive"))],
+                "when": (lambda job, meta, ctx: bool(ctx.get("archive"))),
                 "result": "_",
             },
         },
@@ -258,12 +279,18 @@ PIPELINE_STATES = {
     },
     "BUILD": {
         "pipeline": {
+            compose_build: {
+                "args": [f"meta.{KEY_COMPOSE_FILE}", f"meta.{KEY_COMPOSE_DIR}"],
+                "when": (lambda job, meta, ctx: bool(meta.get(KEY_COMPOSE_FILE))),
+                "result": "ok",
+            },
             build_docker_container: {
                 "args": [
                     f"meta.{KEY_NAME}",
                     f"meta.{KEY_LOCATION}",
                     f"meta.{KEY_IMAGE}",
                 ],
+                "when": (lambda job, meta, ctx: (not bool(meta.get(KEY_COMPOSE_FILE))) and bool(meta.get(KEY_LOCATION))),
                 "result": "ok",
             },
         },

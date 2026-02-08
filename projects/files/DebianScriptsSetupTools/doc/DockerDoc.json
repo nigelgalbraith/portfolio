@@ -2,51 +2,63 @@
   "FIXED_FIELDS": [
     "<MODEL_ID>.Docker",
     "<MODEL_ID>.Docker.<VALUES>.Name",
+    "<MODEL_ID>.Docker.<VALUES>.Location",
     "<MODEL_ID>.Docker.<VALUES>.Image",
     "<MODEL_ID>.Docker.<VALUES>.Port",
-    "<MODEL_ID>.Docker.<VALUES>.Location",
     "<MODEL_ID>.Docker.<VALUES>.Download",
-    "<MODEL_ID>.Docker.<VALUES>.TmpDir"
+    "<MODEL_ID>.Docker.<VALUES>.TmpDir",
+    "<MODEL_ID>.Docker.<VALUES>.ComposeFile",
+    "<MODEL_ID>.Docker.<VALUES>.ComposeDir",
+    "<MODEL_ID>.Docker.<VALUES>.ComposeContainers"
   ],
   "EDITABLE_FIELDS": [
     "<MODEL_ID>",
     "<MODEL_ID>.Docker.<VALUES>",
     "<MODEL_ID>.Docker.<VALUES>.Name.<VALUES>",
+    "<MODEL_ID>.Docker.<VALUES>.Location.<VALUES>",
     "<MODEL_ID>.Docker.<VALUES>.Image.<VALUES>",
     "<MODEL_ID>.Docker.<VALUES>.Port.<VALUES>",
-    "<MODEL_ID>.Docker.<VALUES>.Location.<VALUES>",
     "<MODEL_ID>.Docker.<VALUES>.Download.<VALUES>",
-    "<MODEL_ID>.Docker.<VALUES>.TmpDir.<VALUES>"
+    "<MODEL_ID>.Docker.<VALUES>.TmpDir.<VALUES>",
+    "<MODEL_ID>.Docker.<VALUES>.ComposeFile.<VALUES>",
+    "<MODEL_ID>.Docker.<VALUES>.ComposeDir.<VALUES>",
+    "<MODEL_ID>.Docker.<VALUES>.ComposeContainers.<VALUES>"
   ],
   "EXAMPLE": {
     "<MODEL_ID>": {
       "Docker": {
         "webrcade": {
           "Name": "webrcade",
+          "Location": "~/projects/webArcade/webrcade-master/",
           "Image": "webrcade/webrcade",
           "Port": "8080:80",
-          "Location": "~/projects/webArcade/webrcade-master/",
           "Download": "https://codeload.github.com/webrcade/webrcade/zip/refs/heads/master",
           "TmpDir": "/tmp/docker_downloads"
         },
-        "example-app": {
-          "Name": "example-app",
-          "Image": "example/image",
-          "Port": "9090:80",
-          "Location": "~/projects/example-app/",
-          "Download": "https://example.com/example-app.zip",
-          "TmpDir": "/tmp/docker_downloads"
+        "paperless-compose": {
+          "Name": "paperless-compose",
+          "Location": "~/docker/paperless",
+          "ComposeFile": "~/docker/paperless/docker-compose.yml",
+          "ComposeDir": "~/docker/paperless",
+          "ComposeContainers": [
+            "paperless-webserver",
+            "paperless-db",
+            "paperless-broker"
+          ]
         }
       }
     }
   },
   "DESCRIPTION": {
-    "<MODEL_ID>.Docker.<VALUES>": "A Docker workload definition.",
-    "<MODEL_ID>.Docker.<VALUES>.Name.<VALUES>": "Logical name for the Docker workload.",
-    "<MODEL_ID>.Docker.<VALUES>.Image.<VALUES>": "Docker image name to pull/run.",
-    "<MODEL_ID>.Docker.<VALUES>.Port.<VALUES>": "Port mapping in HOST:CONTAINER format.",
-    "<MODEL_ID>.Docker.<VALUES>.Location.<VALUES>": "Local directory where Docker assets live.",
-    "<MODEL_ID>.Docker.<VALUES>.Download.<VALUES>": "Optional URL to download Docker assets.",
-    "<MODEL_ID>.Docker.<VALUES>.TmpDir.<VALUES>": "Temporary directory used for Docker downloads."
+    "<MODEL_ID>.Docker.<VALUES>": "A Docker workload definition (single container or docker compose).",
+    "<MODEL_ID>.Docker.<VALUES>.Name.<VALUES>": "Logical name for the workload (container name, or compose project label).",
+    "<MODEL_ID>.Docker.<VALUES>.Location.<VALUES>": "Local directory used for build/download context or as a working directory anchor for related operations. Required for all jobs (can point at the compose project directory for compose jobs).",
+    "<MODEL_ID>.Docker.<VALUES>.Image.<VALUES>": "Docker image name to pull/run for single-container jobs (docker run). Not required for compose jobs (compose.yml owns images/build).",
+    "<MODEL_ID>.Docker.<VALUES>.Port.<VALUES>": "Port mapping in HOST:CONTAINER format for single-container jobs (docker run). Not required for compose jobs.",
+    "<MODEL_ID>.Docker.<VALUES>.Download.<VALUES>": "Optional URL to download Docker build assets (zip) for single-container jobs. If omitted, the Download action performs a no-op for that job.",
+    "<MODEL_ID>.Docker.<VALUES>.TmpDir.<VALUES>": "Temporary directory used for Docker downloads. Only needed when Download is provided.",
+    "<MODEL_ID>.Docker.<VALUES>.ComposeFile.<VALUES>": "Path to a docker-compose.yml (or any compose file). If provided, this job uses docker compose up/down/build.",
+    "<MODEL_ID>.Docker.<VALUES>.ComposeDir.<VALUES>": "Optional working directory for compose commands. If omitted, the directory containing ComposeFile is used.",
+    "<MODEL_ID>.Docker.<VALUES>.ComposeContainers.<VALUES>": "List of container names that belong to the compose workload. Used for status checks (all must be running)."
   }
 }
