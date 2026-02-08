@@ -1,0 +1,97 @@
+{
+  "jobs": {
+    "thematic_v1": {
+      "csv": {
+        "path": "csv/thematic.csv",
+        "encoding": "utf-8",
+        "delimiter": ",",
+        "date_formats": [
+          "%Y-%m-%d"
+        ]
+      },
+      "output": {
+        "database_name": "thematic_analysis",
+        "sql_output_path": "sql/thematic.sql",
+        "seed_ui_meta": true
+      },
+      "tables": [
+        {
+          "name": "extracts",
+          "table_type": "entity",
+          "id_column": "id",
+          "fields": [
+            {
+              "name": "reference",
+              "type": "text",
+              "csv": "References"
+            },
+            {
+              "name": "extract_text",
+              "type": "text",
+              "csv": "Extracts"
+            },
+            {
+              "name": "facts",
+              "type": "text",
+              "csv": "Facts"
+            },
+            {
+              "name": "notes",
+              "type": "text",
+              "csv": "Notes/Additional"
+            }
+          ]
+        },
+        {
+          "name": "factor",
+          "table_type": "lookup",
+          "id_column": "id",
+          "source_csv_column": "Factors",
+          "value_split": "[,\\n]"
+        },
+        {
+          "name": "group",
+          "table_type": "lookup",
+          "id_column": "id",
+          "source_csv_column": "Groups",
+          "value_split": "[,\\n]"
+        },
+        {
+          "name": "sub_group",
+          "table_type": "lookup",
+          "id_column": "id",
+          "source_csv_column": "Sub Groups",
+          "value_split": "[,\\n]"
+        },
+        {
+          "name": "extract_factor",
+          "table_type": "junction",
+          "left": "extracts",
+          "right": "factor",
+          "right_csv": "Factors",
+          "split": "\\n"
+        },
+        {
+          "name": "factor_group",
+          "table_type": "junction",
+          "left": "factor",
+          "right": "group",
+          "left_csv": "Factors",
+          "right_csv": "Groups",
+          "split": "\\n",
+          "pairing": "zip"
+        },
+        {
+          "name": "group_sub_group",
+          "table_type": "junction",
+          "left": "group",
+          "right": "sub_group",
+          "left_csv": "Groups",
+          "right_csv": "Sub Groups",
+          "split": "\\n",
+          "pairing": "zip"
+        }
+      ]
+    }
+  }
+}
