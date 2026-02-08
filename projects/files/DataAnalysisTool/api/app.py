@@ -16,6 +16,7 @@ from routes.configs import bp as configs_bp
 from routes.summary import bp as summary_bp
 from routes.data_entry import bp as data_entry_bp
 from routes.docs import bp as docs_bp
+from routes.health import bp as health_bp
 from modules.backups import run_startup_backups, should_run_startup_tasks
 
 
@@ -70,6 +71,7 @@ app.register_blueprint(configs_bp)
 app.register_blueprint(summary_bp)
 app.register_blueprint(data_entry_bp)
 app.register_blueprint(docs_bp)
+app.register_blueprint(health_bp)
 
 
 # -----------------------------

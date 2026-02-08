@@ -40,24 +40,6 @@ def _compose_workdir(compose_file: str, compose_dir: Optional[str]) -> Path:
     return Path(compose_file).expanduser().resolve().parent
 
 
-def docker_workload_running(job_name: str, meta: dict, compose_key_or_list) -> bool:
-    """
-    Return True if a docker workload is running.
-
-    The third arg may be:
-    - a string key (e.g. "ComposeContainers"), OR
-    - the actual list of compose container names (depending on loader arg resolution).
-    """
-    if isinstance(compose_key_or_list, list):
-        compose_containers = compose_key_or_list
-    else:
-        compose_containers = meta.get(compose_key_or_list) or []
-    if isinstance(compose_containers, list) and compose_containers:
-        return all(docker_container_running(c) for c in compose_containers)
-    return docker_container_running(job_name)
-
-
-
 # ---------------------------------------------------------------------
 # IMAGE / CONTAINER CHECKS
 # ---------------------------------------------------------------------
@@ -91,6 +73,24 @@ def docker_container_running(name: str) -> bool:
     except Exception as e:
         print(f"[ERROR] Could not check running status for '{name}': {e}")
         return False
+
+
+def docker_workload_running(job_name: str, meta: dict, compose_key_or_list) -> bool:
+    """
+    Return True if a docker workload is running.
+
+    The third arg may be:
+    - a string key (e.g. "ComposeContainers"), OR
+    - the actual list of compose container names (depending on loader arg resolution).
+    """
+    if isinstance(compose_key_or_list, list):
+        compose_containers = compose_key_or_list
+    else:
+        compose_containers = meta.get(compose_key_or_list) or []
+    if isinstance(compose_containers, list) and compose_containers:
+        return all(docker_container_running(c) for c in compose_containers)
+    return docker_container_running(job_name)
+
 
 
 def docker_container_exists(name: str) -> bool:
@@ -207,7 +207,7 @@ def stop_container(container_name: str) -> bool:
 
 def remove_container(container_name: str) -> bool:
     """
-    Remove a Docker container if it exists (idempotent).
+    Remove a Docker container if it exists (idempotent, forceful).
 
     Example:
         remove_container("myapp")
@@ -215,7 +215,10 @@ def remove_container(container_name: str) -> bool:
     try:
         if docker_container_exists(container_name):
             print(f"[RM]    Removing container '{container_name}' ...")
-            res = subprocess.run(["docker", "rm", container_name], check=False)
+            res = subprocess.run(
+                ["docker", "rm", "-f", container_name],
+                check=False
+            )
             if res.returncode == 0:
                 print(f"[OK]    Container '{container_name}' removed.")
                 return True
@@ -226,6 +229,7 @@ def remove_container(container_name: str) -> bool:
     except Exception as e:
         print(f"[ERROR] Remove error for '{container_name}': {e}")
         return False
+
 
 
 def status_container(container_name: str) -> bool:

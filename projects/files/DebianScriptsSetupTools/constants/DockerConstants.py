@@ -13,10 +13,12 @@ from modules.docker_utils import (
     compose_down,
     status_compose,
     docker_workload_running,
+    remove_container,
 )
 from modules.archive_utils import download_archive_file, install_archive_file, handle_cleanup
 from modules.system_utils import expand_path
 from modules.display_utils import display_config_doc
+from modules.test_utils import run_tests
 
 # === CONFIG PATHS & KEYS ===
 PRIMARY_CONFIG   = "config/AppConfigSettings.json"
@@ -116,12 +118,28 @@ ACTIONS = {
         "execute_state": "DOWNLOAD",
         "post_state": "CONFIG_LOADING",
     },
-    f"Build image for {JOBS_KEY}": {
+    f"Remove {JOBS_KEY}": {
+        "verb": "remove",
+        "filter_status": True,
+        "label": UNINSTALLED_LABEL,
+        "prompt": "This will REMOVE the container(s). Proceed? [y/n]: ",
+        "execute_state": "REMOVE",
+        "post_state": "CONFIG_LOADING",
+    },
+    f"Rebuild image for {JOBS_KEY}": {
         "verb": "build",
         "filter_status": None,
         "label": "BUILT",
-        "prompt": "Build image from source? [y/n]: ",
+        "prompt": "Rebuild image from source? [y/n]: ",
         "execute_state": "BUILD",
+        "post_state": "CONFIG_LOADING",
+    },
+    f"Run tests for {JOBS_KEY}": {
+        "verb": "test",
+        "filter_status": True,
+        "label": "TESTED",
+        "prompt": "Run tests now? [y/n]: ",
+        "execute_state": "TEST",
         "post_state": "CONFIG_LOADING",
     },
     "Show config help": {
@@ -277,24 +295,81 @@ PIPELINE_STATES = {
         "success_key": "ok",
         "post_state": "CONFIG_LOADING",
     },
-    "BUILD": {
-        "pipeline": {
-            compose_build: {
-                "args": [f"meta.{KEY_COMPOSE_FILE}", f"meta.{KEY_COMPOSE_DIR}"],
-                "when": (lambda job, meta, ctx: bool(meta.get(KEY_COMPOSE_FILE))),
-                "result": "ok",
+        "REMOVE": {
+                    "pipeline": {
+                        compose_down: {
+                            "args": [f"meta.{KEY_COMPOSE_FILE}", f"meta.{KEY_COMPOSE_DIR}"],
+                            "when": (lambda job, meta, ctx: bool(meta.get(KEY_COMPOSE_FILE))),
+                            "result": "ok",
+                        },
+                        remove_container: {
+                            "args": [f"meta.{KEY_NAME}"],
+                            "when": (lambda job, meta, ctx: not bool(meta.get(KEY_COMPOSE_FILE))),
+                            "result": "ok",
+                        },
+                    },
+                    "label": UNINSTALLED_LABEL,
+                    "success_key": "ok",
+                    "post_state": "CONFIG_LOADING",
+                },
+        "BUILD": {
+            "pipeline": {
+
+                compose_down: {
+                    "args": [f"meta.{KEY_COMPOSE_FILE}", f"meta.{KEY_COMPOSE_DIR}"],
+                    "when": (lambda job, meta, ctx: bool(meta.get(KEY_COMPOSE_FILE))),
+                    "result": "_",
+                },
+                compose_build: {
+                    "args": [f"meta.{KEY_COMPOSE_FILE}", f"meta.{KEY_COMPOSE_DIR}"],
+                    "when": (lambda job, meta, ctx: bool(meta.get(KEY_COMPOSE_FILE))),
+                    "result": "_",
+                },
+                compose_up: {
+                    "args": [f"meta.{KEY_COMPOSE_FILE}", f"meta.{KEY_COMPOSE_DIR}"],
+                    "when": (lambda job, meta, ctx: bool(meta.get(KEY_COMPOSE_FILE))),
+                    "result": "ok",
+                },
+
+                stop_container: {
+                    "args": [f"meta.{KEY_NAME}"],
+                    "when": (lambda job, meta, ctx: not bool(meta.get(KEY_COMPOSE_FILE))),
+                    "result": "_",
+                },
+                remove_container: {
+                    "args": [f"meta.{KEY_NAME}"],
+                    "when": (lambda job, meta, ctx: not bool(meta.get(KEY_COMPOSE_FILE))),
+                    "result": "_",
+                },
+                build_docker_container: {
+                    "args": [
+                        f"meta.{KEY_NAME}",
+                        f"meta.{KEY_LOCATION}",
+                        f"meta.{KEY_IMAGE}",
+                    ],
+                    "when": (lambda job, meta, ctx: not bool(meta.get(KEY_COMPOSE_FILE))),
+                    "result": "_",
+                },
+                start_container: {
+                    "args": [f"meta.{KEY_NAME}", f"meta.{KEY_PORT}", f"meta.{KEY_IMAGE}"],
+                    "when": (lambda job, meta, ctx: not bool(meta.get(KEY_COMPOSE_FILE))),
+                    "result": "ok",
+                },
             },
-            build_docker_container: {
-                "args": [
-                    f"meta.{KEY_NAME}",
-                    f"meta.{KEY_LOCATION}",
-                    f"meta.{KEY_IMAGE}",
-                ],
-                "when": (lambda job, meta, ctx: (not bool(meta.get(KEY_COMPOSE_FILE))) and bool(meta.get(KEY_LOCATION))),
+            "label": "BUILT",
+            "success_key": "ok",
+            "post_state": "CONFIG_LOADING",
+        },
+    
+    "TEST": {
+        "pipeline": {
+            run_tests: {
+                "args": [f"meta.Tests"],
+                "when": (lambda job, meta, ctx: bool(meta.get("Tests"))),
                 "result": "ok",
             },
         },
-        "label": "BUILT",
+        "label": "TESTED",
         "success_key": "ok",
         "post_state": "CONFIG_LOADING",
     },
