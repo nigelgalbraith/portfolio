@@ -11,8 +11,8 @@ from io import StringIO
 from contextlib import redirect_stdout
 
 from modules.logger_utils import setup_logging, log_and_print, rotate_logs
-from modules.system_utils import check_account, get_model
-from modules.json_utils import load_json, resolve_value, validate_required_fields, validate_secondary_subkey
+from modules.system_utils import check_account, get_model, get_host
+from modules.json_utils import load_json, resolve_value, validate_required_fields
 from modules.package_utils import (
     check_package,
     ensure_dependencies_installed,
@@ -116,7 +116,7 @@ class State(Enum):
     INITIAL = auto()
     DEP_CHECK = auto()
     DEP_INSTALL = auto()
-    MODEL_DETECTION = auto()
+    IDENTITY_DETECTION = auto()
     JSON_TOPLEVEL_CHECK = auto()
     JSON_REQUIRED_KEYS_CHECK = auto()
     SECONDARY_VALIDATION = auto()
@@ -149,9 +149,10 @@ class StateMachine:
         self.status_only: bool = status_only
         self.plan_only: bool = plan_only
 
-        # Model/config
-        self.model: Optional[str] = None
+        # Identity/config
+        self.identity: Optional[str] = None
         self.detected_model: Optional[str] = None
+        self.detected_host: Optional[str] = None
         self.resolved_config_path: Optional[str] = None
 
         # Verification
@@ -179,7 +180,7 @@ class StateMachine:
 
 
     def setup(self, log_dir: Path, log_prefix: str, required_user: str) -> None:
-        """Initialize logging and verify user; advance to MODEL_DETECTION or FINALIZE."""
+        """Initialize logging and verify user; advance to IDENTITY_DETECTION or FINALIZE."""
         for k, v in vars(self.c).items():
             if v is None:
                 self.finalize_msg = f"Constant {k} is None."
@@ -218,13 +219,13 @@ class StateMachine:
         if self.deps_install_list:
             self.state = State.DEP_INSTALL
         else:
-            self.state = State.MODEL_DETECTION
+            self.state = State.IDENTITY_DETECTION
 
 
     def dep_install(self) -> None:
         """Install missing dependencies in batch, verify each; fail fast on error."""
         if not self.deps_install_list:
-            self.state = State.MODEL_DETECTION
+            self.state = State.IDENTITY_DETECTION
             return
         out = [f"[INSTALL] Attempting batch install: {', '.join(self.deps_install_list)}"]
         ok = ensure_dependencies_installed(self.deps_install_list)
@@ -244,30 +245,42 @@ class StateMachine:
         self.deps_install_list = []
         log_and_print("\n  ==> Running Dependency Check")
         log_and_print(wrap_in_box(out, title="Dependency Install", indent=2, pad=1))
-        self.state = State.MODEL_DETECTION
+        self.state = State.IDENTITY_DETECTION
 
 
-    def detect_model(self, detection_config: Dict, required_user: str) -> None:
-        """Detect system model, resolve config path, and load JSON data."""
+    def detect_identity(self, detection_config: Dict, required_user: str) -> None:
+        """Detect system identity, resolve config path, and load JSON data."""
+        host = get_host()
         model = get_model()
+        self.detected_host = host
         self.detected_model = model
         primary_cfg = load_json(detection_config["primary_config"])
         pk = detection_config["jobs_key"]
         dk = detection_config["default_config"]
-        resolved_path = resolve_value(primary_cfg, model, pk, default_key=None, check_file=True)
         used_default = False
+        used_host = False
+        resolved_path = resolve_value(primary_cfg, host, pk, default_key=None, check_file=True)
+        if resolved_path:
+            used_host = True
+        if not resolved_path:
+            resolved_path = resolve_value(primary_cfg, model, pk, default_key=None, check_file=True)
         if not resolved_path:
             resolved_path = resolve_value(primary_cfg, dk, pk, default_key=None, check_file=True)
             used_default = True
         if not resolved_path:
             self.finalize_msg = (
                 f"Invalid {detection_config['config_type'].upper()} config path for "
-                f"model '{model}' or fallback."
+                f"host '{host}', model '{model}', or fallback."
             )
             self.state = State.FINALIZE
             return
         self.resolved_config_path = resolved_path
-        self.model = dk if used_default else model
+        if used_default:
+            self.identity = dk
+        elif used_host:
+            self.identity = host
+        else:
+            self.identity = model
         loaded = load_json(resolved_path)
         if not isinstance(loaded, dict):
             self.finalize_msg = (
@@ -278,26 +291,31 @@ class StateMachine:
             return
         ctx = {
             "User": required_user,
+            "Detected host": self.detected_host,
             "Detected model": self.detected_model,
-            "Effective model": self.model,
+            "Effective key": self.identity,
             "Config file": self.resolved_config_path,
             "Config type": detection_config["config_type"].upper(),
+            "Used host?": used_host,
             "Used default?": used_default,
         }
         out_lines = []
+        out_lines.append(f"Detected host: {host}")
         out_lines.append(f"Detected model: {model}")
         out_lines.append(f"Primary config path: {detection_config['primary_config']}")
         out_lines.append(f"Using {detection_config['config_type'].upper()} config file: {resolved_path}")
+        if used_host:
+            out_lines.append(f"Using host override '{host}' (preferred over model).")
         if used_default:
             out_lines.append(
-                f"Falling back from detected model '{self.detected_model}' to '{dk}'. "
+                f"Falling back from '{host}'/'{model}' to '{dk}'. "
                 + detection_config["default_config_note"]
             )
         buf = StringIO()
         with contextlib.redirect_stdout(buf):
             print_dict_table([ctx], field_names=list(ctx.keys()), label="Run Context")
         out_lines.extend(buf.getvalue().splitlines())
-        log_and_print("\n  ==> Detecting Model")
+        log_and_print("\n  ==> Detecting Identity")
         log_and_print(wrap_in_box(out_lines, indent=2, pad=1))
         self.job_data = loaded
         self.verification_outcomes = {}
@@ -307,20 +325,17 @@ class StateMachine:
 
 
     def validate_json_toplevel(self, jobs_key: str) -> None:
-        """Validate that the model section exists, then validate the top-level jobs key."""
-        model = self.model
-        entry = self.job_data.get(model)
-        ok_model = isinstance(entry, dict)
-        self.verification_outcomes[f"Model: '{model}' (object)"] = ok_model
-        if self.detected_model != self.model:
+        """Validate that the identity section exists, then validate the top-level jobs key."""
+        identity = self.identity
+        entry = self.job_data.get(identity)
+        ok_identity = isinstance(entry, dict)
+        self.verification_outcomes[f"Identity: '{identity}' (object)"] = ok_identity
+        if identity not in self.job_data:
             self.verification_notes.append("")
             self.verification_notes.append(
-                f"[WARN] Detected model '{self.detected_model}' does not match effective model '{self.model}'"
+                f"[WARN] Config does not contain a '{identity}' section"
             )
-        if isinstance(self.job_data, dict) and model not in self.job_data:
-            self.verification_notes.append("")
-            self.verification_notes.append(f"[WARN] Config does not contain a '{model}' section")
-        if not ok_model:
+        if not ok_identity:
             self.state = State.DISPLAY_VERIFICATION
             return
         self.verification_outcomes["  "] = True
@@ -329,7 +344,9 @@ class StateMachine:
         self.verification_outcomes[f"Top-level: '{jobs_key}' section (object)"] = ok_jobs
         if jobs_key not in entry:
             self.verification_notes.append("")
-            self.verification_notes.append(f"[WARN] Model '{model}' does not contain a '{jobs_key}' section")
+            self.verification_notes.append(
+                f"[WARN] Identity '{identity}' does not contain a '{jobs_key}' section"
+            )
         if not ok_jobs:
             self.state = State.DISPLAY_VERIFICATION
             return
@@ -344,12 +361,12 @@ class StateMachine:
         object_type: type = dict,
     ) -> None:
         """Validate required sections and enforce per-job required fields."""
-        model = self.model
-        entry = self.job_data.get(model, {})
+        identity = self.identity
+        entry = self.job_data.get(identity, {})
         jobs = entry.get(section_key, {})
         ok_jobs_block = isinstance(jobs, dict) and bool(jobs)
         self.verification_outcomes[
-            f"Primary: '{model}/{section_key}' is a non-empty object"
+            f"Primary: '{identity}/{section_key}' is a non-empty object"
         ] = ok_jobs_block
         if not ok_jobs_block:
             self.state = State.DISPLAY_VERIFICATION
@@ -378,11 +395,11 @@ class StateMachine:
             self.verification_notes.append("[INFO] No secondary validation rules defined; skipping.")
             self.state = State.DISPLAY_VERIFICATION
             return
-        model = self.model
-        jobs_block = self.job_data.get(model, {}).get(section_key, {})
+        identity = self.identity
+        jobs_block = self.job_data.get(identity, {}).get(section_key, {})
         ok_jobs_block = isinstance(jobs_block, dict)
         self.verification_outcomes["   "] = True
-        self.verification_outcomes[f"Secondary: '{model}/{section_key}' is an object (for secondary checks)"] = ok_jobs_block
+        self.verification_outcomes[f"Secondary: '{identity}/{section_key}' is an object (for secondary checks)"] = ok_jobs_block
         if not ok_jobs_block:
             self.state = State.DISPLAY_VERIFICATION
             return
@@ -464,9 +481,9 @@ class StateMachine:
 
 
     def load_job_block(self, jobs_key: str) -> None:
-        """Load the package list (DEB keys) for the model; advance to PACKAGE_STATUS."""
-        model = self.model
-        block = self.job_data[model][jobs_key]
+        """Load the package list (DEB keys) for the identity; advance to PACKAGE_STATUS."""
+        identity = self.identity
+        block = self.job_data[identity][jobs_key]
         self.all_jobs = {job: block.get(job, {}) or {} for job in block.keys()}
         self.active_jobs = self.all_jobs.copy()
         self.state = State.PACKAGE_STATUS if self.active_jobs else State.MENU_SELECTION
@@ -723,22 +740,22 @@ class StateMachine:
     def main(self) -> None:
         """Run the state machine with a dispatch table until FINALIZE."""
         handlers: Dict[State, Callable[[], None]] = {
-            State.INITIAL:              lambda: self.setup(self.c.LOG_DIR, self.c.LOG_PREFIX, self.c.REQUIRED_USER),
-            State.DEP_CHECK:            lambda: self.dep_check(self.c.DEPENDENCIES),
-            State.DEP_INSTALL:          lambda: self.dep_install(),
-            State.MODEL_DETECTION:      lambda: self.detect_model(self.c.DETECTION_CONFIG, self.c.REQUIRED_USER),
-            State.JSON_TOPLEVEL_CHECK:  lambda: self.validate_json_toplevel(self.c.JOBS_KEY),
+            State.INITIAL:                  lambda: self.setup(self.c.LOG_DIR, self.c.LOG_PREFIX, self.c.REQUIRED_USER),
+            State.DEP_CHECK:                lambda: self.dep_check(self.c.DEPENDENCIES),
+            State.DEP_INSTALL:              lambda: self.dep_install(),
+            State.IDENTITY_DETECTION:       lambda: self.detect_identity(self.c.DETECTION_CONFIG, self.c.REQUIRED_USER),
+            State.JSON_TOPLEVEL_CHECK:      lambda: self.validate_json_toplevel(self.c.JOBS_KEY),
             State.JSON_REQUIRED_KEYS_CHECK: lambda: self.validate_json_required_keys(self.c.VALIDATION_CONFIG, self.c.JOBS_KEY, dict),
-            State.SECONDARY_VALIDATION: lambda: self.validate_secondary_keys(self.c.SECONDARY_VALIDATION, self.c.JOBS_KEY),
-            State.DISPLAY_VERIFICATION: lambda: self.display_verification_outcome(self.c.CONFIG_DOC),
-            State.CONFIG_LOADING:       lambda: self.load_job_block(self.c.JOBS_KEY),
-            State.PACKAGE_STATUS:       lambda: self.build_status_map(self.c.JOBS_KEY, self.c.INSTALLED_LABEL, self.c.UNINSTALLED_LABEL, self.c.STATUS_FN_CONFIG),
-            State.BUILD_ACTIONS:        lambda: self.build_actions(self.c.ACTIONS),
-            State.MENU_SELECTION:       lambda: self.select_action(),
-            State.SUB_SELECT:           lambda: self.sub_select_action(self.c.SUB_MENU),
-            State.PREPARE_PLAN:         lambda: self.prepare_jobs_dict(self.c.JOBS_KEY, self.c.OPTIONAL_PLAN_COLUMNS.get(self.current_action_key, self.c.PLAN_COLUMN_ORDER)),
-            State.CONFIRM:              lambda: self.confirm_action(),
-            State.EXECUTE:              lambda: self.run_pipeline_action(self._pending_pipeline_spec or {}),
+            State.SECONDARY_VALIDATION:     lambda: self.validate_secondary_keys(self.c.SECONDARY_VALIDATION, self.c.JOBS_KEY),
+            State.DISPLAY_VERIFICATION:     lambda: self.display_verification_outcome(self.c.CONFIG_DOC),
+            State.CONFIG_LOADING:           lambda: self.load_job_block(self.c.JOBS_KEY),
+            State.PACKAGE_STATUS:           lambda: self.build_status_map(self.c.JOBS_KEY, self.c.INSTALLED_LABEL, self.c.UNINSTALLED_LABEL, self.c.STATUS_FN_CONFIG),
+            State.BUILD_ACTIONS:            lambda: self.build_actions(self.c.ACTIONS),
+            State.MENU_SELECTION:           lambda: self.select_action(),
+            State.SUB_SELECT:               lambda: self.sub_select_action(self.c.SUB_MENU),
+            State.PREPARE_PLAN:             lambda: self.prepare_jobs_dict(self.c.JOBS_KEY, self.c.OPTIONAL_PLAN_COLUMNS.get(self.current_action_key, self.c.PLAN_COLUMN_ORDER)),
+            State.CONFIRM:                  lambda: self.confirm_action(),
+            State.EXECUTE:                  lambda: self.run_pipeline_action(self._pending_pipeline_spec or {}),
         }
         try:
             while self.state != State.FINALIZE:

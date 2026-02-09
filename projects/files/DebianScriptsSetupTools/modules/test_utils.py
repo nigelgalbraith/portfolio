@@ -61,14 +61,12 @@ def run_tests(tests: list[dict]) -> bool:
         label = test.get("label", "unnamed-test")
         raw_path = test.get("path", "")
         path = Path(os.path.expandvars(raw_path)).expanduser().resolve()
-
+        print()
         print(f"{tag_test()} {label} → {path}")
-
         if not path.exists():
             print(f"{tag_fail()} Test path does not exist: {path}")
             all_ok = False
             continue
-
         if path.is_dir():
             res = subprocess.run(["pytest", "."], cwd=path, check=False)
         else:
@@ -77,11 +75,10 @@ def run_tests(tests: list[dict]) -> bool:
                 all_ok = False
                 continue
             res = subprocess.run([str(path)], cwd=path.parent, check=False)
-
         if res.returncode != 0:
             print(f"{tag_fail()} {label}")
             all_ok = False
         else:
             print(f"{tag_ok()}  {label}")
-
+    print()
     return all_ok

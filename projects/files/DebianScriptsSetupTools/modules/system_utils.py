@@ -5,6 +5,7 @@ system_utils.py
 
 import os
 import re
+import socket
 import subprocess
 import getpass
 import datetime
@@ -44,6 +45,10 @@ def get_model():
         return output.decode().strip().replace(" ", "")
     except subprocess.CalledProcessError:
         return "default"
+
+def get_host() -> str:
+    """Return hostname without spaces."""
+    return socket.gethostname().replace(" ", "")
 
 
 def expand_path(path_str: str) -> Path:

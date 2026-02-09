@@ -86,31 +86,7 @@ STATUS_FN_CONFIG = {
 # === MENU / ACTIONS ===
 ACTIONS = {
     "_meta": {"title": "Select an option"},
-    f"Start {JOBS_KEY}": {
-        "verb": "start",
-        "filter_status": False,
-        "label": INSTALLED_LABEL,
-        "prompt": "Proceed with start? [y/n]: ",
-        "execute_state": "START",
-        "post_state": "CONFIG_LOADING",
-    },
-    f"Stop {JOBS_KEY}": {
-        "verb": "stop",
-        "filter_status": True,
-        "label": UNINSTALLED_LABEL,
-        "prompt": "Proceed with stop? [y/n]: ",
-        "execute_state": "STOP",
-        "post_state": "CONFIG_LOADING",
-    },
-    f"Show status of {JOBS_KEY}": {
-        "verb": "status",
-        "filter_status": None,
-        "label": "STATUS",
-        "prompt": None,
-        "execute_state": "STATUS",
-        "post_state": "CONFIG_LOADING",
-    },
-    f"Download source for {JOBS_KEY}": {
+    f"Download {JOBS_KEY} File": {
         "verb": "download",
         "filter_status": None,
         "label": "DOWNLOADED",
@@ -118,15 +94,23 @@ ACTIONS = {
         "execute_state": "DOWNLOAD",
         "post_state": "CONFIG_LOADING",
     },
-    f"Remove {JOBS_KEY}": {
-        "verb": "remove",
-        "filter_status": True,
-        "label": UNINSTALLED_LABEL,
-        "prompt": "This will REMOVE the container(s). Proceed? [y/n]: ",
-        "execute_state": "REMOVE",
+    f"Start {JOBS_KEY} File": {
+        "verb": "start",
+        "filter_status": False,
+        "label": INSTALLED_LABEL,
+        "prompt": "Proceed with start? [y/n]: ",
+        "execute_state": "START",
         "post_state": "CONFIG_LOADING",
     },
-    f"Rebuild image for {JOBS_KEY}": {
+    f"{JOBS_KEY} File Status": {
+        "verb": "status",
+        "filter_status": None,
+        "label": "STATUS",
+        "prompt": None,
+        "execute_state": "STATUS",
+        "post_state": "CONFIG_LOADING",
+    },
+    f"Rebuild {JOBS_KEY} File": {
         "verb": "build",
         "filter_status": None,
         "label": "BUILT",
@@ -134,12 +118,28 @@ ACTIONS = {
         "execute_state": "BUILD",
         "post_state": "CONFIG_LOADING",
     },
-    f"Run tests for {JOBS_KEY}": {
+    f"Test {JOBS_KEY} File": {
         "verb": "test",
         "filter_status": True,
         "label": "TESTED",
         "prompt": "Run tests now? [y/n]: ",
         "execute_state": "TEST",
+        "post_state": "CONFIG_LOADING",
+    },
+    f"Stop {JOBS_KEY} File": {
+        "verb": "stop",
+        "filter_status": True,
+        "label": UNINSTALLED_LABEL,
+        "prompt": "Proceed with stop? [y/n]: ",
+        "execute_state": "STOP",
+        "post_state": "CONFIG_LOADING",
+    },
+    f"Remove {JOBS_KEY} File": {
+        "verb": "remove",
+        "filter_status": True,
+        "label": UNINSTALLED_LABEL,
+        "prompt": "This will REMOVE the container(s). Proceed? [y/n]: ",
+        "execute_state": "REMOVE",
         "post_state": "CONFIG_LOADING",
     },
     "Show config help": {
@@ -190,6 +190,37 @@ OPTIONAL_PLAN_COLUMNS = {}
 
 # === PIPELINES ===
 PIPELINE_STATES = {
+    "DOWNLOAD": {
+        "pipeline": {
+            (lambda job: (print(f"[SKIP]  '{job}': no Download/TmpDir configured.") or False)): {
+                "args": ["job"],
+                "when": (lambda job, meta, ctx: (not meta.get(KEY_DOWNLOAD)) or (not meta.get(KEY_TMPDIR))),
+                "result": "ok",
+            },
+            download_archive_file: {
+                "args": [f"meta.{KEY_NAME}", f"meta.{KEY_DOWNLOAD}", f"meta.{KEY_TMPDIR}"],
+                "when": (lambda job, meta, ctx: bool(meta.get(KEY_DOWNLOAD)) and bool(meta.get(KEY_TMPDIR))),
+                "result": "archive",
+            },
+            install_archive_file: {
+                "args": [
+                    (lambda job, meta, ctx: ctx.get("archive")),
+                    f"meta.{KEY_LOCATION}",
+                    True,
+                ],
+                "when": (lambda job, meta, ctx: bool(ctx.get("archive")) and bool(meta.get(KEY_LOCATION))),
+                "result": "ok",
+            },
+            handle_cleanup: {
+                "args": [(lambda job, meta, ctx: ctx.get("archive"))],
+                "when": (lambda job, meta, ctx: bool(ctx.get("archive"))),
+                "result": "_",
+            },
+        },
+        "label": "DOWNLOADED",
+        "success_key": "ok",
+        "post_state": "CONFIG_LOADING",
+    },
     "START": {
         "pipeline": {
             # --- Compose start ---
@@ -228,6 +259,81 @@ PIPELINE_STATES = {
         "success_key": "ok",
         "post_state": "CONFIG_LOADING",
     },
+    "STATUS": {
+        "pipeline": {
+            status_compose: {
+                "args": ["job", f"meta.{KEY_COMPOSE_CONTAINERS}"],
+                "when": (lambda job, meta, ctx: bool(meta.get(KEY_COMPOSE_FILE))),
+                "result": "ok",
+            },
+            status_container: {
+                "args": [f"meta.{KEY_NAME}"],
+                "when": (lambda job, meta, ctx: not bool(meta.get(KEY_COMPOSE_FILE))),
+                "result": "ok",
+            },
+        },
+        "label": "STATUS",
+        "success_key": "ok",
+        "post_state": "CONFIG_LOADING",
+    },
+    "BUILD": {
+        "pipeline": {
+            compose_down: {
+                "args": [f"meta.{KEY_COMPOSE_FILE}", f"meta.{KEY_COMPOSE_DIR}"],
+                "when": (lambda job, meta, ctx: bool(meta.get(KEY_COMPOSE_FILE))),
+                "result": "_",
+            },
+            compose_build: {
+                "args": [f"meta.{KEY_COMPOSE_FILE}", f"meta.{KEY_COMPOSE_DIR}"],
+                "when": (lambda job, meta, ctx: bool(meta.get(KEY_COMPOSE_FILE))),
+                "result": "_",
+            },
+            compose_up: {
+                "args": [f"meta.{KEY_COMPOSE_FILE}", f"meta.{KEY_COMPOSE_DIR}"],
+                "when": (lambda job, meta, ctx: bool(meta.get(KEY_COMPOSE_FILE))),
+                "result": "ok",
+            },
+            stop_container: {
+                "args": [f"meta.{KEY_NAME}"],
+                "when": (lambda job, meta, ctx: not bool(meta.get(KEY_COMPOSE_FILE))),
+                "result": "_",
+            },
+            remove_container: {
+                "args": [f"meta.{KEY_NAME}"],
+                "when": (lambda job, meta, ctx: not bool(meta.get(KEY_COMPOSE_FILE))),
+                "result": "_",
+            },
+            build_docker_container: {
+                "args": [
+                    f"meta.{KEY_NAME}",
+                    f"meta.{KEY_LOCATION}",
+                    f"meta.{KEY_IMAGE}",
+                ],
+                "when": (lambda job, meta, ctx: not bool(meta.get(KEY_COMPOSE_FILE))),
+                "result": "_",
+            },
+            start_container: {
+                "args": [f"meta.{KEY_NAME}", f"meta.{KEY_PORT}", f"meta.{KEY_IMAGE}"],
+                "when": (lambda job, meta, ctx: not bool(meta.get(KEY_COMPOSE_FILE))),
+                "result": "ok",
+            },
+        },
+        "label": "BUILT",
+        "success_key": "ok",
+        "post_state": "CONFIG_LOADING",
+    },
+    "TEST": {
+        "pipeline": {
+            run_tests: {
+                "args": [f"meta.Tests"],
+                "when": (lambda job, meta, ctx: bool(meta.get("Tests"))),
+                "result": "ok",
+            },
+        },
+        "label": "TESTED",
+        "success_key": "ok",
+        "post_state": "CONFIG_LOADING",
+    },
     "STOP": {
         "pipeline": {
             # Compose stop
@@ -247,129 +353,20 @@ PIPELINE_STATES = {
         "success_key": "ok",
         "post_state": "CONFIG_LOADING",
     },
-    "STATUS": {
+    "REMOVE": {
         "pipeline": {
-            status_compose: {
-                "args": ["job", f"meta.{KEY_COMPOSE_CONTAINERS}"],
+            compose_down: {
+                "args": [f"meta.{KEY_COMPOSE_FILE}", f"meta.{KEY_COMPOSE_DIR}"],
                 "when": (lambda job, meta, ctx: bool(meta.get(KEY_COMPOSE_FILE))),
                 "result": "ok",
             },
-            status_container: {
+            remove_container: {
                 "args": [f"meta.{KEY_NAME}"],
                 "when": (lambda job, meta, ctx: not bool(meta.get(KEY_COMPOSE_FILE))),
                 "result": "ok",
             },
         },
-        "label": "STATUS",
-        "success_key": "ok",
-        "post_state": "CONFIG_LOADING",
-    },
-    "DOWNLOAD": {
-        "pipeline": {
-            (lambda job: (print(f"[SKIP]  '{job}': no Download/TmpDir configured.") or False)): {
-                "args": ["job"],
-                "when": (lambda job, meta, ctx: (not meta.get(KEY_DOWNLOAD)) or (not meta.get(KEY_TMPDIR))),
-                "result": "ok",
-            },
-            download_archive_file: {
-                "args": [f"meta.{KEY_NAME}", f"meta.{KEY_DOWNLOAD}", f"meta.{KEY_TMPDIR}"],
-                "when": (lambda job, meta, ctx: bool(meta.get(KEY_DOWNLOAD)) and bool(meta.get(KEY_TMPDIR))),
-                "result": "archive",
-            },
-            install_archive_file: {
-                "args": [
-                    (lambda job, meta, ctx: ctx.get("archive")),
-                    f"meta.{KEY_LOCATION}",
-                    True,
-                ],
-                "when": (lambda job, meta, ctx: bool(ctx.get("archive")) and bool(meta.get(KEY_LOCATION))),
-                "result": "ok",
-            },
-            handle_cleanup: {
-                "args": [(lambda job, meta, ctx: ctx.get("archive"))],
-                "when": (lambda job, meta, ctx: bool(ctx.get("archive"))),
-                "result": "_",
-            },
-        },
-        "label": "DOWNLOADED",
-        "success_key": "ok",
-        "post_state": "CONFIG_LOADING",
-    },
-        "REMOVE": {
-                    "pipeline": {
-                        compose_down: {
-                            "args": [f"meta.{KEY_COMPOSE_FILE}", f"meta.{KEY_COMPOSE_DIR}"],
-                            "when": (lambda job, meta, ctx: bool(meta.get(KEY_COMPOSE_FILE))),
-                            "result": "ok",
-                        },
-                        remove_container: {
-                            "args": [f"meta.{KEY_NAME}"],
-                            "when": (lambda job, meta, ctx: not bool(meta.get(KEY_COMPOSE_FILE))),
-                            "result": "ok",
-                        },
-                    },
-                    "label": UNINSTALLED_LABEL,
-                    "success_key": "ok",
-                    "post_state": "CONFIG_LOADING",
-                },
-        "BUILD": {
-            "pipeline": {
-
-                compose_down: {
-                    "args": [f"meta.{KEY_COMPOSE_FILE}", f"meta.{KEY_COMPOSE_DIR}"],
-                    "when": (lambda job, meta, ctx: bool(meta.get(KEY_COMPOSE_FILE))),
-                    "result": "_",
-                },
-                compose_build: {
-                    "args": [f"meta.{KEY_COMPOSE_FILE}", f"meta.{KEY_COMPOSE_DIR}"],
-                    "when": (lambda job, meta, ctx: bool(meta.get(KEY_COMPOSE_FILE))),
-                    "result": "_",
-                },
-                compose_up: {
-                    "args": [f"meta.{KEY_COMPOSE_FILE}", f"meta.{KEY_COMPOSE_DIR}"],
-                    "when": (lambda job, meta, ctx: bool(meta.get(KEY_COMPOSE_FILE))),
-                    "result": "ok",
-                },
-
-                stop_container: {
-                    "args": [f"meta.{KEY_NAME}"],
-                    "when": (lambda job, meta, ctx: not bool(meta.get(KEY_COMPOSE_FILE))),
-                    "result": "_",
-                },
-                remove_container: {
-                    "args": [f"meta.{KEY_NAME}"],
-                    "when": (lambda job, meta, ctx: not bool(meta.get(KEY_COMPOSE_FILE))),
-                    "result": "_",
-                },
-                build_docker_container: {
-                    "args": [
-                        f"meta.{KEY_NAME}",
-                        f"meta.{KEY_LOCATION}",
-                        f"meta.{KEY_IMAGE}",
-                    ],
-                    "when": (lambda job, meta, ctx: not bool(meta.get(KEY_COMPOSE_FILE))),
-                    "result": "_",
-                },
-                start_container: {
-                    "args": [f"meta.{KEY_NAME}", f"meta.{KEY_PORT}", f"meta.{KEY_IMAGE}"],
-                    "when": (lambda job, meta, ctx: not bool(meta.get(KEY_COMPOSE_FILE))),
-                    "result": "ok",
-                },
-            },
-            "label": "BUILT",
-            "success_key": "ok",
-            "post_state": "CONFIG_LOADING",
-        },
-    
-    "TEST": {
-        "pipeline": {
-            run_tests: {
-                "args": [f"meta.Tests"],
-                "when": (lambda job, meta, ctx: bool(meta.get("Tests"))),
-                "result": "ok",
-            },
-        },
-        "label": "TESTED",
+        "label": UNINSTALLED_LABEL,
         "success_key": "ok",
         "post_state": "CONFIG_LOADING",
     },
