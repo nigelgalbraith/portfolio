@@ -12,7 +12,7 @@
       "dataanalysis-tool": {
         "Name": "dataanalysis-tool",
         "Location": "~/projects/dataAnalysis/dataanalysis-tool/",
-        "Download": "https://raw.githubusercontent.com/nigelgalbraith/portfolio.github.io/main/projects/files/DataAnalysisTool.zip",
+        "Download": "https://raw.githubusercontent.com/nigelgalbraith/portfolio/main/projects/files/DataAnalysisTool.zip",
         "TmpDir": "/tmp/docker_downloads",
         "ComposeFile": "~/projects/dataAnalysis/dataanalysis-tool/docker-compose.yml",
         "ComposeDir": "~/projects/dataAnalysis/dataanalysis-tool",
@@ -35,7 +35,7 @@
       "language-translator": {
         "Name": "language-translator",
         "Location": "~/projects/AI/LanguageTranslator/",
-        "Download": "https://raw.githubusercontent.com/nigelgalbraith/portfolio.github.io/main/projects/files/LanguageTranslator.zip",
+        "Download": "https://raw.githubusercontent.com/nigelgalbraith/portfolio/main/projects/files/LanguageTranslator.zip",
         "TmpDir": "/tmp/docker_downloads",
         "ComposeFile": "~/projects/AI/LanguageTranslator/docker-compose.yml",
         "ComposeDir": "~/projects/AI/LanguageTranslator",
@@ -52,7 +52,7 @@
       "text-creator": {
         "Name": "text-creator",
         "Location": "~/projects/AI/TextCreator/",
-        "Download": "https://raw.githubusercontent.com/nigelgalbraith/portfolio.github.io/main/projects/files/TextCreator.zip",
+        "Download": "https://raw.githubusercontent.com/nigelgalbraith/portfolio/main/projects/files/TextCreator.zip",
         "TmpDir": "/tmp/docker_downloads",
         "ComposeFile": "~/projects/AI/TextCreator/docker-compose.yml",
         "ComposeDir": "~/projects/AI/TextCreator",
