@@ -2,8 +2,8 @@
     "Dropbox":  {
                     "Append":  false,
                     "Mirror":  false,
-                    "Source":  "D:\\Documents\\GitHub\\portfolio.github.io",
-                    "Name":  "portfolio.github.io",
+                    "Source":  "D:\\Documents\\GitHub\\portfolio",
+                    "Name":  "portfolio",
                     "Freq":  "Daily",
                     "Zip":  true,
                     "Keep":  1,
