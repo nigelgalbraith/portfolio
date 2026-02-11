@@ -33,8 +33,16 @@
    <h1>Nigel Galbraith Portfolio</h1>
 
    <!-- Navigation Bar with hamburger menu for mobile -->
-   <nav class="navbar">
-    <button class="hamburger" onclick="toggleMenu()">☰</button>
+  <nav class="navbar" aria-label="Primary navigation">
+    <button
+      class="hamburger"
+      type="button"
+      aria-label="Toggle navigation menu"
+      aria-controls="navLinks"
+      aria-expanded="false"
+      onclick="toggleMenu(this)"
+    >☰</button>
+
     <div class="nav-links" id="navLinks">
      <ul>
       <li><a class="active" href="index.html">Home</a></li>
@@ -54,9 +62,9 @@
     <!-- Image block  -->
     <div class="main-content-image">
       <picture>
-        <source media="(min-width: 480px)" srcset="images/main/optimized/mobile/standard/diverse.png" />
-        <source media="(min-width: 1024px)" srcset="images/main/optimized/laptop/standard/diverse.png" />
         <source media="(min-width: 1280px)" srcset="images/main/optimized/desktop/standard/diverse.png" />
+        <source media="(min-width: 1024px)" srcset="images/main/optimized/laptop/standard/diverse.png" />
+        <source media="(min-width: 480px)" srcset="images/main/optimized/mobile/standard/diverse.png" />
         <img alt="Work background image" src="images/main/optimized/mobile/standard/diverse.png" />
       </picture>
     </div>

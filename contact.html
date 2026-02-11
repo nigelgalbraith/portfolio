@@ -33,8 +33,16 @@
    <h1>Nigel Galbraith Portfolio</h1>
 
    <!-- Navigation Bar -->
-   <nav class="navbar">
-    <button class="hamburger" onclick="toggleMenu()">☰</button>
+  <nav class="navbar" aria-label="Primary navigation">
+    <button
+      class="hamburger"
+      type="button"
+      aria-label="Toggle navigation menu"
+      aria-controls="navLinks"
+      aria-expanded="false"
+      onclick="toggleMenu(this)"
+    >☰</button>
+
     <div class="nav-links" id="navLinks">
      <ul>
       <li><a href="index.html">Home</a></li>

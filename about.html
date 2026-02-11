@@ -31,8 +31,16 @@
    <h1>Nigel Galbraith Portfolio</h1>
 
    <!-- Navigation Bar -->
-   <nav class="navbar">
-    <button class="hamburger" onclick="toggleMenu()">☰</button>
+  <nav class="navbar" aria-label="Primary navigation">
+    <button
+      class="hamburger"
+      type="button"
+      aria-label="Toggle navigation menu"
+      aria-controls="navLinks"
+      aria-expanded="false"
+      onclick="toggleMenu(this)"
+    >☰</button>
+
     <div class="nav-links" id="navLinks">
      <ul>
       <li><a href="index.html">Home</a></li>
@@ -52,12 +60,10 @@
      <!-- Responsive Profile Image -->
      <div class="main-content-image-padding">
       <picture>
-       <source media="(min-width: 480px)" srcset="images/main/optimized/mobile/standard/nigel-cartoon.png" />
-       <source media="(min-width: 1024px)" srcset="images/main/optimized/laptop/standard/nigel-cartoon.png" />
        <source media="(min-width: 1280px)" srcset="images/main/optimized/desktop/standard/nigel-cartoon.png" />
-       <img 
-        alt="Cartoon image of Nigel Galbraith" 
-        src="images/main/optimized/mobile/standard/nigel-cartoon.png" />
+       <source media="(min-width: 1024px)" srcset="images/main/optimized/laptop/standard/nigel-cartoon.png" />
+       <source media="(min-width: 480px)" srcset="images/main/optimized/mobile/standard/nigel-cartoon.png" />
+       <img alt="Cartoon image of Nigel Galbraith" src="images/main/optimized/mobile/standard/nigel-cartoon.png" />
       </picture>
      </div>
     </div>
