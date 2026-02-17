@@ -18,9 +18,8 @@ const MAIN_TEXT_DATA = {
   },
   "kvmLab": {
     "paragraphs": [
-      "The KVM Student Labs project moved Techlabs from VMware Workstation Pro to an open source stack with Ubuntu, QEMU, and Libvirt. The aim was to cut licensing costs, boost performance, and add domain based authentication.",
-      "Getting hardware to work smoothly with Active Directory was a hurdle, and test environment limits caused delays. This shifted the focus toward feasibility testing and highlighted the need for solid backups and clear documentation.",
-      "In the end, the project set up domain authenticated Linux virtualization with Cockpit for VM management, proving KVM is a practical and scalable option for student labs."
+      "The KVM Student Labs project replaced VMware Workstation Pro with an open source stack built on Ubuntu, QEMU, and Libvirt. The goal was to reduce licensing costs, improve performance, and introduce domain-based authentication for managing student virtual machines.",
+      "Integrating the Linux host with Active Directory and ensuring hardware compatibility was more involved than expected. Limitations in the test environment slowed progress and forced adjustments to the original plan. This shifted the focus toward feasibility testing, reproducible setup steps, and stronger documentation."
     ]
   },
   "sharepointGps": {

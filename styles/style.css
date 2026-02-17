@@ -106,7 +106,9 @@ h1 {
     display: block;
 }
 
-.boxed-content, .boxed-content-main-image  {
+.boxed-content, 
+.boxed-content-main-image, 
+.reflections-content-text  {
     background: rgba(0, 0, 0, 0.4);
     border: 2px solid #00ffff;
     padding: 1rem;
@@ -114,8 +116,21 @@ h1 {
     margin-bottom: 0rem;
 }
 
-.boxed-content {
+.boxed-content, .reflections-content-text {
     width: 100%;
+}
+
+.reflections-content-text p, 
+.reflections-content-text h2,
+.reflections-content-text li,
+.reflections-content-text h3 
+{
+  margin-left: 1rem;
+  margin-right: 1rem;
+}
+
+.reflections-content-text h2 {
+  text-align: center;
 }
 
 .sketchfab-embed-wrapper iframe {
