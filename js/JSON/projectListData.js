@@ -20,9 +20,9 @@ const PROJECT_LIST_DATA = [
     "title": "Greenhouse Planter Boxes",
     "description": `
       <ul>
-        <li>Designed planter box layouts in SketchUp for greenhouse use.</li>
-        <li>Optimized for efficient space usage and sustainable materials.</li>
-        <li>Adapted designs for year round indoor growing conditions.</li>
+        <li>Designed and built modular planter boxes for a greenhouse.</li>
+        <li>Used SketchUp to test layout and fit before construction.</li>
+        <li>Considered access, durability, and future replacement.</li>
       </ul>
     `
   },
@@ -33,10 +33,10 @@ const PROJECT_LIST_DATA = [
     "title": "Open-Source Ubuntu KVM Solution",
     "description": `
       <ul>
-        <li>Built a practical alternative to VMware using Ubuntu, QEMU, and Libvirt.</li>
-        <li>Reduced licensing costs while retaining enterprise level features.</li>
-        <li>Integrated with Active Directory and existing domain infrastructure.</li>
-        <li>Enabled flexible, controlled virtual lab environments for students.</li>
+        <li>Explored replacing VMware with an open source stack using Ubuntu, QEMU, and Libvirt.</li>
+        <li>Evaluated integration with Active Directory and domain authentication.</li>
+        <li>Tested feasibility within real hardware and environment constraints.</li>
+        <li>Identified architectural and deployment challenges in virtual lab design.</li>
       </ul>
     `
   },
@@ -47,9 +47,9 @@ const PROJECT_LIST_DATA = [
     "title": "Portfolio Website",
     "description": `
       <ul>
-        <li>Designed and built modular planter boxes for a greenhouse.</li>
-        <li>Used SketchUp to test layout and fit before construction.</li>
-        <li>Considered access, durability, and future replacement.</li>
+        <li>Designed and built the site structure using modular HTML and CSS.</li>
+        <li>Implemented JavaScript loaders to inject content dynamically.</li>
+        <li>Created reusable page templates to keep the system maintainable.</li>
       </ul>
     `
   },
