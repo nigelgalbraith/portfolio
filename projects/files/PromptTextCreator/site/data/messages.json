@@ -1,9 +1,0 @@
-{
-  "messages": [
-    "Welcome to the Text Creator, enter a prompt and generate text.",
-    "Tip: Adjust the style settings to change the tone of your result.",
-    "You can preview your text at any time before exporting.",
-    "All processing runs locally through your Ollama model offline.",
-    "Use the export panel to save your generated text whenever you're happy with the result."
-  ]
-}

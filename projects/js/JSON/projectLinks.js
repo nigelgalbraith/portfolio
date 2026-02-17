@@ -17,7 +17,7 @@ const ProjectLinks = {
     },
     {
       label: "Download Project",
-      href: "files/ThematicAnalysis.zip",
+      href: "https://codeload.github.com/nigelgalbraith/ThematicAnalysis/zip/refs/heads/main",
       icon: "../images/icons/optimized/zip.png",
       alt: "Download Icon",
       download: true
@@ -27,14 +27,14 @@ const ProjectLinks = {
   quiz: [
     {
       label: "Quiz Web App",
-      href: "files/QuizCreator/Index.html",
+      href: "https://nigelgalbraith.github.io/QuizCreator/",
       icon: "../images/icons/optimized/Webpage.PNG",
       alt: "Quiz Webpage Icon",
       target: "_blank"
     },
     {
       label: "Download Quiz Project",
-      href: "files/QuizCreator.zip",
+      href: "https://codeload.github.com/nigelgalbraith/QuizCreator/zip/refs/heads/main",
       icon: "../images/icons/optimized/zip.png",
       alt: "Download Quiz Icon",
       download: true
@@ -53,7 +53,7 @@ const ProjectLinks = {
     powerShellCloudBackup: [
     {
       label: "PowerShell Cloud Backup Tool",
-      href: "files/PowerShellCloudBackupTool.zip",
+      href: "https://codeload.github.com/nigelgalbraith/PowerShellCloudBackupTool/zip/refs/heads/main",
       icon: "../images/icons/optimized/zip.png",
       alt: "Zip",
       download: true
@@ -62,7 +62,7 @@ const ProjectLinks = {
     debianInstallSuite: [
       {
         label: "Debian Install Suite Tools",
-        href: "files/DebianSetupSuite.zip",
+        href: "https://codeload.github.com/nigelgalbraith/DebianSetupSuite/zip/refs/heads/main",
         icon: "../images/icons/optimized/zip.png",
         alt: "Zip",
         download: true
@@ -71,7 +71,7 @@ const ProjectLinks = {
     textCreator: [
       {
         label: "Text Creator Tool",
-        href: "files/PromptTextCreator.zip",
+        href: "https://codeload.github.com/nigelgalbraith/PromptTextCreator/zip/refs/heads/main",
         icon: "../images/icons/optimized/zip.png",
         alt: "Zip",
         download: true
@@ -80,7 +80,7 @@ const ProjectLinks = {
     languageTranslator: [
       {
         label: "Language Translator Tool",
-        href: "files/LanguageTranslator.zip",
+        href: "https://codeload.github.com/nigelgalbraith/LanguageTranslator/zip/refs/heads/main",
         icon: "../images/icons/optimized/zip.png",
         alt: "Zip",
         download: true
