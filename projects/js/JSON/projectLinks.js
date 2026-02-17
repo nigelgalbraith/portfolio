@@ -3,16 +3,9 @@ const ProjectLinks = {
   thematic: [
     {
       label: "Main Thematic Webpage",
-      href: "files/ThematicAnalysis/ThematicAnalysis-Web/Index.html",
+      href: "https://nigelgalbraith.github.io/ThematicAnalysis/",
       icon: "../images/icons/optimized/Webpage.PNG",
       alt: "Webpage Icon",
-      target: "_blank"
-    },
-    {
-      label: "Search Tool Page",
-      href: "files/ThematicAnalysis/SearchTool-Web/Index.html",
-      icon: "../images/icons/optimized/search.png",
-      alt: "Web Search Icon",
       target: "_blank"
     },
     {
@@ -44,7 +37,7 @@ const ProjectLinks = {
   portfolio: [
     {
       label: "Download Website Tools",
-      href: "files/PortfolioWebsiteTools.zip",
+      href: "https://codeload.github.com/nigelgalbraith/WebsiteTools/zip/refs/heads/main",
       icon: "../images/icons/optimized/zip.png",
       alt: "Zip",
       download: true
