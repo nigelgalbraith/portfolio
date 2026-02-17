@@ -62,7 +62,7 @@ const ProjectLinks = {
     debianInstallSuite: [
       {
         label: "Debian Install Suite Tools",
-        href: "files/DebianScriptsSetupTools.zip",
+        href: "files/DebianSetupSuite.zip",
         icon: "../images/icons/optimized/zip.png",
         alt: "Zip",
         download: true
