@@ -1,0 +1,18 @@
+{
+  "Default": {
+    "RDP": {
+      "xrdp":{
+        "UserName": "xrdp",
+        "ServiceName": "xrdp",
+        "SessionCmd": "startxfce4",
+        "XsessionFile": ".xsession",
+        "SkeletonDir": "/etc/skel",
+        "UserHomeBase": "/home",
+        "Groups": ["ssl-cert"],
+        "SslCertDir": "/etc/ssl/certs",
+        "SslKeyDir": "/etc/ssl/private",
+        "XrdpDir": "/etc/xrdp"
+      }
+    }
+  }
+}

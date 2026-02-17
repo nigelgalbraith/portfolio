@@ -1,0 +1,17 @@
+{
+  "Default": {
+    "DEB": {
+      "Example1": {
+        "DownloadURL": "https://example.com/example1.deb",
+        "EnableService": false,
+        "download_dir": "/tmp/deb_downloads"
+        
+      },
+      "Example2": {
+        "DownloadURL": "https://example.com/example2.deb",
+        "EnableService": true,
+        "download_dir": "/tmp/deb_downloads"
+      }
+    }
+  }
+}

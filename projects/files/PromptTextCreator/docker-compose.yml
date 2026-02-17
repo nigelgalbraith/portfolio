@@ -1,0 +1,60 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: text-generator-ui-nginx:latest
+    container_name: text-generator-ui
+    ports:
+      - "8080:80"
+    # NOTE: Only depend on Ollama so web still loads if Piper is down
+    depends_on:
+      ollama:
+        condition: service_healthy
+      ollama-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    environment:
+      - OLLAMA_ORIGINS=http://localhost:8080
+    volumes:
+      - ollama-data:/root/.ollama
+    ports:
+      - "11434:11434"
+    healthcheck:
+      test: ["CMD", "sh", "-c", "ollama list >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+    restart: unless-stopped
+
+  ollama-init:
+    image: ollama/ollama:latest
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    entrypoint: ["/bin/sh","-lc","ollama pull phi3 && echo 'phi3 pulled'"]
+    restart: "no"
+
+  # Piper HTTP server (REST at POST /)
+  piper:
+    image: artibex/piper-http:latest
+    container_name: piper
+    environment:
+      - MODEL_DOWNLOAD_LINK=https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/amy/low/en_US-amy-low.onnx?download=true
+    ports:
+      - "5000:5000"
+    healthcheck:
+      test: ["CMD", "sh", "-c", "nc -z localhost 5000"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  ollama-data:

@@ -1,0 +1,10 @@
+{
+  "Default": {
+    "Packages": {
+      "vlc": {},
+      "audacious": {},
+      "audacity": {},
+      "firefox-esr": {}
+    }
+  }
+}

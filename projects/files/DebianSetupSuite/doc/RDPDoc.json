@@ -1,0 +1,64 @@
+{
+  "FIXED_FIELDS": [
+    "<MODEL_ID>.RDP",
+    "<MODEL_ID>.RDP.<VALUES>.ServiceName",
+    "<MODEL_ID>.RDP.<VALUES>.UserName",
+    "<MODEL_ID>.RDP.<VALUES>.SessionCmd",
+    "<MODEL_ID>.RDP.<VALUES>.XsessionFile",
+    "<MODEL_ID>.RDP.<VALUES>.SkeletonDir",
+    "<MODEL_ID>.RDP.<VALUES>.UserHomeBase",
+    "<MODEL_ID>.RDP.<VALUES>.Groups",
+    "<MODEL_ID>.RDP.<VALUES>.SslCertDir",
+    "<MODEL_ID>.RDP.<VALUES>.SslKeyDir",
+    "<MODEL_ID>.RDP.<VALUES>.XrdpDir"
+  ],
+  "EDITABLE_FIELDS": [
+    "<MODEL_ID>",
+    "<MODEL_ID>.RDP.<VALUES>",
+    "<MODEL_ID>.RDP.<VALUES>.ServiceName.<VALUES>",
+    "<MODEL_ID>.RDP.<VALUES>.UserName.<VALUES>",
+    "<MODEL_ID>.RDP.<VALUES>.SessionCmd.<VALUES>",
+    "<MODEL_ID>.RDP.<VALUES>.XsessionFile.<VALUES>",
+    "<MODEL_ID>.RDP.<VALUES>.SkeletonDir.<VALUES>",
+    "<MODEL_ID>.RDP.<VALUES>.UserHomeBase.<VALUES>",
+    "<MODEL_ID>.RDP.<VALUES>.Groups.<VALUES>",
+    "<MODEL_ID>.RDP.<VALUES>.SslCertDir.<VALUES>",
+    "<MODEL_ID>.RDP.<VALUES>.SslKeyDir.<VALUES>",
+    "<MODEL_ID>.RDP.<VALUES>.XrdpDir.<VALUES>"
+  ],
+  "EXAMPLE": {
+    "<MODEL_ID>": {
+      "RDP": {
+        "xrdp-setup": {
+          "ServiceName": "xrdp",
+          "UserName": "student",
+          "SessionCmd": "startxfce4",
+          "XsessionFile": "/etc/skel/.xsession",
+          "SkeletonDir": "/etc/skel",
+          "UserHomeBase": "/home",
+          "Groups": [
+            "ssl-cert",
+            "video",
+            "audio"
+          ],
+          "SslCertDir": "/etc/ssl/certs",
+          "SslKeyDir": "/etc/ssl/private",
+          "XrdpDir": "/etc/xrdp"
+        }
+      }
+    }
+  },
+  "DESCRIPTION": {
+    "<MODEL_ID>.RDP.<VALUES>": "An RDP service configuration job.",
+    "<MODEL_ID>.RDP.<VALUES>.ServiceName.<VALUES>": "Name of the RDP service to install/manage (e.g. xrdp).",
+    "<MODEL_ID>.RDP.<VALUES>.UserName.<VALUES>": "Primary user account used for RDP sessions.",
+    "<MODEL_ID>.RDP.<VALUES>.SessionCmd.<VALUES>": "Command executed to start the desktop session.",
+    "<MODEL_ID>.RDP.<VALUES>.XsessionFile.<VALUES>": "Path to the xsession file used for RDP logins.",
+    "<MODEL_ID>.RDP.<VALUES>.SkeletonDir.<VALUES>": "Skeleton directory used when creating new user home directories.",
+    "<MODEL_ID>.RDP.<VALUES>.UserHomeBase.<VALUES>": "Base directory under which RDP user home folders are created.",
+    "<MODEL_ID>.RDP.<VALUES>.Groups.<VALUES>": "List of system groups the RDP user should belong to.",
+    "<MODEL_ID>.RDP.<VALUES>.SslCertDir.<VALUES>": "Directory containing SSL certificates for RDP.",
+    "<MODEL_ID>.RDP.<VALUES>.SslKeyDir.<VALUES>": "Directory containing SSL private keys for RDP.",
+    "<MODEL_ID>.RDP.<VALUES>.XrdpDir.<VALUES>": "Base configuration directory for XRDP."
+  }
+}

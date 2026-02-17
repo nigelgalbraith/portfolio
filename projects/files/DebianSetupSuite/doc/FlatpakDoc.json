@@ -1,0 +1,21 @@
+{
+  "FIXED_FIELDS": [
+    "<MODEL_ID>.Flatpak", 
+    "<MODEL_ID>.Flatpak.<VALUES>.remote."
+  ],
+  "EDITABLE_FIELDS": [
+    "<MODEL_ID>", 
+    "Flatpak.<VALUES>", 
+    "Flatpak.<VALUES>.remote.<VALUES>"],
+  "EXAMPLE": {
+    "<MODEL_ID>": {
+      "Flatpak": {
+        "org.videolan.VLC": { "remote": "flathub" },
+        "com.valvesoftware.Steam": { "remote": "flathub" }
+      }
+    }
+  },
+  "DESCRIPTION": {
+    "<MODEL_ID>.Flatpak.<VALUES>": "Add a Flatpak application ID as the key (e.g. org.videolan.VLC). The value stays {}. Remove the key to uninstall or stop managing that Flatpak."
+  }
+}

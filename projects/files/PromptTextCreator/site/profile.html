@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Profile Builder</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="css/style.css" />
+
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='18' fill='%2306b6d4'/><text x='50' y='62' font-size='58' text-anchor='middle' fill='%23071018'>TG</text></svg>">
+</head>
+
+<body>
+<div class="app">
+
+  <header class="header-centered">
+    <h1>Profile Builder</h1>
+
+    <nav class="nav">
+      <div class="nav-links">
+        <a href="index.html">Generator</a>
+        <a href="profile.html" aria-current="page">Profile Builder</a>
+      </div>
+    </nav>
+
+    <div class="profile-loader-wrapper">
+      <!-- Load button pane -->
+      <div
+        data-pane="profile-loader"
+        data-state-key="TEXT_PROFILE"
+        data-default-profile="data/default.json"
+        data-button-label="Load Profile"
+        data-accept="application/json"
+        data-ticker-id="profile-main"
+      ></div>
+
+      <!-- Typewriter ticker pane -->
+      <div
+        class="profile-loader-ticker"
+        data-pane="status-ticker"
+        data-messages-url="data/messages.json"
+        data-ticker-id="profile-main"
+      ></div>
+    </div>
+  </header>
+
+  <main class="split" id="root">
+
+    <!-- Intro text for profile page -->
+    <div class="intro-text"
+         data-pane="intro-text"
+         data-intro-key="profile">
+    </div>
+
+    <!-- Key/value fields -->
+    <div data-pane="builder-form"
+         data-state-key="TEXT_PROFILE"
+         data-title="Form Fields">
+    </div>
+
+    <!-- Checklist groups -->
+    <div data-pane="builder-checklists"
+         data-state-key="TEXT_PROFILE"
+         data-title="Checklist Groups">
+    </div>
+
+    <!-- Subject + example blocks -->
+    <div data-pane="builder-snippets"
+         data-state-key="TEXT_PROFILE"
+         data-title="Snippets">
+    </div>
+
+    <!-- Writing style list -->
+    <div data-pane="builder-styles"
+         data-state-key="TEXT_PROFILE"
+         data-title="Styles">
+    </div>
+
+    <!-- Mode + template + prompt + Ollama config -->
+    <div data-pane="builder-meta"
+         data-state-key="TEXT_PROFILE"
+         data-title="Profile">
+    </div>
+
+    <!-- Export profile state → JSON file -->
+    <div data-pane="builder-export"
+         data-state-key="TEXT_PROFILE"
+         data-title="Export Profile"
+         data-filename="profile.json"
+         data-button-label="Download JSON"
+         data-ticker-id="profile-main">
+    </div>
+
+  </main>
+</div>
+
+<!-- Scripts -->
+<script src="js/PanesCore.js"></script>
+<script src="js/Common/StatusTickerPane.js"></script>
+<script src="js/Common/ProfileLoaderPane.js"></script>
+
+
+<script src="js/Builder/BuilderFormPane.js"></script>
+<script src="js/Builder/BuilderChecklistPane.js"></script>
+<script src="js/Builder/BuilderSnippetsPane.js"></script>
+<script src="js/Builder/BuilderStylesPane.js"></script>
+<script src="js/Builder/BuilderMetaPane.js"></script>
+
+
+<script src="js/Common/ExportPane.js"></script>
+<script src="text/intro.js"></script>
+<script src="js/Common/IntroPane.js"></script>
+<script>
+window.Panes && window.Panes.bootstrap();
+</script>
+
+</body>
+</html>

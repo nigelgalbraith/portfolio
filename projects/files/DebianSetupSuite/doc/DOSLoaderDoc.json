@@ -1,0 +1,62 @@
+{
+  "FIXED_FIELDS": [
+    "<MODEL_ID>.DOSLoader",
+    "<MODEL_ID>.DOSLoader.<VALUES>.Name",
+    "<MODEL_ID>.DOSLoader.<VALUES>.DownloadURL",
+    "<MODEL_ID>.DOSLoader.<VALUES>.ExtractTo",
+    "<MODEL_ID>.DOSLoader.<VALUES>.CheckPath",
+    "<MODEL_ID>.DOSLoader.<VALUES>.StripTopLevel",
+    "<MODEL_ID>.DOSLoader.<VALUES>.LaunchCmd",
+    "<MODEL_ID>.DOSLoader.<VALUES>.PostInstall",
+    "<MODEL_ID>.DOSLoader.<VALUES>.Notes"
+  ],
+  "EDITABLE_FIELDS": [
+    "<MODEL_ID>",
+    "<MODEL_ID>.DOSLoader.<VALUES>",
+    "<MODEL_ID>.DOSLoader.<VALUES>.Name.<VALUES>",
+    "<MODEL_ID>.DOSLoader.<VALUES>.DownloadURL.<VALUES>",
+    "<MODEL_ID>.DOSLoader.<VALUES>.ExtractTo.<VALUES>",
+    "<MODEL_ID>.DOSLoader.<VALUES>.CheckPath.<VALUES>",
+    "<MODEL_ID>.DOSLoader.<VALUES>.StripTopLevel.<VALUES>",
+    "<MODEL_ID>.DOSLoader.<VALUES>.LaunchCmd.<VALUES>",
+    "<MODEL_ID>.DOSLoader.<VALUES>.PostInstall.<VALUES>",
+    "<MODEL_ID>.DOSLoader.<VALUES>.Notes.<VALUES>"
+  ],
+  "EXAMPLE": {
+    "<MODEL_ID>": {
+      "DOSLoader": {
+        "Monkey": {
+          "Name": "The Secret of Monkey Island",
+          "DownloadURL": "https://archive.org/download/monkey_dos/MONKEY.zip",
+          "ExtractTo": "~/dosgames/monkey",
+          "CheckPath": "~/dosgames/monkey",
+          "StripTopLevel": true,
+          "LaunchCmd": "dosbox -c \"mount c ~/dosgames/monkey\" -c \"c:\" -c \"monkey.exe\"",
+          "PostInstall": [],
+          "Notes": "Runs in DOSBox. Default launch assumes MONKEY.EXE is present."
+        },
+        "IndianaJonesLC": {
+          "Name": "Indiana Jones and the Last Crusade",
+          "DownloadURL": "https://archive.org/download/JONES_EGA/JONES.zip",
+          "ExtractTo": "~/dosgames/indylc",
+          "CheckPath": "~/dosgames/indylc",
+          "StripTopLevel": true,
+          "LaunchCmd": "dosbox -c \"mount c ~/dosgames/indylc\" -c \"c:\" -c \"indy.exe\"",
+          "PostInstall": [],
+          "Notes": "Runs in DOSBox. Default launch assumes indy.exe is present."
+        }
+      }
+    }
+  },
+  "DESCRIPTION": {
+    "<MODEL_ID>.DOSLoader.<VALUES>": "A DOS game definition.",
+    "<MODEL_ID>.DOSLoader.<VALUES>.Name.<VALUES>": "Human-readable game name.",
+    "<MODEL_ID>.DOSLoader.<VALUES>.DownloadURL.<VALUES>": "URL to download the game archive.",
+    "<MODEL_ID>.DOSLoader.<VALUES>.ExtractTo.<VALUES>": "Directory where the archive is extracted.",
+    "<MODEL_ID>.DOSLoader.<VALUES>.CheckPath.<VALUES>": "Path used to verify installation.",
+    "<MODEL_ID>.DOSLoader.<VALUES>.StripTopLevel.<VALUES>": "Remove top-level folder during extraction.",
+    "<MODEL_ID>.DOSLoader.<VALUES>.LaunchCmd.<VALUES>": "DOSBox launch command.",
+    "<MODEL_ID>.DOSLoader.<VALUES>.PostInstall.<VALUES>": "Commands run after installation.",
+    "<MODEL_ID>.DOSLoader.<VALUES>.Notes.<VALUES>": "Free-form notes about the game."
+  }
+}

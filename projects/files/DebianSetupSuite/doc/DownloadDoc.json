@@ -1,0 +1,50 @@
+{
+  "FIXED_FIELDS": [
+    "<MODEL_ID>.Downloads",
+    "<MODEL_ID>.Downloads.<VALUES>.links",
+    "<MODEL_ID>.Downloads.<VALUES>.links.output_path",
+    "<MODEL_ID>.Downloads.<VALUES>.links.extract",
+    "<MODEL_ID>.Downloads.<VALUES>.links.extract_extensions",
+    "<MODEL_ID>.Downloads.<VALUES>.links.LinksConfigs"
+  ],
+  "EDITABLE_FIELDS": [
+    "<MODEL_ID>",
+    "<MODEL_ID>.Downloads.<VALUES>",
+    "<MODEL_ID>.Downloads.<VALUES>.links.<VALUES>.output_path.<VALUES>",
+    "<MODEL_ID>.Downloads.<VALUES>.links.<VALUES>.extract.<VALUES>",
+    "<MODEL_ID>.Downloads.<VALUES>.links.<VALUES>.extract_extensions.<VALUES>",
+    "<MODEL_ID>.Downloads.<VALUES>.links.<VALUES>.LinksConfigs.<VALUES>"
+  ],
+  "EXAMPLE": {
+    "<MODEL_ID>": {
+      "Downloads": {
+        "TEST": {
+          "links": {
+            "output_path": "",
+            "extract": false,
+            "extract_extensions": [],
+            "LinksConfigs": []
+          }
+        },
+        "Archives": {
+          "links": {
+            "output_path": "/tmp/downloads",
+            "extract": true,
+            "extract_extensions": [
+              ".zip",
+              ".tar.gz"
+            ],
+            "LinksConfigs": []
+          }
+        }
+      }
+    }
+  },
+  "DESCRIPTION": {
+    "<MODEL_ID>.Downloads.<VALUES>": "A grouped download job.",
+    "<MODEL_ID>.Downloads.<VALUES>.links.<VALUES>.output_path.<VALUES>": "Directory where downloaded files are saved.",
+    "<MODEL_ID>.Downloads.<VALUES>.links.<VALUES>.extract.<VALUES>": "If true, extract downloaded archives.",
+    "<MODEL_ID>.Downloads.<VALUES>.links.<VALUES>.extract_extensions.<VALUES>": "File extensions treated as extractable.",
+    "<MODEL_ID>.Downloads.<VALUES>.links.<VALUES>.LinksConfigs.<VALUES>": "Optional per-link configuration entries."
+  }
+}

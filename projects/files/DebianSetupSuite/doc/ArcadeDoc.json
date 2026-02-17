@@ -1,0 +1,221 @@
+{
+  "FIXED_FIELDS": [
+    "<MODEL_ID>.Arcade",
+    "<MODEL_ID>.Arcade.<VALUES>.Packages",
+    "<MODEL_ID>.Arcade.<VALUES>.SetupDirs",
+    "<MODEL_ID>.Arcade.<VALUES>.SetupScripts",
+    "<MODEL_ID>.Arcade.<VALUES>.SetupScripts.script",
+    "<MODEL_ID>.Arcade.<VALUES>.SetupScripts.args",
+    "<MODEL_ID>.Arcade.<VALUES>.SetupCmds",
+    "<MODEL_ID>.Arcade.<VALUES>.ChmodPaths",
+    "<MODEL_ID>.Arcade.<VALUES>.ChmodPaths.path",
+    "<MODEL_ID>.Arcade.<VALUES>.ChmodPaths.mode",
+    "<MODEL_ID>.Arcade.<VALUES>.ChmodPaths.recursive",
+    "<MODEL_ID>.Arcade.<VALUES>.ChownUser",
+    "<MODEL_ID>.Arcade.<VALUES>.ChownGroup",
+    "<MODEL_ID>.Arcade.<VALUES>.ChownRecursive",
+    "<MODEL_ID>.Arcade.<VALUES>.ChownPaths",
+    "<MODEL_ID>.Arcade.<VALUES>.ChownPaths.path",
+    "<MODEL_ID>.Arcade.<VALUES>.RemovePaths",
+    "<MODEL_ID>.Arcade.<VALUES>.ResetDirs",
+    "<MODEL_ID>.Arcade.<VALUES>.ResetCmds",
+    "<MODEL_ID>.Arcade.<VALUES>.SettingsFiles",
+    "<MODEL_ID>.Arcade.<VALUES>.SettingsFiles.copyName",
+    "<MODEL_ID>.Arcade.<VALUES>.SettingsFiles.src",
+    "<MODEL_ID>.Arcade.<VALUES>.SettingsFiles.dest",
+    "<MODEL_ID>.Arcade.<VALUES>.SettingsFolders",
+    "<MODEL_ID>.Arcade.<VALUES>.arcadeUsers",
+    "<MODEL_ID>.Arcade.<VALUES>.arcadeGroups",
+    "<MODEL_ID>.Arcade.<VALUES>.ProtectedFolders",
+    "<MODEL_ID>.Arcade.<VALUES>.ProtectedFolders.path",
+    "<MODEL_ID>.Arcade.<VALUES>.ProtectedFolders.owner",
+    "<MODEL_ID>.Arcade.<VALUES>.ProtectedFolders.group",
+    "<MODEL_ID>.Arcade.<VALUES>.ProtectedFolders.permissions"
+  ],
+  "EDITABLE_FIELDS": [
+    "<MODEL_ID>",
+    "<MODEL_ID>.Arcade.<VALUES>",
+    "<MODEL_ID>.Arcade.<VALUES>.Packages.<VALUES>",
+    "<MODEL_ID>.Arcade.<VALUES>.SetupDirs.<VALUES>",
+    "<MODEL_ID>.Arcade.<VALUES>.SetupScripts.<VALUES>.script.<VALUES>",
+    "<MODEL_ID>.Arcade.<VALUES>.SetupScripts.<VALUES>.args.<VALUES>",
+    "<MODEL_ID>.Arcade.<VALUES>.SetupCmds.<VALUES>",
+    "<MODEL_ID>.Arcade.<VALUES>.ChmodPaths.<VALUES>.path.<VALUES>",
+    "<MODEL_ID>.Arcade.<VALUES>.ChmodPaths.<VALUES>.mode.<VALUES>",
+    "<MODEL_ID>.Arcade.<VALUES>.ChmodPaths.<VALUES>.recursive.<VALUES>",
+    "<MODEL_ID>.Arcade.<VALUES>.ChownUser.<VALUES>",
+    "<MODEL_ID>.Arcade.<VALUES>.ChownGroup.<VALUES>",
+    "<MODEL_ID>.Arcade.<VALUES>.ChownRecursive.<VALUES>",
+    "<MODEL_ID>.Arcade.<VALUES>.ChownPaths.<VALUES>.path.<VALUES>",
+    "<MODEL_ID>.Arcade.<VALUES>.RemovePaths.<VALUES>",
+    "<MODEL_ID>.Arcade.<VALUES>.ResetDirs.<VALUES>",
+    "<MODEL_ID>.Arcade.<VALUES>.ResetCmds.<VALUES>",
+    "<MODEL_ID>.Arcade.<VALUES>.SettingsFiles.<VALUES>.copyName.<VALUES>",
+    "<MODEL_ID>.Arcade.<VALUES>.SettingsFiles.<VALUES>.src.<VALUES>",
+    "<MODEL_ID>.Arcade.<VALUES>.SettingsFiles.<VALUES>.dest.<VALUES>",
+    "<MODEL_ID>.Arcade.<VALUES>.SettingsFolders.<VALUES>",
+    "<MODEL_ID>.Arcade.<VALUES>.arcadeUsers.<VALUES>",
+    "<MODEL_ID>.Arcade.<VALUES>.arcadeGroups.<VALUES>",
+    "<MODEL_ID>.Arcade.<VALUES>.ProtectedFolders.<VALUES>.path.<VALUES>",
+    "<MODEL_ID>.Arcade.<VALUES>.ProtectedFolders.<VALUES>.owner.<VALUES>",
+    "<MODEL_ID>.Arcade.<VALUES>.ProtectedFolders.<VALUES>.group.<VALUES>",
+    "<MODEL_ID>.Arcade.<VALUES>.ProtectedFolders.<VALUES>.permissions.<VALUES>"
+  ],
+  "EXAMPLE": {
+    "<MODEL_ID>": {
+      "Arcade": {
+        "mame": {
+          "Packages": [
+            "mame",
+            "mame-data",
+            "mame-tools"
+          ],
+          "SetupDirs": [
+            "/etc/mame",
+            "/var/lib/arcade/mame"
+          ],
+          "SetupScripts": [
+            {
+              "script": "settings/controllers/install_xbox_controller.sh",
+              "args": []
+            }
+          ],
+          "SetupCmds": [
+            "/usr/games/mame -listxml > /var/lib/arcade/mame.xml"
+          ],
+          "ChmodPaths": [
+            {
+              "path": "/var/lib/arcade/mame",
+              "mode": "2775",
+              "recursive": true
+            }
+          ],
+          "ChownUser": "nigel",
+          "ChownGroup": "arcade",
+          "ChownRecursive": true,
+          "ChownPaths": [
+            {
+              "path": "/var/lib/arcade/mame"
+            }
+          ],
+          "RemovePaths": [
+            "/etc/mame/*.ini"
+          ],
+          "ResetDirs": [
+            "/etc/mame"
+          ],
+          "ResetCmds": [
+            "bash -lc 'cd /etc/mame && /usr/games/mame -createconfig'"
+          ],
+          "SettingsFiles": [
+            {
+              "copyName": "MainConfig",
+              "src": "settings/mame/Desktop/Desktop-mame_template.ini",
+              "dest": "/etc/mame/mame.ini"
+            }
+          ],
+          "SettingsFolders": [],
+          "arcadeUsers": [
+            "nigel"
+          ],
+          "arcadeGroups": [
+            "arcade"
+          ],
+          "ProtectedFolders": [
+            {
+              "path": "/mnt/plexmedia/PlexMedia/arcade",
+              "owner": "root",
+              "group": "arcade",
+              "permissions": "3775"
+            }
+          ]
+        },
+        "retroarch": {
+          "Packages": [
+            "retroarch",
+            "libretro-core-info"
+          ],
+          "SetupDirs": [
+            "/etc/retroarch",
+            "/var/lib/arcade/retroarch"
+          ],
+          "SetupScripts": [],
+          "SetupCmds": [],
+          "ChmodPaths": [
+            {
+              "path": "/var/lib/arcade/retroarch",
+              "mode": "2775",
+              "recursive": true
+            }
+          ],
+          "ChownUser": "nigel",
+          "ChownGroup": "arcade",
+          "ChownRecursive": true,
+          "ChownPaths": [
+            {
+              "path": "/var/lib/arcade/retroarch"
+            }
+          ],
+          "RemovePaths": [
+            "/etc/retroarch/retroarch.cfg"
+          ],
+          "ResetDirs": [
+            "/etc/retroarch"
+          ],
+          "ResetCmds": [],
+          "SettingsFiles": [
+            {
+              "copyName": "RetroArchConfig",
+              "src": "settings/retroarch/Desktop/Desktop-template-retroarch.cfg",
+              "dest": "/etc/retroarch/retroarch.cfg"
+            }
+          ],
+          "SettingsFolders": [],
+          "arcadeUsers": [
+            "nigel"
+          ],
+          "arcadeGroups": [
+            "arcade"
+          ],
+          "ProtectedFolders": [
+            {
+              "path": "/mnt/plexmedia/PlexMedia/arcade",
+              "owner": "root",
+              "group": "arcade",
+              "permissions": "3775"
+            }
+          ]
+        }
+      }
+    }
+  },
+  "DESCRIPTION": {
+    "<MODEL_ID>.Arcade.<VALUES>": "An arcade system setup job.",
+    "<MODEL_ID>.Arcade.<VALUES>.Packages.<VALUES>": "Debian packages required for the arcade job.",
+    "<MODEL_ID>.Arcade.<VALUES>.SetupDirs.<VALUES>": "Directories created before configuration.",
+    "<MODEL_ID>.Arcade.<VALUES>.SetupScripts.<VALUES>": "Scripts executed during setup.",
+    "<MODEL_ID>.Arcade.<VALUES>.SetupScripts.<VALUES>.script.<VALUES>": "Script file path.",
+    "<MODEL_ID>.Arcade.<VALUES>.SetupScripts.<VALUES>.args.<VALUES>": "Arguments passed to the script.",
+    "<MODEL_ID>.Arcade.<VALUES>.SetupCmds.<VALUES>": "Shell commands executed during setup.",
+    "<MODEL_ID>.Arcade.<VALUES>.ChmodPaths.<VALUES>.path.<VALUES>": "Target path for chmod operation.",
+    "<MODEL_ID>.Arcade.<VALUES>.ChmodPaths.<VALUES>.mode.<VALUES>": "Permission mode.",
+    "<MODEL_ID>.Arcade.<VALUES>.ChmodPaths.<VALUES>.recursive.<VALUES>": "Apply permissions recursively.",
+    "<MODEL_ID>.Arcade.<VALUES>.ChownUser.<VALUES>": "User that owns arcade files.",
+    "<MODEL_ID>.Arcade.<VALUES>.ChownGroup.<VALUES>": "Group that owns arcade files.",
+    "<MODEL_ID>.Arcade.<VALUES>.ChownRecursive.<VALUES>": "Apply ownership recursively.",
+    "<MODEL_ID>.Arcade.<VALUES>.ChownPaths.<VALUES>.path.<VALUES>": "Target path for chown operation.",
+    "<MODEL_ID>.Arcade.<VALUES>.RemovePaths.<VALUES>": "Paths removed during uninstall/reset.",
+    "<MODEL_ID>.Arcade.<VALUES>.ResetDirs.<VALUES>": "Directories recreated during reset.",
+    "<MODEL_ID>.Arcade.<VALUES>.ResetCmds.<VALUES>": "Commands executed during reset.",
+    "<MODEL_ID>.Arcade.<VALUES>.SettingsFiles.<VALUES>.copyName.<VALUES>": "Logical name.",
+    "<MODEL_ID>.Arcade.<VALUES>.SettingsFiles.<VALUES>.src.<VALUES>": "Source file path.",
+    "<MODEL_ID>.Arcade.<VALUES>.SettingsFiles.<VALUES>.dest.<VALUES>": "Destination file path.",
+    "<MODEL_ID>.Arcade.<VALUES>.SettingsFolders.<VALUES>": "Configuration folders copied into place.",
+    "<MODEL_ID>.Arcade.<VALUES>.arcadeUsers.<VALUES>": "Users granted arcade access.",
+    "<MODEL_ID>.Arcade.<VALUES>.arcadeGroups.<VALUES>": "Groups granted arcade access.",
+    "<MODEL_ID>.Arcade.<VALUES>.ProtectedFolders.<VALUES>.path.<VALUES>": "Protected folder path.",
+    "<MODEL_ID>.Arcade.<VALUES>.ProtectedFolders.<VALUES>.owner.<VALUES>": "Folder owner.",
+    "<MODEL_ID>.Arcade.<VALUES>.ProtectedFolders.<VALUES>.group.<VALUES>": "Folder group.",
+    "<MODEL_ID>.Arcade.<VALUES>.ProtectedFolders.<VALUES>.permissions.<VALUES>": "Permission mode."
+  }
+}

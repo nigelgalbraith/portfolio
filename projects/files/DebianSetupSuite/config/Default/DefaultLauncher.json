@@ -1,0 +1,73 @@
+{
+  "Default": {
+    "Launcher": {
+      "flex-launcher": {
+        "DownloadURL": "https://github.com/complexlogic/flex-launcher/releases/download/v2.2/flex-launcher_2.2_amd64.deb",
+        "download_dir": "/tmp/launcher-downloads",
+
+        "SettingsFolders": [
+          { "copyName": "Flex icons", "src": "settings/flex/icons", "dest": "/home/launcher/.config/flex-launcher/icons" }
+        ],
+        "SettingsFiles": [
+          { "copyName": "FlexINI", "src": "settings/flex/Desktop/Desktop-Flex-Template-config.ini", "dest": "/home/launcher/.config/flex-launcher/config.ini" }
+        ],
+
+        "SettingsChmodPaths": [
+          { "path": "/home/launcher/.config/flex-launcher/icons", "mode": "755" },
+          { "path": "/home/launcher/.config/flex-launcher/config.ini", "mode": "644" }
+        ],
+        "SettingsChownPaths": [
+          { "path": "/home/launcher/.config/flex-launcher/icons" },
+          { "path": "/home/launcher/.config/flex-launcher/config.ini" }
+        ],
+
+        "RemovePaths": [
+          "/home/launcher/.config/flex-launcher/config.ini",
+          "/home/launcher/.config/openbox/autostart",
+          "/etc/lightdm/lightdm.conf.d/50-launcher.conf"
+        ],
+
+        "SetupDirs": [
+          "/home/launcher/.config",
+          "/home/launcher/.config/openbox",
+          "/home/launcher/.config/flex-launcher",
+          "/etc/lightdm/lightdm.conf.d"
+        ],
+
+        "KioskFiles": [
+          { "copyName": "LightDM autologin", "src": "settings/flex/Desktop/Desktop-LightDM-50-launcher.conf", "dest": "/etc/lightdm/lightdm.conf.d/50-launcher.conf" },
+          { "copyName": "Openbox autostart", "src": "settings/flex/Desktop/Desktop-Flex-autostart.sh", "dest": "/home/launcher/.config/openbox/autostart" },
+          { "copyName": "Launcher Xsession", "src": "settings/flex/Desktop/Desktop-Flex-xsession", "dest": "/home/launcher/.xsession" }
+        ],
+
+        "ChmodPaths": [
+          { "path": "/home/launcher/.config/openbox/autostart", "mode": "755" },
+          { "path": "/home/launcher/.xsession", "mode": "744" }
+        ],
+
+        "ChownUser": "launcher",
+        "ChownPaths": [
+          { "path": "/home/launcher" },
+          { "path": "/home/launcher/.config" },
+          { "path": "/home/launcher/.cache" }
+        ],
+        "ChownRecursive": true,
+
+        "Users": ["launcher"],
+        "UserGroups": ["audio", "video", "arcade"],
+
+        "DefaultDM": { "package": "gdm3", "service": "gdm" },
+        "KioskDM":   { "package": "lightdm", "service": "lightdm" },
+
+        "AdditionalPackages": [
+          "chromium",
+          "dbus-user-session",
+          "dbus-x11",
+          "lightdm-gtk-greeter",
+          "lightdm-gtk-greeter-settings",
+          "libsdl2-image-2.0-0"
+        ]
+      }
+    }
+  }
+}

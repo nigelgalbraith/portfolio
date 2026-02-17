@@ -1,0 +1,14 @@
+{
+  "Default": {
+    "Downloads": {
+      "TEST": {
+        "links": {
+          "output_path": "",
+          "extract": false,
+          "extract_extensions": [],
+          "LinksConfigs": []
+        }
+      }
+    }
+  }
+}

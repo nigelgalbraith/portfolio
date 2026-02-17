@@ -1,0 +1,43 @@
+{
+  "Default": {
+    "ufw":{
+      "Firewall": {
+        "Applications": [
+          "ExampleApp1",
+          "ExampleApp2"
+        ],
+        "SinglePorts": [
+          {
+            "RuleName": "SSH",
+            "Port": 22,
+            "Protocol": "tcp",
+            "IPs": [
+              "1.1.1.1",
+              "1.1.1.2"
+            ]
+          },
+          {
+            "RuleName": "RDP",
+            "Port": 3389,
+            "Protocol": "tcp",
+            "IPs": [
+              "2.2.2.1",
+              "2.2.2.2"
+            ]
+          }
+        ],
+        "PortRanges": [
+          {
+            "RuleName": "Example",
+            "FromPort": 8000,
+            "ToPort": 8100,
+            "Protocol": "tcp",
+            "IPs": [
+              "3.3.3.1"
+            ]
+          }
+        ]
+      }
+    }
+  }
+}

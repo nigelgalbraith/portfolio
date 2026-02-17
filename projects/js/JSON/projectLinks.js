@@ -53,7 +53,7 @@ const ProjectLinks = {
     powerShellCloudBackup: [
     {
       label: "PowerShell Cloud Backup Tool",
-      href: "files/powerShellCloudBackupTool.zip",
+      href: "files/PowerShellCloudBackupTool.zip",
       icon: "../images/icons/optimized/zip.png",
       alt: "Zip",
       download: true
@@ -71,7 +71,7 @@ const ProjectLinks = {
     textCreator: [
       {
         label: "Text Creator Tool",
-        href: "files/TextCreator.zip",
+        href: "files/PromptTextCreator.zip",
         icon: "../images/icons/optimized/zip.png",
         alt: "Zip",
         download: true
