@@ -47,9 +47,9 @@ const PROJECT_LIST_DATA = [
     "title": "Portfolio Website",
     "description": `
       <ul>
-        <li>Built entirely from scratch with modular HTML and CSS.</li>
-        <li>Uses dynamic JavaScript injection for project content and loaders.</li>
-        <li>Templated project pages ensure maintainable, reusable structure.</li>
+        <li>Designed and built modular planter boxes for a greenhouse.</li>
+        <li>Used SketchUp to test layout and fit before construction.</li>
+        <li>Considered access, durability, and future replacement.</li>
       </ul>
     `
   },
@@ -88,10 +88,10 @@ const PROJECT_LIST_DATA = [
     "title": "Terrace Gardens",
     "description": `
       <ul>
-        <li>Planned and visualized tiered garden layouts using SketchUp.</li>
-        <li>Optimized designs for narrow or sloped spaces.</li>
-        <li>Focused on low maintenance and sustainable planting solutions.</li>
-        <li>Created layouts suitable for urban or backyard terraces.</li>
+        <li>Designed tiered planter layouts in SketchUp before building.</li>
+        <li>Worked around tight and uneven spaces.</li>
+        <li>Built with durability and straightforward maintenance in mind.</li>
+        <li>Adapted the layout to suit the available space.</li>
       </ul>
     `
   },
@@ -105,7 +105,7 @@ const PROJECT_LIST_DATA = [
         <li>Transforms Excel based thematic coding data into a web tool.</li>
         <li>Provides an interactive interface to explore and review themes.</li>
         <li>Built with Python for data processing and export.</li>
-        <li>Helps researchers structure, share, and discuss findings more easily.</li>
+        <li>Helps structure findings more easily.</li>
       </ul>
     `
   },
@@ -131,7 +131,7 @@ const PROJECT_LIST_DATA = [
     "description": `
       <ul>
         <li>Unified Debian setup suite powered by a main loader and constants modules.</li>
-        <li>Supports model aware installs and configuration (APT, DEB, Flatpak, ThirdParty repos, firewall rules, services, archives, etc.).</li>
+        <li>Supports model aware installs and configuration (APT, DEB, etc.).</li>
         <li>Loader selects the correct constants, validates configs, and builds a plan.</li>
         <li>Executes pipelines with full logging and rotation policy.</li>
       </ul>
