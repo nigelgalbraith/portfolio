@@ -11,6 +11,7 @@
   <!-- JSON-style data -->
   <script src="../js/JSON/mainTextData.js"></script>
   <script src="../js/JSON/iconRegistry.js"></script>
+  <script src="js/JSON/ReflectionsTextData.js"></script>
   <script src="js/JSON/carouselData.js"></script>
   <script src="js/JSON/sketchfabModels.js"></script>
 
@@ -22,10 +23,21 @@
   <script src="js/carousel.js" defer></script>
   <script src="js/embedSketchfab.js" defer></script>
   <script src="../js/mainTextLoader.js" defer></script>
+  <script src="js/ReflectionsLoader.js" defer></script>
 
   <!-- 3D Model Viewer -->
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 </head>
+
+  <!-- 
+    Dynamic Content Notes:
+    - Responsive image inserted via data-img-name using ../js/responsiveImageLoader.js
+    - Image zoom modal enabled via js/modalZoom.js
+    - Tools and Key Learnings icons populated using data-icons via ../js/skillsLoader.js
+    - Main text loaded dynamically from ../js/mainTextLoader.js using data-main-text
+    - Relections text paragraphs loaded into .reflections-content-text from ../js/RflectionsLoader.js based on data-project
+    - Footer content dynamically loaded via ../js/footerIconLoader.js
+  -->
 
 
 <body>
@@ -82,7 +94,10 @@
         </div>
 
         <div class="step-separator"></div>
-
+        <!-- Relections Page Text (paragraphs etc injected dynamically) -->
+        <div class="reflections-content-text" data-reflections-text="terraceGardens"></div>
+        <div class="step-separator"></div>
+        
         <!-- Download Links -->
         <div class="boxed-content">
           <div data-sketchfab-links="terraceGardens"></div>

@@ -11,8 +11,9 @@
   <!-- Embedded JSON-style content -->
   <script src="../js/JSON/mainTextData.js"></script>
   <script src="../js/JSON/iconRegistry.js"></script>
+  <script src="js/JSON/ReflectionsTextData.js"></script>
   <script src="js/JSON/projectLinks.js"></script>
-   <script src="js/JSON/projectSteps.js"></script>
+  <script src="js/JSON/projectSteps.js"></script>
 
   <!-- JavaScript Functionality -->
   <script src="js/modalZoom.js" defer></script>
@@ -21,6 +22,7 @@
   <script src="js/projectStepsData.js" defer></script>
   <script src="../js/responsiveImageLoader.js" defer></script>
   <script src="../js/mainTextLoader.js" defer></script>
+  <script src="js/ReflectionsLoader.js" defer></script>
   <script src="js/projectLinksLoader.js" defer></script>
 </head>
 
@@ -32,6 +34,7 @@
     - Project steps are injected into <section> by js/projectStepsData.js
     - Tool and key learning icons use the data-icons attribute, populated by ../js/skillsLoader.js
     - Main text paragraphs loaded into .main-content-text from ../js/mainTextLoader.js based on data-project
+    - Relections text paragraphs loaded into .reflections-content-text from ../js/RflectionsLoader.js based on data-project
     - Footer content (e.g. contact links, icons) is inserted via ../js/footerIconLoader.js
   -->
   <div class="grid-bg"></div>
@@ -66,6 +69,9 @@
         <!-- Project Steps (injected by js/projectStepsData.js) -->
         <div class="main-content-step-text">
           <section></section>
+
+        <!-- Relections Page Text (paragraphs etc injected dynamically) -->
+        <div class="reflections-content-text" data-reflections-text="thematic"></div>
 
           <!-- Project Files & Web Links -->
           <h2 class="centered-title">Project Files & Web Links</h2>

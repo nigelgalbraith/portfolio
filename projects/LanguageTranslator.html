@@ -11,6 +11,7 @@
   <!-- JSON-style data -->
   <script src="../js/JSON/mainTextData.js"></script>
   <script src="../js/JSON/iconRegistry.js"></script>
+  <script src="js/JSON/ReflectionsTextData.js"></script>
   <script src="js/JSON/projectLinks.js"></script>
   <script src="js/JSON/projectSteps.js"></script>
 
@@ -22,6 +23,7 @@
   <script src="js/projectStepsData.js" defer></script>
   <script src="../js/responsiveImageLoader.js" defer></script>
   <script src="../js/mainTextLoader.js" defer></script>
+  <script src="js/ReflectionsLoader.js" defer></script>
   <script src="js/projectLinksLoader.js" defer></script>
 </head>
 
@@ -34,6 +36,7 @@
     - Footer content is dynamically inserted via footerIconLoader.js
     - Image zoom modal functionality is handled by modalZoom.js
     - Main text description is loaded via data-main-text="languageTranslator" and mainTextLoader.js
+    - Relections text paragraphs loaded into .reflections-content-text from ../js/ReflectionsLoader.js based on data-project
   -->
 
   <div class="grid-bg"></div>
@@ -69,6 +72,9 @@
         <div class="main-content-step-text">
           <!-- Project Steps injected by js/projectStepsData.js -->
           <section></section>
+
+        <!-- Relections Page Text (paragraphs etc injected dynamically) -->
+        <div class="reflections-content-text" data-reflections-text="languageTranslator"></div>
 
           <!-- Project Links Section -->
           <h2 class="centered-title">Project Files</h2>

@@ -11,8 +11,9 @@
   <!-- JSON-style data -->
   <script src="../js/JSON/mainTextData.js"></script>
   <script src="../js/JSON/iconRegistry.js"></script>
+  <script src="js/JSON/ReflectionsTextData.js"></script>
   <script src="js/JSON/projectLinks.js"></script>
-   <script src="js/JSON/projectSteps.js"></script>
+  <script src="js/JSON/projectSteps.js"></script>
 
   <!-- JavaScript Functionality -->
   <script src="js/modalZoom.js" defer></script>                          
@@ -22,8 +23,20 @@
   <script src="js/projectStepsData.js" defer></script>
   <script src="../js/responsiveImageLoader.js" defer></script>
   <script src="../js/mainTextLoader.js" defer></script>
+  <script src="js/ReflectionsLoader.js" defer></script>
   <script src="js/projectLinksLoader.js" defer></script>
 </head>
+
+
+  <!-- 
+    Dynamic Content Notes:
+    - Responsive image inserted via data-img-name using ../js/responsiveImageLoader.js
+    - Image zoom modal enabled via js/modalZoom.js
+    - Tools and Key Learnings icons populated using data-icons via ../js/skillsLoader.js
+    - Main text loaded dynamically from ../js/mainTextLoader.js using data-main-text
+    - Relections text paragraphs loaded into .reflections-content-text from ../js/RflectionsLoader.js based on data-project
+    - Footer content dynamically loaded via ../js/footerIconLoader.js
+  -->
 
 <body data-project="quiz">
   <div class="grid-bg"></div>
@@ -60,6 +73,9 @@
         <!-- Project Steps -->
         <div class="main-content-step-text">
           <section></section>
+
+        <!-- Relections Page Text (paragraphs etc injected dynamically) -->
+        <div class="reflections-content-text" data-reflections-text="quizCreator"></div>
 
           <!-- Quiz Links -->
           <h2 class="centered-title">Project Files & Web Links</h2>

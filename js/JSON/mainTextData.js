@@ -2,6 +2,35 @@
 // Static JavaScript object used as embedded content data for main content rendering
 
 const MAIN_TEXT_DATA = {
+  "home": {
+    "paragraphs": [
+      "I’m an IT professional based in Christchurch, New Zealand, with a broad background in infrastructure, networking, virtualization, and automation. I like putting together smart, practical solutions whether that’s for a workplace setup or one of my own DIY projects.",
+      "I started out doing hands on trades work, then studied at Ara Institute of Canterbury where I got into IT. That mix of practical know how and new ideas still guides how I approach things today.",
+      "For me, it’s always about problem solving and finding efficient ways to get things done. I reckon tech, when used right, can make life easier and a bit greener too.",
+      "Feel free to check out my projects, read a bit more about me, or get in touch. I’m always up for working with people who value innovation, sustainability, and practical creativity."
+    ]
+  },
+  "about": {
+    "paragraphs": [
+      "I'm Nigel Galbraith, an IT professional with a broad background in infrastructure, virtualization, and automation. I started out in trades before moving into tech, which gave me a practical way of looking at systems making sure they’re reliable, sustainable, and easy to use.",
+      "I like tackling complex problems and finding efficient solutions. For me, tech works best when it’s practical, creative, and makes life easier."
+    ]
+  },
+  "contact": {
+      "paragraphs": [
+          "Want to get in touch? Here are a few ways you can reach me.",
+          "Send a message anytime, I’d be keen to hear from you."
+      ],
+      "lists": [
+          {
+          "items": [
+              'Email: <a href="mailto:nigel.galbraith@proton.me">nigelgalbraith@proton.me</a>',
+              'GitHub: <a href="https://github.com/nigelgalbraith/nigelgalbraith.github.io" rel="noopener" target="_blank">github.com/nigelgalbraith</a>',
+              'LinkedIn: <a href="https://www.linkedin.com/in/nigel-galbraith" rel="noopener" target="_blank">linkedin.com/in/nigel-galbraith</a>'
+          ]
+          }
+      ]
+  },
   "arcadeCabinet": {
     "paragraphs": [
       "For this project, I built a custom MAME arcade cabinet using waste MDF and salvaged timber from my joinery work, giving new life to materials that would have otherwise been discarded. The cabinet was designed from scratch and cut using basic woodworking tools, with a focus on keeping costs low but also maintain an authentic retro look and feel.",
@@ -24,64 +53,34 @@ const MAIN_TEXT_DATA = {
   },
   "sharepointGps": {
     "paragraphs": [
-      "At Downer, I built a SharePoint solution to improve efficiency and communication in the traffic management team.",
-      "The platform became a central hub, giving the team better visibility and easier communication.",
-      "It cut down paperwork, improved audit trails, and kept field crews connected to the office in real time."
+      "At Downer, I developed a SharePoint-based system to improve communication and coordination within the traffic management team.",
+      "The platform centralised Traffic Management Plans (TMPs), site checks, and planning tools into one accessible location.",
+      "It reduced paperwork and improved visibility between field crews and office staff, while highlighting the practical challenges of deploying digital systems in real-world conditions."
     ],
     "lists": [
       {
         "title": "Key Features",
         "items": [
           "Access and manage Traffic Management Plans (TMPs) from tablets on site.",
-          "Upload daily site checks with smartphones for faster reporting.",
-          "Scan traffic signs to auto log GPS coordinates."
+          "Upload daily site checks using mobile devices.",
+          "Scan traffic signs to log GPS coordinates."
         ]
       },
       {
-        "title": "Operational Benefits",
+        "title": "Operational Impact",
         "items": [
-          "Forward works planning that links staff, plant, and resources.",
-          "Better visibility with online weekly planner access.",
-          "Crew pre planning based on job needs."
+          "Forward works planning linking staff, plant, and resources.",
+          "Shared weekly planner for improved visibility.",
+          "Pre-planning support for crews based on job requirements."
         ]
       }
     ]
   },
   "terraceGardens": {
-    "paragraphs": 
-  [
-    "I designed terrace gardens in SketchUp, trying out different planter box layouts and levels to get a setup that was simple and balanced. The idea was to keep the build straightforward and modular, using reclaimed wood and solid fixings to make it durable but still easy to put together.",
-    "For me it’s about using tech to save time and make the hands on work easier. SketchUp lets me try different options before building, and it also helps when explaining ideas to others. Having a model to look at means everyone can see the same thing and be clear on how it should come together."
-  ]
-  },
-  "home": {
     "paragraphs": [
-    "I’m an IT professional based in Christchurch, New Zealand, with a broad background in infrastructure, networking, virtualization, and automation. I like putting together smart, practical solutions whether that’s for a workplace setup or one of my own DIY projects.",
-    "I started out doing hands on trades work, then studied at Ara Institute of Canterbury where I got into IT. That mix of practical know how and new ideas still guides how I approach things today.",
-    "For me, it’s always about problem solving and finding efficient ways to get things done. I reckon tech, when used right, can make life easier and a bit greener too.",
-    "Feel free to check out my projects, read a bit more about me, or get in touch. I’m always up for working with people who value innovation, sustainability, and practical creativity."
-  ]
-  },
-  "about": {
-    "paragraphs": [
-      "I'm Nigel Galbraith, an IT professional with a broad background in infrastructure, virtualization, and automation. I started out in trades before moving into tech, which gave me a practical way of looking at systems making sure they’re reliable, sustainable, and easy to use.",
-      "I like tackling complex problems and finding efficient solutions. For me, tech works best when it’s practical, creative, and makes life easier."
+      "I designed terrace gardens in SketchUp, trying out different planter box layouts and levels to get a setup that was simple and balanced. The idea was to keep the build straightforward and modular, using reclaimed wood and solid fixings to make it durable but still easy to put together.",
+      "For me it’s about using tech to save time and make the hands on work easier. SketchUp lets me try different options before building, and it also helps when explaining ideas to others. Having a model to look at means everyone can see the same thing and be clear on how it should come together."
     ]
-  },
-  "contact": {
-      "paragraphs": [
-          "Want to get in touch? Here are a few ways you can reach me.",
-          "Send a message anytime, I’d be keen to hear from you."
-      ],
-      "lists": [
-          {
-          "items": [
-              'Email: <a href="mailto:nigel.galbraith@proton.me">nigelgalbraith@proton.me</a>',
-              'GitHub: <a href="https://github.com/nigelgalbraith/nigelgalbraith.github.io" rel="noopener" target="_blank">github.com/nigelgalbraith</a>',
-              'LinkedIn: <a href="https://www.linkedin.com/in/nigel-galbraith" rel="noopener" target="_blank">linkedin.com/in/nigel-galbraith</a>'
-          ]
-          }
-      ]
   },
   "portfolioWebsite": {
     "paragraphs": [

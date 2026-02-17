@@ -11,6 +11,7 @@
   <!-- JSON-style data -->
   <script src="../js/JSON/mainTextData.js"></script>
   <script src="../js/JSON/iconRegistry.js"></script>
+  <script src="js/JSON/ReflectionsTextData.js"></script>
 
   <!-- JavaScript Functionality -->
   <script src="js/modalZoom.js" defer></script>
@@ -18,6 +19,7 @@
   <script src="../js/skillsLoader.js" defer></script>
   <script src="../js/responsiveImageLoader.js" defer></script>
   <script src="../js/mainTextLoader.js" defer></script>
+  <script src="js/ReflectionsLoader.js" defer></script>
 </head>
 
 
@@ -28,6 +30,7 @@
     - Image zoom modal enabled via js/modalZoom.js
     - Tools and Key Learnings icons populated using data-icons via ../js/skillsLoader.js
     - Main text loaded dynamically from ../js/mainTextLoader.js using data-main-text
+    - Relections text paragraphs loaded into .reflections-content-text from ../js/RflectionsLoader.js based on data-project
     - Footer content dynamically loaded via ../js/footerIconLoader.js
   -->
 
@@ -68,6 +71,9 @@
 
     <!-- Main Page Text (paragraphs injected by mainTextLoader.js) -->
     <div class="main-content-text" data-main-text="sharepointGps"></div>
+
+    <!-- Relections Page Text (paragraphs etc injected dynamically) -->
+    <div class="reflections-content-text" data-reflections-text="sharepointGps"></div>
 
     <!-- Tools and Technologies (icons injected using data-icons via skillsLoader.js) -->
     <section>
