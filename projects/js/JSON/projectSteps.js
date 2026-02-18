@@ -340,8 +340,8 @@ thematic: [
     {
       title: "Step 4: Choose Zip Archive Mode",
       img: "BackupModeZip.png",
-      alt: "Choosing Zip Backup Mode",
-      text: "If you select Zip Backup, the tool will compress your source files into a timestamped archive. You can choose how often to create a zip (Daily, Weekly, Monthly) and how many previous zip files to retain. This is useful for versioned backups or archival snapshots."
+      alt: "Choosing Zip Backup Mode", ⚠️ Important: Mirror mode can permanently delete files from the destination if they no longer exist in the source. While most cloud providers offer a recycle bin (often ~30 days), recovery is not guaranteed use this mode carefully."
+      text: "If you select Zip Backup, the tool will compress your source files into a timestamped archive. You can choose how often to create a zip (Daily, Weekly, Monthly) and how many previous zip files to retain. This is useful for versioned backups or archival snapshots.
     },
     {
       title: "Step 5: Run Backup or Shutdown",
