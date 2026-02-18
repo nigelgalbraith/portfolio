@@ -8,6 +8,7 @@ I hit a problem, I don’t like the messy solution, and I decide to build someth
 I prefer modular systems over giant scripts.
 I prefer predictable execution over clever hacks.
 I like when structure makes things easier to reason about.
+I care more about correctness and clarity than speed or hype.
 
 This portfolio is a collection of the systems I’ve built while learning, experimenting, and refining how I think about software.
 
@@ -53,12 +54,10 @@ I want tools that:
 
 Right now I’m refining:
 
-- Modular backend systems
-- Structured data workflows
-- Clean configuration-driven tooling
-- Personal security lab development
-
-I care more about correctness and clarity than speed or hype.
+- Backend systems
+- Structured data tooling
+- Automation projects
+- Security lab experimentation
 
 ---
 
