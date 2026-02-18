@@ -68,8 +68,6 @@ Everything is MIT licensed.
 If something is useful, copy it.
 Change it. Break it. Improve it.
 
-That’s the point.
-
 ---
 
 Thanks for stopping by.
