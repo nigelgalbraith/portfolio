@@ -47,8 +47,6 @@ I want tools that:
 - Can be extended without breaking everything
 - Make their structure obvious
 
-That’s the thread running through everything here.
-
 ---
 
 ## Current Focus
