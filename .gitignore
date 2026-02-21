@@ -1,8 +1,25 @@
-# Python cache
-__pycache__/
-*.py[cod]
-*$py.class
+# OS junk
+.DS_Store
+Thumbs.db
 
-# Optional: virtual environments
+# Editor folders
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Node
+node_modules/
+package-lock.json
+
+# Python
+__pycache__/
+*.pyc
 venv/
-.env/
+.env
+
+# Build / temporary output
+dist/
+build/
+tmp/
