@@ -12,6 +12,7 @@
   <script src="js/JSON/mainTextData.js"></script>
 
   <!-- JavaScript functionality -->
+  <script src="js/themeToggle.js" defer></script>
   <script src="js/menuToggle.js" defer></script>
   <script src="js/mainTextLoader.js" defer></script>
   <script src="js/footerIconLoader.js" defer></script>
@@ -31,6 +32,19 @@
   <!-- Main content wrapper -->
   <div class="container">
    <h1>Nigel Galbraith Portfolio</h1>
+
+  <!-- Theme toggle button -->
+  <div class="theme-toggle-wrapper">
+    <button
+      class="theme-toggle"
+      type="button"
+      aria-label="Toggle light/dark mode"
+      aria-pressed="false"
+      title="Toggle light/dark mode">
+      <span class="theme-toggle-icon" aria-hidden="true">☾</span>
+      <span class="theme-toggle-text">Theme</span>
+    </button>
+  </div>
 
    <!-- Navigation Bar with hamburger menu for mobile -->
   <nav class="navbar" aria-label="Primary navigation">

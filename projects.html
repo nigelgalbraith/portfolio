@@ -13,10 +13,10 @@
 
   <!-- JavaScript Functionality -->
   <script src="js/menuToggle.js" defer></script>
+  <script src="js/themeToggle.js" defer></script>
   <script src="js/footerIconLoader.js" defer></script>
   <script src="js/projectListLoader.js" defer></script>
 </head>
-
 
  <body>
   <!-- Grid background overlay -->
@@ -24,6 +24,19 @@
   <div class="container">
    <h1>Nigel Galbraith Portfolio</h1>
 
+  <!-- Theme toggle button -->
+  <div class="theme-toggle-wrapper">
+    <button
+      class="theme-toggle"
+      type="button"
+      aria-label="Toggle light/dark mode"
+      aria-pressed="false"
+      title="Toggle light/dark mode">
+      <span class="theme-toggle-icon" aria-hidden="true">☾</span>
+      <span class="theme-toggle-text">Theme</span>
+    </button>
+  </div>
+  
    <!-- Navigation Bar -->
    <nav class="navbar">
     <button class="hamburger" onclick="toggleMenu()">☰</button>
