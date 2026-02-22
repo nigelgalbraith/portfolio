@@ -25,7 +25,7 @@ const MAIN_TEXT_DATA = {
           {
           "items": [
               'Email: <a href="mailto:nigel.galbraith@proton.me">nigelgalbraith@proton.me</a>',
-              'GitHub: <a href="https://github.com/nigelgalbraith/nigelgalbraith.github.io" rel="noopener" target="_blank">github.com/nigelgalbraith</a>',
+              'GitHub: <a href="https://github.com/nigelgalbraith/" rel="noopener" target="_blank">github.com/nigelgalbraith</a>',
               'LinkedIn: <a href="https://www.linkedin.com/in/nigel-galbraith" rel="noopener" target="_blank">linkedin.com/in/nigel-galbraith</a>'
           ]
           }
