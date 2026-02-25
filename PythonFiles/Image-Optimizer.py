@@ -7,6 +7,7 @@
 #========
 import os
 import sys
+from PIL import Image, ImageOps
 
 #==========
 # CONSTANTS
@@ -61,7 +62,14 @@ ASSET_SETS = {
     }
 }
 
-REQUIRED_PACKAGES = ["PIL"]  # Only what's actually used at runtime
+FAVICON_CONFIG = {
+    "input": "../images/icons/original/monitor.png",
+    "output_dir": "../images/icons/optimized",
+    "sizes": [16, 32, 48, 180],  
+    "ico_sizes": [16, 32, 48]
+}
+
+REQUIRED_PACKAGES = ["PIL"] 
 VALID_EXTS = ('.jpg', '.jpeg', '.png')
 
 #=================
@@ -126,29 +134,49 @@ def process_assets(input_dir, output_dir, target_width, quality, valid_exts):
         ))
     return tasks
 
+
 def resize_image(input_path, output_path, target_width, quality):
     """Resize and save an image at target width and quality."""
     try:
-        from PIL import Image, ImageOps
         with Image.open(input_path) as img:
-            # Respect camera EXIF orientation
             img = ImageOps.exif_transpose(img)
-
             orig_width, orig_height = img.size
             if orig_width == 0:
                 print(f"Skipping {input_path}: width is 0")
                 return
-
             scale = target_width / orig_width
             target_height = int(orig_height * scale)
             img_resized = img.resize((target_width, target_height), Image.LANCZOS)
-
-            # Create destination dir lazily, only if we actually save something
             os.makedirs(os.path.dirname(output_path), exist_ok=True)
-            img_resized.save(output_path, optimize=True, quality=quality)
+            ext = os.path.splitext(output_path)[1].lower()
+            save_kwargs = {"optimize": True}
+            if ext in (".jpg", ".jpeg"):
+                save_kwargs["quality"] = quality
+            img_resized.save(output_path, **save_kwargs)
             print(f"Saved: {output_path}")
     except Exception as e:
         print(f"Error processing {input_path}: {e}")
+
+
+def generate_favicon_png(input_path, output_path, size):
+    """Generate a single square favicon PNG at the given size."""
+    from PIL import Image
+    with Image.open(input_path) as img:
+        img = img.convert("RGBA")
+        resized = img.resize((size, size), Image.LANCZOS)
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        resized.save(output_path, optimize=True)
+        print(f"Saved: {output_path}")
+
+
+def generate_favicon_ico(input_path, output_path, sizes):
+    """Generate a multi-size favicon.ico file."""
+    from PIL import Image
+    with Image.open(input_path) as img:
+        img = img.convert("RGBA")
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        img.save(output_path, format="ICO", sizes=[(s, s) for s in sizes])
+        print(f"Saved: {output_path}")        
 
 #=====
 # MAIN
@@ -157,26 +185,23 @@ def main():
     """Run all setup, processing, and resizing tasks."""
     for package in REQUIRED_PACKAGES:
         check_package(package)
-
     # Gather all candidate input dirs
     input_dirs = gather_input_dirs(IMAGE_PROFILES, ASSET_SETS)
     existing_inputs = [d for d in input_dirs if os.path.isdir(d)]
     if not existing_inputs:
         print("[ERROR] No input directories found. Nothing to process.")
         sys.exit(1)
-
     # Require at least one image present anywhere
-    if not any(dir_has_images(d, VALID_EXTS) for d in existing_inputs):
+    favicon_exists = os.path.isfile(FAVICON_CONFIG["input"])
+    if not any(dir_has_images(d, VALID_EXTS) for d in existing_inputs) and not favicon_exists:
         print("[ERROR] No images found in any existing input directory. Exiting.")
         sys.exit(1)
-
     # --- Responsive images (no pre-creation of outputs) ---
     for label, config in IMAGE_PROFILES.items():
         in_dir = config["input_dir"]
         if not os.path.isdir(in_dir):
             print(f"[WARNING] Skipping profile '{label}': input dir not found -> {in_dir}")
             continue
-
         print(f"========= Processing profile: {label} =========")
         for device in ["desktop", "laptop", "mobile"]:
             versions = config["sizes"].get(device, {})
@@ -190,7 +215,6 @@ def main():
                     for task in tasks:
                         resize_image(*task, config["quality"])
             print()
-
     # --- Assets (thumbs/icons) ---
     for asset_type, sets in ASSET_SETS.items():
         for label, cfg in sets.items():
@@ -198,7 +222,6 @@ def main():
             if not os.path.isdir(in_dir):
                 print(f"[WARNING] Skipping {asset_type} for '{label}': input dir not found -> {in_dir}")
                 continue
-
             print(f"========= Processing {asset_type} for: {label} =========")
             tasks = process_assets(in_dir, cfg["output_dir"], cfg["width"], cfg["quality"], VALID_EXTS)
             if not tasks:
@@ -207,7 +230,28 @@ def main():
                 for task in tasks:
                     resize_image(*task)
             print()
-
+    # --- Favicons ---
+    favicon_input = FAVICON_CONFIG["input"]
+    favicon_output_dir = FAVICON_CONFIG["output_dir"]
+    if os.path.isfile(favicon_input):
+        print("========= Processing favicons =========")
+        # PNG sizes
+        for size in FAVICON_CONFIG["sizes"]:
+            output_path = os.path.join(
+                favicon_output_dir,
+                f"favicon-{size}x{size}.png"
+            )
+            generate_favicon_png(favicon_input, output_path, size)
+        # ICO
+        ico_path = os.path.join(favicon_output_dir, "favicon.ico")
+        generate_favicon_ico(
+            favicon_input,
+            ico_path,
+            FAVICON_CONFIG["ico_sizes"]
+        )
+        print()
+    else:
+        print(f"[WARNING] Skipping favicons: source not found -> {favicon_input}")
     print("Done. Responsive images and asset images generated.")
 
 if __name__ == "__main__":
