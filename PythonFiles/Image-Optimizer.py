@@ -160,7 +160,6 @@ def resize_image(input_path, output_path, target_width, quality):
 
 def generate_favicon_png(input_path, output_path, size):
     """Generate a single square favicon PNG at the given size."""
-    from PIL import Image
     with Image.open(input_path) as img:
         img = img.convert("RGBA")
         resized = img.resize((size, size), Image.LANCZOS)
@@ -171,7 +170,6 @@ def generate_favicon_png(input_path, output_path, size):
 
 def generate_favicon_ico(input_path, output_path, sizes):
     """Generate a multi-size favicon.ico file."""
-    from PIL import Image
     with Image.open(input_path) as img:
         img = img.convert("RGBA")
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
