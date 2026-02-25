@@ -63,8 +63,8 @@ ASSET_SETS = {
 }
 
 FAVICON_CONFIG = {
-    "input": "../images/icons/original/monitor.png",
-    "output_dir": "../images/icons/optimized",
+    "input": "../images/favicon/original/monitor.png",
+    "output_dir": "../images/favicon/optimized",
     "sizes": [16, 32, 48, 180],  
     "ico_sizes": [16, 32, 48]
 }
