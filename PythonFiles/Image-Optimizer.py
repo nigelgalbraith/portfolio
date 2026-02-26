@@ -186,8 +186,9 @@ def main():
     # Gather all candidate input dirs
     input_dirs = gather_input_dirs(IMAGE_PROFILES, ASSET_SETS)
     existing_inputs = [d for d in input_dirs if os.path.isdir(d)]
-    if not existing_inputs:
-        print("[ERROR] No input directories found. Nothing to process.")
+    favicon_exists = os.path.isfile(FAVICON_CONFIG["input"])
+    if not existing_inputs and not favicon_exists:
+        print("[ERROR] No input directories found and no favicon source found. Exiting.")
         sys.exit(1)
     # Require at least one image present anywhere
     favicon_exists = os.path.isfile(FAVICON_CONFIG["input"])
