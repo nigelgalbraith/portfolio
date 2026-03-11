@@ -3,12 +3,12 @@
 
 const MAIN_TEXT_DATA = {
   "home": {
-    "paragraphs": [
-      "I’m an IT professional based in Christchurch, New Zealand, with a broad background in infrastructure, networking, virtualization, and automation. I like putting together smart, practical solutions whether that’s for a workplace setup or one of my own DIY projects.",
-      "I started out doing hands on trades work, then studied at Ara Institute of Canterbury where I got into IT. That mix of practical know how and new ideas still guides how I approach things today.",
-      "For me, it’s always about problem solving and finding efficient ways to get things done. I reckon tech, when used right, can make life easier and a bit greener too.",
-      "Feel free to check out my projects, read a bit more about me, or get in touch. I’m always up for working with people who value innovation, sustainability, and practical creativity."
-    ]
+  "paragraphs": [
+    "I’m an IT professional based in Christchurch, New Zealand, with a broad background in infrastructure, networking, virtualization, and automation. I like putting together smart, practical solutions whether that’s for a workplace setup or one of my own DIY projects.",
+    "I started out doing hands on trades work, then studied at Ara Institute of Canterbury where I got into IT. That mix of practical know how and new ideas still guides how I approach things today.",
+    "For me, it’s always about problem solving and finding efficient ways to get things done. I reckon tech, when used right, can make life easier and a bit greener too.",
+    "Feel free to have a look through the projects or get in touch if you'd like to talk about ideas, systems, or solving interesting problems."
+  ]
   },
   "about": {
     "paragraphs": [
