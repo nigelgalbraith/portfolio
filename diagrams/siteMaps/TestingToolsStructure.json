@@ -2,13 +2,13 @@
   "meta": {
     "main_label": "Loader",
     "second_label": "Constants Files",
-    "third_label": "ConfigAndDocs",
+    "third_label": "Tool Configs",
     "main_title": "Testing Tools Loader",
-    "second_title": "Scanner Constants",
-    "third_title": "Config & Docs",
+    "second_title": "Constants Modules",
+    "third_title": "Tool Config Files",
     "key_main": "Main",
     "key_second": "ConstantsFiles",
-    "key_third": "ConfigAndDocs",
+    "key_third": "ToolConfigs",
     "key_links": "links",
     "key_styles": "styles",
     "key_classes": "classes",
@@ -18,33 +18,24 @@
     "ToolLoader": "ToolLoader.py"
   },
   "ConstantsFiles": {
-    "WiFiConstants": "WiFiConstants.py",
-    "NetworkConstants": "NetworkConstants.py"
+    "WiFiConstants": "WiFiConstants",
+    "NetworkConstants": "NetworkConstants"
   },
-  "ConfigAndDocs": {
-    "WiFiConfig": "config/WiFiConfig.json",
-    "WiFiDoc": "doc/WiFiDoc.json",
-    "NetworkConfig": "config/NetworkConfig.json",
-    "NetworkDoc": "doc/NetworkDoc.json",
-    "SharedModules": "modules/*.py"
+  "ToolConfigs": {
+    "WiFiConfig": "WiFiConfig.json",
+    "NetworkConfig": "NetworkConfig.json"
   },
   "links": [
     ["ToolLoader", "WiFiConstants"],
     ["ToolLoader", "NetworkConstants"],
     ["WiFiConstants", "WiFiConfig"],
-    ["WiFiConstants", "WiFiDoc"],
-    ["NetworkConstants", "NetworkConfig"],
-    ["NetworkConstants", "NetworkDoc"],
-    ["ToolLoader", "SharedModules"]
+    ["NetworkConstants", "NetworkConfig"]
   ],
   "class_map": {
     "ToolLoader": "primary",
     "WiFiConstants": "secondary",
     "NetworkConstants": "secondary",
     "WiFiConfig": "tertiary",
-    "WiFiDoc": "tertiary",
-    "NetworkConfig": "tertiary",
-    "NetworkDoc": "tertiary",
-    "SharedModules": "tertiary"
+    "NetworkConfig": "tertiary"
   }
 }

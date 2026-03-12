@@ -4,31 +4,22 @@ graph TD
     ToolLoader[ToolLoader.py]
   end
 
-  subgraph Constants Files [Scanner Constants]
-    WiFiConstants[WiFiConstants.py]
-    NetworkConstants[NetworkConstants.py]
+  subgraph Constants Files [Constants Modules]
+    WiFiConstants[WiFiConstants]
+    NetworkConstants[NetworkConstants]
   end
 
-  subgraph ConfigAndDocs [Config & Docs]
-    WiFiConfig[config/WiFiConfig.json]
-    WiFiDoc[doc/WiFiDoc.json]
-    NetworkConfig[config/NetworkConfig.json]
-    NetworkDoc[doc/NetworkDoc.json]
-    SharedModules[modules/*.py]
+  subgraph Tool Configs [Tool Config Files]
+    WiFiConfig[WiFiConfig.json]
+    NetworkConfig[NetworkConfig.json]
   end
 
   ToolLoader --> WiFiConstants
   ToolLoader --> NetworkConstants
   WiFiConstants --> WiFiConfig
-  WiFiConstants --> WiFiDoc
   NetworkConstants --> NetworkConfig
-  NetworkConstants --> NetworkDoc
-  ToolLoader --> SharedModules
   class ToolLoader primary
   class WiFiConstants secondary
   class NetworkConstants secondary
   class WiFiConfig tertiary
-  class WiFiDoc tertiary
   class NetworkConfig tertiary
-  class NetworkDoc tertiary
-  class SharedModules tertiary

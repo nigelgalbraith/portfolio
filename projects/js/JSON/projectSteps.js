@@ -645,104 +645,172 @@ thematic: [
   ],
   // Step-by-step breakdown for the Automation Tools and Testing Tools frameworks
   automationTools: [
-    {
-      title: "Automation Tools Framework Overview",
-      img: "AutomationToolsStructure.png",
-      alt: "Automation Tools framework overview",
-      text: "This diagram shows the core structure of the automation framework. A central loader controls the common setup process, while individual tools provide their own constants, validation rules, documentation, and execution states. The goal is to avoid duplicating boilerplate and make each new automation tool follow the same predictable pattern."
-    },
-    {
-      title: "Loader State Machine",
-      img: "AutomationToolsStateMachineFlow.png",
-      alt: "Automation Tools loader state machine",
-      text: "The loader follows a structured state based flow. It loads the selected tool, checks dependencies, reads configuration, validates required values, builds the execution plan, and then runs the requested action through an ordered pipeline. This keeps the control flow easy to trace and makes the framework easier to extend without turning it into a pile of special cases."
-    },
-    {
-      title: "Constants and Validation Structure",
-      img: "AutomationToolsConstantsFlow.png",
-      alt: "Automation Tools constants and validation structure",
-      text: "Each tool is defined through a constants module rather than hardcoded inside the loader. These constants define actions, menu entries, required config keys, pipeline states, and logging behavior. Validation is handled before the main work begins, which helps catch bad config or missing fields early instead of failing halfway through execution."
-    },
-    {
-      title: "Step 1: Launch the Loader",
-      img: "AutomationToolsMenu.png",
-      alt: "Automation Tools main loader menu",
-      text: "When the framework starts, the loader presents the available tool set and actions. Instead of running one script per task, the user selects a tool from a shared entry point. This makes the overall system easier to manage and gives each tool a consistent execution path."
-    },
-    {
-      title: "Step 2: Load Tool Constants and Config",
-      img: "AutomationToolsLoadConfig.png",
-      alt: "Loading constants and configuration for Automation Tools",
-      text: "Once a tool is selected, the loader imports the matching constants module and reads the tool’s JSON configuration. These define what fields are required, what actions are supported, and which pipeline functions should run. Keeping those details in config and constants files makes the framework more modular and easier to maintain."
-    },
-    {
-      title: "Step 3: Validate and Build the Plan",
-      img: "AutomationToolsValidation.png",
-      alt: "Automation Tools validation and planning stage",
-      text: "Before anything executes, the framework validates the loaded data and builds a clear plan of what will happen. This helps catch problems early and keeps the execution flow more predictable. It also makes the framework safer to use because it separates checking from doing."
-    },
-    {
-      title: "Step 4: Run the Execution Pipeline",
-      img: "AutomationToolsPipelineFlow.png",
-      alt: "Automation Tools execution pipeline",
-      text: "After validation, the selected action runs through its defined pipeline states in order. Each state has a specific job, such as status collection, preparation, execution, or reporting. This setup keeps the framework tidy and makes it easier to add new actions later without rewriting the whole tool."
-    },
-  ],
-  // Step-by-step breakdown for the Testing Tools framework
+  {
+    title: "Automation Tools Structure",
+    img: "AutomationToolsStructure.png",
+    alt: "Automation Tools configuration flow diagram",
+    text: `
+      <ul>
+        <li>Driven by a single loader and tool specific constants modules.</li>
+        <li>The loader selects the tool, resolves config and documentation paths, and validates required fields.</li>
+        <li>Actions run through a shared state machine and ordered pipeline states.</li>
+        <li>The framework is designed so new automation tools can follow the same modular pattern without rewriting the loader.</li>
+      </ul>
+    `
+  },
+  {
+    title: "Main State Machine",
+    img: "AutomationToolsStateMachineFlow.png",
+    alt: "Automation Tools loader state machine",
+    text: `
+      <ul>
+        <li>Shows the available automation tools and actions.</li>
+        <li><b>You select which constants module</b> to run.</li>
+        <li>Loader <b>loads that constants module</b> including actions, validation rules, and pipeline states.</li>
+        <li>Reads the selected tool’s config and documentation paths.</li>
+        <li>Validates config before execution begins.</li>
+        <li>Builds the plan, prompts for confirmation, then runs the selected pipeline.</li>
+        <li>Writes logs using the shared logging rules for the framework.</li>
+      </ul>
+    `
+  },
+  {
+    title: "Constants Overview",
+    img: "AutomationToolsConstantsFlow.png",
+    alt: "Automation Tools constants and pipelines overview",
+    text: `
+      <br>
+      Each automation tool uses a constants module that defines how the loader should validate and execute that tool.
+      The loader imports one set at a time based on what you select. <br>
+      <b>Common fields include:</b>
+
+      <ul>
+        <li><b>PRIMARY_CONFIG</b> – path to the main config file for the selected tool.</li>
+        <li><b>DOC_PATH</b> – path to the matching documentation or help JSON.</li>
+        <li><b>VALIDATION_CONFIG</b> – required fields and expected structure for the tool config.</li>
+        <li><b>SECONDARY_VALIDATION</b> – optional deeper checks for nested values.</li>
+        <li><b>ACTIONS / SUB_MENU</b> – menu entries and which pipeline to run.</li>
+        <li><b>PIPELINE_STATES</b> – ordered steps for each action.</li>
+        <li><b>LOG_*</b> – log directory, log prefix, rotation name, and retention policy.</li>
+        <li><b>REQUIRED_USER</b> – optional execution guard when a specific user context is required.</li>
+      </ul>
+
+      The same validation → plan → pipeline pattern applies across the framework.
+    `
+  },
+  {
+    title: "Link Tool Config and Documentation",
+    img: "AutomationToolsConfigLink.png",
+    alt: "Automation Tools config and documentation linkage",
+    text: `
+      <ul>
+        <li>Each tool points to its own config file and matching documentation file.</li>
+        <li>The loader reads those paths from the selected constants module.</li>
+        <li>This keeps the framework modular by separating tool specific settings from shared execution logic.</li>
+      </ul>
+    `
+  },
+  {
+    title: "General Flow",
+    img: "AutomationToolsGeneralFlow.png",
+    alt: "Automation Tools unified execution flow",
+    text: `
+      <ol>
+        <li><b>Select Tool</b>: Loader shows the menu and loads the chosen constants module.</li>
+        <li><b>Resolve Config</b>: Reads the config and documentation paths for that tool.</li>
+        <li><b>Validate</b>: Required keys are checked before anything runs.</li>
+        <li><b>Status & Plan</b>: Builds a clear execution plan for the selected action.</li>
+        <li><b>Confirm</b>: Presents a summary and proceeds only when confirmed.</li>
+        <li><b>Execute & Log</b>: Runs the pipeline states in order and writes logs using the shared framework rules.</li>
+      </ol>
+
+      This single flow allows different automation tools to reuse the same loader without duplicating control logic.
+    `
+  }
+],
+ // Step-by-step breakdown for the Testing Tools framework
   testingTools: [
     {
-      title: "Testing Tools Framework Overview",
+      title: "Testing Tools Structure",
       img: "TestingToolsStructure.png",
-      alt: "Testing Tools framework overview",
-      text: "This diagram shows how the testing tools reuse the same shared loader architecture. Instead of writing separate stand alone utilities for each job, the Wi Fi and network scanners plug into a common framework for startup, validation, menu selection, and execution. That keeps the structure consistent while still allowing each tool to do different work."
+      alt: "Testing Tools configuration flow diagram",
+      text: `
+        <ul>
+          <li>Driven by a shared loader and separate constants modules for each scanner.</li>
+          <li>The loader selects the scanner, resolves config and documentation paths, and validates required fields.</li>
+          <li>Actions run through the same state machine and ordered pipeline pattern used across the framework.</li>
+          <li>WiFi and network diagnostics follow the same modular structure, making the tools easier to extend and maintain.</li>
+        </ul>
+      `
     },
     {
-      title: "Shared Loader and Tool Selection",
+      title: "Main State Machine",
       img: "TestingToolsStateMachineFlow.png",
-      alt: "Testing Tools shared loader and tool selection",
-      text: "The shared loader acts as the entry point for the diagnostic utilities. It presents the available tools, loads the matching constants and config, and then hands off to the selected scanner. This means the testing tools follow the same predictable structure as the automation framework instead of each one inventing its own control flow."
+      alt: "Testing Tools loader state machine",
+      text: `
+        <ul>
+          <li>Shows a menu of available diagnostic tools such as WiFi scanning and network scanning.</li>
+          <li><b>You select which constants module</b> to run.</li>
+          <li>Loader <b>loads that constants module</b> including actions, validation rules, and pipeline states.</li>
+          <li>Reads the selected tool’s config and documentation paths.</li>
+          <li>Validates config before running any scan action.</li>
+          <li>Builds the plan, prompts for confirmation, then runs the selected pipeline.</li>
+          <li>Writes logs and output using the shared framework rules.</li>
+        </ul>
+      `
     },
     {
-      title: "Wi Fi Scanner Flow",
-      img: "TestingToolsWiFiScannerFlow.png",
-      alt: "Wi Fi scanner flow",
-      text: "The Wi Fi scanner is designed to inspect wireless interfaces and nearby networks from the terminal. It can list interfaces, run scans, and display useful details in a more structured way than relying on individual one off commands. Wrapping that logic inside the shared framework makes the tool easier to repeat and extend."
+      title: "Constants Overview",
+      img: "TestingToolsConstantsFlow.png",
+      alt: "Testing Tools constants and pipelines overview",
+      text: `
+        <br>
+        Each diagnostic tool uses a constants module that defines how the loader should validate and execute that scanner.
+        The loader imports one set at a time based on what you’re running. <br>
+        <b>Common fields include:</b>
+
+        <ul>
+          <li><b>PRIMARY_CONFIG</b> – path to the selected scanner config file.</li>
+          <li><b>DOC_PATH</b> – path to the matching documentation or help JSON.</li>
+          <li><b>VALIDATION_CONFIG</b> – required fields and expected structure for the scanner config.</li>
+          <li><b>SECONDARY_VALIDATION</b> – optional deeper checks for nested values.</li>
+          <li><b>ACTIONS / SUB_MENU</b> – available scan actions and which pipeline to run.</li>
+          <li><b>PIPELINE_STATES</b> – ordered steps for each scan action.</li>
+          <li><b>LOG_*</b> – log directory, log prefix, rotation name, and retention policy.</li>
+          <li><b>REQUIRED_USER</b> – optional execution guard if needed for a scanner action.</li>
+        </ul>
+
+        The same validation → plan → pipeline pattern applies across both WiFi and network tools.
+      `
     },
     {
-      title: "Network Scanner Flow",
-      img: "TestingToolsNetworkScannerFlow.png",
-      alt: "Network scanner flow",
-      text: "The network scanner handles jobs such as viewing ARP neighbours, selecting hosts, and running TCP port scans. It reuses the same framework style as the Wi Fi scanner, but applies it to wired or local network testing tasks. This shows how the same architecture can support different practical diagnostics without major structural changes."
+      title: "Link Scanner Config and Documentation",
+      img: "TestingToolsConfigLink.png",
+      alt: "Testing Tools config and documentation linkage",
+      text: `
+        <ul>
+          <li>Each scanner points to its own config file and matching documentation file.</li>
+          <li>The loader reads those paths from the selected constants module.</li>
+          <li>This keeps WiFi and network specific settings separate from the shared execution logic.</li>
+        </ul>
+      `
     },
     {
-      title: "Step 1: Launch the Testing Loader",
-      img: "TestingToolsMenu.png",
-      alt: "Testing Tools loader menu",
-      text: "When the tool starts, the loader displays the available testing utilities and actions. This creates a single entry point for diagnostics rather than requiring separate scripts for each task. It also makes the toolset feel more like one coherent system."
-    },
-    {
-      title: "Step 2: Select Wi Fi or Network Scanning",
-      img: "TestingToolsSelectTool.png",
-      alt: "Selecting a testing tool",
-      text: "After launch, choose whether to run the Wi Fi scanner or the network scanner. The framework then loads the right constants, validation settings, and action pipeline for that utility. This keeps the specific tool behavior separate while still reusing the same shared structure."
-    },
-    {
-      title: "Step 3: Inspect Interfaces or Nearby Hosts",
-      img: "TestingToolsInspect.png",
-      alt: "Inspecting network interfaces and nearby hosts",
-      text: "Depending on the selected utility, the tool can list wireless interfaces, show nearby access points, inspect network details, or view neighbouring hosts on the local network. These are the kinds of tasks that usually end up spread across separate commands, so bringing them together into one structured workflow makes troubleshooting easier."
-    },
-    {
-      title: "Step 4: Run Targeted Diagnostics",
-      img: "TestingToolsPortScan.png",
-      alt: "Running targeted diagnostics and TCP port scans",
-      text: "Once a target is selected, the scanner can run more focused diagnostics such as checking TCP ports. This helps move from basic discovery into practical testing without leaving the same tool flow. The framework approach keeps these actions tidy and easier to follow than a loose collection of shell commands."
-    },
-    {
-      title: "Step 5: Review Results Through the Shared Framework",
-      img: "TestingToolsResults.png",
-      alt: "Testing Tools results and output",
-      text: "The final output is shown through the same shared execution pattern used across the rest of the framework. This makes the testing tools easier to understand, easier to debug, and easier to extend later if more scanners or diagnostic actions are added."
+      title: "General Flow",
+      img: "TestingToolsGeneralFlow.png",
+      alt: "Testing Tools unified execution flow",
+      text: `
+        <ol>
+          <li><b>Select Tool</b>: Loader shows the menu and loads the chosen scanner constants module.</li>
+          <li><b>Resolve Config</b>: Reads the config and documentation paths for that scanner.</li>
+          <li><b>Validate</b>: Required keys are checked before any diagnostics run.</li>
+          <li><b>Status & Plan</b>: Builds a clear execution plan for the selected scan action.</li>
+          <li><b>Confirm</b>: Presents a summary and proceeds only when confirmed.</li>
+          <li><b>Execute & Log</b>: Runs the pipeline states in order and writes logs using the shared framework rules.</li>
+        </ol>
+
+        This single flow supports both WiFi scanning and network scanning without duplicating the overall control structure.
+      `
     }
   ],
 };
