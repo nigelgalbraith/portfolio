@@ -1,0 +1,17 @@
+{
+  "nodes": {
+    "ConstantsModule": { "label": "Constants module" },
+    "ConfigPath": { "label": "Config path" },
+    "ConfigDoc": { "label": "Config doc" },
+    "ValidationRules": { "label": "Validation rules" },
+    "Actions": { "label": "Actions" },
+    "PipelineStates": { "label": "Pipeline states" }
+  },
+  "connections": [
+    ["ConstantsModule", "ConfigPath"],
+    ["ConstantsModule", "ConfigDoc"],
+    ["ConstantsModule", "ValidationRules"],
+    ["ConstantsModule", "Actions"],
+    ["ConstantsModule", "PipelineStates"]
+  ]
+}

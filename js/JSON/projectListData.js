@@ -164,5 +164,47 @@ const PROJECT_LIST_DATA = [
         <li>Modular UI built with reusable panes for text input, previews, toggles, and TTS.</li>
       </ul>
   `
-  }
+  },
+  {
+  "href": "projects/PromptForge.html",
+  "img": "images/thumbs/optimized/PromptForge.png",
+  "alt": "Prompt Forge Thumbnail",
+  "title": "Prompt Forge",
+  "description": `
+    <ul>
+      <li>Web based prompt building tool designed for local AI models.</li>
+      <li>Supports reusable prompt profiles and structured prompt templates.</li>
+      <li>Includes batch generation and model selection.</li>
+      <li>Built with a lightweight frontend and local API integration.</li>
+    </ul>
+  `
+},
+{
+  "href": "projects/AutomationTools.html",
+  "img": "images/thumbs/optimized/AutomationTools.png",
+  "alt": "Automation Tools Thumbnail",
+  "title": "Automation Tools Framework",
+  "description": `
+    <ul>
+      <li>Reusable automation framework built around a modular loader system.</li>
+      <li>Tools are defined through constants modules and JSON configurations.</li>
+      <li>Supports validation, execution pipelines, and structured logging.</li>
+      <li>Designed to simplify building reliable terminal based automation tools.</li>
+    </ul>
+  `
+},
+{
+  "href": "projects/TestingTools.html",
+  "img": "images/thumbs/optimized/TestingTools.png",
+  "alt": "Testing Tools Thumbnail",
+  "title": "Network Testing Tools",
+  "description": `
+    <ul>
+      <li>Network diagnostics toolkit built on the automation loader framework.</li>
+      <li>Includes Wi-Fi scanning, interface inspection, and TCP port scanning.</li>
+      <li>Uses shared modules and configuration driven tool definitions.</li>
+      <li>Demonstrates how the loader framework can support real world diagnostics.</li>
+    </ul>
+  `
+},
 ];

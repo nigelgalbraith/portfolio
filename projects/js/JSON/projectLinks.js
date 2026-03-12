@@ -78,5 +78,32 @@ const ProjectLinks = {
         alt: "Zip",
         download: true
       }
-    ]
+    ],
+    promptForge: [
+      {
+        label: "Prompt Forge Tool",
+        href: "https://codeload.github.com/nigelgalbraith/PromptForge/zip/refs/heads/main",
+        icon: "../images/icons/optimized/zip.png",
+        alt: "Zip",
+        download: true
+      }
+    ],
+    automationTools: [
+      {
+        label: "Automation Tools Framework",
+        href: "https://codeload.github.com/nigelgalbraith/AutomationTools/zip/refs/heads/main",
+        icon: "../images/icons/optimized/zip.png",
+        alt: "Zip",
+        download: true
+      }
+    ],
+    testingTools: [
+      {
+        label: "Network Testing Tools",
+        href: "https://codeload.github.com/nigelgalbraith/TestingTools/zip/refs/heads/main",
+        icon: "../images/icons/optimized/zip.png",
+        alt: "Zip",
+        download: true
+      }
+    ],
 };

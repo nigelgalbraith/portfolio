@@ -1,0 +1,23 @@
+{
+  "nodes": {
+    "ShowMenu": { "label": "Show menu" },
+    "SelectTool": { "label": "Select tool" },
+    "LoadConstants": { "label": "Load constants" },
+    "CheckDeps": { "label": "Check dependencies" },
+    "LoadConfig": { "label": "Load config" },
+    "ValidateConfig": { "label": "Validate config" },
+    "SelectAction": { "label": "Select action" },
+    "RunPipeline": { "label": "Run pipeline" },
+    "LogResult": { "label": "Log result" }
+  },
+  "connections": [
+    ["ShowMenu", "SelectTool"],
+    ["SelectTool", "LoadConstants"],
+    ["LoadConstants", "CheckDeps"],
+    ["CheckDeps", "LoadConfig"],
+    ["LoadConfig", "ValidateConfig"],
+    ["ValidateConfig", "SelectAction"],
+    ["SelectAction", "RunPipeline"],
+    ["RunPipeline", "LogResult"]
+  ]
+}

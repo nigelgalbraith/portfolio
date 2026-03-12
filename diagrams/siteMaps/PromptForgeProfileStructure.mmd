@@ -1,0 +1,37 @@
+graph TD
+
+  subgraph HTMLPages [Prompt Forge – Profile Builder]
+    ProfilePage[profile.html]
+  end
+
+  subgraph JavaScript [Builder Modules]
+    BuilderFormPane[Builder form pane]
+    FieldsPane[Fields pane]
+    SnippetsPane[Snippets pane]
+    StylesPane[Styles pane]
+    SavePane[Save pane]
+  end
+
+  subgraph DataAndServices [Data & Services]
+    ProfilesAPI[Profile API]
+    MessagesData[messages.json]
+    ModelsData[models.json]
+  end
+
+  ProfilePage --> BuilderFormPane
+  ProfilePage --> FieldsPane
+  ProfilePage --> SnippetsPane
+  ProfilePage --> StylesPane
+  ProfilePage --> SavePane
+  SavePane --> ProfilesAPI
+  ProfilePage --> MessagesData
+  ProfilePage --> ModelsData
+  class ProfilePage primary
+  class BuilderFormPane secondary
+  class FieldsPane secondary
+  class SnippetsPane secondary
+  class StylesPane secondary
+  class SavePane secondary
+  class ProfilesAPI tertiary
+  class MessagesData tertiary
+  class ModelsData tertiary

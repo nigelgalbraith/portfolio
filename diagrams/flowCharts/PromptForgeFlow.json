@@ -1,0 +1,15 @@
+{
+  "nodes": {
+    "LoadProfile": { "label": "Load profile" },
+    "BuildPrompt": { "label": "Build prompt" },
+    "SelectProvider": { "label": "Select provider" },
+    "GenerateOutput": { "label": "Generate output" },
+    "ReviewSave": { "label": "Review or save" }
+  },
+  "connections": [
+    ["LoadProfile", "BuildPrompt"],
+    ["BuildPrompt", "SelectProvider"],
+    ["SelectProvider", "GenerateOutput"],
+    ["GenerateOutput", "ReviewSave"]
+  ]
+}

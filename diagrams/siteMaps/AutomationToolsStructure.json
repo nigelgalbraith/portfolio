@@ -1,0 +1,44 @@
+{
+  "meta": {
+    "main_label": "Loader",
+    "second_label": "Constants Files",
+    "third_label": "ConfigAndDocs",
+    "main_title": "Automation Tools Loader",
+    "second_title": "Constants Modules",
+    "third_title": "Config & Docs",
+    "key_main": "Main",
+    "key_second": "ConstantsFiles",
+    "key_third": "ConfigAndDocs",
+    "key_links": "links",
+    "key_styles": "styles",
+    "key_classes": "classes",
+    "key_class_map": "class_map"
+  },
+  "Main": {
+    "AutomationLoader": "AutomationLoader.py"
+  },
+  "ConstantsFiles": {
+    "TextCreatorConstants": "TextCreatorConstants.py"
+  },
+  "ConfigAndDocs": {
+    "TextCreatorConfig": "config/TextCreator.json",
+    "TextCreatorDoc": "doc/TextCreatorDoc.json",
+    "PromptTemplates": "PromptTemplates/*.txt",
+    "SharedModules": "modules/*.py"
+  },
+  "links": [
+    ["AutomationLoader", "TextCreatorConstants"],
+    ["TextCreatorConstants", "TextCreatorConfig"],
+    ["TextCreatorConstants", "TextCreatorDoc"],
+    ["TextCreatorConstants", "PromptTemplates"],
+    ["AutomationLoader", "SharedModules"]
+  ],
+  "class_map": {
+    "AutomationLoader": "primary",
+    "TextCreatorConstants": "secondary",
+    "TextCreatorConfig": "tertiary",
+    "TextCreatorDoc": "tertiary",
+    "PromptTemplates": "tertiary",
+    "SharedModules": "tertiary"
+  }
+}

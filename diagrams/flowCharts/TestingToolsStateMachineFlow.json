@@ -1,0 +1,23 @@
+{
+  "nodes": {
+    "ShowMenu": { "label": "Show menu" },
+    "SelectTool": { "label": "Select scanner" },
+    "LoadConstants": { "label": "Load constants" },
+    "LoadConfig": { "label": "Load config" },
+    "ValidateConfig": { "label": "Validate config" },
+    "SelectAction": { "label": "Select action" },
+    "RunPrePhase": { "label": "Run pre phase" },
+    "ConfirmRun": { "label": "Confirm run" },
+    "RunExecPhase": { "label": "Run exec phase" }
+  },
+  "connections": [
+    ["ShowMenu", "SelectTool"],
+    ["SelectTool", "LoadConstants"],
+    ["LoadConstants", "LoadConfig"],
+    ["LoadConfig", "ValidateConfig"],
+    ["ValidateConfig", "SelectAction"],
+    ["SelectAction", "RunPrePhase"],
+    ["RunPrePhase", "ConfirmRun"],
+    ["ConfirmRun", "RunExecPhase"]
+  ]
+}

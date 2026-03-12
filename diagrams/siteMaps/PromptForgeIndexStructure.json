@@ -1,0 +1,60 @@
+{
+  "meta": {
+    "main_label": "HTMLPages",
+    "second_label": "JavaScript",
+    "third_label": "DataAndServices",
+    "main_title": "Prompt Forge – Generator Page",
+    "second_title": "Frontend Modules",
+    "third_title": "Data & Services",
+    "key_main": "HTMLPages",
+    "key_second": "JavaScript",
+    "key_third": "DataAndServices",
+    "key_links": "links",
+    "key_styles": "styles",
+    "key_classes": "classes",
+    "key_class_map": "class_map"
+  },
+  "HTMLPages": {
+    "GeneratorPage": "index.html"
+  },
+  "JavaScript": {
+    "ProfilePane": "Profile pane",
+    "PromptFormPane": "Prompt form pane",
+    "PreviewPane": "Preview pane",
+    "BatchPane": "Batch pane",
+    "ExportPane": "Export pane"
+  },
+  "DataAndServices": {
+    "MessagesData": "messages.json",
+    "ModelsData": "models.json",
+    "GenerateAPI": "POST /api/generate",
+    "ProfilesAPI": "Profile API",
+    "LocalProviders": "Ollama / LocalAI / Piper"
+  },
+  "links": [
+    ["GeneratorPage", "ProfilePane"],
+    ["GeneratorPage", "PromptFormPane"],
+    ["GeneratorPage", "PreviewPane"],
+    ["GeneratorPage", "BatchPane"],
+    ["GeneratorPage", "ExportPane"],
+    ["ProfilePane", "ProfilesAPI"],
+    ["PreviewPane", "GenerateAPI"],
+    ["BatchPane", "GenerateAPI"],
+    ["GeneratorPage", "MessagesData"],
+    ["GeneratorPage", "ModelsData"],
+    ["GenerateAPI", "LocalProviders"]
+  ],
+  "class_map": {
+    "GeneratorPage": "primary",
+    "ProfilePane": "secondary",
+    "PromptFormPane": "secondary",
+    "PreviewPane": "secondary",
+    "BatchPane": "secondary",
+    "ExportPane": "secondary",
+    "MessagesData": "tertiary",
+    "ModelsData": "tertiary",
+    "GenerateAPI": "tertiary",
+    "ProfilesAPI": "tertiary",
+    "LocalProviders": "tertiary"
+  }
+}

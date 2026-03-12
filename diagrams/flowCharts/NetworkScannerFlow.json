@@ -1,0 +1,17 @@
+{
+  "nodes": {
+    "ListInterfaces": { "label": "List interfaces" },
+    "SelectInterface": { "label": "Select interface" },
+    "InspectNetwork": { "label": "Inspect network" },
+    "ShowNeighbours": { "label": "Show neighbours" },
+    "ChooseHost": { "label": "Choose host" },
+    "RunPortScan": { "label": "Run port scan" }
+  },
+  "connections": [
+    ["ListInterfaces", "SelectInterface"],
+    ["SelectInterface", "InspectNetwork"],
+    ["InspectNetwork", "ShowNeighbours"],
+    ["ShowNeighbours", "ChooseHost"],
+    ["ChooseHost", "RunPortScan"]
+  ]
+}

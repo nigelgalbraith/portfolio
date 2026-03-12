@@ -1,0 +1,28 @@
+graph TD
+
+  subgraph Loader [Automation Tools Loader]
+    AutomationLoader[AutomationLoader.py]
+  end
+
+  subgraph Constants Files [Constants Modules]
+    TextCreatorConstants[TextCreatorConstants.py]
+  end
+
+  subgraph ConfigAndDocs [Config & Docs]
+    TextCreatorConfig[config/TextCreator.json]
+    TextCreatorDoc[doc/TextCreatorDoc.json]
+    PromptTemplates[PromptTemplates/*.txt]
+    SharedModules[modules/*.py]
+  end
+
+  AutomationLoader --> TextCreatorConstants
+  TextCreatorConstants --> TextCreatorConfig
+  TextCreatorConstants --> TextCreatorDoc
+  TextCreatorConstants --> PromptTemplates
+  AutomationLoader --> SharedModules
+  class AutomationLoader primary
+  class TextCreatorConstants secondary
+  class TextCreatorConfig tertiary
+  class TextCreatorDoc tertiary
+  class PromptTemplates tertiary
+  class SharedModules tertiary

@@ -1,0 +1,34 @@
+graph TD
+
+  subgraph Loader [Testing Tools Loader]
+    ToolLoader[ToolLoader.py]
+  end
+
+  subgraph Constants Files [Scanner Constants]
+    WiFiConstants[WiFiConstants.py]
+    NetworkConstants[NetworkConstants.py]
+  end
+
+  subgraph ConfigAndDocs [Config & Docs]
+    WiFiConfig[config/WiFiConfig.json]
+    WiFiDoc[doc/WiFiDoc.json]
+    NetworkConfig[config/NetworkConfig.json]
+    NetworkDoc[doc/NetworkDoc.json]
+    SharedModules[modules/*.py]
+  end
+
+  ToolLoader --> WiFiConstants
+  ToolLoader --> NetworkConstants
+  WiFiConstants --> WiFiConfig
+  WiFiConstants --> WiFiDoc
+  NetworkConstants --> NetworkConfig
+  NetworkConstants --> NetworkDoc
+  ToolLoader --> SharedModules
+  class ToolLoader primary
+  class WiFiConstants secondary
+  class NetworkConstants secondary
+  class WiFiConfig tertiary
+  class WiFiDoc tertiary
+  class NetworkConfig tertiary
+  class NetworkDoc tertiary
+  class SharedModules tertiary

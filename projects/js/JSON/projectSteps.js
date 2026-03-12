@@ -592,4 +592,157 @@ thematic: [
         text: "Once the translation is shown, click the speaker icon to hear it spoken aloud. Each language page uses its own Piper voice engine behind the scenes, routed through Nginx."
       }
     ],
+    // Step-by-step breakdown for the Prompt Forge project
+    promptForge: [
+    {
+      title: "Prompt Forge System Overview",
+      img: "PromptForgeFlow.png",
+      alt: "Prompt Forge site, API, and local model services overview",
+      text: "This diagram shows how Prompt Forge is structured. The browser loads the static frontend through Nginx, while a lightweight Node and Express API handles profile management and prompt generation requests. Local providers such as Ollama or LocalAI handle the actual model processing, keeping the whole workflow self hosted and under your control."
+    },
+    {
+      title: "Frontend Layout and Pane Structure",
+      img: "PromptForgeIndexStructure.png",
+      alt: "Prompt Forge frontend HTML structure",
+      text: "The interface is split into reusable sections for profile loading, prompt building, output preview, and batch generation. Each area is wired through small JavaScript modules rather than a large frontend framework. This keeps the page easier to understand, easier to extend, and more in line with the lightweight style used across the rest of the project."
+    },
+    {
+      title: "API and Profile Management Flow",
+      img: "PromptForgeApiFlow.png",
+      alt: "Prompt Forge API and profile management flow",
+      text: "The API layer handles loading, saving, and updating JSON based prompt profiles. Instead of hardcoding form setups into the page, Prompt Forge reads structured profile data and rebuilds the interface from that configuration. This makes it easier to reuse prompt layouts and keep the workflow consistent across different writing tasks."
+    },
+    {
+      title: "Step 1: Load or Create a Prompt Profile",
+      img: "PromptForgeProfileLoader.png",
+      alt: "Prompt Forge profile loader",
+      text: "Start by loading an existing profile or creating a new one. Profiles define the form fields, prompt template, metadata, and any reusable options you want available in the interface. This means the tool can be adapted for different writing or prompt building tasks without rewriting the frontend."
+    },
+    {
+      title: "Step 2: Fill in Prompt Inputs",
+      img: "PromptForgeForm.png",
+      alt: "Prompt Forge form inputs",
+      text: "Once a profile is active, the page builds the required inputs dynamically. You can enter the context, role, style, instructions, or any custom fields defined by the selected profile. This keeps the workflow structured and avoids rebuilding the same prompt format manually each time."
+    },
+    {
+      title: "Step 3: Choose Provider and Generate Output",
+      img: "PromptForgePreview.png",
+      alt: "Prompt Forge generated output preview",
+      text: "After filling in the prompt details, the request is sent through the API to the selected local provider. The generated result is then shown in the preview area, where it can be reviewed, copied, or regenerated. Keeping this step local means the prompts and outputs stay on your own machine rather than being sent to an external service."
+    },
+    {
+      title: "Step 4: Run Batch Prompt Jobs",
+      img: "PromptForgeBatch.png",
+      alt: "Prompt Forge batch generation screen",
+      text: "For repeated work, Prompt Forge also supports batch style prompt generation. This lets you apply the same structure to multiple jobs without re entering the full setup every time. It makes the tool more useful for repeatable content workflows instead of just one off prompt testing."
+    },
+    {
+      title: "Step 5: Save and Reuse Profiles",
+      img: "PromptForgeSaveProfile.png",
+      alt: "Saving Prompt Forge profiles",
+      text: "Once a profile works the way you want, it can be saved back to JSON through the API layer. Saving profiles means the same prompt structure, field setup, and writing workflow can be reused later, which helps keep local prompt generation fast and consistent."
+    }
+  ],
+  // Step-by-step breakdown for the Automation Tools and Testing Tools frameworks
+  automationTools: [
+    {
+      title: "Automation Tools Framework Overview",
+      img: "AutomationToolsStructure.png",
+      alt: "Automation Tools framework overview",
+      text: "This diagram shows the core structure of the automation framework. A central loader controls the common setup process, while individual tools provide their own constants, validation rules, documentation, and execution states. The goal is to avoid duplicating boilerplate and make each new automation tool follow the same predictable pattern."
+    },
+    {
+      title: "Loader State Machine",
+      img: "AutomationToolsStateMachineFlow.png",
+      alt: "Automation Tools loader state machine",
+      text: "The loader follows a structured state based flow. It loads the selected tool, checks dependencies, reads configuration, validates required values, builds the execution plan, and then runs the requested action through an ordered pipeline. This keeps the control flow easy to trace and makes the framework easier to extend without turning it into a pile of special cases."
+    },
+    {
+      title: "Constants and Validation Structure",
+      img: "AutomationToolsConstantsFlow.png",
+      alt: "Automation Tools constants and validation structure",
+      text: "Each tool is defined through a constants module rather than hardcoded inside the loader. These constants define actions, menu entries, required config keys, pipeline states, and logging behavior. Validation is handled before the main work begins, which helps catch bad config or missing fields early instead of failing halfway through execution."
+    },
+    {
+      title: "Step 1: Launch the Loader",
+      img: "AutomationToolsMenu.png",
+      alt: "Automation Tools main loader menu",
+      text: "When the framework starts, the loader presents the available tool set and actions. Instead of running one script per task, the user selects a tool from a shared entry point. This makes the overall system easier to manage and gives each tool a consistent execution path."
+    },
+    {
+      title: "Step 2: Load Tool Constants and Config",
+      img: "AutomationToolsLoadConfig.png",
+      alt: "Loading constants and configuration for Automation Tools",
+      text: "Once a tool is selected, the loader imports the matching constants module and reads the tool’s JSON configuration. These define what fields are required, what actions are supported, and which pipeline functions should run. Keeping those details in config and constants files makes the framework more modular and easier to maintain."
+    },
+    {
+      title: "Step 3: Validate and Build the Plan",
+      img: "AutomationToolsValidation.png",
+      alt: "Automation Tools validation and planning stage",
+      text: "Before anything executes, the framework validates the loaded data and builds a clear plan of what will happen. This helps catch problems early and keeps the execution flow more predictable. It also makes the framework safer to use because it separates checking from doing."
+    },
+    {
+      title: "Step 4: Run the Execution Pipeline",
+      img: "AutomationToolsPipelineFlow.png",
+      alt: "Automation Tools execution pipeline",
+      text: "After validation, the selected action runs through its defined pipeline states in order. Each state has a specific job, such as status collection, preparation, execution, or reporting. This setup keeps the framework tidy and makes it easier to add new actions later without rewriting the whole tool."
+    },
+  ],
+  // Step-by-step breakdown for the Testing Tools framework
+  testingTools: [
+    {
+      title: "Testing Tools Framework Overview",
+      img: "TestingToolsStructure.png",
+      alt: "Testing Tools framework overview",
+      text: "This diagram shows how the testing tools reuse the same shared loader architecture. Instead of writing separate stand alone utilities for each job, the Wi Fi and network scanners plug into a common framework for startup, validation, menu selection, and execution. That keeps the structure consistent while still allowing each tool to do different work."
+    },
+    {
+      title: "Shared Loader and Tool Selection",
+      img: "TestingToolsStateMachineFlow.png",
+      alt: "Testing Tools shared loader and tool selection",
+      text: "The shared loader acts as the entry point for the diagnostic utilities. It presents the available tools, loads the matching constants and config, and then hands off to the selected scanner. This means the testing tools follow the same predictable structure as the automation framework instead of each one inventing its own control flow."
+    },
+    {
+      title: "Wi Fi Scanner Flow",
+      img: "TestingToolsWiFiScannerFlow.png",
+      alt: "Wi Fi scanner flow",
+      text: "The Wi Fi scanner is designed to inspect wireless interfaces and nearby networks from the terminal. It can list interfaces, run scans, and display useful details in a more structured way than relying on individual one off commands. Wrapping that logic inside the shared framework makes the tool easier to repeat and extend."
+    },
+    {
+      title: "Network Scanner Flow",
+      img: "TestingToolsNetworkScannerFlow.png",
+      alt: "Network scanner flow",
+      text: "The network scanner handles jobs such as viewing ARP neighbours, selecting hosts, and running TCP port scans. It reuses the same framework style as the Wi Fi scanner, but applies it to wired or local network testing tasks. This shows how the same architecture can support different practical diagnostics without major structural changes."
+    },
+    {
+      title: "Step 1: Launch the Testing Loader",
+      img: "TestingToolsMenu.png",
+      alt: "Testing Tools loader menu",
+      text: "When the tool starts, the loader displays the available testing utilities and actions. This creates a single entry point for diagnostics rather than requiring separate scripts for each task. It also makes the toolset feel more like one coherent system."
+    },
+    {
+      title: "Step 2: Select Wi Fi or Network Scanning",
+      img: "TestingToolsSelectTool.png",
+      alt: "Selecting a testing tool",
+      text: "After launch, choose whether to run the Wi Fi scanner or the network scanner. The framework then loads the right constants, validation settings, and action pipeline for that utility. This keeps the specific tool behavior separate while still reusing the same shared structure."
+    },
+    {
+      title: "Step 3: Inspect Interfaces or Nearby Hosts",
+      img: "TestingToolsInspect.png",
+      alt: "Inspecting network interfaces and nearby hosts",
+      text: "Depending on the selected utility, the tool can list wireless interfaces, show nearby access points, inspect network details, or view neighbouring hosts on the local network. These are the kinds of tasks that usually end up spread across separate commands, so bringing them together into one structured workflow makes troubleshooting easier."
+    },
+    {
+      title: "Step 4: Run Targeted Diagnostics",
+      img: "TestingToolsPortScan.png",
+      alt: "Running targeted diagnostics and TCP port scans",
+      text: "Once a target is selected, the scanner can run more focused diagnostics such as checking TCP ports. This helps move from basic discovery into practical testing without leaving the same tool flow. The framework approach keeps these actions tidy and easier to follow than a loose collection of shell commands."
+    },
+    {
+      title: "Step 5: Review Results Through the Shared Framework",
+      img: "TestingToolsResults.png",
+      alt: "Testing Tools results and output",
+      text: "The final output is shown through the same shared execution pattern used across the rest of the framework. This makes the testing tools easier to understand, easier to debug, and easier to extend later if more scanners or diagnostic actions are added."
+    }
+  ],
 };

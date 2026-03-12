@@ -1,0 +1,17 @@
+{
+  "nodes": {
+    "StartAction": { "label": "Start action" },
+    "PrePhase": { "label": "Pre phase" },
+    "PlanPhase": { "label": "Plan phase" },
+    "ConfirmPhase": { "label": "Confirm phase" },
+    "ExecPhase": { "label": "Exec phase" },
+    "PostPhase": { "label": "Post phase" }
+  },
+  "connections": [
+    ["StartAction", "PrePhase"],
+    ["PrePhase", "PlanPhase"],
+    ["PlanPhase", "ConfirmPhase"],
+    ["ConfirmPhase", "ExecPhase"],
+    ["ExecPhase", "PostPhase"]
+  ]
+}

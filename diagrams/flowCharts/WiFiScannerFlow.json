@@ -1,0 +1,15 @@
+{
+  "nodes": {
+    "ListInterfaces": { "label": "List interfaces" },
+    "SelectInterface": { "label": "Select interface" },
+    "ScanNetworks": { "label": "Scan networks" },
+    "ChooseNetwork": { "label": "Choose network" },
+    "ShowDetails": { "label": "Show details" }
+  },
+  "connections": [
+    ["ListInterfaces", "SelectInterface"],
+    ["SelectInterface", "ScanNetworks"],
+    ["ScanNetworks", "ChooseNetwork"],
+    ["ChooseNetwork", "ShowDetails"]
+  ]
+}

@@ -1,0 +1,44 @@
+graph TD
+
+  subgraph HTMLPages [Prompt Forge – Generator Page]
+    GeneratorPage[index.html]
+  end
+
+  subgraph JavaScript [Frontend Modules]
+    ProfilePane[Profile pane]
+    PromptFormPane[Prompt form pane]
+    PreviewPane[Preview pane]
+    BatchPane[Batch pane]
+    ExportPane[Export pane]
+  end
+
+  subgraph DataAndServices [Data & Services]
+    MessagesData[messages.json]
+    ModelsData[models.json]
+    GenerateAPI[POST /api/generate]
+    ProfilesAPI[Profile API]
+    LocalProviders[Ollama / LocalAI / Piper]
+  end
+
+  GeneratorPage --> ProfilePane
+  GeneratorPage --> PromptFormPane
+  GeneratorPage --> PreviewPane
+  GeneratorPage --> BatchPane
+  GeneratorPage --> ExportPane
+  ProfilePane --> ProfilesAPI
+  PreviewPane --> GenerateAPI
+  BatchPane --> GenerateAPI
+  GeneratorPage --> MessagesData
+  GeneratorPage --> ModelsData
+  GenerateAPI --> LocalProviders
+  class GeneratorPage primary
+  class ProfilePane secondary
+  class PromptFormPane secondary
+  class PreviewPane secondary
+  class BatchPane secondary
+  class ExportPane secondary
+  class MessagesData tertiary
+  class ModelsData tertiary
+  class GenerateAPI tertiary
+  class ProfilesAPI tertiary
+  class LocalProviders tertiary

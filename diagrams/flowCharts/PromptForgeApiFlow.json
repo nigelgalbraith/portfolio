@@ -1,0 +1,19 @@
+{
+  "nodes": {
+    "OpenUI": { "label": "Open web UI" },
+    "CallAPI": { "label": "Call API route" },
+    "SelectRoute": { "label": "Choose route" },
+    "Generate": { "label": "Generate text" },
+    "SaveProfile": { "label": "Save profile" },
+    "ListProfiles": { "label": "List profiles" },
+    "LoadProfile": { "label": "Load profile" }
+  },
+  "connections": [
+    ["OpenUI", "CallAPI"],
+    ["CallAPI", "SelectRoute"],
+    ["SelectRoute", "Generate"],
+    ["SelectRoute", "SaveProfile"],
+    ["SelectRoute", "ListProfiles"],
+    ["SelectRoute", "LoadProfile"]
+  ]
+}

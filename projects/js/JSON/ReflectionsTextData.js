@@ -85,5 +85,26 @@ const REFLECTIONS_DATA = {
       "This project reinforced how reusable UI components simplify expansion. By structuring the interface around modular panes and data attributes, adding additional languages became a matter of configuration rather than rewriting logic. That separation between structure and behavior kept the code manageable.",
       "Running translation and text to speech locally also highlighted the trade off between convenience and control. Self hosting removes external dependency, but it increases responsibility for configuration and performance. The lesson was to keep integration points simple and avoid unnecessary abstraction."
     ]
-  }
+  },
+  "promptForge": {
+    heading: "Reflection",
+    paragraphs: [
+      "Prompt Forge grew out of the earlier text generator project, but the goal here was to focus on building prompts more deliberately. Instead of typing everything manually each time, the interface lets you structure context, tone, and checklist inputs before sending them to the model. That made the process more repeatable and easier to adjust.",
+      "The key takeaway was how useful small structured tools can be when working with language models. Breaking prompts into components makes it easier to refine output and experiment with different combinations without constantly rewriting everything from scratch."
+    ]
+  },
+  "automationTools": {
+    heading: "Reflection",
+    paragraphs: [
+      "The automation tools project came from the need to repeatedly configure systems in a predictable way. Instead of relying on manual setup steps, the loader driven structure lets each tool run through the same validation, planning, and execution flow. That consistency reduces mistakes and makes the behaviour easier to understand.",
+      "What stood out during development was how important clear structure becomes in automation work. When scripts start to grow, separating configuration, logic, and execution paths keeps things manageable. The modular approach also made it easier to add new tools later without rewriting the entire framework."
+    ]
+  },
+  "testingTools": {
+    heading: "Reflection",
+    paragraphs: [
+      "The testing tools project focuses on quick diagnostics for common networking issues. Instead of running several unrelated commands manually, the tool groups common checks like WiFi scanning, network discovery, and connectivity tests behind a simple menu system.",
+      "Building it highlighted the value of small utilities that remove friction during troubleshooting. Even basic checks become easier when they follow a consistent structure and provide clear output. The project reinforced the idea that practical tools often come from simplifying tasks you already perform regularly."
+    ]
+  },
 };

@@ -1,0 +1,15 @@
+{
+  "nodes": {
+    "EnterInputs": { "label": "Enter prompt inputs" },
+    "CompilePrompt": { "label": "Compile prompt" },
+    "ChooseModel": { "label": "Choose model" },
+    "SendRequest": { "label": "Send request" },
+    "RenderPreview": { "label": "Render preview" }
+  },
+  "connections": [
+    ["EnterInputs", "CompilePrompt"],
+    ["CompilePrompt", "ChooseModel"],
+    ["ChooseModel", "SendRequest"],
+    ["SendRequest", "RenderPreview"]
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "meta": {
+    "main_label": "HTMLPages",
+    "second_label": "JavaScript",
+    "third_label": "DataAndServices",
+    "main_title": "Prompt Forge – Profile Builder",
+    "second_title": "Builder Modules",
+    "third_title": "Data & Services",
+    "key_main": "HTMLPages",
+    "key_second": "JavaScript",
+    "key_third": "DataAndServices",
+    "key_links": "links",
+    "key_styles": "styles",
+    "key_classes": "classes",
+    "key_class_map": "class_map"
+  },
+  "HTMLPages": {
+    "ProfilePage": "profile.html"
+  },
+  "JavaScript": {
+    "BuilderFormPane": "Builder form pane",
+    "FieldsPane": "Fields pane",
+    "SnippetsPane": "Snippets pane",
+    "StylesPane": "Styles pane",
+    "SavePane": "Save pane"
+  },
+  "DataAndServices": {
+    "ProfilesAPI": "Profile API",
+    "MessagesData": "messages.json",
+    "ModelsData": "models.json"
+  },
+  "links": [
+    ["ProfilePage", "BuilderFormPane"],
+    ["ProfilePage", "FieldsPane"],
+    ["ProfilePage", "SnippetsPane"],
+    ["ProfilePage", "StylesPane"],
+    ["ProfilePage", "SavePane"],
+    ["SavePane", "ProfilesAPI"],
+    ["ProfilePage", "MessagesData"],
+    ["ProfilePage", "ModelsData"]
+  ],
+  "class_map": {
+    "ProfilePage": "primary",
+    "BuilderFormPane": "secondary",
+    "FieldsPane": "secondary",
+    "SnippetsPane": "secondary",
+    "StylesPane": "secondary",
+    "SavePane": "secondary",
+    "ProfilesAPI": "tertiary",
+    "MessagesData": "tertiary",
+    "ModelsData": "tertiary"
+  }
+}

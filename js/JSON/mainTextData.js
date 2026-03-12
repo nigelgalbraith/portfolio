@@ -136,5 +136,26 @@ const MAIN_TEXT_DATA = {
       "The main menu lets you choose between Spanish and Chinese, each with a dedicated page for both directions of translation. The UI is built from small reusable panes for text entry, translation previews, toggle buttons, and audio playback. Each lane is wired with data attributes, so the same JavaScript modules can drive both languages.",
       "LibreTranslate handles the actual translation, while three Piper instances provide natural voices for English, Spanish, and Chinese. Nginx exposes simple endpoints for /translate and the per language TTS services, keeping the browser code straightforward and easy to follow."
     ]
-  }
+  },
+  "promptForge": {
+    "paragraphs": [
+      "Prompt Forge is a web based prompt workstation built to run locally with Docker. It expands on the earlier Text Creator idea by moving the workflow into a browser interface, while still keeping everything simple, private, and easy to manage on your own machine.",
+      "The frontend is served through Nginx and uses vanilla JavaScript modules, while a lightweight Node and Express API handles prompt generation requests and saved profile management. Profiles can be created, edited, stored as JSON, and loaded back into the interface, which makes it easier to reuse structured prompt setups without rebuilding them each time.",
+      "The system is designed to work with local providers like Ollama and LocalAI, with optional Piper text to speech support as part of the wider setup. The focus was on keeping the tool practical and modular: no heavy frameworks, no cloud dependency, and a clean split between the browser UI, API layer, and local model services."
+    ]
+  },
+  "automationTools": {
+    "paragraphs": [
+      "This project is a modular automation framework built around a single loader and a structured pipeline system. Instead of writing one off scripts for each task, I wanted a cleaner way to define tools through constants modules, config files, validation rules, and reusable execution states.",
+      "The loader handles the common work: checking dependencies, loading JSON config, validating structure, showing documentation, building menus, and then running the selected action through an ordered pipeline. That keeps the tool specific logic out of the loader itself and makes it easier to extend without turning the project into a mess.",
+      "At the moment the framework is set up around a Text Creator style workflow, but the main point is the architecture rather than one specific tool. It was built to support repeatable terminal based automation in a way that stays predictable, maintainable, and easy to grow into other utilities later."
+    ]
+  },
+  "testingTools": {
+    "paragraphs": [
+      "This project applies the same loader based architecture to a set of terminal testing and diagnostic tools. Rather than building separate stand alone scripts, I used a shared tool loader and pipeline style state machine so the utilities follow the same structure for setup, validation, selection, and execution.",
+      "The current tools include a Wi Fi scanner and a network scanner. They can list interfaces, scan for nearby wireless networks, inspect selected network details, show ARP neighbours, and run TCP port scans against chosen hosts. Each tool has its own config, documentation, and constants module, while the shared modules handle the common execution flow.",
+      "The main goal was to keep the tools modular and predictable while still being useful for real troubleshooting. It shows how the same framework can be reused in a different area, taking the loader idea beyond automation tasks and applying it to practical network testing work."
+    ]
+  },
 };
