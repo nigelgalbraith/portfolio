@@ -4,12 +4,12 @@
     "ValidateJSON": { "label": "Validate config" },
     "BuildStatusPlan": { "label": "Build execution plan" },
     "ConfirmPlan": { "label": "Confirm action" },
-    "ExecuteLog": { "label": "Execute pipeline & log" }
+    "Execute": { "label": "Execute pipeline" }
   },
   "connections": [
     ["DetectResolve", "ValidateJSON"],
     ["ValidateJSON", "BuildStatusPlan"],
     ["BuildStatusPlan", "ConfirmPlan"],
-    ["ConfirmPlan", "ExecuteLog"]
+    ["ConfirmPlan", "Execute"]
   ]
 }

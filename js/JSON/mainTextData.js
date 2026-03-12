@@ -158,4 +158,16 @@ const MAIN_TEXT_DATA = {
       "The main goal was to keep the tools modular and predictable while still being useful for real troubleshooting. It shows how the same framework can be reused in a different area, taking the loader idea beyond automation tasks and applying it to practical network testing work."
     ]
   },
+  "vegeGardenBoxes": {
+    "paragraphs": [
+      "This project page is currently under construction.",
+      "Photos, SketchUp models, and build notes will be added once the project content is ready."
+    ]
+  },
+  "verticalGreenhouse": {
+    "paragraphs": [
+      "This project page is currently under construction.",
+      "Photos, SketchUp models, and build notes will be added once the project content is ready."
+    ]
+  },
 };

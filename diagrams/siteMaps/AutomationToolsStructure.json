@@ -20,21 +20,38 @@
   },
 
   "ConstantsFiles": {
-    "TextCreatorConstants": "TextCreatorConstants"
+    "TextCreatorConstants": "TextCreatorConstants",
+
+    "FutureToolAConstants": "FutureToolAConstants",
+    "FutureToolBConstants": "FutureToolBConstants"
   },
 
   "ToolConfigs": {
-    "TextCreatorConfig": "TextCreator.json"
+    "TextCreatorConfig": "TextCreator.json",
+
+    "FutureToolAConfig": "FutureToolA.json",
+    "FutureToolBConfig": "FutureToolB.json"
   },
 
   "links": [
     ["AutomationLoader", "TextCreatorConstants"],
-    ["TextCreatorConstants", "TextCreatorConfig"]
+    ["AutomationLoader", "FutureToolAConstants"],
+    ["AutomationLoader", "FutureToolBConstants"],
+
+    ["TextCreatorConstants", "TextCreatorConfig"],
+    ["FutureToolAConstants", "FutureToolAConfig"],
+    ["FutureToolBConstants", "FutureToolBConfig"]
   ],
 
   "class_map": {
     "AutomationLoader": "primary",
+
     "TextCreatorConstants": "secondary",
-    "TextCreatorConfig": "tertiary"
+    "FutureToolAConstants": "secondary",
+    "FutureToolBConstants": "secondary",
+
+    "TextCreatorConfig": "tertiary",
+    "FutureToolAConfig": "tertiary",
+    "FutureToolBConfig": "tertiary"
   }
 }

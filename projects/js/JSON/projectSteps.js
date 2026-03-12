@@ -635,12 +635,6 @@ thematic: [
       img: "PromptForgeBatch.png",
       alt: "Prompt Forge batch generation screen",
       text: "For repeated work, Prompt Forge also supports batch style prompt generation. This lets you apply the same structure to multiple jobs without re entering the full setup every time. It makes the tool more useful for repeatable content workflows instead of just one off prompt testing."
-    },
-    {
-      title: "Step 5: Save and Reuse Profiles",
-      img: "PromptForgeSaveProfile.png",
-      alt: "Saving Prompt Forge profiles",
-      text: "Once a profile works the way you want, it can be saved back to JSON through the API layer. Saving profiles means the same prompt structure, field setup, and writing workflow can be reused later, which helps keep local prompt generation fast and consistent."
     }
   ],
   // Step-by-step breakdown for the Automation Tools and Testing Tools frameworks
@@ -670,7 +664,6 @@ thematic: [
         <li>Reads the selected tool’s config and documentation paths.</li>
         <li>Validates config before execution begins.</li>
         <li>Builds the plan, prompts for confirmation, then runs the selected pipeline.</li>
-        <li>Writes logs using the shared logging rules for the framework.</li>
       </ul>
     `
   },
@@ -691,7 +684,6 @@ thematic: [
         <li><b>SECONDARY_VALIDATION</b> – optional deeper checks for nested values.</li>
         <li><b>ACTIONS / SUB_MENU</b> – menu entries and which pipeline to run.</li>
         <li><b>PIPELINE_STATES</b> – ordered steps for each action.</li>
-        <li><b>LOG_*</b> – log directory, log prefix, rotation name, and retention policy.</li>
         <li><b>REQUIRED_USER</b> – optional execution guard when a specific user context is required.</li>
       </ul>
 
@@ -721,7 +713,7 @@ thematic: [
         <li><b>Validate</b>: Required keys are checked before anything runs.</li>
         <li><b>Status & Plan</b>: Builds a clear execution plan for the selected action.</li>
         <li><b>Confirm</b>: Presents a summary and proceeds only when confirmed.</li>
-        <li><b>Execute & Log</b>: Runs the pipeline states in order and writes logs using the shared framework rules.</li>
+        <li><b>Execute</b>: Runs the pipeline states.</li>
       </ol>
 
       This single flow allows different automation tools to reuse the same loader without duplicating control logic.
@@ -755,7 +747,6 @@ thematic: [
           <li>Reads the selected tool’s config and documentation paths.</li>
           <li>Validates config before running any scan action.</li>
           <li>Builds the plan, prompts for confirmation, then runs the selected pipeline.</li>
-          <li>Writes logs and output using the shared framework rules.</li>
         </ul>
       `
     },
@@ -776,7 +767,6 @@ thematic: [
           <li><b>SECONDARY_VALIDATION</b> – optional deeper checks for nested values.</li>
           <li><b>ACTIONS / SUB_MENU</b> – available scan actions and which pipeline to run.</li>
           <li><b>PIPELINE_STATES</b> – ordered steps for each scan action.</li>
-          <li><b>LOG_*</b> – log directory, log prefix, rotation name, and retention policy.</li>
           <li><b>REQUIRED_USER</b> – optional execution guard if needed for a scanner action.</li>
         </ul>
 
@@ -806,7 +796,7 @@ thematic: [
           <li><b>Validate</b>: Required keys are checked before any diagnostics run.</li>
           <li><b>Status & Plan</b>: Builds a clear execution plan for the selected scan action.</li>
           <li><b>Confirm</b>: Presents a summary and proceeds only when confirmed.</li>
-          <li><b>Execute & Log</b>: Runs the pipeline states in order and writes logs using the shared framework rules.</li>
+          <li><b>Execute</b>: Runs the pipeline states in order.</li>
         </ol>
 
         This single flow supports both WiFi scanning and network scanning without duplicating the overall control structure.

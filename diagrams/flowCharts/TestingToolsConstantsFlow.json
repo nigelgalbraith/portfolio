@@ -6,8 +6,7 @@
     "DetermineStatus": { "label": "Check status" },
     "ChooseAction": { "label": "Select action" },
     "BuildPipeline": { "label": "Build pipeline" },
-    "RunPipeline": { "label": "Run pipeline" },
-    "LoggingPolicy": { "label": "Apply logging" }
+    "RunPipeline": { "label": "Run pipeline" }
   },
   "connections": [
     ["ImportConstants", "ReadKeys"],
@@ -15,7 +14,6 @@
     ["ValidateConfig", "DetermineStatus"],
     ["DetermineStatus", "ChooseAction"],
     ["ChooseAction", "BuildPipeline"],
-    ["BuildPipeline", "RunPipeline"],
-    ["RunPipeline", "LoggingPolicy"]
+    ["BuildPipeline", "RunPipeline"]
   ]
 }

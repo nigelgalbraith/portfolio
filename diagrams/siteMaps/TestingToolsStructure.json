@@ -14,28 +14,50 @@
     "key_classes": "classes",
     "key_class_map": "class_map"
   },
+
   "Main": {
     "ToolLoader": "ToolLoader.py"
   },
+
   "ConstantsFiles": {
     "WiFiConstants": "WiFiConstants",
-    "NetworkConstants": "NetworkConstants"
+    "NetworkConstants": "NetworkConstants",
+
+    "FutureToolAConstants": "FutureToolAConstants",
+    "FutureToolBConstants": "FutureToolBConstants"
   },
+
   "ToolConfigs": {
     "WiFiConfig": "WiFiConfig.json",
-    "NetworkConfig": "NetworkConfig.json"
+    "NetworkConfig": "NetworkConfig.json",
+
+    "FutureToolAConfig": "FutureToolAConfig.json",
+    "FutureToolBConfig": "FutureToolBConfig.json"
   },
+
   "links": [
     ["ToolLoader", "WiFiConstants"],
     ["ToolLoader", "NetworkConstants"],
+    ["ToolLoader", "FutureToolAConstants"],
+    ["ToolLoader", "FutureToolBConstants"],
+
     ["WiFiConstants", "WiFiConfig"],
-    ["NetworkConstants", "NetworkConfig"]
+    ["NetworkConstants", "NetworkConfig"],
+    ["FutureToolAConstants", "FutureToolAConfig"],
+    ["FutureToolBConstants", "FutureToolBConfig"]
   ],
+
   "class_map": {
     "ToolLoader": "primary",
+
     "WiFiConstants": "secondary",
     "NetworkConstants": "secondary",
+    "FutureToolAConstants": "secondary",
+    "FutureToolBConstants": "secondary",
+
     "WiFiConfig": "tertiary",
-    "NetworkConfig": "tertiary"
+    "NetworkConfig": "tertiary",
+    "FutureToolAConfig": "tertiary",
+    "FutureToolBConfig": "tertiary"
   }
 }

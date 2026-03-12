@@ -7,19 +7,31 @@ graph TD
   subgraph Constants Files [Constants Modules]
     WiFiConstants[WiFiConstants]
     NetworkConstants[NetworkConstants]
+    FutureToolAConstants[FutureToolAConstants]
+    FutureToolBConstants[FutureToolBConstants]
   end
 
   subgraph Tool Configs [Tool Config Files]
     WiFiConfig[WiFiConfig.json]
     NetworkConfig[NetworkConfig.json]
+    FutureToolAConfig[FutureToolAConfig.json]
+    FutureToolBConfig[FutureToolBConfig.json]
   end
 
   ToolLoader --> WiFiConstants
   ToolLoader --> NetworkConstants
+  ToolLoader --> FutureToolAConstants
+  ToolLoader --> FutureToolBConstants
   WiFiConstants --> WiFiConfig
   NetworkConstants --> NetworkConfig
+  FutureToolAConstants --> FutureToolAConfig
+  FutureToolBConstants --> FutureToolBConfig
   class ToolLoader primary
   class WiFiConstants secondary
   class NetworkConstants secondary
+  class FutureToolAConstants secondary
+  class FutureToolBConstants secondary
   class WiFiConfig tertiary
   class NetworkConfig tertiary
+  class FutureToolAConfig tertiary
+  class FutureToolBConfig tertiary

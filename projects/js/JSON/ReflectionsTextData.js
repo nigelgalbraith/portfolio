@@ -89,22 +89,36 @@ const REFLECTIONS_DATA = {
   "promptForge": {
     heading: "Reflection",
     paragraphs: [
-      "Prompt Forge grew out of the earlier text generator project, but the goal here was to focus on building prompts more deliberately. Instead of typing everything manually each time, the interface lets you structure context, tone, and checklist inputs before sending them to the model. That made the process more repeatable and easier to adjust.",
-      "The key takeaway was how useful small structured tools can be when working with language models. Breaking prompts into components makes it easier to refine output and experiment with different combinations without constantly rewriting everything from scratch."
+      "Prompt Forge grew out of the earlier text generator project, but it exposed a few weaknesses in how prompts were being written. Typing everything manually each time quickly became inconsistent, especially when trying to reuse the same structure across different tasks. The tool ended up being a way to experiment with breaking prompts into smaller components instead of treating them as a single block of text.",
+      "Working on it also highlighted how easy it is for prompt systems to become overcomplicated. Some early ideas added too many fields and options, which made the interface harder to use rather than better. Simplifying the structure and keeping the components focused turned out to be the more practical approach."
     ]
   },
   "automationTools": {
     heading: "Reflection",
     paragraphs: [
-      "The automation tools project came from the need to repeatedly configure systems in a predictable way. Instead of relying on manual setup steps, the loader driven structure lets each tool run through the same validation, planning, and execution flow. That consistency reduces mistakes and makes the behaviour easier to understand.",
-      "What stood out during development was how important clear structure becomes in automation work. When scripts start to grow, separating configuration, logic, and execution paths keeps things manageable. The modular approach also made it easier to add new tools later without rewriting the entire framework."
+      "The automation tools project came out of repeatedly setting up systems in roughly the same way and realising how easy it is to miss steps when doing it manually. The loader structure grew from trying to keep those tasks predictable instead of relying on memory or scattered scripts.",
+      "While building it, it became obvious how quickly automation scripts can become messy if everything is mixed together. Separating configuration, validation, and execution made the tools easier to reason about. It also made it simpler to add new tools later without having to change the loader each time."
     ]
   },
   "testingTools": {
     heading: "Reflection",
     paragraphs: [
-      "The testing tools project focuses on quick diagnostics for common networking issues. Instead of running several unrelated commands manually, the tool groups common checks like WiFi scanning, network discovery, and connectivity tests behind a simple menu system.",
-      "Building it highlighted the value of small utilities that remove friction during troubleshooting. Even basic checks become easier when they follow a consistent structure and provide clear output. The project reinforced the idea that practical tools often come from simplifying tasks you already perform regularly."
+      "The testing tools project started from the small checks that come up when troubleshooting networks. Commands like scanning WiFi, checking neighbours, or testing ports are straightforward, but they usually involve jumping between several tools and remembering the right flags.",
+      "Building a small framework around those checks made the process more consistent. It also showed that diagnostic tools do not need to be complicated to be useful. Simply organising common checks into a predictable structure makes troubleshooting easier when something is not working."
     ]
   },
+  "vegeGardenBoxes": {
+    heading: "Reflection",
+    paragraphs: [
+      "This project page is still being put together. The planter boxes have been built, but the documentation, photos, and models have not been added yet.",
+      "Once everything is documented properly, this section will cover the design choices, build process, and what I would change if building the system again."
+    ]
+  },
+  "verticalGreenhouse": {
+    heading: "Reflection",
+    paragraphs: [
+      "This project page is currently under construction while the design and build details are organised.",
+      "Future updates will include the SketchUp design, build photos, and a reflection on what worked well and what could be improved."
+    ]
+  }
 };

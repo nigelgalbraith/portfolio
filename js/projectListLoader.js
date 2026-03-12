@@ -6,9 +6,6 @@ document.addEventListener("DOMContentLoaded", () => {
   // Use external JSON data
   const projects = PROJECT_LIST_DATA;
 
-  // Sort alphabetically by title
-  projects.sort((a, b) => a.title.localeCompare(b.title));
-
   projects.forEach((project) => {
     const template = `
       <a class="grouped-list-item-button-link" href="${project.href}">

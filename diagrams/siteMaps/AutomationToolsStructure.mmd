@@ -6,14 +6,26 @@ graph TD
 
   subgraph Constants Files [Constants Modules]
     TextCreatorConstants[TextCreatorConstants]
+    FutureToolAConstants[FutureToolAConstants]
+    FutureToolBConstants[FutureToolBConstants]
   end
 
   subgraph Tool Configs [Tool Config Files]
     TextCreatorConfig[TextCreator.json]
+    FutureToolAConfig[FutureToolA.json]
+    FutureToolBConfig[FutureToolB.json]
   end
 
   AutomationLoader --> TextCreatorConstants
+  AutomationLoader --> FutureToolAConstants
+  AutomationLoader --> FutureToolBConstants
   TextCreatorConstants --> TextCreatorConfig
+  FutureToolAConstants --> FutureToolAConfig
+  FutureToolBConstants --> FutureToolBConfig
   class AutomationLoader primary
   class TextCreatorConstants secondary
+  class FutureToolAConstants secondary
+  class FutureToolBConstants secondary
   class TextCreatorConfig tertiary
+  class FutureToolAConfig tertiary
+  class FutureToolBConfig tertiary

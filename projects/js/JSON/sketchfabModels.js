@@ -31,4 +31,54 @@ const SKETCHFAB_MODELS = {
       }
     ]
   }
+
+  /*
+  arcadeCabinet: {
+    title: "Arcade Cabinet",
+    embedUrl: "SKETCHFAB_EMBED_URL_HERE",
+    directLink: "SKETCHFAB_MODEL_LINK_HERE",
+    username: "nigelgalbraith",
+    userProfile: "https://sketchfab.com/nigelgalbraith",
+    links: [
+      {
+        href: "SKETCHFAB_MODEL_LINK_HERE",
+        icon: "../images/icons/optimized/SketchFabIcon.png",
+        label: "View Model",
+        download: false
+      }
+    ]
+  },
+
+  vegeGardenBoxes: {
+    title: "Vegetable Garden Boxes",
+    embedUrl: "SKETCHFAB_EMBED_URL_HERE",
+    directLink: "SKETCHFAB_MODEL_LINK_HERE",
+    username: "nigelgalbraith",
+    userProfile: "https://sketchfab.com/nigelgalbraith",
+    links: [
+      {
+        href: "SKETCHFAB_MODEL_LINK_HERE",
+        icon: "../images/icons/optimized/SketchFabIcon.png",
+        label: "View Model",
+        download: false
+      }
+    ]
+  },
+
+  verticalGreenhouse: {
+    title: "Vertical Greenhouse",
+    embedUrl: "SKETCHFAB_EMBED_URL_HERE",
+    directLink: "SKETCHFAB_MODEL_LINK_HERE",
+    username: "nigelgalbraith",
+    userProfile: "https://sketchfab.com/nigelgalbraith",
+    links: [
+      {
+        href: "SKETCHFAB_MODEL_LINK_HERE",
+        icon: "../images/icons/optimized/SketchFabIcon.png",
+        label: "View Model",
+        download: false
+      }
+    ]
+  }
+  */
 };
