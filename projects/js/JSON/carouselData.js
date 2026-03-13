@@ -37,27 +37,30 @@ const CAROUSEL_DATA = {
     { imgName: "GreenhousePlanterBoxesSketchUp2.png", alt: "Greenhouse Planter Boxes SketchUp 2", class: "centre-img" },
     { imgName: "GreenhousePlanterBoxesSketchUp3.png", alt: "Greenhouse Planter Boxes SketchUp 3", class: "centre-img" },
     { imgName: "GreenhousePlanterBoxesSketchUp4.png", alt: "Greenhouse Planter Boxes SketchUp 4", class: "centre-img" }
-  ]
+  ],
   // ------------------------------------------------------------------
   // FUTURE CAROUSELS (images not ready yet)
   // ------------------------------------------------------------------
 
-  /*
+  
   verticalGreenhouseCarousel: [
     { imgName: "VerticalGreenhouse1.png", alt: "Vertical Greenhouse 1", class: "centre-img" },
-    { imgName: "VerticalGreenhouse2.png", alt: "Vertical Greenhouse 2", class: "centre-img" }
+    { imgName: "VerticalGreenhouse2.png", alt: "Vertical Greenhouse 2", class: "centre-img" },
+    { imgName: "VerticalGreenhouse3.png", alt: "Vertical Greenhouse 3", class: "centre-img" }
   ],
-
+  /*
   verticalGreenhouseSketchupCarousel: [
     { imgName: "VerticalGreenhouseSketchUp1.png", alt: "Vertical Greenhouse SketchUp 1", class: "centre-img" },
     { imgName: "VerticalGreenhouseSketchUp2.png", alt: "Vertical Greenhouse SketchUp 2", class: "centre-img" }
   ],
+  */
 
   vegeGardenBoxesCarousel: [
     { imgName: "VegeGardenBoxes1.png", alt: "Vegetable Garden Boxes 1", class: "centre-img" },
-    { imgName: "VegeGardenBoxes2.png", alt: "Vegetable Garden Boxes 2", class: "centre-img" }
+    { imgName: "VegeGardenBoxes2.png", alt: "Vegetable Garden Boxes 2", class: "centre-img" },
+    { imgName: "VegeGardenBoxes3.png", alt: "Vegetable Garden Boxes 3", class: "centre-img" }
   ],
-
+  /*
   vegeGardenBoxesSketchupCarousel: [
     { imgName: "VegeGardenBoxesSketchUp1.png", alt: "Vegetable Garden Boxes SketchUp 1", class: "centre-img" },
     { imgName: "VegeGardenBoxesSketchUp2.png", alt: "Vegetable Garden Boxes SketchUp 2", class: "centre-img" }

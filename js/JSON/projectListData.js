@@ -185,10 +185,10 @@ const PROJECT_LIST_DATA = [
   "href": "projects/AutomationTools.html",
   "img": "images/thumbs/optimized/AutomationTools.png",
   "alt": "Automation Tools Thumbnail",
-  "title": "Automation Tools Framework",
+  "title": "Automation Tools",
   "description": `
     <ul>
-      <li>Reusable automation framework built around a modular loader system.</li>
+      <li>Reusable automation tools built around a modular loader system.</li>
       <li>Tools are defined through constants modules and JSON configurations.</li>
       <li>Supports validation, execution pipelines, and structured logging.</li>
       <li>Designed to simplify building reliable terminal based automation tools.</li>
@@ -202,7 +202,7 @@ const PROJECT_LIST_DATA = [
   "title": "Network Testing Tools",
   "description": `
     <ul>
-      <li>Network diagnostics toolkit built on the automation loader framework.</li>
+      <li>Network diagnostics toolkit built on the automation loader.</li>
       <li>Includes Wi-Fi scanning, interface inspection, and TCP port scanning.</li>
       <li>Uses shared modules and configuration driven tool definitions.</li>
       <li>Demonstrates how the loader framework can support real world diagnostics.</li>

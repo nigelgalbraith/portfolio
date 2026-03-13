@@ -145,7 +145,7 @@ const ProjectLinks = {
       target: "_blank"
     },
     {
-      label: "Automation Tools Framework",
+      label: "Automation Tools",
       href: "https://codeload.github.com/nigelgalbraith/AutomationTools/zip/refs/heads/main",
       icon: "../images/icons/optimized/zip.png",
       alt: "Zip",
