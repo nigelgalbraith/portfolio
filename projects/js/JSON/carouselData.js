@@ -4,12 +4,11 @@ const CAROUSEL_DATA = {
     { imgName: "Arcade-Cabinet1.png", alt: "Arcade Cabinet 1", class: "centre-img" },
     { imgName: "Arcade-Cabinet2.png", alt: "Arcade Cabinet 2", class: "centre-img" }
   ],
-  /*
   arcadeSketchupCarousel: [
     { imgName: "ArcadeCabinetSketchUp1.png", alt: "Arcade Cabinet SketchUp 1", class: "centre-img" },
-    { imgName: "ArcadeCabinetSketchUp2.png", alt: "Arcade Cabinet SketchUp 2", class: "centre-img" }
+    { imgName: "ArcadeCabinetSketchUp2.png", alt: "Arcade Cabinet SketchUp 2", class: "centre-img" },
+     { imgName: "ArcadeCabinetSketchUp3.png", alt: "Arcade Cabinet SketchUp 3", class: "centre-img" }
   ],
-  */
 
   terraceGardensCarousel: [
     { imgName: "TerraceGardens1.png", alt: "Terrace Gardens 1", class: "centre-img" },
