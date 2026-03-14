@@ -11,10 +11,10 @@ const PROJECT_LIST_DATA = [
   "title": "Custom Arcade Cabinet",
   "description": `
     <ul>
-      <li>Reused salvaged materials to build a full-sized MAME arcade cabinet.</li>
-      <li>Added custom wiring and arcade style controls.</li>
-      <li>Powered by an old Dell PC running HyperSpin.</li>
-      <li>Emulates multiple retro consoles for an all in one nostalgic gaming setup.</li>
+      <li>Built a full-sized MAME arcade cabinet using salvaged materials.</li>
+      <li>Installed custom wiring and arcade-style controls.</li>
+      <li>Repurposed an old Dell PC running HyperSpin as the emulator system.</li>
+      <li>Supports multiple retro console and arcade platforms.</li>
     </ul>
   `
 },
