@@ -50,13 +50,13 @@ const SKETCHFAB_MODELS = {
 
   verticalGreenhouse: {
     title: "Vertical Greenhouse",
-    embedUrl: "https://sketchfab.com/models/08a5bbe34b724b76be7b00ac0431e9e7/embed",
-    directLink: "https://sketchfab.com/3d-models/vertical-greenhouse-08a5bbe34b724b76be7b00ac0431e9e7",
+    embedUrl: "https://sketchfab.com/models/e9469d4bc2974895b4d39bd714608a32/embed",
+    directLink: "https://sketchfab.com/3d-models/vertical-greenhouse-e9469d4bc2974895b4d39bd714608a32",
     username: "nigelgalbraith",
     userProfile: "https://sketchfab.com/nigelgalbraith",
     links: [
       {
-        href: "https://sketchfab.com/3d-models/vertical-greenhouse-08a5bbe34b724b76be7b00ac0431e9e7",
+        href: "https://sketchfab.com/3d-models/vertical-greenhouse-e9469d4bc2974895b4d39bd714608a32",
         icon: "../images/icons/optimized/SketchFabIcon.png",
         label: "View Model",
         download: false
