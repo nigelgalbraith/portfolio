@@ -46,6 +46,22 @@ const SKETCHFAB_MODELS = {
         download: false
       }
     ]
+  },
+
+  verticalGreenhouse: {
+    title: "Vertical Greenhouse",
+    embedUrl: "https://sketchfab.com/models/08a5bbe34b724b76be7b00ac0431e9e7/embed",
+    directLink: "https://sketchfab.com/3d-models/vertical-greenhouse-08a5bbe34b724b76be7b00ac0431e9e7",
+    username: "nigelgalbraith",
+    userProfile: "https://sketchfab.com/nigelgalbraith",
+    links: [
+      {
+        href: "https://sketchfab.com/3d-models/vertical-greenhouse-08a5bbe34b724b76be7b00ac0431e9e7",
+        icon: "../images/icons/optimized/SketchFabIcon.png",
+        label: "View Model",
+        download: false
+      }
+    ]
   }
 
   /*
@@ -64,21 +80,5 @@ const SKETCHFAB_MODELS = {
       }
     ]
   },
-
-  verticalGreenhouse: {
-    title: "Vertical Greenhouse",
-    embedUrl: "SKETCHFAB_EMBED_URL_HERE",
-    directLink: "SKETCHFAB_MODEL_LINK_HERE",
-    username: "nigelgalbraith",
-    userProfile: "https://sketchfab.com/nigelgalbraith",
-    links: [
-      {
-        href: "SKETCHFAB_MODEL_LINK_HERE",
-        icon: "../images/icons/optimized/SketchFabIcon.png",
-        label: "View Model",
-        download: false
-      }
-    ]
-  }
   */
 };

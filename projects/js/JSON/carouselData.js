@@ -47,12 +47,11 @@ const CAROUSEL_DATA = {
     { imgName: "VerticalGreenhouse2.png", alt: "Vertical Greenhouse 2", class: "centre-img" },
     { imgName: "VerticalGreenhouse3.png", alt: "Vertical Greenhouse 3", class: "centre-img" }
   ],
-  /*
   verticalGreenhouseSketchupCarousel: [
     { imgName: "VerticalGreenhouseSketchUp1.png", alt: "Vertical Greenhouse SketchUp 1", class: "centre-img" },
-    { imgName: "VerticalGreenhouseSketchUp2.png", alt: "Vertical Greenhouse SketchUp 2", class: "centre-img" }
+    { imgName: "VerticalGreenhouseSketchUp2.png", alt: "Vertical Greenhouse SketchUp 2", class: "centre-img" },
+    { imgName: "VerticalGreenhouseSketchUp3.png", alt: "Vertical Greenhouse SketchUp 3", class: "centre-img" }
   ],
-  */
 
   vegeGardenBoxesCarousel: [
     { imgName: "VegeGardenBoxes1.png", alt: "Vegetable Garden Boxes 1", class: "centre-img" },
