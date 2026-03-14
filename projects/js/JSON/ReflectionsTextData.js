@@ -110,15 +110,16 @@ const REFLECTIONS_DATA = {
   "vegeGardenBoxes": {
     heading: "Reflection",
     paragraphs: [
-      "This project page is still being put together. The planter boxes have been built, but the documentation, photos, and models have not been added yet.",
-      "Once everything is documented properly, this section will cover the design choices, build process, and what I would change if building the system again."
+      "The planter boxes turned out strong and durable, but they were probably a bit overbuilt. At around 800mm high they required a large amount of soil to fill, which made the setup heavier and took quite a while to complete. If I built them again I would likely add internal supports or feet to reduce the volume of soil needed.",
+      "Another improvement would be planning irrigation before filling the beds. Installing watering hoses or a simple irrigation line first would have made watering easier and saved some effort once the soil was already in place."
     ]
   },
+
   "verticalGreenhouse": {
     heading: "Reflection",
     paragraphs: [
-      "This project page is currently under construction while the design and build details are organised.",
-      "Future updates will include the SketchUp design, build photos, and a reflection on what worked well and what could be improved."
+      "Overall the vertical greenhouse worked well and achieved the goal of saving space while still allowing multiple plants to grow. The stacked layout made watering and access reasonably straightforward.",
+      "One thing I would improve is how the plastic covering is installed. At the moment it is simply screwed directly to the frame. In future it would probably be better to build removable frames or panels so the plastic could be replaced more easily in sections if it wears out."
     ]
   }
 };

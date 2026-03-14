@@ -52,8 +52,10 @@ const PROJECT_LIST_DATA = [
   "title": "Vegetable Garden Boxes",
   "description": `
     <ul>
-      <li>Project page currently under construction.</li>
-      <li>Photos, design models, and build notes will be added soon.</li>
+      <li>Raised vegetable beds designed to reduce bending while gardening.</li>
+      <li>Built using corrugated iron sides for durability and low cost.</li>
+      <li>Designed in SketchUp before construction.</li>
+      <li>Focused on practical access and long term outdoor use.</li>
     </ul>
   `
 },
@@ -64,8 +66,10 @@ const PROJECT_LIST_DATA = [
   "title": "Vertical Greenhouse",
   "description": `
     <ul>
-      <li>Project page currently under construction.</li>
-      <li>Photos, design models, and build notes will be added soon.</li>
+      <li>Vertical greenhouse design to maximise growing space.</li>
+      <li>Stacked planter layout improves access and watering.</li>
+      <li>Frame designed for durability in greenhouse heat.</li>
+      <li>Explores space efficient small scale food growing.</li>
     </ul>
   `
 },

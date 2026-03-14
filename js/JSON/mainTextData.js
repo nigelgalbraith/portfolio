@@ -160,14 +160,16 @@ const MAIN_TEXT_DATA = {
   },
   "vegeGardenBoxes": {
     "paragraphs": [
-      "This project page is currently under construction.",
-      "Photos, SketchUp models, and build notes will be added once the project content is ready."
+      "I built these raised vegetable garden boxes to make growing food easier without having to bend down all the time. The extra height makes planting, watering, and harvesting much easier on the back.",
+      "The boxes were designed with cost and durability in mind. I used corrugated iron for the sides because it lasts much longer than untreated timber and holds up well outdoors. The goal was to build something solid without spending a lot of money.",
+      "Before building, I used SketchUp to experiment with the layout and proportions. Modelling the boxes first helped work out dimensions and spacing so the final build came together more smoothly."
     ]
   },
   "verticalGreenhouse": {
     "paragraphs": [
-      "This project page is currently under construction.",
-      "Photos, SketchUp models, and build notes will be added once the project content is ready."
+      "This project explores a vertical greenhouse layout designed to save space while still allowing a good number of plants to be grown. Instead of spreading out across the ground, the growing trays are stacked vertically to make better use of the available area.",
+      "The stacked drawer style layout also makes watering easier, as each level can be accessed from the front. This keeps the setup compact while still being practical to maintain.",
+      "Through experimenting with materials, I found timber held up better than plastic in the greenhouse environment. Plastic trays tended to become brittle from the heat over time, while metal could potentially heat up too much. Using wood provided a good balance of durability and stability for the structure."
     ]
   },
 };
