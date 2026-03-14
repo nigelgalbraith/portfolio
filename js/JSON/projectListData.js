@@ -25,10 +25,10 @@ const PROJECT_LIST_DATA = [
   "title": "Terrace Gardens",
   "description": `
     <ul>
-      <li>Designed tiered planter layouts in SketchUp before building.</li>
-      <li>Worked around tight and uneven spaces.</li>
-      <li>Built with durability and straightforward maintenance in mind.</li>
-      <li>Adapted the layout to suit the available space.</li>
+      <li>Designed tiered planter layouts in SketchUp before construction.</li>
+      <li>Adapted the design to work around tight and uneven spaces.</li>
+      <li>Built for durability and simple long-term maintenance.</li>
+      <li>Optimised the layout to make better use of the available space.</li>
     </ul>
   `
 },
