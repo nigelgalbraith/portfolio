@@ -62,23 +62,21 @@ const SKETCHFAB_MODELS = {
         download: false
       }
     ]
-  }
+  },
 
-  /*
   vegeGardenBoxes: {
     title: "Vegetable Garden Boxes",
-    embedUrl: "SKETCHFAB_EMBED_URL_HERE",
-    directLink: "SKETCHFAB_MODEL_LINK_HERE",
+    embedUrl: "https://sketchfab.com/models/0c85b47fd7c048be8e7f2dde6102d2a3/embed",
+    directLink: "https://sketchfab.com/3d-models/vege-garden-boxes-0c85b47fd7c048be8e7f2dde6102d2a3",
     username: "nigelgalbraith",
     userProfile: "https://sketchfab.com/nigelgalbraith",
     links: [
       {
-        href: "SKETCHFAB_MODEL_LINK_HERE",
+        href: "https://sketchfab.com/3d-models/vege-garden-boxes-0c85b47fd7c048be8e7f2dde6102d2a3",
         icon: "../images/icons/optimized/SketchFabIcon.png",
         label: "View Model",
         download: false
       }
     ]
-  },
-  */
+  }
 };

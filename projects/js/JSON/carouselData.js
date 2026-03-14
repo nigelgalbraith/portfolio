@@ -58,12 +58,12 @@ const CAROUSEL_DATA = {
     { imgName: "VegeGardenBoxes2.png", alt: "Vegetable Garden Boxes 2", class: "centre-img" },
     { imgName: "VegeGardenBoxes3.png", alt: "Vegetable Garden Boxes 3", class: "centre-img" }
   ],
-  /*
   vegeGardenBoxesSketchupCarousel: [
     { imgName: "VegeGardenBoxesSketchUp1.png", alt: "Vegetable Garden Boxes SketchUp 1", class: "centre-img" },
-    { imgName: "VegeGardenBoxesSketchUp2.png", alt: "Vegetable Garden Boxes SketchUp 2", class: "centre-img" }
+    { imgName: "VegeGardenBoxesSketchUp2.png", alt: "Vegetable Garden Boxes SketchUp 2", class: "centre-img" },
+    { imgName: "VegeGardenBoxesSketchUp3.png", alt: "Vegetable Garden Boxes SketchUp 3", class: "centre-img" },
+    { imgName: "VegeGardenBoxesSketchUp4.png", alt: "Vegetable Garden Boxes SketchUp 4", class: "centre-img" }
   ],
-  */
 
   // Add more carousels here if needed
 };
