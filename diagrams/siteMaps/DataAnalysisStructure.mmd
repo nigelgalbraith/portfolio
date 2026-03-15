@@ -1,0 +1,43 @@
+graph TD
+
+  subgraph System [Data Analysis Tool]
+    DataAnalysisTool[Data Analysis Tool]
+  end
+
+  subgraph Services [Docker Services]
+    Web[Web Service]
+    API[Flask API]
+    Postgres[PostgreSQL]
+  end
+
+  subgraph APIComponents [API Components]
+    Routes[Blueprint Routes]
+    Modules[Service Modules]
+    Pages[UI Page Definitions]
+  end
+
+  subgraph StorageAndImport [Supporting Storage]
+    Configs[Config Storage]
+    Backups[Backups]
+    Imports[CSV to SQL Utilities]
+  end
+
+  DataAnalysisTool --> Web
+  Web --> API
+  API --> Postgres
+  API --> Routes
+  API --> Modules
+  API --> Pages
+  API --> Configs
+  API --> Backups
+  Postgres --> Imports
+  class DataAnalysisTool primary
+  class Web secondary
+  class API secondary
+  class Postgres secondary
+  class Routes tertiary
+  class Modules tertiary
+  class Pages tertiary
+  class Configs support
+  class Backups support
+  class Imports support

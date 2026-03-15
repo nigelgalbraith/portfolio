@@ -17,46 +17,54 @@
     "key_classes": "classes",
     "key_class_map": "class_map"
   },
+
   "System": {
     "DataAnalysisTool": "Data Analysis Tool"
   },
+
   "Services": {
     "Web": "Web Service",
     "API": "Flask API",
     "Postgres": "PostgreSQL"
   },
+
   "APIComponents": {
     "Routes": "Blueprint Routes",
     "Modules": "Service Modules",
     "Pages": "UI Page Definitions"
   },
+
   "StorageAndImport": {
     "Configs": "Config Storage",
     "Backups": "Backups",
     "Imports": "CSV to SQL Utilities"
   },
+
   "links": [
     ["DataAnalysisTool", "Web"],
-    ["DataAnalysisTool", "API"],
-    ["DataAnalysisTool", "Postgres"],
     ["Web", "API"],
+    ["API", "Postgres"],
+
     ["API", "Routes"],
     ["API", "Modules"],
     ["API", "Pages"],
-    ["Routes", "Postgres"],
-    ["Modules", "Postgres"],
+
     ["API", "Configs"],
     ["API", "Backups"],
-    ["Imports", "Postgres"]
+    ["Postgres", "Imports"]
   ],
+
   "class_map": {
     "DataAnalysisTool": "primary",
+
     "Web": "secondary",
     "API": "secondary",
     "Postgres": "secondary",
+
     "Routes": "tertiary",
     "Modules": "tertiary",
     "Pages": "tertiary",
+
     "Configs": "support",
     "Backups": "support",
     "Imports": "support"
