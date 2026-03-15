@@ -2,60 +2,93 @@
 // Static JavaScript object used as embedded content data for main content rendering
 
 const MAIN_TEXT_DATA = {
+  /* -------------------------
+     SITE CONTENT
+  ------------------------- */
+
   "home": {
-  "paragraphs": [
-    "I’m an IT professional based in Christchurch, New Zealand, with a broad background in infrastructure, networking, virtualization, and automation. I like putting together smart, practical solutions whether that’s for a workplace setup or one of my own DIY projects.",
-    "I started out doing hands on trades work, then studied at Ara Institute of Canterbury where I got into IT. That mix of practical know how and new ideas still guides how I approach things today.",
-    "For me, it’s always about problem solving and finding efficient ways to get things done. I reckon tech, when used right, can make life easier and a bit greener too.",
-    "Feel free to have a look through the projects or get in touch if you'd like to talk about ideas, systems, or solving interesting problems."
-  ]
+    "paragraphs": [
+      "I’m an IT professional based in Christchurch, New Zealand, with experience in infrastructure, networking, virtualization, and automation. I enjoy building practical solutions, whether that’s for real systems, small tools, or hands-on projects.",
+      "I started out in trades before moving into IT through study at Ara Institute of Canterbury. That mix of practical experience and technical learning still shapes how I approach systems and problem solving.",
+      "For me the focus is always on making things work well in the real world. Good technology should simplify work, reduce friction, and make systems easier to manage.",
+      "Feel free to explore the projects or get in touch if you'd like to talk about ideas, systems, or practical solutions."
+    ]
   },
+
   "about": {
     "paragraphs": [
-      "I'm Nigel Galbraith, an IT professional with a broad background in infrastructure, virtualization, and automation. I started out in trades before moving into tech, which gave me a practical way of looking at systems making sure they’re reliable, sustainable, and easy to use.",
-      "I like tackling complex problems and finding efficient solutions. For me, tech works best when it’s practical, creative, and makes life easier."
+      "I'm Nigel Galbraith, an IT professional with a background in infrastructure, virtualization, and automation. I started out in trades before moving into technology, which gave me a practical way of thinking about systems and how they actually work in real environments.",
+      "I enjoy solving complex problems and building solutions that are reliable, maintainable, and straightforward to use. For me, technology works best when it stays practical and focused on making things easier."
     ]
   },
+
   "contact": {
-      "paragraphs": [
-          "Want to get in touch? Here are a few ways you can reach me.",
-          "Send a message anytime, I’d be keen to hear from you."
-      ],
-      "lists": [
-          {
-          "items": [
-              'Email: <a href="mailto:nigel.galbraith@proton.me">nigelgalbraith@proton.me</a>',
-              'GitHub: <a href="https://github.com/nigelgalbraith/" rel="noopener" target="_blank">github.com/nigelgalbraith</a>',
-              'LinkedIn: <a href="https://www.linkedin.com/in/nigel-galbraith" rel="noopener" target="_blank">linkedin.com/in/nigel-galbraith</a>'
-          ]
-          }
-      ]
+    "paragraphs": [
+      "If you'd like to get in touch, here are a few ways to reach me.",
+      "Feel free to send a message anytime."
+    ],
+    "lists": [
+      {
+        "items": [
+          "Email: <a href=\"mailto:nigel.galbraith@proton.me\">nigelgalbraith@proton.me</a>",
+          "GitHub: <a href=\"https://github.com/nigelgalbraith/\" rel=\"noopener\" target=\"_blank\">github.com/nigelgalbraith</a>",
+          "LinkedIn: <a href=\"https://www.linkedin.com/in/nigel-galbraith\" rel=\"noopener\" target=\"_blank\">linkedin.com/in/nigel-galbraith</a>"
+        ]
+      }
+    ]
   },
+
+  /* -------------------------
+     DIY / BUILD PROJECTS
+  ------------------------- */
+
   "arcadeCabinet": {
     "paragraphs": [
-      "For this project, I built a custom MAME arcade cabinet using waste MDF and salvaged timber from my joinery work, giving new life to materials that would have otherwise been discarded. The cabinet was designed from scratch and cut using basic woodworking tools, with a focus on keeping costs low but also maintain an authentic retro look and feel.",
-      "I integrated an i PAC circuit board to handle keyboard inputs from real arcade buttons and joysticks, giving the experience a true arcade feel.",
-      "It runs Windows with HyperSpin as the front end interface, supporting a library of over 4,000 classic games from various consoles and arcade systems. The build was a great way to combine my interest in retro gaming with hands on woodworking and hardware integration skills."
+      "I built a custom MAME arcade cabinet using waste MDF and salvaged timber from my joinery work, giving new life to materials that would otherwise have been discarded. The cabinet was designed from scratch and cut using basic woodworking tools, with a focus on keeping costs low while maintaining a classic arcade look.",
+      "An i-PAC interface board handles keyboard inputs from the arcade buttons and joysticks, allowing standard arcade controls to work directly with the system.",
+      "The cabinet runs Windows with HyperSpin as the frontend, supporting a library of over 4,000 classic games from various arcade systems and consoles. The project combines my interest in retro gaming with hands-on woodworking and hardware integration."
     ]
   },
-  "greenhouseBoxes": {
-    "paragraphs":
-    [
-      "I designed a set of planter box layouts in SketchUp, trying out different ways to get the most growing space while still keeping access easy. The idea was to keep it modular so it could be put together in the greenhouse without too much hassle. I used reclaimed wood where I could, and added galvanized screws at the corners to keep it solid.",
-      "Using SketchUp gave me a chance to work through different layouts before I started building, which saved time and cut down on mistakes. It also helped me show the plan more clearly, so everyone could picture how it would fit together in the greenhouse."
-    ]
-  },
-  "kvmLab": {
+
+  "terraceGardens": {
     "paragraphs": [
-      "The KVM Student Labs project replaced VMware Workstation Pro with an open source stack built on Ubuntu, QEMU, and Libvirt. The goal was to reduce licensing costs, improve performance, and introduce domain-based authentication for managing student virtual machines.",
-      "Integrating the Linux host with Active Directory and ensuring hardware compatibility was more involved than expected. Limitations in the test environment slowed progress and forced adjustments to the original plan. This shifted the focus toward feasibility testing, reproducible setup steps, and stronger documentation."
+      "I designed the terrace garden layout in SketchUp, testing different planter box arrangements and levels to create a balanced and practical setup. The build was planned to stay straightforward and modular, using reclaimed wood and solid fixings to keep it durable while remaining easy to assemble.",
+      "SketchUp allowed me to test layouts before building, which helped avoid mistakes and made the construction process smoother. Having a clear model also made it easier to explain the design and ensure everyone understood how the final structure would come together."
     ]
   },
+
+  "greenhouseBoxes": {
+    "paragraphs": [
+      "I designed a series of modular planter box layouts in SketchUp to maximise growing space while keeping access simple. The design focused on modular construction so the boxes could be assembled easily inside the greenhouse.",
+      "Using SketchUp allowed me to test layouts and dimensions before building, which helped avoid mistakes and made the final build more straightforward. It also made it easier to show the plan clearly and explain how the layout would fit together."
+    ]
+  },
+
+  "vegeGardenBoxes": {
+    "paragraphs": [
+      "I built these raised vegetable garden boxes to make growing food easier without constant bending. The extra height makes planting, watering, and harvesting more comfortable.",
+      "The design focused on durability and cost. Corrugated iron was used for the sides because it lasts longer than untreated timber and performs well outdoors.",
+      "Before building, I modelled the layout in SketchUp to test dimensions and spacing. This helped plan the structure and made the final build easier to assemble."
+    ]
+  },
+
+  "verticalGreenhouse": {
+    "paragraphs": [
+      "This project explores a vertical greenhouse layout designed to use space more efficiently. Instead of spreading planting trays across the ground, the trays are stacked vertically to increase growing area within the same footprint.",
+      "The stacked drawer-style layout allows each level to be accessed from the front, making watering and maintenance easier while keeping the structure compact.",
+      "After experimenting with materials, timber proved more reliable than plastic in the greenhouse environment. Plastic trays tended to become brittle from heat over time, while timber provided a more stable structure."
+    ]
+  },
+
+  /* -------------------------
+     INFRASTRUCTURE PROJECTS
+  ------------------------- */
+
   "sharepointGps": {
     "paragraphs": [
-      "At Downer, I developed a SharePoint-based system to improve communication and coordination within the traffic management team.",
-      "The platform centralised Traffic Management Plans (TMPs), site checks, and planning tools into one accessible location.",
-      "It reduced paperwork and improved visibility between field crews and office staff, while highlighting the practical challenges of deploying digital systems in real-world conditions."
+      "While working at Downer, I developed a SharePoint-based system to improve communication and coordination within the traffic management team.",
+      "The platform centralised Traffic Management Plans (TMPs), site checks, and planning tools into a single accessible system.",
+      "It reduced paperwork and improved visibility between field crews and office staff, while also revealing the practical challenges of introducing digital workflows into established field operations."
     ],
     "lists": [
       {
@@ -76,100 +109,108 @@ const MAIN_TEXT_DATA = {
       }
     ]
   },
-  "terraceGardens": {
+
+  "kvmLab": {
     "paragraphs": [
-      "I designed terrace gardens in SketchUp, trying out different planter box layouts and levels to get a setup that was simple and balanced. The idea was to keep the build straightforward and modular, using reclaimed wood and solid fixings to make it durable but still easy to put together.",
-      "For me it’s about using tech to save time and make the hands on work easier. SketchUp lets me try different options before building, and it also helps when explaining ideas to others. Having a model to look at means everyone can see the same thing and be clear on how it should come together."
+      "The KVM Student Labs project explored replacing VMware Workstation Pro with an open-source stack built on Ubuntu, QEMU, and Libvirt. The goal was to reduce licensing costs while introducing domain-based authentication for managing student virtual machines.",
+      "Integrating the Linux host with Active Directory and working through hardware compatibility proved more complex than expected. Limitations in the test environment required changes to the original plan and shifted the focus toward feasibility testing, reproducible setup steps, and clear documentation."
     ]
   },
+
+  /* -------------------------
+     SOFTWARE TOOLS
+  ------------------------- */
+
   "portfolioWebsite": {
     "paragraphs": [
-      "Here I’ve documented how I put together my portfolio site, from the folder layout to the JavaScript that runs it. I set it up to be modular and easy to maintain, without using frameworks.",
-      "The pages are static HTML with styling and behavior handled by reusable JavaScript modules. Content gets pulled into templates, which keeps things simple to update and avoids repeating code. Each project has its own page, and loaders take care of things like images and footers.",
-      "The setup keeps structure (HTML), style (CSS), and behavior (JS) clearly separated. Building it from scratch gave me full control over layout, accessibility, and performance, while also giving me the chance to teach myself new skills along the way."
+      "This project documents how I built my portfolio website, from the folder structure to the JavaScript that drives the site. The goal was to keep the system modular, maintainable, and framework-free.",
+      "Pages are written as static HTML, with styling and behaviour handled through reusable JavaScript modules. Content is injected into templates, which keeps updates simple and avoids repeating code. Each project has its own page, while loaders handle shared elements such as images and footers.",
+      "The structure keeps HTML, CSS, and JavaScript clearly separated. Building the site from scratch gave me full control over layout, accessibility, and performance while helping me deepen my understanding of front-end architecture."
     ]
   },
+
   "quizCreator": {
     "paragraphs": [
-      "This project is a self contained quiz generator that takes questions, answers, and explanations from a structured Excel spreadsheet and turns them into an interactive web quiz.",
-      "I built it as a simple offline tool no sign ups, no third party platforms, and no need for internet access. Being able to create and run quizzes locally makes it handy for personal study, classrooms, or places with limited connectivity.",
-      "Repetition and practice were key to how I learned during my study. This project let me build quizzes tailored to my own pace and topics, so I could reinforce concepts and revisit areas as often as needed.",
-      "The current version is based on CyberOps content, but the setup is flexible. Swap out the spreadsheet and it can be used for IT, science, languages, or any subject.",
-      "It was also a way to put my skills into practice using Python and pandas for data handling, Excel integration, and web tech like HTML, JavaScript, and JSON to build the quiz interface. The focus was on keeping it easy to use and practical."
+      "This project is a self-contained quiz generator that reads questions, answers, and explanations from a structured Excel spreadsheet and converts them into an interactive web quiz.",
+      "The tool runs entirely offline with no sign-ups, external platforms, or internet connection required. Quizzes can be created and run locally, making it useful for personal study, classrooms, or environments with limited connectivity.",
+      "I originally built it to support my own study process. Being able to generate quizzes from structured content made it easier to reinforce concepts and revisit topics as often as needed.",
+      "The current version uses CyberOps material, but the system is flexible. By replacing the spreadsheet, the same tool can be used for subjects such as IT, science, languages, or general education.",
+      "The project combines Python and pandas for spreadsheet processing with HTML, JavaScript, and JSON to generate the quiz interface. The focus was on keeping the system simple, practical, and easy to reuse."
     ]
   },
+
   "thematic": {
     "paragraphs": [
-      "This project streamlines thematic analysis by combining structured Excel sheets with automated data handling and web export tools. It takes a task that’s usually repetitive and time consuming and makes it faster and more organised.",
-      "I built it to cut down on manual work no endless copying, pasting, or cross referencing. With macros and structured workflows, it keeps the analysis consistent and makes sure factors, groupings, and categories are properly tracked.",
-      "When I worked with qualitative datasets, I found it easy to get lost managing themes and metadata. This system gave me a clearer, repeatable process, letting me focus more on the insights instead of fixing formulas or formatting.",
-      "The results can be exported to a web format, so findings are easier to review and navigate. It also builds glossaries, group relationships, and simple risk model automatically, making easier to understand.",
-      "It was a chance to apply what I’ve been learning Excel automation, Python scripting, and front end web development. It’s flexible enough to handle different types of thematic work, from research to education or internal reporting."
+      "This project started as a way to manage thematic coding data in Excel without constantly jumping between sheets and manually tracking relationships between themes, factors, and notes.",
+      "The workflow uses structured spreadsheets and macros to organise the data, while Python scripts handle processing and exporting the results.",
+      "Working with qualitative datasets can get messy quickly, especially when themes, groupings, and notes start to grow. The goal of this setup was simply to keep everything organised and reduce the amount of repetitive spreadsheet work.",
+      "The processed data can also be exported to a small web interface so the themes and relationships can be reviewed outside the spreadsheet."
     ]
   },
+
   "powerShellCloudBackup": {
-      "paragraphs": [
-      "This tool backs up selected files and folders to cloud storage like Google Drive, Dropbox, or Mega NZ before shutdown or logoff. You can choose between zipped backups (with retention) or raw file copies in append or mirror mode. It includes customizable settings, a GUI for configuration, and checks to confirm sync is complete.",
-      "Even though it’s been tested, I recommend running a manual backup first to avoid data loss. This matters most in 'Mirror' mode, which can delete files in the destination to match the source. Always double check your paths and settings before using automatic shutdown.",
-      "Most cloud providers, including Google Drive, Dropbox, and Mega NZ, keep deleted files for a short time (usually up to 30 days), which can help recover mistakes. Still, it’s best to set things up carefully from the start.",
-      "Backup settings are stored in editable JSON files, so you can update preferences without touching the script. You can also add new cloud providers by extending the `cloudProviders.json` file with another provider block."
+    "paragraphs": [
+      "This tool backs up selected files and folders to cloud storage such as Google Drive, Dropbox, or Mega before shutdown or logoff. It supports both zipped backups with retention and direct file copies using append or mirror mode. A simple GUI allows configuration of paths and settings, and the tool checks that cloud sync has completed before shutdown.",
+      "Because mirror mode can remove files from the destination to match the source, it is recommended to run a manual backup first and confirm the paths are correct before enabling automatic backups on shutdown or logoff.",
+      "Most cloud providers keep deleted files for a short period, which can help recover mistakes, but it is still important to verify the configuration before relying on automated backups.",
+      "Backup settings are stored in JSON configuration files so they can be updated without modifying the script. Additional providers can be added by extending the `cloudProviders.json` configuration."
     ]
   },
+
+  /* -------------------------
+     AUTOMATION SYSTEMS
+  ------------------------- */
+
   "debianInstallSuite": {
     "paragraphs": [
-      "This set of Python and Bash scripts automates the setup of Debian based systems using a modular, model aware design. Each script handles a specific task like installing packages, setting firewall rules, configuring RDP, deploying services, or managing third party repos. All behavior is driven by JSON config files linked to system models, making the tool flexible across different environments.",
-      "The scripts follow a simple flow: detect the system model, load the right config, validate input, run the job, and log everything to a versioned logs directory. Each installer asks for confirmation before changes are made, and logs are rotated automatically to keep things tidy.",
-      "Instead of maintaining one standard image, the scripts let you define rules per device type and apply them with a single command.",
-      "Core logic is split into utility modules for logging, service setup, file permissions, JSON parsing, and more. This makes them easy to extend and maintain, with room to grow into GUI tools, remote execution, or Ansible style automation later on."
-      ]
-    },
-  "textCreator": {
-    "paragraphs": [
-      "This project is a standalone text generator built to run entirely offline using Ollama and Piper. I wanted a tool that was simple, fast, and private, without relying on any external services or cloud APIs. Everything is handled locally through Docker containers, with the frontend served by Nginx and the model processing done through a JavaScript interface.",
-      "The system loads a profile file, builds dynamic form fields and checklists, and then sends the structured prompt to the LLM to generate text. It also includes a profile builder so you can design your own templates, styles, and metadata without editing the JSON manually.",
-      "A built-in text-to-speech option runs through Piper, letting the tool read the generated text out loud using a local voice model. The whole setup focuses on practicality and ease of use: clean layouts, modular panes, no frameworks, and everything bundled into a Docker compose file so it can be deployed on any machine with a single command."
+      "This project is a set of Python and Bash scripts that automate the setup of Debian-based systems using a modular, model-aware design. Each script handles a specific task such as installing packages, configuring firewall rules, setting up RDP, deploying services, or managing third-party repositories. Behaviour is controlled through JSON configuration files linked to system models.",
+      "The workflow is straightforward: detect the system model, load the correct configuration, validate inputs, run the job, and log the results. Installers ask for confirmation before making changes, and logs are written to a versioned directory with automatic rotation.",
+      "Instead of maintaining a single system image, the scripts allow different rules to be defined per device type and applied with a single command.",
+      "Core logic is split into reusable utility modules for logging, service setup, permissions, and JSON handling. This keeps the scripts easier to extend and maintain as the project grows."
     ]
   },
-  "languageTranslator": {
-    "paragraphs": [
-      "This project is a self hosted language translator that combines LibreTranslate with Piper text to speech. It runs entirely in Docker, with Nginx serving the frontend and proxying clean routes to the translation and voice services. Everything stays local, with no external cloud APIs.",
-      "The main menu lets you choose between Spanish and Chinese, each with a dedicated page for both directions of translation. The UI is built from small reusable panes for text entry, translation previews, toggle buttons, and audio playback. Each lane is wired with data attributes, so the same JavaScript modules can drive both languages.",
-      "LibreTranslate handles the actual translation, while three Piper instances provide natural voices for English, Spanish, and Chinese. Nginx exposes simple endpoints for /translate and the per language TTS services, keeping the browser code straightforward and easy to follow."
-    ]
-  },
-  "promptForge": {
-    "paragraphs": [
-      "Prompt Forge is a web based prompt workstation built to run locally with Docker. It expands on the earlier Text Creator idea by moving the workflow into a browser interface, while still keeping everything simple, private, and easy to manage on your own machine.",
-      "The frontend is served through Nginx and uses vanilla JavaScript modules, while a lightweight Node and Express API handles prompt generation requests and saved profile management. Profiles can be created, edited, stored as JSON, and loaded back into the interface, which makes it easier to reuse structured prompt setups without rebuilding them each time.",
-      "The system is designed to work with local providers like Ollama and LocalAI, with optional Piper text to speech support as part of the wider setup. The focus was on keeping the tool practical and modular: no heavy frameworks, no cloud dependency, and a clean split between the browser UI, API layer, and local model services."
-    ]
-  },
+
   "automationTools": {
     "paragraphs": [
-      "This project is a modular automation framework built around a single loader and a structured pipeline system. Instead of writing one off scripts for each task, I wanted a cleaner way to define tools through constants modules, config files, validation rules, and reusable execution states.",
-      "The loader handles the common work: checking dependencies, loading JSON config, validating structure, showing documentation, building menus, and then running the selected action through an ordered pipeline. That keeps the tool specific logic out of the loader itself and makes it easier to extend without turning the project into a mess.",
-      "At the moment the framework is set up around a Text Creator style workflow, but the main point is the architecture rather than one specific tool. It was built to support repeatable terminal based automation in a way that stays predictable, maintainable, and easy to grow into other utilities later."
+      "This project is a modular automation framework built around a single loader and a structured pipeline system. Instead of writing separate scripts for each task, tools are defined through constants modules, configuration files, validation rules, and reusable execution states.",
+      "The loader handles shared tasks such as dependency checks, loading JSON configuration, validating inputs, building menus, and running the selected action through an ordered pipeline. This keeps tool-specific logic separate from the loader and makes the framework easier to extend.",
+      "The project focuses on building predictable terminal-based automation tools using a consistent structure so new utilities can be added without rewriting the core workflow."
     ]
   },
+
   "testingTools": {
     "paragraphs": [
-      "This project applies the same loader based architecture to a set of terminal testing and diagnostic tools. Rather than building separate stand alone scripts, I used a shared tool loader and pipeline style state machine so the utilities follow the same structure for setup, validation, selection, and execution.",
-      "The current tools include a Wi Fi scanner and a network scanner. They can list interfaces, scan for nearby wireless networks, inspect selected network details, show ARP neighbours, and run TCP port scans against chosen hosts. Each tool has its own config, documentation, and constants module, while the shared modules handle the common execution flow.",
-      "The main goal was to keep the tools modular and predictable while still being useful for real troubleshooting. It shows how the same framework can be reused in a different area, taking the loader idea beyond automation tasks and applying it to practical network testing work."
+      "This project applies the same loader-based architecture to a set of terminal diagnostic tools. Instead of building separate scripts, the utilities share a common loader and pipeline structure for setup, validation, selection, and execution.",
+      "Current tools include a Wi-Fi scanner and a network scanner. They can list interfaces, scan for nearby wireless networks, inspect selected network details, show ARP neighbours, and run TCP port scans against chosen hosts.",
+      "Each tool has its own configuration and documentation, while shared modules handle the common execution flow so the utilities remain consistent and modular."
     ]
   },
-  "vegeGardenBoxes": {
+
+  /* -------------------------
+     AI / LLM TOOLS
+  ------------------------- */
+
+  "textCreator": {
     "paragraphs": [
-      "I built these raised vegetable garden boxes to make growing food easier without having to bend down all the time. The extra height makes planting, watering, and harvesting much easier on the back.",
-      "The boxes were designed with cost and durability in mind. I used corrugated iron for the sides because it lasts much longer than untreated timber and holds up well outdoors. The goal was to build something solid without spending a lot of money.",
-      "Before building, I used SketchUp to experiment with the layout and proportions. Modelling the boxes first helped work out dimensions and spacing so the final build came together more smoothly."
+      "This project is a standalone text generator designed to run entirely offline using Ollama and Piper. The goal was to create a simple, fast, and private tool that does not rely on external services or cloud APIs. Everything runs locally in Docker containers, with Nginx serving the interface.",
+      "The system loads profile files that define prompt structure, form fields, and checklists. These inputs are assembled into a structured prompt and sent to the local language model to generate text. A profile builder interface allows templates and metadata to be created without editing JSON directly.",
+      "Optional text-to-speech support is provided through Piper so generated text can be read aloud using local voice models. The application uses modular UI panes and avoids heavy frameworks, keeping the system lightweight and easy to deploy through Docker Compose."
     ]
   },
-  "verticalGreenhouse": {
+
+  "languageTranslator": {
     "paragraphs": [
-      "This project explores a vertical greenhouse layout designed to save space while still allowing a good number of plants to be grown. Instead of spreading out across the ground, the growing trays are stacked vertically to make better use of the available area.",
-      "The stacked drawer style layout also makes watering easier, as each level can be accessed from the front. This keeps the setup compact while still being practical to maintain.",
-      "Through experimenting with materials, I found timber held up better than plastic in the greenhouse environment. Plastic trays tended to become brittle from the heat over time, while metal could potentially heat up too much. Using wood provided a good balance of durability and stability for the structure."
+      "This project is a self-hosted language translator built with LibreTranslate and Piper text-to-speech. The system runs entirely in Docker, with Nginx serving the frontend and proxying requests to the translation and voice services so everything stays local.",
+      "The interface provides translation between English, Spanish, and Chinese. The UI is built from reusable panes for text input, translation output, controls, and audio playback. Each section is connected through data attributes so the same JavaScript modules can drive multiple translation directions.",
+      "LibreTranslate performs the translation while Piper provides local voice output. Nginx exposes simple endpoints for translation and text-to-speech services, keeping the browser-side code straightforward."
     ]
   },
+
+  "promptForge": {
+    "paragraphs": [
+      "Prompt Forge is a local prompt-building interface designed to run in Docker. It expands on the earlier Text Creator project by moving the workflow into a browser-based interface while keeping everything local and self-contained.",
+      "The frontend is served through Nginx using vanilla JavaScript modules. A lightweight Node and Express API handles prompt generation and profile management. Profiles can be created, stored as JSON, and loaded back into the interface to reuse structured prompt setups.",
+      "The system works with local model providers such as Ollama or LocalAI, with optional Piper text-to-speech support. The architecture keeps the browser UI, API layer, and local model services clearly separated."
+    ]
+  }
 };

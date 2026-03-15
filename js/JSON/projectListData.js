@@ -39,9 +39,9 @@ const PROJECT_LIST_DATA = [
   "title": "Greenhouse Planter Boxes",
   "description": `
     <ul>
-      <li>Designed and built modular planter boxes for a greenhouse.</li>
-      <li>Used SketchUp to test layout and fit before construction.</li>
-      <li>Considered access, durability, and future replacement.</li>
+      <li>Designed and built modular planter boxes for a greenhouse layout.</li>
+      <li>Used SketchUp to test layout, fit, and spacing before construction.</li>
+      <li>Planned for easy access, durability, and future replacement.</li>
     </ul>
   `
 },
@@ -52,10 +52,10 @@ const PROJECT_LIST_DATA = [
   "title": "Vegetable Garden Boxes",
   "description": `
     <ul>
-      <li>Raised vegetable beds designed to reduce bending while gardening.</li>
-      <li>Built using corrugated iron sides for durability and low cost.</li>
-      <li>Designed in SketchUp before construction.</li>
-      <li>Focused on practical access and long term outdoor use.</li>
+      <li>Built raised vegetable beds to reduce bending while gardening.</li>
+      <li>Used corrugated iron sides for durability and lower cost.</li>
+      <li>Designed the layout in SketchUp before construction.</li>
+      <li>Focused on practical access and long-term outdoor use.</li>
     </ul>
   `
 },
@@ -66,10 +66,10 @@ const PROJECT_LIST_DATA = [
   "title": "Vertical Greenhouse",
   "description": `
     <ul>
-      <li>Vertical greenhouse design to maximise growing space.</li>
-      <li>Stacked planter layout improves access and watering.</li>
-      <li>Frame designed for durability in greenhouse heat.</li>
-      <li>Explores space efficient small scale food growing.</li>
+      <li>Designed a vertical greenhouse layout to maximise growing space.</li>
+      <li>Used a stacked planter arrangement to improve access and watering.</li>
+      <li>Built the frame to handle heat and humidity inside the greenhouse.</li>
+      <li>Explores space-efficient small-scale food growing.</li>
     </ul>
   `
 },
@@ -85,10 +85,10 @@ const PROJECT_LIST_DATA = [
   "title": "SharePoint Database and GPS Based Tracking System",
   "description": `
     <ul>
-      <li>Developed a SharePoint platform with mobile friendly workflows.</li>
-      <li>Enabled field staff to access and update job data remotely.</li>
-      <li>Integrated GPS logging to track signage and site checks automatically.</li>
-      <li>Improved coordination and planning for traffic management teams.</li>
+      <li>Built a SharePoint platform with mobile-friendly workflows for field teams.</li>
+      <li>Enabled staff to access and update job data directly from site.</li>
+      <li>Integrated GPS logging to record signage locations and site inspections.</li>
+      <li>Improved coordination and planning for traffic management operations.</li>
     </ul>
   `
 },
@@ -99,10 +99,10 @@ const PROJECT_LIST_DATA = [
   "title": "Open-Source Ubuntu KVM Solution",
   "description": `
     <ul>
-      <li>Explored replacing VMware with an open source stack using Ubuntu, QEMU, and Libvirt.</li>
+      <li>Tested replacing VMware with an open-source stack using Ubuntu, QEMU, and Libvirt.</li>
       <li>Evaluated integration with Active Directory and domain authentication.</li>
-      <li>Tested feasibility within real hardware and environment constraints.</li>
-      <li>Identified architectural and deployment challenges in virtual lab design.</li>
+      <li>Built and configured a working KVM-based virtual lab environment.</li>
+      <li>Documented architectural and deployment challenges in the setup.</li>
     </ul>
   `
 },
@@ -118,9 +118,10 @@ const PROJECT_LIST_DATA = [
   "title": "Portfolio Website",
   "description": `
     <ul>
-      <li>Designed and built the site structure using modular HTML and CSS.</li>
-      <li>Implemented JavaScript loaders to inject content dynamically.</li>
-      <li>Created reusable page templates to keep the system maintainable.</li>
+      <li>Designed and built a modular portfolio website using HTML, CSS, and JavaScript.</li>
+      <li>Implemented JavaScript loaders to inject project data and page content dynamically.</li>
+      <li>Used reusable page structures to keep layout, content, and logic separated.</li>
+      <li>Built to remain maintainable as new projects are added.</li>
     </ul>
   `
 },
@@ -131,10 +132,10 @@ const PROJECT_LIST_DATA = [
   "title": "Quiz Creator",
   "description": `
     <ul>
-      <li>Reads quiz questions and answers directly from Excel files.</li>
-      <li>Converts them into an interactive, browser based quiz.</li>
-      <li>Runs locally with no external dependencies.</li>
-      <li>Includes answer explanations for self study and offline use.</li>
+      <li>Reads quiz questions and answers directly from Excel spreadsheets.</li>
+      <li>Converts the data into an interactive browser-based quiz.</li>
+      <li>Runs locally in the browser with no external dependencies.</li>
+      <li>Supports answer explanations for self-study and offline use.</li>
     </ul>
   `
 },
@@ -145,10 +146,10 @@ const PROJECT_LIST_DATA = [
   "title": "Thermatic Analysis Web Tool",
   "description": `
     <ul>
-      <li>Transforms Excel based thematic coding data into a web tool.</li>
-      <li>Provides an interactive interface to explore and review themes.</li>
-      <li>Built with Python for data processing and export.</li>
-      <li>Helps structure findings more easily.</li>
+      <li>Converts Excel-based thematic coding data into an interactive web interface.</li>
+      <li>Allows themes and coded responses to be explored and reviewed in the browser.</li>
+      <li>Uses Python to process, organise, and export the dataset.</li>
+      <li>Helps structure and navigate qualitative research findings.</li>
     </ul>
   `
 },
@@ -159,10 +160,10 @@ const PROJECT_LIST_DATA = [
   "title": "PowerShell Cloud Backup Tool",
   "description": `
     <ul>
-      <li>Automates backups to Google Drive, Dropbox, or Mega.</li>
-      <li>Offers zipped or file based modes for flexibility.</li>
-      <li>Includes a GUI with shutdown integration.</li>
-      <li>Uses customizable JSON configs for source, destination, and schedule.</li>
+      <li>Automates backups to Google Drive, Dropbox, and Mega.</li>
+      <li>Supports both zipped and file-based backup modes.</li>
+      <li>Includes a GUI with optional backup-before-shutdown integration.</li>
+      <li>Uses JSON configuration files for source, destination, and backup settings.</li>
     </ul>
   `
 },
@@ -178,10 +179,10 @@ const PROJECT_LIST_DATA = [
   "title": "Debian Setup Suite",
   "description": `
     <ul>
-      <li>Unified Debian setup suite powered by a main loader and constants modules.</li>
-      <li>Supports model aware installs and configuration (APT, DEB, etc.).</li>
-      <li>Loader selects the correct constants, validates configs, and builds a plan.</li>
-      <li>Executes pipelines with full logging and rotation policy.</li>
+      <li>Built a unified Debian setup suite around a main loader and constants modules.</li>
+      <li>Supports model-aware installs and configuration for APT, DEB, and related tasks.</li>
+      <li>The loader selects constants, validates configuration, and builds an execution plan.</li>
+      <li>Runs setup pipelines with structured logging and log rotation.</li>
     </ul>
   `
 },
@@ -192,10 +193,10 @@ const PROJECT_LIST_DATA = [
   "title": "Automation Tools",
   "description": `
     <ul>
-      <li>Reusable automation tools built around a modular loader system.</li>
-      <li>Tools are defined through constants modules and JSON configurations.</li>
+      <li>Built reusable automation tools around a modular loader system.</li>
+      <li>Tools are defined using constants modules and JSON configuration files.</li>
       <li>Supports validation, execution pipelines, and structured logging.</li>
-      <li>Designed to simplify building reliable terminal based automation tools.</li>
+      <li>Simplifies building reliable terminal-based automation tools.</li>
     </ul>
   `
 },
@@ -206,10 +207,10 @@ const PROJECT_LIST_DATA = [
   "title": "Network Testing Tools",
   "description": `
     <ul>
-      <li>Network diagnostics toolkit built on the automation loader.</li>
+      <li>Built a network diagnostics toolkit on top of the automation loader framework.</li>
       <li>Includes Wi-Fi scanning, interface inspection, and TCP port scanning.</li>
-      <li>Uses shared modules and configuration driven tool definitions.</li>
-      <li>Demonstrates how the loader framework can support real world diagnostics.</li>
+      <li>Uses shared modules and configuration-driven tool definitions.</li>
+      <li>Provides practical tools for diagnosing network connectivity issues.</li>
     </ul>
   `
 },
@@ -225,10 +226,10 @@ const PROJECT_LIST_DATA = [
   "title": "Text Creator",
   "description": `
     <ul>
-      <li>Local text generator powered by Ollama and Piper.</li>
-      <li>Modular pane based UI with profile loading, custom fields, and checklists.</li>
-      <li>Generates structured prompts and renders text with on page preview.</li>
-      <li>Includes optional text to speech and a full profile builder interface.</li>
+      <li>Local text generation tool powered by Ollama and Piper.</li>
+      <li>Modular pane-based interface with profile loading, custom fields, and checklists.</li>
+      <li>Builds structured prompts and renders generated text with on-page preview.</li>
+      <li>Includes optional text-to-speech and a profile builder interface.</li>
     </ul>
   `
 },
@@ -239,10 +240,10 @@ const PROJECT_LIST_DATA = [
   "title": "Language Translator",
   "description": `
     <ul>
-      <li>Self-hosted translation UI using LibreTranslate and Piper TTS.</li>
-      <li>Supports English ↔ Spanish and English ↔ Chinese with natural sounding voices.</li>
-      <li>Nginx reverse proxy provides API routes and modular UI panes.</li>
-      <li>Designed to run fully locally with Docker.</li>
+      <li>Self-hosted translation interface using LibreTranslate and Piper TTS.</li>
+      <li>Supports English ↔ Spanish and English ↔ Chinese translation with local voice output.</li>
+      <li>Uses an Nginx reverse proxy to provide API routes for the interface.</li>
+      <li>Designed to run fully locally using Docker.</li>
     </ul>
   `
 },
@@ -253,9 +254,9 @@ const PROJECT_LIST_DATA = [
   "title": "Prompt Forge",
   "description": `
     <ul>
-      <li>Web based prompt building tool designed for local AI models.</li>
-      <li>Supports reusable prompt profiles and structured prompt templates.</li>
-      <li>Includes batch generation and model selection.</li>
+      <li>Web-based prompt builder designed for local AI models.</li>
+      <li>Supports reusable prompt profiles and structured templates.</li>
+      <li>Includes batch prompt generation and model selection.</li>
       <li>Built with a lightweight frontend and local API integration.</li>
     </ul>
   `

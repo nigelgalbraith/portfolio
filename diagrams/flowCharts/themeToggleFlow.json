@@ -1,0 +1,30 @@
+{
+  "nodes": {
+    "listenToggle": {
+      "label": "Listen for theme toggle click"
+    },
+    "toggleTheme": {
+      "label": "Switch between light and dark theme"
+    },
+    "savePreference": {
+      "label": "Save theme preference to localStorage"
+    },
+    "applyTheme": {
+      "label": "Apply theme class to document"
+    }
+  },
+  "connections": [
+    [
+      "listenToggle",
+      "toggleTheme"
+    ],
+    [
+      "toggleTheme",
+      "savePreference"
+    ],
+    [
+      "toggleTheme",
+      "applyTheme"
+    ]
+  ]
+}
