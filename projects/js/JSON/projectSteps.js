@@ -443,6 +443,12 @@ dataAnalysisTool: [
       alt: "Backup Log Output",
       text: "After the backup completes, review the on-screen log for results, errors, or skipped files. This feedback confirms that all selected files were processed correctly. A copy of each log is also saved to your home directory under the 'logs' folder, so you can refer back to previous backups even after restarting the program."
     },
+    {
+      title: "Step 7: Schedule Automatic Backups",
+      img: "BackupSchedule.png",
+      alt: "Scheduling Automatic Backups",
+      text: "A scheduling feature allows the tool to create a Windows Scheduled Task directly from the GUI. Select the desired frequency (Daily, Weekly, or Monthly) and the time the backup should run, then click the 'Schedule Backup' button. The tool will create or update a Windows scheduled task so the backup runs automatically without needing to open the application. This makes it easy to protect files regularly without remembering to run the backup manually."
+    },
   ],
   /* -------------------------
      AUTOMATION SYSTEMS
