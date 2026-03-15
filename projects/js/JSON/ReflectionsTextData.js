@@ -65,6 +65,17 @@ const REFLECTIONS_DATA = {
       "Databases are better suited for structured analysis and querying, especially when tools like PostgreSQL and analytics layers such as Superset can sit on top. The challenge is that initial data collection still needs to be simple, and most people are comfortable with spreadsheets. Going forward, a cleaner solution would likely involve structured data entry that feeds directly into a predefined database schema, reducing duplication and long-term complexity."
     ]
   },
+
+  "dataAnalysisTool": {
+    heading: "Reflection",
+    paragraphs: [
+      "This project began as an attempt to move beyond spreadsheet-based analysis tools and experiment with a structured database-driven approach. The system is built around a Docker environment running a Flask API and PostgreSQL database, with a small frontend used to explore database structure, relationships, and summary views.",
+      "The project is still under development and not all planned features are fully implemented yet. The goal is to support structured data entry, summary configuration, and relationship inspection through the web interface, but parts of this workflow are still being refined. The work so far has mainly focused on building the architecture and modular API structure.",
+      "One of the main motivations for this project came from the limitations encountered during the thematic analysis tool. As datasets and relationships grow, spreadsheet-based systems become harder to maintain and query. A database-backed approach allows the structure of the data to be defined once and then explored more flexibly.",
+      "In the future I plan to expand the project into a more complete analysis environment by integrating tools such as Apache Superset for visualisation and exploration. The aim is to keep data entry simple while allowing more powerful querying and analysis once the data is stored in a properly structured database."
+    ]
+  },
+
   "powerShellCloudBackup": {
     heading: "Reflection",
       paragraphs: [

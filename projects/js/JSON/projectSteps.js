@@ -325,6 +325,51 @@ thematic: [
   }
 ],
 
+dataAnalysisTool: [
+  {
+    title: "Data Analysis Tool Structure",
+    img: "DataAnalysisStructure.png",
+    alt: "Data Analysis Tool Structure Diagram",
+    text: "This diagram shows the overall structure of the Data Analysis Tool. The system runs as a Docker-based stack with separate web, API, and PostgreSQL services. The API is organised into blueprint routes and service modules, while supporting storage areas handle configuration data, backups, and import utilities."
+  },
+  {
+    title: "Data Analysis Tool Workflow",
+    img: "DataAnalysisFlow.png",
+    alt: "Data Analysis Tool Workflow Diagram",
+    text: "This diagram shows the main workflow of the tool. A user starts by selecting a database, then reviews relationships between tables, configures summary settings, generates a summary table, and uses the data entry tools to add or edit records."
+  },
+  {
+    title: "Step 1: Database Settings",
+    img: "DataAnalysisToolDatabaseSettingsPage.png",
+    alt: "Database Settings Page",
+    text: "The workflow begins on the Database Settings page, where a database can be selected, created, or prepared for use. This gives the rest of the application a database context to work with."
+  },
+  {
+    title: "Step 2: Relationships",
+    img: "DataAnalysisToolRelationshipsPage.png",
+    alt: "Relationships Page",
+    text: "The Relationships page is used to inspect how tables are linked. This helps make the structure of the database easier to understand before building summaries or entering records."
+  },
+  {
+    title: "Step 3: Summary Settings",
+    img: "DataAnalysisToolSummarySettingsPage.png",
+    alt: "Summary Settings Page",
+    text: "The Summary Settings page is used to define how summary data should be generated. This stage controls what information will be grouped, filtered, or displayed in the summary view."
+  },
+  {
+    title: "Step 4: Summary Table",
+    img: "DataAnalysisToolSummaryTablePage.png",
+    alt: "Summary Table Page",
+    text: "The Summary Table page displays the generated results in a more usable overview form. This allows the user to review the processed data before making record-level changes."
+  },
+  {
+    title: "Step 5: Data Entry",
+    img: "DataAnalysisToolDataEntryPage.png",
+    alt: "Data Entry Page",
+    text: "The Data Entry page allows records to be added, edited, or removed while working within the database structure already defined by the selected tables and relationships."
+  }
+],
+
   powerShellCloudBackup: [
     {
       title: "Backup Tool Project Structure",

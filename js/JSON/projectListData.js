@@ -154,6 +154,20 @@ const PROJECT_LIST_DATA = [
   `
 },
 {
+  "href": "projects/DataAnalysisTool.html",
+  "img": "images/thumbs/optimized/DataAnalysisTool.png",
+  "alt": "Data Analysis Tool Thumbnail",
+  "title": "Data Analysis Tool",
+  "description": `
+    <ul>
+      <li>Containerised data analysis platform built with Python, Docker, and Nginx.</li>
+      <li>Supports importing structured datasets and converting CSV data to SQL.</li>
+      <li>Provides modular API routes for processing and exploring datasets.</li>
+      <li>Designed as a flexible environment for building data analysis tools.</li>
+    </ul>
+  `
+},
+{
   "href": "projects/PowerShell-CloudBackup.html",
   "img": "images/thumbs/optimized/PowerShellBackup.png",
   "alt": "PowerShell Backup Tool Thumbnail",

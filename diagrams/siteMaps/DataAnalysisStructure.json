@@ -1,0 +1,64 @@
+{
+  "meta": {
+    "main_label": "System",
+    "second_label": "Services",
+    "third_label": "APIComponents",
+    "fourth_label": "StorageAndImport",
+    "main_title": "Data Analysis Tool",
+    "second_title": "Docker Services",
+    "third_title": "API Components",
+    "fourth_title": "Supporting Storage",
+    "key_main": "System",
+    "key_second": "Services",
+    "key_third": "APIComponents",
+    "key_fourth": "StorageAndImport",
+    "key_links": "links",
+    "key_styles": "styles",
+    "key_classes": "classes",
+    "key_class_map": "class_map"
+  },
+  "System": {
+    "DataAnalysisTool": "Data Analysis Tool"
+  },
+  "Services": {
+    "Web": "Web Service",
+    "API": "Flask API",
+    "Postgres": "PostgreSQL"
+  },
+  "APIComponents": {
+    "Routes": "Blueprint Routes",
+    "Modules": "Service Modules",
+    "Pages": "UI Page Definitions"
+  },
+  "StorageAndImport": {
+    "Configs": "Config Storage",
+    "Backups": "Backups",
+    "Imports": "CSV to SQL Utilities"
+  },
+  "links": [
+    ["DataAnalysisTool", "Web"],
+    ["DataAnalysisTool", "API"],
+    ["DataAnalysisTool", "Postgres"],
+    ["Web", "API"],
+    ["API", "Routes"],
+    ["API", "Modules"],
+    ["API", "Pages"],
+    ["Routes", "Postgres"],
+    ["Modules", "Postgres"],
+    ["API", "Configs"],
+    ["API", "Backups"],
+    ["Imports", "Postgres"]
+  ],
+  "class_map": {
+    "DataAnalysisTool": "primary",
+    "Web": "secondary",
+    "API": "secondary",
+    "Postgres": "secondary",
+    "Routes": "tertiary",
+    "Modules": "tertiary",
+    "Pages": "tertiary",
+    "Configs": "support",
+    "Backups": "support",
+    "Imports": "support"
+  }
+}

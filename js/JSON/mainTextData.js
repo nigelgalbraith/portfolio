@@ -148,6 +148,15 @@ const MAIN_TEXT_DATA = {
     ]
   },
 
+  "dataAnalysisTool": {
+    "paragraphs": [
+      "This project was built as a containerised environment for experimenting with different ways of processing and analysing structured datasets.",
+      "The system combines a Python API, Docker containers, and an Nginx reverse proxy to create a modular platform where datasets can be imported, processed, and explored.",
+      "Data can be imported from CSV files and converted into SQL-ready structures, allowing the analysis modules to work with consistent and structured datasets.",
+      "The goal of the project was to build a flexible environment where new analysis tools could be added without rebuilding the entire system, keeping the data pipeline, processing logic, and interface separated."
+    ]
+  },
+
   "powerShellCloudBackup": {
     "paragraphs": [
       "This tool backs up selected files and folders to cloud storage such as Google Drive, Dropbox, or Mega before shutdown or logoff. It supports both zipped backups with retention and direct file copies using append or mirror mode. A simple GUI allows configuration of paths and settings, and the tool checks that cloud sync has completed before shutdown.",

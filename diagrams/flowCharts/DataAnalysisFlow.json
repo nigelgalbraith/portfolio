@@ -1,0 +1,29 @@
+{
+  "nodes": {
+    "StartApp": {
+      "label": "Start Docker services"
+    },
+    "SelectDatabase": {
+      "label": "Open Database Settings"
+    },
+    "InspectRelationships": {
+      "label": "Review table relationships"
+    },
+    "ConfigureSummary": {
+      "label": "Set summary configuration"
+    },
+    "ViewSummary": {
+      "label": "Generate summary table"
+    },
+    "ManageRecords": {
+      "label": "Add or edit records"
+    }
+  },
+  "connections": [
+    ["StartApp", "SelectDatabase"],
+    ["SelectDatabase", "InspectRelationships"],
+    ["InspectRelationships", "ConfigureSummary"],
+    ["ConfigureSummary", "ViewSummary"],
+    ["ViewSummary", "ManageRecords"]
+  ]
+}

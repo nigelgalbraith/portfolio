@@ -168,5 +168,22 @@ const ProjectLinks = {
       alt: "Zip",
       download: true
     }
+  ],
+
+    dataAnalysisTool: [
+    {
+      label: "View GitHub Repository",
+      href: "https://github.com/nigelgalbraith/DataAnalysisTool",
+      icon: "../images/icons/optimized/githubBlack.png",
+      alt: "GitHub",
+      target: "_blank"
+    },
+    {
+      label: "Data Analysis Tool",
+      href: "https://codeload.github.com/nigelgalbraith/DataAnalysisTool/zip/refs/heads/main",
+      icon: "../images/icons/optimized/zip.png",
+      alt: "Zip",
+      download: true
+    }
   ]
 };
