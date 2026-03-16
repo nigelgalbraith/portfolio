@@ -53,14 +53,28 @@ const ProjectLinks = {
 
   powerShellCloudBackup: [
     {
-      label: "View GitHub Repository",
+      label: "PowerShell CmdLine GitHub Repository",
+      href: "https://github.com/nigelgalbraith/Robocopy-Backup-Tool",
+      icon: "../images/icons/optimized/githubBlack.png",
+      alt: "GitHub",
+      target: "_blank"
+    },
+    {
+      label: "PowerShell CmdLine Tool",
+      href: "https://codeload.github.com/nigelgalbraith/Robocopy-Backup-Tool/zip/refs/heads/main",
+      icon: "../images/icons/optimized/zip.png",
+      alt: "Zip",
+      download: true
+    },
+    {
+      label: "PowerShell GUI GitHub Repository",
       href: "https://github.com/nigelgalbraith/PowerShellCloudBackupTool",
       icon: "../images/icons/optimized/githubBlack.png",
       alt: "GitHub",
       target: "_blank"
     },
     {
-      label: "PowerShell Cloud Backup Tool",
+      label: "PowerShell GUI Tool",
       href: "https://codeload.github.com/nigelgalbraith/PowerShellCloudBackupTool/zip/refs/heads/main",
       icon: "../images/icons/optimized/zip.png",
       alt: "Zip",

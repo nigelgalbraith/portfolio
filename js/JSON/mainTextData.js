@@ -162,7 +162,8 @@ const MAIN_TEXT_DATA = {
       "This tool backs up selected files and folders to cloud storage such as Google Drive, Dropbox, or Mega before shutdown or logoff. It supports both zipped backups with retention and direct file copies using append or mirror mode. A simple GUI allows configuration of paths and settings, and the tool checks that cloud sync has completed before shutdown.",
       "Because mirror mode can remove files from the destination to match the source, it is recommended to run a manual backup first and confirm the paths are correct before enabling automatic backups on shutdown or logoff.",
       "Most cloud providers keep deleted files for a short period, which can help recover mistakes, but it is still important to verify the configuration before relying on automated backups.",
-      "Backup settings are stored in JSON configuration files so they can be updated without modifying the script. Additional providers can be added by extending the `cloudProviders.json` configuration."
+      "Backup settings are stored in JSON configuration files so they can be updated without modifying the script. Additional providers can be added by extending the `cloudProviders.json` configuration.",
+      "A simplified Robocopy-only version of this tool is also available for users who prefer a minimal command-line backup script without the GUI."
     ]
   },
 
